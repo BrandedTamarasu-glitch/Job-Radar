@@ -1,0 +1,40 @@
+{
+  "name": "Your Full Name",
+  "level": "mid",
+  "years_experience": 5,
+  "target_titles": [
+    "Your Top Target Title",
+    "Second Choice Title",
+    "Third Choice Title",
+    "Fourth Choice Title"
+  ],
+  "core_skills": [
+    "Skill 1",
+    "Skill 2",
+    "Skill 3",
+    "Skill 4",
+    "Skill 5"
+  ],
+  "secondary_skills": [
+    "Secondary Skill 1",
+    "Secondary Skill 2",
+    "Secondary Skill 3",
+    "Secondary Skill 4",
+    "Secondary Skill 5"
+  ],
+  "certifications": [],
+  "domain_expertise": [
+    "industry 1",
+    "industry 2"
+  ],
+  "location": "City, ST",
+  "arrangement": ["remote", "hybrid"],
+  "target_market": "Remote",
+  "comp_floor": null,
+  "dealbreakers": [],
+  "languages": ["English"],
+  "highlights": [
+    "Quantified accomplishment showing impact (e.g., 'Reduced API latency 40% by redesigning caching layer')",
+    "Another achievement that demonstrates your strengths"
+  ]
+}
