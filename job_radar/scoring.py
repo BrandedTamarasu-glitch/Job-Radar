@@ -3,7 +3,7 @@
 import logging
 import re
 
-from staffing_firms import is_staffing_firm
+from .staffing_firms import is_staffing_firm
 
 log = logging.getLogger(__name__)
 

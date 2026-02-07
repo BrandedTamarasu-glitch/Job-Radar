@@ -2,10 +2,10 @@
 """Job Search Optimization Toolkit — CLI entry point.
 
 Usage:
-    python search.py --profile profiles/your_name.json
-    python search.py --profile profiles/your_name.json --from 2026-02-05 --to 2026-02-06
-    python search.py --profile profiles/your_name.json --dry-run
-    python search.py --profile profiles/your_name.json --open
+    job-radar --profile profiles/your_name.json
+    job-radar --profile profiles/your_name.json --from 2026-02-05 --to 2026-02-06
+    job-radar --profile profiles/your_name.json --dry-run
+    job-radar --profile profiles/your_name.json --open
 """
 
 import argparse
@@ -18,19 +18,11 @@ import sys
 from datetime import datetime, timedelta
 from typing import Optional
 
-# Always resolve paths relative to where this script lives.
-_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-os.chdir(_SCRIPT_DIR)
-sys.path.insert(0, _SCRIPT_DIR)
-
-# Dependency check — must come before importing project modules
-from deps import ensure_dependencies
-_OS_INFO = ensure_dependencies()
-
-from sources import fetch_all, generate_manual_urls, build_search_queries
-from scoring import score_job
-from report import generate_report
-from tracker import mark_seen, get_stats
+from .deps import get_os_info
+from .sources import fetch_all, generate_manual_urls, build_search_queries
+from .scoring import score_job
+from .report import generate_report
+from .tracker import mark_seen, get_stats
 
 log = logging.getLogger("search")
 
@@ -281,7 +273,7 @@ def main():
 
     # Disable cache if requested
     if args.no_cache:
-        import cache
+        from . import cache
         cache._CACHE_MAX_AGE_SECONDS = 0
 
     # Defaults: 48 hours ago to now
@@ -297,7 +289,8 @@ def main():
     print(f"\n{C.BOLD}{'='*60}")
     print(f"  Job Search — {name}")
     print(f"  Date range: {from_date} to {to_date}")
-    print(f"  Platform: {_OS_INFO['os_name']} ({_OS_INFO['arch']})")
+    _os_info = get_os_info()
+    print(f"  Platform: {_os_info['os_name']} ({_os_info['arch']})")
     print(f"{'='*60}{C.RESET}\n")
 
     # Dry-run mode — show queries and exit

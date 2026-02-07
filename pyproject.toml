@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "job-radar"
+version = "0.2.0"
+description = "CLI job search tool that scores listings against your profile"
+requires-python = ">=3.10"
+license = "MIT"
+dependencies = ["requests", "beautifulsoup4"]
+
+[tool.setuptools]
+packages = ["job_radar"]
+
+[project.scripts]
+job-radar = "job_radar.search:main"

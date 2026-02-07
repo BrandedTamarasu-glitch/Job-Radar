@@ -10,8 +10,7 @@ from datetime import date, datetime
 
 log = logging.getLogger(__name__)
 
-_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-_TRACKER_PATH = os.path.join(_SCRIPT_DIR, "results", "tracker.json")
+_TRACKER_PATH = os.path.join(os.getcwd(), "results", "tracker.json")
 
 
 def _load_tracker() -> dict:

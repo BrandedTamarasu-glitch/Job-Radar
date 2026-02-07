@@ -6,3 +6,6 @@ __pycache__/
 results/
 profiles/*.json
 !profiles/_template.json
+dist/
+*.egg-info/
+build/

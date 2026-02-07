@@ -2,9 +2,23 @@
 
 A Python CLI that searches multiple job boards, scores listings against your candidate profile, and generates a ranked Markdown report.
 
+## Install
+
+```bash
+pip install job-radar
+```
+
+Or install from source:
+
+```bash
+git clone https://github.com/yourusername/job-radar.git
+cd job-radar
+pip install -e .
+```
+
 ## Setup
 
-**Requirements:** Python 3.10+ (macOS, Linux, or Windows). Dependencies install automatically on first run.
+**Requirements:** Python 3.10+ (macOS, Linux, or Windows).
 
 ### Step 1: Create your profile
 
@@ -22,7 +36,7 @@ See [WORKFLOW.md](WORKFLOW.md#1-create-a-candidate-profile) for a full field ref
 ### Step 2: Preview your queries
 
 ```bash
-python search.py --profile profiles/your_name.json --dry-run
+job-radar --profile profiles/your_name.json --dry-run
 ```
 
 This shows what search queries will run without fetching anything. Use it to verify your profile produces sensible searches.
@@ -30,7 +44,7 @@ This shows what search queries will run without fetching anything. Use it to ver
 ### Step 3: Run the search
 
 ```bash
-python search.py --profile profiles/your_name.json
+job-radar --profile profiles/your_name.json
 ```
 
 The tool will:
@@ -67,22 +81,22 @@ Open the report at `results/your_name_YYYY-MM-DD.md`. The report includes:
 
 ```bash
 # Basic daily search
-python search.py --profile profiles/your_name.json
+job-radar --profile profiles/your_name.json
 
 # Search a specific date range and auto-open the report
-python search.py --profile profiles/your_name.json --from 2026-02-01 --to 2026-02-06 --open
+job-radar --profile profiles/your_name.json --from 2026-02-01 --to 2026-02-06 --open
 
 # Only show new listings, skip anything seen before
-python search.py --profile profiles/your_name.json --new-only
+job-radar --profile profiles/your_name.json --new-only
 
 # Only show strong matches (3.5+)
-python search.py --profile profiles/your_name.json --min-score 3.5
+job-radar --profile profiles/your_name.json --min-score 3.5
 
 # Fresh fetch with debug logging
-python search.py --profile profiles/your_name.json --no-cache -v
+job-radar --profile profiles/your_name.json --no-cache -v
 
 # Preview queries without running them
-python search.py --profile profiles/your_name.json --dry-run
+job-radar --profile profiles/your_name.json --dry-run
 ```
 
 ## Score Ratings

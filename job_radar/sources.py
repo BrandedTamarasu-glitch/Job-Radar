@@ -10,7 +10,7 @@ from datetime import date
 
 from bs4 import BeautifulSoup
 
-from cache import fetch_with_retry
+from .cache import fetch_with_retry
 
 log = logging.getLogger(__name__)
 

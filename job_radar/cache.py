@@ -11,8 +11,7 @@ import requests
 
 log = logging.getLogger(__name__)
 
-_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-_CACHE_DIR = os.path.join(_SCRIPT_DIR, ".cache")
+_CACHE_DIR = os.path.join(os.getcwd(), ".cache")
 _CACHE_MAX_AGE_SECONDS = 4 * 3600  # 4 hours
 
 
