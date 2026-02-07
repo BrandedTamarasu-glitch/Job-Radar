@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.2.0 — 2026-02-06
+
+### Packaging
+- **Installable package** — Restructured as a proper Python package (`job_radar/`). Install with `pip install -e .` and run via the `job-radar` CLI command or `python -m job_radar`.
+- **pyproject.toml** — Added package metadata, dependencies (`requests`, `beautifulsoup4`), and console entry point.
+- **Relative imports** — All inter-module imports converted from bare to relative (e.g., `from .cache import ...`).
+- **CWD-relative paths** — Cache and tracker now store data relative to the current working directory instead of the script location, so the tool works correctly when pip-installed.
+
+---
+
 ## v0.02 — 2026-02-06
 
 ### New Files

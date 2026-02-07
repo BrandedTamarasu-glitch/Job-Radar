@@ -1,20 +1,18 @@
-# Job Search Optimization Toolkit — Workflow
+# Job Radar — Workflow
 
-**Version 0.02** | [Changelog](CHANGELOG.md)
+**Version 0.2.0** | [Changelog](CHANGELOG.md)
 
 A Python-based job search tool that fetches listings from multiple sources, scores them against a candidate profile, tracks results across runs, and generates a ranked Markdown report.
 
 ## Prerequisites
 
 - Python 3.10+
-- Dependencies are **auto-installed** on first run (requests, beautifulsoup4)
-- The script detects your OS (macOS, Linux, Windows) and uses appropriate commands
+- Install with `pip install -e .` (see [README](README.md#install))
 
 ## Quick Start
 
 ```bash
-# Run from anywhere — the script resolves its own paths
-python path/to/search.py --profile profiles/your_name.json
+job-radar --profile profiles/your_name.json
 ```
 
 By default, the search covers jobs posted within the last 48 hours.
@@ -64,7 +62,7 @@ Edit the new file with your information. The field reference below explains what
 ### 2. Run the Search
 
 ```bash
-python search.py --profile profiles/<name>.json
+job-radar --profile profiles/<name>.json
 ```
 
 **Options:**
@@ -147,15 +145,15 @@ HTTP responses are cached for 4 hours in `.cache/` to avoid hammering sources du
 
 ### Adding Skill Variants
 
-If your skills have abbreviations or alternate names (e.g., "P2P" for "Procure-to-Pay"), add them to the `_SKILL_VARIANTS` dict in `scoring.py` to improve matching. Short skills (2 characters or less) and known ambiguous terms automatically use word-boundary matching to prevent false positives.
+If your skills have abbreviations or alternate names (e.g., "P2P" for "Procure-to-Pay"), add them to the `_SKILL_VARIANTS` dict in `job_radar/scoring.py` to improve matching. Short skills (2 characters or less) and known ambiguous terms automatically use word-boundary matching to prevent false positives.
 
 ### Adding Staffing Firms
 
-Add known staffing/consulting firm names to the list in `staffing_firms.py`. Staffing firms get a response likelihood boost since they're incentivized to place candidates.
+Add known staffing/consulting firm names to the list in `job_radar/staffing_firms.py`. Staffing firms get a response likelihood boost since they're incentivized to place candidates.
 
 ### Adding HN Hiring Technology Slugs
 
-HN Hiring uses specific lowercase slugs for technology filters. If your skills aren't being searched on HN Hiring, add mappings to the `_HN_SKILL_SLUGS` dict in `sources.py`.
+HN Hiring uses specific lowercase slugs for technology filters. If your skills aren't being searched on HN Hiring, add mappings to the `_HN_SKILL_SLUGS` dict in `job_radar/sources.py`.
 
 ## Tips
 
@@ -171,21 +169,25 @@ HN Hiring uses specific lowercase slugs for technology filters. If your skills a
 ## File Structure
 
 ```
-job-search/
-├── profiles/           # Candidate profile JSON files
-│   └── _template.json  # Copy this to create your profile
-├── results/            # Generated Markdown reports (auto-created)
-│   └── tracker.json    # Cross-run dedup and stats
-├── .cache/             # HTTP response cache (auto-created, gitignore-able)
-├── search.py           # CLI entry point
-├── deps.py             # OS-aware dependency checker and auto-installer
-├── sources.py          # Dice + HN Hiring + RemoteOK + WWR fetchers
-├── scoring.py          # Weighted scoring engine with word-boundary matching
-├── report.py           # Markdown report generator with talking points
-├── tracker.py          # Cross-run dedup, stats, application tracking
-├── cache.py            # HTTP caching and retry-with-backoff layer
-├── staffing_firms.py   # Known staffing firm list for response scoring
-├── README.md           # Quick-start guide and command reference
-├── CHANGELOG.md        # Version history and release notes
-└── WORKFLOW.md         # Full documentation and workflow details
+Job-Radar/
+├── job_radar/              # Python package
+│   ├── __init__.py         # Package version
+│   ├── __main__.py         # python -m job_radar entry point
+│   ├── search.py           # CLI entry point (job-radar command)
+│   ├── sources.py          # Dice + HN Hiring + RemoteOK + WWR fetchers
+│   ├── scoring.py          # Weighted scoring engine with word-boundary matching
+│   ├── report.py           # Markdown report generator with talking points
+│   ├── tracker.py          # Cross-run dedup, stats, application tracking
+│   ├── cache.py            # HTTP caching and retry-with-backoff layer
+│   ├── deps.py             # OS detection utility
+│   └── staffing_firms.py   # Known staffing firm list for response scoring
+├── profiles/               # Candidate profile JSON files
+│   └── _template.json      # Copy this to create your profile
+├── results/                # Generated Markdown reports (auto-created)
+│   └── tracker.json        # Cross-run dedup and stats
+├── .cache/                 # HTTP response cache (auto-created)
+├── pyproject.toml          # Package metadata and dependencies
+├── README.md               # Quick-start guide and command reference
+├── CHANGELOG.md            # Version history and release notes
+└── WORKFLOW.md             # Full documentation and workflow details
 ```

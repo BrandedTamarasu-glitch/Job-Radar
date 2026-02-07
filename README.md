@@ -4,11 +4,7 @@ A Python CLI that searches multiple job boards, scores listings against your can
 
 ## Install
 
-```bash
-pip install job-radar
-```
-
-Or install from source:
+**Requirements:** Python 3.10+ (macOS, Linux, or Windows).
 
 ```bash
 git clone https://github.com/BrandedTamarasu-glitch/Job-Radar.git
@@ -16,11 +12,9 @@ cd Job-Radar
 pip install -e .
 ```
 
-You can also run it without installing via `python -m job_radar`.
+This installs the `job-radar` command. You can also run it without installing via `python -m job_radar`.
 
 ## Setup
-
-**Requirements:** Python 3.10+ (macOS, Linux, or Windows).
 
 ### Step 1: Create your profile
 
