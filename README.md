@@ -1,4 +1,4 @@
-# Job Search Optimization Toolkit
+# Job Radar
 
 A Python CLI that searches multiple job boards, scores listings against your candidate profile, and generates a ranked Markdown report.
 
@@ -11,10 +11,12 @@ pip install job-radar
 Or install from source:
 
 ```bash
-git clone https://github.com/yourusername/job-radar.git
-cd job-radar
+git clone https://github.com/BrandedTamarasu-glitch/Job-Radar.git
+cd Job-Radar
 pip install -e .
 ```
+
+You can also run it without installing via `python -m job_radar`.
 
 ## Setup
 
