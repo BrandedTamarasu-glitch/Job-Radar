@@ -18,6 +18,7 @@ import sys
 from datetime import datetime, timedelta
 from typing import Optional
 
+from .config import load_config
 from .deps import get_os_info
 from .sources import fetch_all, generate_manual_urls, build_search_queries
 from .scoring import score_job
@@ -84,7 +85,7 @@ def _score_color(score: float) -> str:
 # CLI argument parsing
 # ---------------------------------------------------------------------------
 
-def parse_args():
+def parse_args(config: dict | None = None):
     parser = argparse.ArgumentParser(
         description="Search and score job listings for a candidate profile."
     )
@@ -92,6 +93,11 @@ def parse_args():
         "--profile",
         required=True,
         help="Path to candidate profile JSON file",
+    )
+    parser.add_argument(
+        "--config",
+        default=None,
+        help="Path to custom config file (default: ~/.job-radar/config.json)",
     )
     parser.add_argument(
         "--from",
@@ -132,7 +138,8 @@ def parse_args():
     )
     parser.add_argument(
         "--new-only",
-        action="store_true",
+        action=argparse.BooleanOptionalAction,
+        default=False,
         help="Only show new (unseen) results in the report.",
     )
     parser.add_argument(
@@ -141,6 +148,8 @@ def parse_args():
         default=None,
         help="Minimum score threshold for results (e.g. 3.0). Default: 2.8.",
     )
+    if config:
+        parser.set_defaults(**config)
     return parser.parse_args()
 
 
@@ -258,7 +267,13 @@ def _open_file(path: str):
 # ---------------------------------------------------------------------------
 
 def main():
-    args = parse_args()
+    # Two-pass: extract --config before full parse so config defaults apply
+    pre_parser = argparse.ArgumentParser(add_help=False)
+    pre_parser.add_argument("--config", default=None)
+    pre_args, _ = pre_parser.parse_known_args()
+
+    config = load_config(pre_args.config)
+    args = parse_args(config)
 
     # Configure logging
     log_level = logging.DEBUG if args.verbose else logging.INFO
