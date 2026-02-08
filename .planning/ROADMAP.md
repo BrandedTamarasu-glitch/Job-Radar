@@ -27,7 +27,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. Short skills like "go", "r", and "c" still require word-boundary matching and do not false-positive match inside words like "going" or "programming"
   3. All existing `_SKILL_VARIANTS` entries continue to match correctly (zero regressions)
   4. New common tech variants (e.g., "postgres" / "postgresql", "k8s" / "kubernetes") are recognized without manual profile entries
-**Plans**: 1 plan
+**Plans**: 2 plans
 
 Plans:
 - [x] 01-01-PLAN.md — Add _normalize_skill(), wire normalized variant lookup, expand _SKILL_VARIANTS with 16 common tech entries
@@ -43,10 +43,10 @@ Plans:
   3. Deleting or never creating a config file causes zero behavior change from today's tool
   4. Running `job-radar --config /path/to/custom.json` loads that file instead of the default location
   5. A config file with `{"unknown_key": true}` produces a clear warning message naming the unrecognized key
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 02-01: TBD
+- [ ] 02-01-PLAN.md — Create config.py module and integrate config loading into CLI pipeline
 
 ### Phase 3: Test Suite
 **Goal**: Scoring, tracking, and both new features are validated by automated tests that catch regressions before they reach production
@@ -72,7 +72,7 @@ Phases execute in numeric order: 1 -> 2 -> 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Fuzzy Skill Normalization | 2/2 | Complete ✓ | 2026-02-07 |
-| 2. Config File Support | 0/0 | Not started | - |
+| 2. Config File Support | 0/1 | Planned | - |
 | 3. Test Suite | 0/0 | Not started | - |
 
 ---
