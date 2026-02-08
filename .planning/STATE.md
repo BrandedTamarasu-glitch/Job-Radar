@@ -10,27 +10,28 @@ See: .planning/PROJECT.md (updated 2026-02-07)
 ## Current Position
 
 Phase: 2 of 3 (Config File Support)
-Plan: 0 of 0 in current phase (not yet planned)
-Status: Phase 1 verified ✓ — Phase 2 ready to plan
-Last activity: 2026-02-07 -- Phase 1 complete, all 8/8 must-haves verified
+Plan: 1 of 1 in current phase
+Status: Phase 2 Plan 1 complete
+Last activity: 2026-02-08 -- Completed 02-01-PLAN.md (config file support)
 
-Progress: [███░░░░░░░] 33%
+Progress: [█████░░░░░] 50%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
-- Average duration: 1.5 min
-- Total execution time: 3 min
+- Total plans completed: 3
+- Average duration: 1.7 min
+- Total execution time: 5 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-fuzzy-skill-normalization | 2 | 3 min | 1.5 min |
+| 02-config-file-support | 1 | 2 min | 2 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (2 min), 01-02 (1 min)
+- Last 5 plans: 01-01 (2 min), 01-02 (1 min), 02-01 (2 min)
 - Trend: fast
 
 *Updated after each plan completion*
@@ -50,6 +51,10 @@ Recent decisions affecting current work:
 - [01-01]: Bidirectional kubernetes/k8s entries -- symmetric lookup without special-casing
 - [01-02]: Use _WORD_ONLY_RE compiled regex to detect non-word chars rather than hardcoding exclusions
 - [01-02]: Gate len<=2 boundary rule on word-only check -- future skills with # or + automatically benefit
+- [02-01]: KNOWN_KEYS excludes 'profile' (required=True) and 'config' (circular) -- only min_score, new_only, output
+- [02-01]: All config warnings go to stderr to avoid polluting piped stdout
+- [02-01]: BooleanOptionalAction on --new-only enables --no-new-only to override config-set new_only: true
+- [02-01]: Two-pass parse: pre-parser extracts --config path before full parse applies set_defaults
 
 ### Pending Todos
 
@@ -61,6 +66,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-08T01:42:24Z
-Stopped at: Completed 01-02-PLAN.md
+Last session: 2026-02-08T02:15:12Z
+Stopped at: Completed 02-01-PLAN.md
 Resume file: None
