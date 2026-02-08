@@ -5,33 +5,33 @@
 See: .planning/PROJECT.md (updated 2026-02-07)
 
 **Core value:** Accurate job-candidate scoring -- if the scoring is wrong, nothing else matters.
-**Current focus:** Phase 1 - Fuzzy Skill Normalization
+**Current focus:** Phase 1 - Fuzzy Skill Normalization (gap closure complete)
 
 ## Current Position
 
 Phase: 1 of 3 (Fuzzy Skill Normalization)
-Plan: 1 of 1 in current phase
+Plan: 2 of 2 in current phase (gap closure)
 Status: Phase 1 complete
-Last activity: 2026-02-08 -- Completed 01-01-PLAN.md
+Last activity: 2026-02-08 -- Completed 01-02-PLAN.md (gap closure)
 
-Progress: [███░░░░░░░] 33%
+Progress: [████░░░░░░] 40%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
-- Average duration: 2 min
-- Total execution time: 2 min
+- Total plans completed: 2
+- Average duration: 1.5 min
+- Total execution time: 3 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-fuzzy-skill-normalization | 1 | 2 min | 2 min |
+| 01-fuzzy-skill-normalization | 2 | 3 min | 1.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (2 min)
-- Trend: -
+- Last 5 plans: 01-01 (2 min), 01-02 (1 min)
+- Trend: fast
 
 *Updated after each plan completion*
 
@@ -48,6 +48,8 @@ Recent decisions affecting current work:
 - [01-01]: Module-level dict comprehension for _SKILL_VARIANTS_NORMALIZED -- zero runtime overhead
 - [01-01]: Preserve # and + in normalization via [.\-\s]+ negative class -- C# and C++ work correctly
 - [01-01]: Bidirectional kubernetes/k8s entries -- symmetric lookup without special-casing
+- [01-02]: Use _WORD_ONLY_RE compiled regex to detect non-word chars rather than hardcoding exclusions
+- [01-02]: Gate len<=2 boundary rule on word-only check -- future skills with # or + automatically benefit
 
 ### Pending Todos
 
@@ -59,6 +61,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-08T01:34:31Z
-Stopped at: Completed 01-01-PLAN.md
+Last session: 2026-02-08T01:42:24Z
+Stopped at: Completed 01-02-PLAN.md
 Resume file: None
