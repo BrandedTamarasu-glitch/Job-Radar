@@ -210,6 +210,22 @@ _SKILL_VARIANTS = {
     "erp": ["erp"],
     "safe": ["safe ", "safe/", "scaled agile"],
     "jira": ["jira"],
+    "python": ["python", "python3", "py3"],
+    "go": ["go", "golang"],
+    "vue": ["vue", "vue.js", "vuejs"],
+    "angular": ["angular", "angular.js", "angularjs"],
+    "kubernetes": ["kubernetes", "k8s"],
+    "k8s": ["k8s", "kubernetes"],
+    "aws": ["aws", "amazon web services"],
+    "gcp": ["gcp", "google cloud", "google cloud platform"],
+    "azure": ["azure", "microsoft azure"],
+    "docker": ["docker", "containerization"],
+    "terraform": ["terraform", "tf"],
+    "sql": ["sql", "structured query language"],
+    "nosql": ["nosql", "no-sql"],
+    "rest": ["rest", "restful", "rest api", "restful api"],
+    "graphql": ["graphql", "graph ql"],
+    "ci/cd": ["ci/cd", "ci cd", "cicd", "continuous integration", "continuous deployment"],
 }
 
 _SKILL_VARIANTS_NORMALIZED: dict[str, list[str]] = {
