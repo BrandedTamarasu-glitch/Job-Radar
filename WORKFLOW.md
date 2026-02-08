@@ -1,6 +1,6 @@
 # Job Radar — Workflow
 
-**Version 0.2.0** | [Changelog](CHANGELOG.md)
+**Version 0.4.0** | [Changelog](CHANGELOG.md)
 
 A Python-based job search tool that fetches listings from multiple sources, scores them against a candidate profile, tracks results across runs, and generates a ranked Markdown report.
 
