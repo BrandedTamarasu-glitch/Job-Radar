@@ -12,7 +12,7 @@ This milestone improves the reliability and usability of Job Radar's scoring eng
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Fuzzy Skill Normalization** - Skill matching handles punctuation, casing, and variant differences so "NodeJS" matches "node.js"
+- [x] **Phase 1: Fuzzy Skill Normalization** - Skill matching handles punctuation, casing, and variant differences so "NodeJS" matches "node.js"
 - [ ] **Phase 2: Config File Support** - Persistent CLI defaults via JSON config file so users stop retyping the same flags
 - [ ] **Phase 3: Test Suite** - pytest coverage of scoring, tracking, and both new features validates correctness
 
@@ -30,7 +30,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 1 plan
 
 Plans:
-- [ ] 01-01-PLAN.md — Add _normalize_skill(), wire normalized variant lookup, expand _SKILL_VARIANTS with 15 common tech entries
+- [x] 01-01-PLAN.md — Add _normalize_skill(), wire normalized variant lookup, expand _SKILL_VARIANTS with 16 common tech entries
+- [x] 01-02-PLAN.md — Fix C# boundary guard regression in _build_skill_pattern()
 
 ### Phase 2: Config File Support
 **Goal**: Users can save their preferred CLI defaults once and have them apply automatically on every run
@@ -70,7 +71,7 @@ Phases execute in numeric order: 1 -> 2 -> 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Fuzzy Skill Normalization | 0/1 | Planned | - |
+| 1. Fuzzy Skill Normalization | 2/2 | Complete ✓ | 2026-02-07 |
 | 2. Config File Support | 0/0 | Not started | - |
 | 3. Test Suite | 0/0 | Not started | - |
 

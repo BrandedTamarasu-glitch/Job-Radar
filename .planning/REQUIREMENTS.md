@@ -17,11 +17,11 @@
 
 ### Fuzzy Matching
 
-- [ ] **FUZZ-01**: `_normalize_skill()` function strips punctuation, lowercases, and collapses whitespace
-- [ ] **FUZZ-02**: Normalized lookup in `_skill_in_text()` so "NodeJS" matches "node.js"
-- [ ] **FUZZ-03**: `_BOUNDARY_SKILLS` protection preserved — short skills (go, r, c) use word-boundary matching only
-- [ ] **FUZZ-04**: No regressions on existing `_SKILL_VARIANTS` matches
-- [ ] **FUZZ-05**: Expanded `_SKILL_VARIANTS` dict with missing common tech variants
+- [x] **FUZZ-01**: `_normalize_skill()` function strips punctuation, lowercases, and collapses whitespace
+- [x] **FUZZ-02**: Normalized lookup in `_skill_in_text()` so "NodeJS" matches "node.js"
+- [x] **FUZZ-03**: `_BOUNDARY_SKILLS` protection preserved — short skills (go, r, c) use word-boundary matching only
+- [x] **FUZZ-04**: No regressions on existing `_SKILL_VARIANTS` matches
+- [x] **FUZZ-05**: Expanded `_SKILL_VARIANTS` dict with missing common tech variants
 
 ### Config
 
@@ -65,11 +65,11 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FUZZ-01 | Phase 1 | Pending |
-| FUZZ-02 | Phase 1 | Pending |
-| FUZZ-03 | Phase 1 | Pending |
-| FUZZ-04 | Phase 1 | Pending |
-| FUZZ-05 | Phase 1 | Pending |
+| FUZZ-01 | Phase 1 | Complete |
+| FUZZ-02 | Phase 1 | Complete |
+| FUZZ-03 | Phase 1 | Complete |
+| FUZZ-04 | Phase 1 | Complete |
+| FUZZ-05 | Phase 1 | Complete |
 | CONF-01 | Phase 2 | Pending |
 | CONF-02 | Phase 2 | Pending |
 | CONF-03 | Phase 2 | Pending |
