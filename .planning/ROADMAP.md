@@ -27,11 +27,10 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. Short skills like "go", "r", and "c" still require word-boundary matching and do not false-positive match inside words like "going" or "programming"
   3. All existing `_SKILL_VARIANTS` entries continue to match correctly (zero regressions)
   4. New common tech variants (e.g., "postgres" / "postgresql", "k8s" / "kubernetes") are recognized without manual profile entries
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
+- [ ] 01-01-PLAN.md — Add _normalize_skill(), wire normalized variant lookup, expand _SKILL_VARIANTS with 15 common tech entries
 
 ### Phase 2: Config File Support
 **Goal**: Users can save their preferred CLI defaults once and have them apply automatically on every run
@@ -71,7 +70,7 @@ Phases execute in numeric order: 1 -> 2 -> 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Fuzzy Skill Normalization | 0/0 | Not started | - |
+| 1. Fuzzy Skill Normalization | 0/1 | Planned | - |
 | 2. Config File Support | 0/0 | Not started | - |
 | 3. Test Suite | 0/0 | Not started | - |
 
