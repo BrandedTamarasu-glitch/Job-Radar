@@ -237,10 +237,22 @@ _SKILL_VARIANTS_NORMALIZED: dict[str, list[str]] = {
 _BOUNDARY_SKILLS = {"go", "r", "c", "ai", "ml", "qa", "pm", "ci", "cd", "ts", "js"}
 
 
+_WORD_ONLY_RE = re.compile(r'^\w+$')
+
+
 def _build_skill_pattern(skill: str) -> re.Pattern:
-    """Build a regex pattern for a skill, using word boundaries for short/ambiguous terms."""
+    """Build a regex pattern for a skill, using word boundaries for short/ambiguous terms.
+
+    Word boundaries are applied only when the skill is short (<=2 chars) AND
+    consists entirely of word characters. Skills containing non-word characters
+    like # (C#) or + (C++) are unambiguous and don't need boundary protection.
+    """
     escaped = re.escape(skill.lower())
-    if skill.lower() in _BOUNDARY_SKILLS or len(skill) <= 2:
+    needs_boundary = (
+        skill.lower() in _BOUNDARY_SKILLS
+        or (len(skill) <= 2 and bool(_WORD_ONLY_RE.match(skill)))
+    )
+    if needs_boundary:
         return re.compile(rf'\b{escaped}\b', re.IGNORECASE)
     return re.compile(re.escape(skill.lower()), re.IGNORECASE)
 
