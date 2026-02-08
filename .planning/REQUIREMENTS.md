@@ -1,7 +1,7 @@
 # Requirements: Job Radar
 
 **Defined:** 2026-02-07
-**Core Value:** Accurate job-candidate scoring — if the scoring is wrong, nothing else matters.
+**Core Value:** Accurate job-candidate scoring -- if the scoring is wrong, nothing else matters.
 
 ## v1 Requirements
 
@@ -59,35 +59,35 @@
 | rapidfuzz dependency | Normalization-based approach covers the problem without new runtime deps |
 | TOML config format | Requires tomli backport for Python 3.10; JSON is zero-dep and already used |
 | Mobile app | Desktop CLI tool |
-| Scoring weight customization | Deferred — current weights work; tune after test suite validates them |
+| Scoring weight customization | Deferred -- current weights work; tune after test suite validates them |
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TEST-01 | Pending | Pending |
-| TEST-02 | Pending | Pending |
-| TEST-03 | Pending | Pending |
-| TEST-04 | Pending | Pending |
-| TEST-05 | Pending | Pending |
-| TEST-06 | Pending | Pending |
-| TEST-07 | Pending | Pending |
-| FUZZ-01 | Pending | Pending |
-| FUZZ-02 | Pending | Pending |
-| FUZZ-03 | Pending | Pending |
-| FUZZ-04 | Pending | Pending |
-| FUZZ-05 | Pending | Pending |
-| CONF-01 | Pending | Pending |
-| CONF-02 | Pending | Pending |
-| CONF-03 | Pending | Pending |
-| CONF-04 | Pending | Pending |
-| CONF-05 | Pending | Pending |
+| FUZZ-01 | Phase 1 | Pending |
+| FUZZ-02 | Phase 1 | Pending |
+| FUZZ-03 | Phase 1 | Pending |
+| FUZZ-04 | Phase 1 | Pending |
+| FUZZ-05 | Phase 1 | Pending |
+| CONF-01 | Phase 2 | Pending |
+| CONF-02 | Phase 2 | Pending |
+| CONF-03 | Phase 2 | Pending |
+| CONF-04 | Phase 2 | Pending |
+| CONF-05 | Phase 2 | Pending |
+| TEST-01 | Phase 3 | Pending |
+| TEST-02 | Phase 3 | Pending |
+| TEST-03 | Phase 3 | Pending |
+| TEST-04 | Phase 3 | Pending |
+| TEST-05 | Phase 3 | Pending |
+| TEST-06 | Phase 3 | Pending |
+| TEST-07 | Phase 3 | Pending |
 
 **Coverage:**
 - v1 requirements: 17 total
-- Mapped to phases: 0
-- Unmapped: 17
+- Mapped to phases: 17
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-07*
-*Last updated: 2026-02-07 after initial definition*
+*Last updated: 2026-02-07 after roadmap creation*
