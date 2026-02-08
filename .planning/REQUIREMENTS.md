@@ -25,11 +25,11 @@
 
 ### Config
 
-- [ ] **CONF-01**: JSON config file at `~/.job-radar/config.json` for persistent CLI defaults
-- [ ] **CONF-02**: CLI flags always override config values (set_defaults pattern)
-- [ ] **CONF-03**: Graceful behavior when no config file exists — tool works identically to today
-- [ ] **CONF-04**: `--config` flag to specify custom config file path
-- [ ] **CONF-05**: Config validation catches unknown keys with helpful error messages
+- [x] **CONF-01**: JSON config file at `~/.job-radar/config.json` for persistent CLI defaults
+- [x] **CONF-02**: CLI flags always override config values (set_defaults pattern)
+- [x] **CONF-03**: Graceful behavior when no config file exists — tool works identically to today
+- [x] **CONF-04**: `--config` flag to specify custom config file path
+- [x] **CONF-05**: Config validation catches unknown keys with helpful error messages
 
 ## v2 Requirements
 
