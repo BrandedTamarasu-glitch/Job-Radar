@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.4.0 — 2026-02-08
+
+### Config File Support
+- **`~/.job-radar/config.json`** — Save persistent defaults (`min_score`, `new_only`, `output`) so common flags apply automatically on every run.
+- **`--config PATH`** — Load a custom config file instead of the default location.
+- **CLI precedence** — Explicit CLI flags always override config file values.
+- **Unknown key warnings** — Unrecognized config keys produce a named warning to stderr without aborting.
+
+## v0.3.0 — 2026-02-07
+
+### Fuzzy Skill Normalization
+- **Case and punctuation normalization** — `NodeJS`, `node.js`, and `Node.js` all match the same skill entry. Normalization strips dots, dashes, and spaces before comparison.
+- **Expanded skill variants** — Added 16 common tech entries (e.g., `postgres`/`postgresql`, `k8s`/`kubernetes`, `js`/`javascript`).
+- **Bidirectional variant lookup** — Variants like `kubernetes`/`k8s` resolve symmetrically without special-casing.
+- **Short skill boundary fix** — Word-boundary matching for short skills (`c`, `r`, `go`) extended to handle skills containing `#` or `+` (e.g., `C#`, `C++`) correctly.
+
 ## v0.2.0 — 2026-02-06
 
 ### Packaging

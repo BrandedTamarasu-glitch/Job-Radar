@@ -63,6 +63,7 @@ Open the report at `results/your_name_YYYY-MM-DD.md`. The report includes:
 | Flag | Description |
 |---|---|
 | `--profile PATH` | **(Required)** Path to your candidate profile JSON |
+| `--config PATH` | Path to config file (default: `~/.job-radar/config.json`) |
 | `--dry-run` | Show queries without fetching. Use to validate your profile |
 | `--open` | Auto-open the report in your default app after generation |
 | `--from YYYY-MM-DD` | Start date filter (default: 48 hours ago) |

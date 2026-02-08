@@ -69,6 +69,7 @@ job-radar --profile profiles/<name>.json
 - `--from YYYY-MM-DD` — Start date filter (default: 48 hours ago)
 - `--to YYYY-MM-DD` — End date filter (default: today)
 - `--output DIR` — Report output directory (default: `results/`)
+- `--config PATH` — Path to config file (default: `~/.job-radar/config.json`)
 - `--open` — Auto-open the report in your default application after generation
 - `--dry-run` — Show what queries would be run without fetching anything
 - `--verbose` / `-v` — Enable debug logging (shows HTTP requests, cache hits, etc.)
@@ -137,6 +138,20 @@ The tool maintains a `results/tracker.json` file that persists across runs:
 - **Run history** — Tracks total results and new results per run for the last 90 days
 - **Lifetime stats** — Shows total unique jobs seen and average new jobs per run in the report header
 
+## Config File
+
+Save persistent defaults in `~/.job-radar/config.json` so you don't have to retype common flags:
+
+```json
+{
+  "min_score": 3.0,
+  "new_only": true,
+  "output": "/path/to/reports"
+}
+```
+
+Supported keys: `min_score`, `new_only`, `output`. CLI flags always override the config file. Use `--config PATH` to load a different file.
+
 ## Caching
 
 HTTP responses are cached for 4 hours in `.cache/` to avoid hammering sources during development or repeated runs. Use `--no-cache` to force fresh fetches.
@@ -179,6 +194,7 @@ Job-Radar/
 │   ├── report.py           # Markdown report generator with talking points
 │   ├── tracker.py          # Cross-run dedup, stats, application tracking
 │   ├── cache.py            # HTTP caching and retry-with-backoff layer
+│   ├── config.py           # Config file loading (~/.job-radar/config.json)
 │   ├── deps.py             # OS detection utility
 │   └── staffing_firms.py   # Known staffing firm list for response scoring
 ├── profiles/               # Candidate profile JSON files
