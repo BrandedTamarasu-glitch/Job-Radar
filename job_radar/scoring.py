@@ -167,6 +167,24 @@ def _check_comp_floor(job, profile: dict) -> tuple[float, str]:
 # Skill matching with word boundaries
 # ---------------------------------------------------------------------------
 
+_NORM_RE = re.compile(r'[\.\-\s]+')
+
+
+def _normalize_skill(s: str) -> str:
+    """Strip separator punctuation (dots, hyphens, spaces), lowercase.
+
+    Preserves meaningful punctuation: # in C#, + in C++.
+
+    Examples:
+        "Node.js"   -> "nodejs"
+        "node js"   -> "nodejs"
+        ".NET"      -> "net"
+        "C#"        -> "c#"
+        "C++"       -> "c++"
+    """
+    return _NORM_RE.sub('', s.lower())
+
+
 # Alternate forms / abbreviations for common skills
 _SKILL_VARIANTS = {
     "business analysis": ["business analyst", "ba ", "ba/", "business analysis"],
@@ -194,6 +212,10 @@ _SKILL_VARIANTS = {
     "jira": ["jira"],
 }
 
+_SKILL_VARIANTS_NORMALIZED: dict[str, list[str]] = {
+    _normalize_skill(k): v for k, v in _SKILL_VARIANTS.items()
+}
+
 # Skills that need word-boundary matching to avoid false positives.
 # Short or common words that could match unrelated text.
 _BOUNDARY_SKILLS = {"go", "r", "c", "ai", "ml", "qa", "pm", "ci", "cd", "ts", "js"}
@@ -214,8 +236,8 @@ def _skill_in_text(skill: str, text: str) -> bool:
     if pattern.search(text):
         return True
 
-    # Check known variants
-    variants = _SKILL_VARIANTS.get(skill.lower(), [])
+    # Check known variants (normalized key lookup)
+    variants = _SKILL_VARIANTS_NORMALIZED.get(_normalize_skill(skill), [])
     for v in variants:
         v_pattern = _build_skill_pattern(v)
         if v_pattern.search(text):
