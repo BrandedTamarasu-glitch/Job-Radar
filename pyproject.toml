@@ -8,7 +8,7 @@ version = "1.1.0"
 description = "CLI job search tool that scores listings against your profile"
 requires-python = ">=3.10"
 license = "MIT"
-dependencies = ["requests", "beautifulsoup4", "platformdirs>=4.0", "pyfiglet", "colorama", "certifi"]
+dependencies = ["requests", "beautifulsoup4", "platformdirs>=4.0", "pyfiglet", "colorama", "certifi", "questionary"]
 
 [tool.setuptools]
 packages = ["job_radar"]

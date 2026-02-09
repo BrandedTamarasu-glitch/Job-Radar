@@ -1,0 +1,478 @@
+"""Interactive setup wizard for Job Radar first-run configuration.
+
+Collects user profile (name, skills, titles, location, dealbreakers) and
+preferences (min_score, new_only) through sequential questionary prompts,
+validates inputs inline, supports back navigation, and atomically writes
+profile.json and config.json to platformdirs data directory.
+"""
+
+import json
+import os
+import tempfile
+from pathlib import Path
+
+import questionary
+from questionary import Style, Validator, ValidationError
+
+
+# Custom validators
+class NonEmptyValidator(Validator):
+    """Validate that input is not empty or whitespace-only."""
+
+    def validate(self, document):
+        if not document.text.strip():
+            raise ValidationError(
+                message="This field cannot be empty",
+                cursor_position=len(document.text)
+            )
+
+
+class CommaSeparatedValidator(Validator):
+    """Validate comma-separated list with minimum item count."""
+
+    def __init__(self, min_items=1, field_name="item"):
+        self.min_items = min_items
+        self.field_name = field_name
+
+    def validate(self, document):
+        text = document.text.strip()
+        if not text:
+            raise ValidationError(
+                message=f"Please enter at least {self.min_items} {self.field_name}(s)"
+            )
+
+        items = [s.strip() for s in text.split(',') if s.strip()]
+        if len(items) < self.min_items:
+            raise ValidationError(
+                message=f"Please enter at least {self.min_items} {self.field_name}(s)",
+                cursor_position=len(document.text)
+            )
+
+
+class ScoreValidator(Validator):
+    """Validate score is a float between 1.0 and 5.0."""
+
+    def validate(self, document):
+        text = document.text.strip()
+        try:
+            score = float(text)
+            if not (1.0 <= score <= 5.0):
+                raise ValidationError(
+                    message="Score must be a number between 1.0 and 5.0",
+                    cursor_position=len(document.text)
+                )
+        except ValueError:
+            raise ValidationError(
+                message="Score must be a number between 1.0 and 5.0",
+                cursor_position=len(document.text)
+            )
+
+
+# Custom style for cross-platform safe colors
+custom_style = Style([
+    ('qmark', 'fg:cyan bold'),
+    ('question', 'bold'),
+    ('answer', 'fg:green bold'),
+    ('instruction', 'fg:ansigray'),
+])
+
+
+def _write_json_atomic(path: Path, data: dict):
+    """Write JSON file atomically with temp file + rename to prevent corruption.
+
+    Parameters
+    ----------
+    path : Path
+        Target file path
+    data : dict
+        Data to write as JSON
+
+    Notes
+    -----
+    Uses temp file in same directory + atomic rename to prevent partial writes
+    on crash/interrupt. Ensures parent directory exists before writing.
+    """
+    # Ensure parent directory exists
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Create temp file in same directory (same filesystem for atomic rename)
+    fd, tmp_path = tempfile.mkstemp(
+        dir=path.parent,
+        prefix=path.name + ".",
+        suffix=".tmp"
+    )
+
+    try:
+        # Write JSON to temp file
+        with os.fdopen(fd, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+            f.flush()
+            os.fsync(f.fileno())  # Ensure written to disk
+
+        # Atomic replace (works on Unix and Windows Python 3.3+)
+        Path(tmp_path).replace(path)
+    except:
+        # Clean up temp file on error
+        try:
+            os.unlink(tmp_path)
+        except:
+            pass
+        raise
+
+
+def is_first_run() -> bool:
+    """Check if this is the first run by checking for profile.json existence.
+
+    Returns
+    -------
+    bool
+        True if profile.json does not exist, False otherwise
+    """
+    from .paths import get_data_dir
+    return not (get_data_dir() / "profile.json").exists()
+
+
+def run_setup_wizard() -> bool:
+    """Run interactive setup wizard for first-run configuration.
+
+    Prompts user for profile information (name, titles, skills, location,
+    dealbreakers) and preferences (min_score, new_only), validates inputs,
+    supports back navigation via /back command, displays celebration summary,
+    and atomically writes profile.json and config.json.
+
+    Returns
+    -------
+    bool
+        True if wizard completed and files saved, False if user cancelled
+
+    Notes
+    -----
+    Question order: Name -> Titles -> Skills -> Location -> Dealbreakers ->
+    Score -> Filter (per CONTEXT.md decision WIZ-02).
+
+    No default values on profile fields per CONTEXT.md decision WIZ-04.
+    Score defaults to 2.8 per WIZ-08. new_only defaults to True.
+
+    Mid-wizard back navigation: Type /back at any prompt to return to
+    previous question.
+
+    Post-summary editing: After summary, user can edit any field before saving.
+    """
+    from .paths import get_data_dir
+
+    # Question definitions
+    questions = [
+        {
+            'key': 'name',
+            'type': 'text',
+            'message': "What's your name?",
+            'instruction': "e.g., John Doe",
+            'validator': NonEmptyValidator(),
+            'required': True,
+        },
+        {
+            'key': 'titles',
+            'type': 'text',
+            'message': "Target job titles:",
+            'instruction': "e.g., Software Engineer, Full Stack Developer",
+            'validator': CommaSeparatedValidator(min_items=1, field_name="job title"),
+            'required': True,
+        },
+        {
+            'key': 'skills',
+            'type': 'text',
+            'message': "Your core skills:",
+            'instruction': "e.g., Python, JavaScript, React, AWS",
+            'validator': CommaSeparatedValidator(min_items=1, field_name="skill"),
+            'required': True,
+        },
+        {
+            'key': 'location',
+            'type': 'text',
+            'message': "Location preference (optional):",
+            'instruction': "e.g., Remote, New York, Hybrid (press Enter to skip)",
+            'validator': None,
+            'required': False,
+        },
+        {
+            'key': 'dealbreakers',
+            'type': 'text',
+            'message': "Dealbreakers (optional):",
+            'instruction': "e.g., relocation required, on-site only (press Enter to skip)",
+            'validator': None,
+            'required': False,
+        },
+        {
+            'key': 'min_score',
+            'type': 'text',
+            'message': "Minimum job score (1.0-5.0)?",
+            'instruction': "Enter a number from 1.0 to 5.0 (tip: 2.5-3.0 is a good starting point)",
+            'validator': ScoreValidator(),
+            'required': True,
+            'default': "2.8",
+        },
+        {
+            'key': 'new_only',
+            'type': 'confirm',
+            'message': "Show only new jobs (not previously seen)?",
+            'instruction': None,
+            'validator': None,
+            'required': True,
+            'default': True,
+        },
+    ]
+
+    # Wizard header
+    print("\n" + "=" * 60)
+    print("🎯 Job Radar - First Time Setup")
+    print("=" * 60)
+    print("\nTip: Type /back at any prompt to return to the previous question.\n")
+
+    # Sequential prompts with back navigation support
+    answers = {}
+    idx = 0
+
+    while idx < len(questions):
+        q = questions[idx]
+        key = q['key']
+
+        # Section headers
+        if idx == 0:
+            print("\n👤 Profile Information")
+            print("-" * 40 + "\n")
+        elif idx == 5:
+            print("\n⚙️  Search Preferences")
+            print("-" * 40 + "\n")
+
+        # Build prompt kwargs
+        prompt_kwargs = {
+            'message': q['message'],
+            'style': custom_style,
+        }
+
+        if q['instruction']:
+            prompt_kwargs['instruction'] = q['instruction']
+
+        if q.get('validator'):
+            prompt_kwargs['validate'] = q['validator']
+
+        # Pre-fill with previous answer if going back
+        if key in answers:
+            if q['type'] == 'text':
+                prompt_kwargs['default'] = str(answers[key])
+        elif q.get('default') is not None and q['type'] == 'text':
+            # Only use default for new answers on fields with defaults
+            prompt_kwargs['default'] = q['default']
+
+        # Ask question
+        if q['type'] == 'text':
+            result = questionary.text(**prompt_kwargs).ask()
+        elif q['type'] == 'confirm':
+            if key in answers:
+                prompt_kwargs['default'] = answers[key]
+            elif q.get('default') is not None:
+                prompt_kwargs['default'] = q['default']
+            result = questionary.confirm(**prompt_kwargs).ask()
+        else:
+            raise ValueError(f"Unknown question type: {q['type']}")
+
+        # Handle Ctrl+C
+        if result is None:
+            if questionary.confirm(
+                "Exit setup wizard?",
+                default=False,
+                style=custom_style
+            ).ask():
+                return False
+            continue  # Re-prompt same question
+
+        # Handle /back command
+        if isinstance(result, str) and result.lower() == "/back":
+            if idx > 0:
+                idx -= 1
+                print("\n← Going back...\n")
+                continue
+            else:
+                print("\n⚠️  Already at first question.\n")
+                continue
+
+        # Store answer and advance
+        answers[key] = result
+        idx += 1
+
+    # Build profile data structure
+    # Parse comma-separated lists
+    target_titles = [s.strip() for s in answers['titles'].split(',') if s.strip()]
+    core_skills = [s.strip() for s in answers['skills'].split(',') if s.strip()]
+
+    profile_data = {
+        "name": answers['name'],
+        "target_titles": target_titles,
+        "core_skills": core_skills,
+    }
+
+    # Optional fields - only include if non-empty
+    if answers.get('location') and answers['location'].strip():
+        profile_data['location'] = answers['location'].strip()
+
+    if answers.get('dealbreakers') and answers['dealbreakers'].strip():
+        dealbreakers_list = [s.strip() for s in answers['dealbreakers'].split(',') if s.strip()]
+        if dealbreakers_list:
+            profile_data['dealbreakers'] = dealbreakers_list
+
+    # Build config data structure
+    config_data = {
+        "min_score": float(answers['min_score']),
+        "new_only": answers['new_only'],
+    }
+
+    # Celebration summary with post-summary editing loop
+    while True:
+        print("\n✨ All set! Here's your profile:")
+        print("=" * 50)
+        print("\n👤 Profile:")
+        print(f"   Name: {profile_data['name']}")
+        print(f"   Titles: {', '.join(profile_data['target_titles'])}")
+        print(f"   Skills: {', '.join(profile_data['core_skills'])}")
+        print(f"   Location: {profile_data.get('location', '(not set)')}")
+
+        dealbreakers_display = profile_data.get('dealbreakers')
+        if dealbreakers_display:
+            print(f"   Dealbreakers: {', '.join(dealbreakers_display)}")
+        else:
+            print(f"   Dealbreakers: (not set)")
+
+        print("\n⚙️  Preferences:")
+        print(f"   Minimum Score: {config_data['min_score']}")
+        print(f"   New Jobs Only: {'Yes' if config_data['new_only'] else 'No'}")
+        print("=" * 50 + "\n")
+
+        # Ask to save or edit
+        action = questionary.select(
+            "What would you like to do?",
+            choices=[
+                "Save this configuration",
+                "Edit a field",
+                "Cancel setup"
+            ],
+            style=custom_style
+        ).ask()
+
+        if action is None or action == "Cancel setup":
+            print("\nSetup cancelled.")
+            return False
+
+        if action == "Save this configuration":
+            break
+
+        # Edit a field
+        field_choices = [
+            f"Name ({profile_data['name']})",
+            f"Titles ({', '.join(profile_data['target_titles'])})",
+            f"Skills ({', '.join(profile_data['core_skills'])})",
+            f"Location ({profile_data.get('location', '(not set)')})",
+            f"Dealbreakers ({', '.join(profile_data.get('dealbreakers', [])) or '(not set)'})",
+            f"Minimum Score ({config_data['min_score']})",
+            f"New Jobs Only ({'Yes' if config_data['new_only'] else 'No'})",
+        ]
+
+        field_to_edit = questionary.select(
+            "Which field would you like to edit?",
+            choices=field_choices,
+            style=custom_style
+        ).ask()
+
+        if field_to_edit is None:
+            continue
+
+        # Determine which field and re-prompt
+        if field_to_edit.startswith("Name"):
+            new_val = questionary.text(
+                "What's your name?",
+                default=profile_data['name'],
+                validate=NonEmptyValidator(),
+                style=custom_style
+            ).ask()
+            if new_val:
+                profile_data['name'] = new_val
+
+        elif field_to_edit.startswith("Titles"):
+            new_val = questionary.text(
+                "Target job titles:",
+                default=', '.join(profile_data['target_titles']),
+                validate=CommaSeparatedValidator(min_items=1, field_name="job title"),
+                style=custom_style
+            ).ask()
+            if new_val:
+                profile_data['target_titles'] = [s.strip() for s in new_val.split(',') if s.strip()]
+
+        elif field_to_edit.startswith("Skills"):
+            new_val = questionary.text(
+                "Your core skills:",
+                default=', '.join(profile_data['core_skills']),
+                validate=CommaSeparatedValidator(min_items=1, field_name="skill"),
+                style=custom_style
+            ).ask()
+            if new_val:
+                profile_data['core_skills'] = [s.strip() for s in new_val.split(',') if s.strip()]
+
+        elif field_to_edit.startswith("Location"):
+            new_val = questionary.text(
+                "Location preference (optional):",
+                default=profile_data.get('location', ''),
+                style=custom_style
+            ).ask()
+            if new_val is not None:
+                if new_val.strip():
+                    profile_data['location'] = new_val.strip()
+                elif 'location' in profile_data:
+                    del profile_data['location']
+
+        elif field_to_edit.startswith("Dealbreakers"):
+            current_dealbreakers = profile_data.get('dealbreakers', [])
+            new_val = questionary.text(
+                "Dealbreakers (optional):",
+                default=', '.join(current_dealbreakers) if current_dealbreakers else '',
+                style=custom_style
+            ).ask()
+            if new_val is not None:
+                if new_val.strip():
+                    dealbreakers_list = [s.strip() for s in new_val.split(',') if s.strip()]
+                    if dealbreakers_list:
+                        profile_data['dealbreakers'] = dealbreakers_list
+                    elif 'dealbreakers' in profile_data:
+                        del profile_data['dealbreakers']
+                elif 'dealbreakers' in profile_data:
+                    del profile_data['dealbreakers']
+
+        elif field_to_edit.startswith("Minimum Score"):
+            new_val = questionary.text(
+                "Minimum job score (1.0-5.0)?",
+                default=str(config_data['min_score']),
+                validate=ScoreValidator(),
+                style=custom_style
+            ).ask()
+            if new_val:
+                config_data['min_score'] = float(new_val)
+
+        elif field_to_edit.startswith("New Jobs Only"):
+            new_val = questionary.confirm(
+                "Show only new jobs (not previously seen)?",
+                default=config_data['new_only'],
+                style=custom_style
+            ).ask()
+            if new_val is not None:
+                config_data['new_only'] = new_val
+
+    # Write files atomically
+    data_dir = get_data_dir()
+    profile_path = data_dir / "profile.json"
+    config_path = data_dir / "config.json"
+
+    _write_json_atomic(profile_path, profile_data)
+    _write_json_atomic(config_path, config_data)
+
+    print(f"\n✅ Configuration saved to {data_dir}")
+    print("You can now run job-radar to start searching!\n")
+
+    return True
