@@ -18,6 +18,7 @@ import sys
 from datetime import datetime, timedelta
 from typing import Optional
 
+from . import __version__
 from .config import load_config
 from .deps import get_os_info
 from .sources import fetch_all, generate_manual_urls, build_search_queries
@@ -90,8 +91,13 @@ def parse_args(config: dict | None = None):
         description="Search and score job listings for a candidate profile."
     )
     parser.add_argument(
+        "--version",
+        action="version",
+        version=f"job-radar {__version__}",
+    )
+    parser.add_argument(
         "--profile",
-        required=True,
+        required=False,
         help="Path to candidate profile JSON file",
     )
     parser.add_argument(
@@ -157,16 +163,59 @@ def load_profile(path: str) -> dict:
     """Load and validate a candidate profile JSON file."""
     if not os.path.exists(path):
         print(f"{C.RED}Error: Profile not found: {path}{C.RESET}")
+        print(f"\n{C.YELLOW}Tip:{C.RESET} Create a profile from the template:")
+        print(f"  cp profiles/_template.json profiles/your_name.json")
+        print(f"  # Edit the file with your details")
+        print(f"  job-radar --profile profiles/your_name.json")
         sys.exit(1)
 
-    with open(path, encoding="utf-8") as f:
-        profile = json.load(f)
+    try:
+        with open(path, encoding="utf-8") as f:
+            profile = json.load(f)
+    except json.JSONDecodeError as e:
+        print(f"{C.RED}Error: Invalid JSON in profile: {e.msg} (line {e.lineno}){C.RESET}")
+        sys.exit(1)
 
+    if not isinstance(profile, dict):
+        print(f"{C.RED}Error: Profile must be a JSON object, got {type(profile).__name__}{C.RESET}")
+        sys.exit(1)
+
+    # Check required fields
     required = ["name", "target_titles", "core_skills"]
-    for field in required:
+    missing = [f for f in required if f not in profile]
+    if missing:
+        print(f"{C.RED}Error: Profile missing required fields: {', '.join(missing)}{C.RESET}")
+        print(f"\n{C.YELLOW}Required fields:{C.RESET}")
+        print(f"  - name: Your full name")
+        print(f"  - target_titles: List of job titles to search (e.g., [\"Software Engineer\", \"Backend Developer\"])")
+        print(f"  - core_skills: List of your top 5-7 technologies (e.g., [\"Python\", \"Django\", \"PostgreSQL\"])")
+        sys.exit(1)
+
+    # Validate field types and values
+    if not isinstance(profile.get("target_titles"), list) or not profile["target_titles"]:
+        print(f"{C.RED}Error: 'target_titles' must be a non-empty list of strings{C.RESET}")
+        sys.exit(1)
+
+    if not isinstance(profile.get("core_skills"), list) or not profile["core_skills"]:
+        print(f"{C.RED}Error: 'core_skills' must be a non-empty list of strings{C.RESET}")
+        sys.exit(1)
+
+    # Warn about recommended fields
+    recommended = {
+        "level": "Seniority level (e.g., 'mid', 'senior')",
+        "years_experience": "Total years of professional experience",
+        "arrangement": "Work preferences (e.g., ['remote', 'hybrid'])",
+    }
+    warnings = []
+    for field, description in recommended.items():
         if field not in profile:
-            print(f"{C.RED}Error: Profile missing required field: {field}{C.RESET}")
-            sys.exit(1)
+            warnings.append(f"  - {field}: {description}")
+
+    if warnings:
+        print(f"\n{C.YELLOW}Warning: Missing recommended fields:{C.RESET}")
+        for w in warnings:
+            print(w)
+        print(f"{C.DIM}These fields improve scoring accuracy. See WORKFLOW.md for details.{C.RESET}\n")
 
     return profile
 
@@ -274,6 +323,21 @@ def main():
 
     config = load_config(pre_args.config)
     args = parse_args(config)
+
+    # Check for required --profile flag with helpful first-run message
+    if not args.profile:
+        print(f"{C.RED}Error: --profile is required{C.RESET}\n")
+        print(f"{C.BOLD}Getting started:{C.RESET}")
+        print(f"  1. Create your profile from the template:")
+        print(f"     {C.CYAN}cp profiles/_template.json profiles/your_name.json{C.RESET}")
+        print(f"\n  2. Edit the file and fill in your details:")
+        print(f"     - name: Your full name")
+        print(f"     - target_titles: Job titles you're searching for")
+        print(f"     - core_skills: Your top 5-7 technologies")
+        print(f"\n  3. Run the search:")
+        print(f"     {C.CYAN}job-radar --profile profiles/your_name.json{C.RESET}")
+        print(f"\n{C.DIM}See README.md or WORKFLOW.md for full documentation.{C.RESET}")
+        sys.exit(1)
 
     # Configure logging
     log_level = logging.DEBUG if args.verbose else logging.INFO
