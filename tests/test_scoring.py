@@ -101,6 +101,45 @@ def test_score_skill_match(job_factory, core_skills, secondary_skills, descripti
 
 
 # ---------------------------------------------------------------------------
+# Fuzzy variant matching tests (TEST-GAP-01 - v1.0 milestone audit)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("core_skills,description,expected_in_matched", [
+    (["node.js"], "Looking for a NodeJS developer", "node.js"),  # nodejs variant
+    (["kubernetes"], "Experience with k8s required", "kubernetes"),  # k8s variant
+    ([".NET"], "Must know dotnet framework", ".NET"),  # dotnet variant
+    (["C#"], "Seeking csharp programmer", "C#"),  # csharp variant
+    (["python"], "Need python3 scripting skills", "python"),  # python3 variant
+    (["go"], "Backend role using golang", "go"),  # golang variant (not "going")
+], ids=[
+    "nodejs_variant",
+    "k8s_variant",
+    "dotnet_variant",
+    "csharp_variant",
+    "python3_variant",
+    "go_boundary_with_golang",
+])
+def test_score_skill_match_fuzzy_variants(job_factory, core_skills, description, expected_in_matched):
+    """Test cross-variant skill matching (TEST-GAP-01).
+
+    Regression tests for fuzzy normalization: profile skill in one form should match
+    job text containing a different variant form. Covers all 4 audit-identified pairs
+    plus additional boundary cases.
+    """
+    job = job_factory(description=description)
+    profile = {
+        "core_skills": core_skills,
+        "secondary_skills": [],
+    }
+    result = _score_skill_match(job, profile)
+
+    # Single core skill matched: ratio=1.0 -> score = 1.0 + 1.0*4.0 = 5.0
+    assert result["score"] >= 4.0, f"Expected high score for matched variant, got {result['score']}"
+    assert expected_in_matched in result["matched_core"], \
+        f"Expected '{expected_in_matched}' in matched_core, got {result['matched_core']}"
+
+
+# ---------------------------------------------------------------------------
 # Title relevance tests (TEST-01)
 # ---------------------------------------------------------------------------
 
