@@ -320,10 +320,14 @@ def run_setup_wizard() -> bool:
         if dealbreakers_list:
             profile_data['dealbreakers'] = dealbreakers_list
 
+    # Get data directory for path resolution
+    data_dir = get_data_dir()
+
     # Build config data structure
     config_data = {
         "min_score": float(answers['min_score']),
         "new_only": answers['new_only'],
+        "profile_path": str(data_dir / "profile.json"),
     }
 
     # Celebration summary with post-summary editing loop
@@ -465,7 +469,6 @@ def run_setup_wizard() -> bool:
                 config_data['new_only'] = new_val
 
     # Write files atomically
-    data_dir = get_data_dir()
     profile_path = data_dir / "profile.json"
     config_path = data_dir / "config.json"
 

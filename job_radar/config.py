@@ -17,9 +17,8 @@ def _default_config_path() -> Path:
     return get_data_dir() / "config.json"
 
 # Underscore names match argparse dest names.
-# "profile" excluded: required=True, argparse validates before set_defaults applies.
 # "config" excluded: circular reference.
-KNOWN_KEYS = {"min_score", "new_only", "output"}
+KNOWN_KEYS = {"min_score", "new_only", "output", "profile_path"}
 
 
 def load_config(config_path: str | None = None) -> dict:
