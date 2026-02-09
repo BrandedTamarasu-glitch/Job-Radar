@@ -25,23 +25,26 @@ def main():
         # Banner is non-critical, continue even if it fails
         pass
 
-    # First-run setup wizard
-    try:
-        from job_radar.wizard import is_first_run, run_setup_wizard
-        if is_first_run():
-            print("\nWelcome to Job Radar!")
-            print("Let's set up your profile before your first search.\n")
-            if not run_setup_wizard():
-                # User cancelled wizard
-                print("\nSetup cancelled. Run again when you're ready!")
-                sys.exit(0)
-            print()  # Blank line before search starts
-    except ImportError:
-        # questionary not installed -- skip wizard (dev mode without extras)
-        pass
-    except Exception:
-        # Wizard failure is non-critical -- user can still use --profile flag
-        pass
+    # First-run setup wizard (skip if --no-wizard flag present)
+    import argparse as _argparse
+    _pre = _argparse.ArgumentParser(add_help=False)
+    _pre.add_argument("--no-wizard", action="store_true")
+    _pre_args, _ = _pre.parse_known_args()
+
+    if not _pre_args.no_wizard:
+        try:
+            from job_radar.wizard import is_first_run, run_setup_wizard
+            if is_first_run():
+                print("\nWelcome to Job Radar!")
+                print("Let's set up your profile before your first search.\n")
+                if not run_setup_wizard():
+                    print("\nSetup cancelled. Run again when you're ready!")
+                    sys.exit(0)
+                print()  # Blank line before search starts
+        except ImportError:
+            pass  # questionary not installed -- skip wizard (dev mode without extras)
+        except Exception:
+            pass  # Wizard failure is non-critical -- user can still use --profile flag
 
     try:
         from job_radar.search import main as search_main

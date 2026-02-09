@@ -13,6 +13,7 @@ import json
 import logging
 import os
 import platform
+import shutil
 import subprocess
 import sys
 from datetime import datetime, timedelta
@@ -154,6 +155,16 @@ def parse_args(config: dict | None = None):
         default=None,
         help="Minimum score threshold for results (e.g. 3.0). Default: 2.8.",
     )
+    parser.add_argument(
+        "--no-wizard",
+        action="store_true",
+        help="Skip first-run wizard (use with --profile for testing)",
+    )
+    parser.add_argument(
+        "--validate-profile",
+        metavar="PATH",
+        help="Validate profile JSON and exit without searching",
+    )
     if config:
         parser.set_defaults(**config)
     return parser.parse_args()
@@ -217,6 +228,110 @@ def load_profile(path: str) -> dict:
             print(w)
         print(f"{C.DIM}These fields improve scoring accuracy. See WORKFLOW.md for details.{C.RESET}\n")
 
+    return profile
+
+
+def load_profile_with_recovery(path: str, _retry: int = 0) -> dict:
+    """Load profile with wizard recovery on corrupt/missing files.
+
+    Parameters
+    ----------
+    path : str
+        Path to profile JSON file
+    _retry : int
+        Internal retry counter (max 2 attempts)
+
+    Returns
+    -------
+    dict
+        Validated profile dict
+
+    Notes
+    -----
+    On missing or corrupt profile, backs up corrupt file (if exists),
+    runs setup wizard, and retries. Max 2 retry attempts to prevent
+    infinite loops. Uses local wizard import to avoid circular imports.
+    """
+    from pathlib import Path
+
+    # Max retry check
+    if _retry > 1:
+        print(f"\n{C.RED}Error: Profile setup failed after multiple attempts{C.RESET}")
+        print(f"\n{C.YELLOW}Tip:{C.RESET} Use --profile flag to specify a valid profile:")
+        print(f"  job-radar --profile profiles/your_name.json")
+        sys.exit(1)
+
+    # Expand path (handle ~ in paths)
+    expanded_path = Path(path).expanduser()
+    path_str = str(expanded_path)
+
+    # Check 1: File missing
+    if not expanded_path.exists():
+        print(f"\n{C.YELLOW}Profile not found:{C.RESET} {path_str}")
+        print("Running setup wizard to create profile...\n")
+        from .wizard import run_setup_wizard
+        if not run_setup_wizard():
+            print("\nSetup cancelled.")
+            sys.exit(1)
+        return load_profile_with_recovery(path, _retry + 1)
+
+    # Check 2: JSON decode error (corrupt file)
+    try:
+        with open(expanded_path, encoding="utf-8") as f:
+            profile = json.load(f)
+    except json.JSONDecodeError as e:
+        backup_path = f"{path_str}.bak"
+        shutil.copy(expanded_path, backup_path)
+        print(f"\n{C.RED}Profile corrupted:{C.RESET} Invalid JSON at line {e.lineno}")
+        print(f"Backed up to: {backup_path}")
+        print("Running setup wizard to create new profile...\n")
+        from .wizard import run_setup_wizard
+        if not run_setup_wizard():
+            print("\nSetup cancelled.")
+            sys.exit(1)
+        return load_profile_with_recovery(path, _retry + 1)
+
+    # Check 3: Missing required fields
+    required = ["name", "target_titles", "core_skills"]
+    missing = [f for f in required if f not in profile]
+    if missing:
+        backup_path = f"{path_str}.bak"
+        shutil.copy(expanded_path, backup_path)
+        print(f"\n{C.RED}Profile incomplete:{C.RESET} Missing required fields: {', '.join(missing)}")
+        print(f"Backed up to: {backup_path}")
+        print("Running setup wizard to create complete profile...\n")
+        from .wizard import run_setup_wizard
+        if not run_setup_wizard():
+            print("\nSetup cancelled.")
+            sys.exit(1)
+        return load_profile_with_recovery(path, _retry + 1)
+
+    # Check 4: Invalid field types/values
+    if not isinstance(profile.get("target_titles"), list) or not profile["target_titles"]:
+        backup_path = f"{path_str}.bak"
+        shutil.copy(expanded_path, backup_path)
+        print(f"\n{C.RED}Profile invalid:{C.RESET} 'target_titles' must be a non-empty list")
+        print(f"Backed up to: {backup_path}")
+        print("Running setup wizard to create valid profile...\n")
+        from .wizard import run_setup_wizard
+        if not run_setup_wizard():
+            print("\nSetup cancelled.")
+            sys.exit(1)
+        return load_profile_with_recovery(path, _retry + 1)
+
+    if not isinstance(profile.get("core_skills"), list) or not profile["core_skills"]:
+        backup_path = f"{path_str}.bak"
+        shutil.copy(expanded_path, backup_path)
+        print(f"\n{C.RED}Profile invalid:{C.RESET} 'core_skills' must be a non-empty list")
+        print(f"Backed up to: {backup_path}")
+        print("Running setup wizard to create valid profile...\n")
+        from .wizard import run_setup_wizard
+        if not run_setup_wizard():
+            print("\nSetup cancelled.")
+            sys.exit(1)
+        return load_profile_with_recovery(path, _retry + 1)
+
+    # Profile valid - return it
     return profile
 
 
@@ -324,20 +439,36 @@ def main():
     config = load_config(pre_args.config)
     args = parse_args(config)
 
-    # Check for required --profile flag with helpful first-run message
-    if not args.profile:
-        print(f"{C.RED}Error: --profile is required{C.RESET}\n")
-        print(f"{C.BOLD}Getting started:{C.RESET}")
-        print(f"  1. Create your profile from the template:")
-        print(f"     {C.CYAN}cp profiles/_template.json profiles/your_name.json{C.RESET}")
-        print(f"\n  2. Edit the file and fill in your details:")
-        print(f"     - name: Your full name")
-        print(f"     - target_titles: Job titles you're searching for")
-        print(f"     - core_skills: Your top 5-7 technologies")
-        print(f"\n  3. Run the search:")
-        print(f"     {C.CYAN}job-radar --profile profiles/your_name.json{C.RESET}")
-        print(f"\n{C.DIM}See README.md or WORKFLOW.md for full documentation.{C.RESET}")
-        sys.exit(1)
+    # Profile path resolution: CLI --profile > config.json profile_path > default location
+    if args.validate_profile:
+        # Debug mode: validate and exit
+        try:
+            profile = load_profile(args.validate_profile)
+            print(f"\n{C.GREEN}Profile valid:{C.RESET} {args.validate_profile}")
+            print(f"  Name: {profile['name']}")
+            print(f"  Titles: {len(profile['target_titles'])}")
+            print(f"  Skills: {len(profile['core_skills'])}")
+            sys.exit(0)
+        except SystemExit:
+            raise  # Re-raise sys.exit from load_profile
+        except Exception as e:
+            print(f"\n{C.RED}Profile invalid:{C.RESET} {e}")
+            sys.exit(1)
+
+    profile_path_str = args.profile
+    if not profile_path_str:
+        # No CLI flag - use default wizard profile location
+        from .paths import get_data_dir
+        profile_path_str = str(get_data_dir() / "profile.json")
+
+    if args.no_wizard:
+        # Developer mode - use load_profile (no wizard recovery)
+        profile = load_profile(profile_path_str)
+    else:
+        # Normal mode - use recovery (auto-wizard on corrupt/missing)
+        profile = load_profile_with_recovery(profile_path_str)
+
+    name = profile["name"]
 
     # Configure logging
     log_level = logging.DEBUG if args.verbose else logging.INFO
@@ -360,10 +491,6 @@ def main():
     today = _date.today()
     from_date = args.from_date or (today - timedelta(days=2)).isoformat()
     to_date = args.to_date or today.isoformat()
-
-    # Load profile
-    profile = load_profile(args.profile)
-    name = profile["name"]
 
     print(f"\n{C.BOLD}{'='*60}")
     print(f"  Job Search — {name}")
