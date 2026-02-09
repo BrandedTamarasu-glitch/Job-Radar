@@ -18,7 +18,7 @@ def _default_config_path() -> Path:
 
 # Underscore names match argparse dest names.
 # "config" excluded: circular reference.
-KNOWN_KEYS = {"min_score", "new_only", "output", "profile_path"}
+KNOWN_KEYS = {"min_score", "new_only", "output", "profile_path", "auto_open_browser"}
 
 
 def load_config(config_path: str | None = None) -> dict:

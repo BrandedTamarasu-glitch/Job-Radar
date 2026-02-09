@@ -26,6 +26,7 @@ from .sources import fetch_all, generate_manual_urls, build_search_queries
 from .scoring import score_job
 from .report import generate_report
 from .tracker import mark_seen, get_stats
+from .browser import open_report_in_browser
 
 log = logging.getLogger("search")
 
@@ -124,9 +125,9 @@ def parse_args(config: dict | None = None):
         help="Output directory for reports. Default: results/",
     )
     parser.add_argument(
-        "--open",
+        "--no-open",
         action="store_true",
-        help="Auto-open the report after generation.",
+        help="Don't auto-open report in browser",
     )
     parser.add_argument(
         "--dry-run",
@@ -406,24 +407,6 @@ def filter_by_date(results, from_date: str, to_date: str):
     return filtered
 
 
-# ---------------------------------------------------------------------------
-# Report opener
-# ---------------------------------------------------------------------------
-
-def _open_file(path: str):
-    """Open a file with the OS default application."""
-    system = platform.system()
-    try:
-        if system == "Darwin":
-            subprocess.Popen(["open", path])
-        elif system == "Linux":
-            subprocess.Popen(["xdg-open", path])
-        elif system == "Windows":
-            os.startfile(path)
-        else:
-            log.warning("Don't know how to open files on %s", system)
-    except Exception as e:
-        log.warning("Failed to open file: %s", e)
 
 
 # ---------------------------------------------------------------------------
@@ -578,17 +561,27 @@ def main():
 
     print(f"\n{C.BOLD}Step 5:{C.RESET} Generating report...")
     min_score = args.min_score if args.min_score is not None else 2.8
-    report_path = generate_report(
-        profile=profile,
-        scored_results=scored,
-        manual_urls=manual_urls,
-        sources_searched=sources_searched,
-        from_date=from_date,
-        to_date=to_date,
-        output_dir=args.output,
-        tracker_stats=tracker_stats,
-        min_score=min_score,
-    )
+
+    try:
+        report_result = generate_report(
+            profile=profile,
+            scored_results=scored,
+            manual_urls=manual_urls,
+            sources_searched=sources_searched,
+            from_date=from_date,
+            to_date=to_date,
+            output_dir=args.output,
+            tracker_stats=tracker_stats,
+            min_score=min_score,
+        )
+    except Exception as e:
+        print(f"\n{C.RED}Error: Report generation failed: {e}{C.RESET}")
+        sys.exit(1)
+
+    # Extract paths and stats from report result
+    html_path = report_result["html"]
+    md_path = report_result["markdown"]
+    report_stats = report_result["stats"]
 
     # Summary
     recommended = [r for r in scored if r["score"]["overall"] >= 3.5]
@@ -597,13 +590,14 @@ def main():
     print(f"\n{C.BOLD}{'='*60}")
     print(f"  SEARCH COMPLETE — {name}")
     print(f"{'='*60}{C.RESET}")
-    print(f"  Total results:      {len(scored)}")
-    print(f"  New this run:       {C.GREEN}{new_count}{C.RESET}")
-    print(f"  Recommended (3.5+): {C.YELLOW}{len(recommended)}{C.RESET}")
-    print(f"  Strong (4.0+):      {C.GREEN}{len(strong)}{C.RESET}")
+    print(f"  Total results:      {report_stats['total']}")
+    print(f"  New this run:       {C.GREEN}{report_stats['new']}{C.RESET}")
+    print(f"  Recommended (3.5+): {C.YELLOW}{report_stats['recommended']}{C.RESET}")
+    print(f"  Strong (4.0+):      {C.GREEN}{report_stats['strong']}{C.RESET}")
     if dealbreaker_count:
         print(f"  Dealbreakers:       {C.RED}{dealbreaker_count}{C.RESET}")
-    print(f"  Report saved to:    {report_path}")
+    print(f"\n  Report (HTML):      {html_path}")
+    print(f"  Report (Markdown):  {md_path}")
 
     # Tracker stats
     if tracker_stats["total_runs"] > 1:
@@ -621,13 +615,19 @@ def main():
         print()
 
     print(f"  Manual check URLs generated: {len(manual_urls)}")
-    print(f"  Open the report for full details: {report_path}")
     print()
 
-    # Auto-open if requested
-    if args.open:
-        print(f"  Opening report...")
-        _open_file(report_path)
+    # Browser opening
+    auto_open = not args.no_open and config.get("auto_open_browser", True)
+
+    if not scored:
+        print(f"  {C.DIM}No results to display — skipping browser{C.RESET}\n")
+    else:
+        browser_result = open_report_in_browser(html_path, auto_open=auto_open)
+        if browser_result["opened"]:
+            print(f"  {C.GREEN}Report opened in default browser{C.RESET}\n")
+        else:
+            print(f"  Browser: {browser_result['reason']}. Open manually: {html_path}\n")
 
 
 if __name__ == "__main__":
