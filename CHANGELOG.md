@@ -1,5 +1,22 @@
 # Changelog
 
+## v1.0.0 — 2026-02-08
+
+### Test Suite
+- **pytest integration** — Comprehensive test suite with 48 automated tests covering scoring and tracking systems
+- **Parametrized scoring tests** — All `_score_*` functions validated with normal and edge cases (21 test cases across 6 functions)
+- **Dealbreaker detection tests** — Verifies exact match, substring match, and case-insensitive matching behavior
+- **Salary parsing tests** — Covers all formats: "$120k", "$60/hr", "$120,000", ranges, "Not listed", None, empty strings
+- **Tracker tests with isolation** — `job_key()`, `mark_seen()`, and `get_stats()` validated using tmp_path to protect production data
+- **Shared test fixtures** — `sample_profile` and `job_factory` in `tests/conftest.py` for reusable test data
+- **Zero failures** — All 48 tests pass in 0.03s, providing regression protection for scoring engine
+
+### Milestone Achievement
+All v1.0 features delivered:
+- ✓ Fuzzy skill normalization (v0.3.0)
+- ✓ Config file support (v0.4.0)
+- ✓ Comprehensive test suite (v1.0.0)
+
 ## v0.4.0 — 2026-02-08
 
 ### Config File Support

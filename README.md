@@ -1,6 +1,6 @@
 # Job Radar
 
-A Python CLI that searches multiple job boards, scores listings against your candidate profile, and generates a ranked Markdown report.
+A Python CLI that searches multiple job boards, scores listings against your candidate profile, and generates a ranked Markdown report. Includes fuzzy skill matching, persistent config file support, and a comprehensive test suite.
 
 ## Install
 
@@ -104,6 +104,30 @@ job-radar --profile profiles/your_name.json --dry-run
 | 3.5-3.9 | Recommend | Worth applying |
 | 2.8-3.4 | Worth Reviewing | Read the full posting first |
 | < 2.8 | Excluded from report | |
+
+## Development
+
+### Running Tests
+
+The project includes a comprehensive test suite with 48 automated tests:
+
+```bash
+# Install dev dependencies
+pip install pytest
+
+# Run all tests
+pytest tests/
+
+# Run with verbose output
+pytest tests/ -v
+
+# Run specific test file
+pytest tests/test_scoring.py
+```
+
+**Test coverage:**
+- Scoring functions (37 tests) — validates all `_score_*` functions with parametrized edge cases
+- Tracker functions (11 tests) — validates deduplication and stats aggregation with tmp_path isolation
 
 ## Further Reading
 
