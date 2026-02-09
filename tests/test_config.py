@@ -2,7 +2,7 @@
 
 import pytest
 from pathlib import Path
-from job_radar.config import load_config, DEFAULT_CONFIG_PATH, KNOWN_KEYS
+from job_radar.config import load_config, LEGACY_CONFIG_PATH, KNOWN_KEYS
 
 
 # ---------------------------------------------------------------------------
@@ -143,29 +143,29 @@ def test_load_config_valid_configs(tmp_path, content, expected):
 
 
 # ---------------------------------------------------------------------------
-# DEFAULT_CONFIG_PATH tilde expansion (Success Criteria 4)
+# LEGACY_CONFIG_PATH tilde expansion (Success Criteria 4)
 # ---------------------------------------------------------------------------
 
 def test_default_config_path_has_tilde():
-    """Test DEFAULT_CONFIG_PATH contains tilde before expansion."""
-    assert str(DEFAULT_CONFIG_PATH).startswith("~")
+    """Test LEGACY_CONFIG_PATH contains tilde before expansion."""
+    assert str(LEGACY_CONFIG_PATH).startswith("~")
 
 
 def test_default_config_path_expands_to_home():
-    """Test DEFAULT_CONFIG_PATH.expanduser() starts with user home directory."""
-    expanded = DEFAULT_CONFIG_PATH.expanduser()
+    """Test LEGACY_CONFIG_PATH.expanduser() starts with user home directory."""
+    expanded = LEGACY_CONFIG_PATH.expanduser()
     assert str(expanded).startswith(str(Path.home()))
 
 
 def test_default_config_path_no_tilde_after_expansion():
     """Test tilde is gone after expanduser()."""
-    expanded = DEFAULT_CONFIG_PATH.expanduser()
+    expanded = LEGACY_CONFIG_PATH.expanduser()
     assert "~" not in str(expanded)
 
 
 def test_default_config_path_ends_with_config_json():
-    """Test expanded DEFAULT_CONFIG_PATH ends with .job-radar/config.json."""
-    expanded = DEFAULT_CONFIG_PATH.expanduser()
+    """Test expanded LEGACY_CONFIG_PATH ends with .job-radar/config.json."""
+    expanded = LEGACY_CONFIG_PATH.expanduser()
     assert str(expanded).endswith(".job-radar/config.json")
 
 

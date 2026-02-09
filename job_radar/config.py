@@ -8,7 +8,13 @@ import json
 import sys
 from pathlib import Path
 
-DEFAULT_CONFIG_PATH = Path("~/.job-radar/config.json")
+LEGACY_CONFIG_PATH = Path("~/.job-radar/config.json")
+
+
+def _default_config_path() -> Path:
+    """Return default config path, using platform-appropriate directory."""
+    from .paths import get_data_dir
+    return get_data_dir() / "config.json"
 
 # Underscore names match argparse dest names.
 # "profile" excluded: required=True, argparse validates before set_defaults applies.
@@ -22,7 +28,8 @@ def load_config(config_path: str | None = None) -> dict:
     Parameters
     ----------
     config_path:
-        Path to config file. If None, uses DEFAULT_CONFIG_PATH.
+        Path to config file. If None, uses platform-appropriate default path
+        with fallback to legacy ~/.job-radar/config.json for backward compatibility.
 
     Returns
     -------
@@ -32,7 +39,12 @@ def load_config(config_path: str | None = None) -> dict:
     if config_path is not None:
         path = Path(config_path).expanduser()
     else:
-        path = DEFAULT_CONFIG_PATH.expanduser()
+        path = _default_config_path()
+        # Backward compatibility: check legacy path if new path doesn't exist
+        if not path.exists():
+            legacy_path = LEGACY_CONFIG_PATH.expanduser()
+            if legacy_path.exists():
+                path = legacy_path
 
     # CONF-03: missing file = no behavior change
     if not path.exists():
