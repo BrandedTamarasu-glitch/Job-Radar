@@ -10,3 +10,5 @@ profiles/*.json
 dist/
 *.egg-info/
 build/
+.env
+.rate_limits/
