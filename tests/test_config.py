@@ -166,7 +166,9 @@ def test_default_config_path_no_tilde_after_expansion():
 def test_default_config_path_ends_with_config_json():
     """Test expanded LEGACY_CONFIG_PATH ends with .job-radar/config.json."""
     expanded = LEGACY_CONFIG_PATH.expanduser()
-    assert str(expanded).endswith(".job-radar/config.json")
+    # Use pathlib comparison to be platform-agnostic (handles / vs \ on Windows)
+    assert expanded.name == "config.json"
+    assert expanded.parent.name == ".job-radar"
 
 
 # ---------------------------------------------------------------------------

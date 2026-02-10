@@ -173,5 +173,9 @@ def test_tracker_never_touches_production():
     """Test that documents where production tracker lives (safety documentation)."""
     # This test verifies isolation by documenting the production path
     # All other tests MUST use tmp_path + patch to avoid touching this file
-    assert "results/tracker.json" in _TRACKER_PATH
-    assert _TRACKER_PATH.endswith("results/tracker.json")
+    # Use os.path.normpath for platform-agnostic comparison (handles / vs \ on Windows)
+    import os
+    normalized_path = os.path.normpath(_TRACKER_PATH)
+    expected = os.path.normpath("results/tracker.json")
+    assert expected in normalized_path
+    assert normalized_path.endswith(expected)
