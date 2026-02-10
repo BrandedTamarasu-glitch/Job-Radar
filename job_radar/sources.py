@@ -1,5 +1,6 @@
 """Job source fetchers and URL generators."""
 
+import html
 import json as _json
 import logging
 import re
@@ -30,6 +31,9 @@ class JobResult:
     apply_info: str = ""
     employment_type: str = ""  # full-time, contract, C2H, part-time, etc.
     parse_confidence: str = "high"  # high, medium, low
+    salary_min: float | None = None
+    salary_max: float | None = None
+    salary_currency: str | None = None
 
     def __hash__(self):
         return hash((self.title, self.company, self.source))
@@ -55,6 +59,80 @@ def _clean_field(text: str, max_len: int) -> str:
     if len(text) > max_len:
         return text[:max_len - 3].rsplit(" ", 1)[0] + "..."
     return text
+
+
+# ---------------------------------------------------------------------------
+# Text cleaning utilities
+# ---------------------------------------------------------------------------
+
+def strip_html_and_normalize(text: str) -> str:
+    """Strip HTML tags, decode entities, normalize whitespace."""
+    if not text:
+        return ""
+    text = html.unescape(text)
+    soup = BeautifulSoup(text, "html.parser")
+    plain_text = soup.get_text(separator=" ")
+    normalized = re.sub(r'\s+', ' ', plain_text)
+    return normalized.strip()
+
+
+# Map US state names to abbreviations
+_STATE_ABBREV = {
+    "alabama": "AL", "alaska": "AK", "arizona": "AZ", "arkansas": "AR",
+    "california": "CA", "colorado": "CO", "connecticut": "CT", "delaware": "DE",
+    "florida": "FL", "georgia": "GA", "hawaii": "HI", "idaho": "ID",
+    "illinois": "IL", "indiana": "IN", "iowa": "IA", "kansas": "KS",
+    "kentucky": "KY", "louisiana": "LA", "maine": "ME", "maryland": "MD",
+    "massachusetts": "MA", "michigan": "MI", "minnesota": "MN", "mississippi": "MS",
+    "missouri": "MO", "montana": "MT", "nebraska": "NE", "nevada": "NV",
+    "new hampshire": "NH", "new jersey": "NJ", "new mexico": "NM", "new york": "NY",
+    "north carolina": "NC", "north dakota": "ND", "ohio": "OH", "oklahoma": "OK",
+    "oregon": "OR", "pennsylvania": "PA", "rhode island": "RI", "south carolina": "SC",
+    "south dakota": "SD", "tennessee": "TN", "texas": "TX", "utah": "UT",
+    "vermont": "VT", "virginia": "VA", "washington": "WA", "west virginia": "WV",
+    "wisconsin": "WI", "wyoming": "WY",
+}
+
+
+def parse_location_to_city_state(location_str: str) -> str:
+    """Parse location to 'City, State' format.
+
+    Handles:
+    - Empty string -> "Unknown"
+    - "remote" (case-insensitive) -> "Remote"
+    - "City, STATE_ABBR" -> return as-is
+    - "City, State Name" -> abbreviate using state map
+    - "City, State, Country" -> extract City, State
+    - Fallback: return raw string
+    """
+    if not location_str:
+        return "Unknown"
+
+    # Special case: Remote
+    if "remote" in location_str.lower():
+        return "Remote"
+
+    # Pattern 1: "City, STATE_ABBR" (already correct format)
+    match = re.match(r'^([^,]+),\s*([A-Z]{2})(?:\s|,|$)', location_str)
+    if match:
+        city, state = match.groups()
+        return f"{city.strip()}, {state.strip()}"
+
+    # Pattern 2: "City, State Name" -> abbreviate state (if US state)
+    match = re.match(r'^([^,]+),\s*([^,]+?)(?:\s|,|$)', location_str)
+    if match:
+        city, state_name = match.groups()
+        state_lower = state_name.strip().lower()
+        if state_lower in _STATE_ABBREV:
+            return f"{city.strip()}, {_STATE_ABBREV[state_lower]}"
+        # Pattern 3: "City, State, Country" - if we have a third comma, try extracting just City, State
+        remaining = location_str[match.end():].strip()
+        if remaining and ',' not in remaining:
+            # Second part looks like a country, return City, State_Name as-is
+            return f"{city.strip()}, {state_name.strip()}"
+
+    # Fallback: return raw string (better to show raw than guess wrong)
+    return location_str.strip()
 
 
 # ---------------------------------------------------------------------------
@@ -508,6 +586,8 @@ _SOURCE_DISPLAY_NAMES = {
     "hn_hiring": "HN Hiring",
     "remoteok": "RemoteOK",
     "weworkremotely": "We Work Remotely",
+    "adzuna": "Adzuna",
+    "authentic_jobs": "Authentic Jobs",
 }
 
 
