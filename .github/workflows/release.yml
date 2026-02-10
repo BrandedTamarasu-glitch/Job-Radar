@@ -67,6 +67,14 @@ jobs:
       - name: Build with PyInstaller
         run: pyinstaller job-radar.spec --clean
 
+      - name: Install Terminal launcher (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          cd dist/JobRadar.app/Contents/MacOS
+          mv job-radar job-radar-cli
+          cp ../../../../macos-launcher.sh job-radar
+          chmod +x job-radar job-radar-cli
+
       - name: Create archive (Linux)
         if: runner.os == 'Linux'
         run: |
