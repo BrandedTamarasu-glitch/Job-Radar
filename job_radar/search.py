@@ -180,6 +180,19 @@ def parse_args(config: dict | None = None):
         help="Validate a profile JSON and exit",
     )
 
+    # API Options
+    api_group = parser.add_argument_group('API Options')
+    api_group.add_argument(
+        "--setup-apis",
+        action="store_true",
+        help="Interactive setup for API source credentials",
+    )
+    api_group.add_argument(
+        "--test-apis",
+        action="store_true",
+        help="Test configured API keys and report status",
+    )
+
     # Developer Options
     dev_group = parser.add_argument_group('Developer Options')
     dev_group.add_argument(
@@ -459,6 +472,17 @@ def main():
     config = load_config(pre_args.config)
     args = parse_args(config)
 
+    # Early exit handlers for API commands (no profile needed)
+    if args.setup_apis:
+        from .api_setup import setup_apis
+        setup_apis()
+        sys.exit(0)
+
+    if args.test_apis:
+        from .api_setup import test_apis
+        test_apis()
+        sys.exit(0)
+
     # Profile path resolution: CLI --profile > config.json profile_path > default location
     if args.validate_profile:
         # Debug mode: validate and exit
@@ -500,6 +524,10 @@ def main():
     # Quiet down noisy libraries
     logging.getLogger("urllib3").setLevel(logging.WARNING)
     logging.getLogger("requests").setLevel(logging.WARNING)
+
+    # Load API credentials from .env (before fetching)
+    from .api_config import load_api_credentials
+    load_api_credentials()
 
     # Disable cache if requested
     if args.no_cache:
