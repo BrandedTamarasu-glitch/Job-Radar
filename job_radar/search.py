@@ -16,6 +16,7 @@ import platform
 import shutil
 import subprocess
 import sys
+import textwrap
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -89,83 +90,119 @@ def _score_color(score: float) -> str:
 # ---------------------------------------------------------------------------
 
 def parse_args(config: dict | None = None):
+    description = textwrap.dedent("""\
+        Job Radar - Search and score job listings against your profile
+
+        FIRST TIME? Just run without any flags to launch the setup wizard.
+        The wizard guides you through creating your profile and preferences.
+
+        RETURNING? Run without flags to search with your saved profile.
+        Or use the flags below to customize your search:
+    """)
+
+    epilog = textwrap.dedent("""\
+        Examples:
+          job-radar                          Launch wizard (first run) or search
+          job-radar --min-score 3.5          Search with higher quality threshold
+          job-radar --profile path/to.json   Use a specific profile file
+
+        Docs: https://github.com/coryebert/job-radar
+    """)
+
     parser = argparse.ArgumentParser(
-        description="Search and score job listings for a candidate profile."
+        prog='job-radar',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=description,
+        epilog=epilog
     )
+
     parser.add_argument(
         "--version",
         action="version",
         version=f"job-radar {__version__}",
     )
-    parser.add_argument(
-        "--profile",
-        required=False,
-        help="Path to candidate profile JSON file",
-    )
-    parser.add_argument(
-        "--config",
+
+    # Search Options
+    search_group = parser.add_argument_group('Search Options')
+    search_group.add_argument(
+        "--min-score",
+        type=float,
         default=None,
-        help="Path to custom config file (default: ~/.job-radar/config.json)",
+        help="Minimum match score (1-5, default 2.8)",
     )
-    parser.add_argument(
+    search_group.add_argument(
+        "--new-only",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Only show new (unseen) results",
+    )
+    search_group.add_argument(
         "--from",
         dest="from_date",
         default=None,
-        help="Start date for results filter (YYYY-MM-DD). Default: 48 hours ago.",
+        help="Start date YYYY-MM-DD (default: 48 hours ago)",
     )
-    parser.add_argument(
+    search_group.add_argument(
         "--to",
         dest="to_date",
         default=None,
-        help="End date for results filter (YYYY-MM-DD). Default: today.",
+        help="End date YYYY-MM-DD (default: today)",
     )
-    parser.add_argument(
+
+    # Output Options
+    output_group = parser.add_argument_group('Output Options')
+    output_group.add_argument(
         "--output",
         default="results",
-        help="Output directory for reports. Default: results/",
+        help="Output directory for reports (default: results/)",
     )
-    parser.add_argument(
+    output_group.add_argument(
         "--no-open",
         action="store_true",
         help="Don't auto-open report in browser",
     )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Show what queries would be run without fetching.",
+
+    # Profile Options
+    profile_group = parser.add_argument_group('Profile Options')
+    profile_group.add_argument(
+        "--profile",
+        required=False,
+        help="Path to candidate profile JSON",
     )
-    parser.add_argument(
-        "--verbose", "-v",
-        action="store_true",
-        help="Enable verbose/debug logging.",
-    )
-    parser.add_argument(
-        "--no-cache",
-        action="store_true",
-        help="Disable HTTP response caching.",
-    )
-    parser.add_argument(
-        "--new-only",
-        action=argparse.BooleanOptionalAction,
-        default=False,
-        help="Only show new (unseen) results in the report.",
-    )
-    parser.add_argument(
-        "--min-score",
-        type=float,
+    profile_group.add_argument(
+        "--config",
         default=None,
-        help="Minimum score threshold for results (e.g. 3.0). Default: 2.8.",
+        help="Path to config file (default: auto-detect)",
     )
-    parser.add_argument(
-        "--no-wizard",
-        action="store_true",
-        help="Skip first-run wizard (use with --profile for testing)",
-    )
-    parser.add_argument(
+    profile_group.add_argument(
         "--validate-profile",
         metavar="PATH",
-        help="Validate profile JSON and exit without searching",
+        help="Validate a profile JSON and exit",
     )
+
+    # Developer Options
+    dev_group = parser.add_argument_group('Developer Options')
+    dev_group.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show search queries without fetching",
+    )
+    dev_group.add_argument(
+        "--verbose", "-v",
+        action="store_true",
+        help="Enable debug logging",
+    )
+    dev_group.add_argument(
+        "--no-cache",
+        action="store_true",
+        help="Disable HTTP response caching",
+    )
+    dev_group.add_argument(
+        "--no-wizard",
+        action="store_true",
+        help="Skip setup wizard (for testing)",
+    )
+
     if config:
         parser.set_defaults(**config)
     return parser.parse_args()
