@@ -515,6 +515,9 @@ def run_setup_wizard() -> bool:
             break
 
         # Edit a field
+        # Format compensation value
+        comp_display = f"${profile_data['comp_floor']:,}" if profile_data.get('comp_floor') else '(not set)'
+
         field_choices = [
             f"Name ({profile_data['name']})",
             f"Experience ({profile_data['years_experience']} years - {profile_data['level']} level)",
@@ -523,7 +526,7 @@ def run_setup_wizard() -> bool:
             f"Location ({profile_data.get('location', '(not set)')})",
             f"Arrangement ({', '.join(profile_data.get('arrangement', [])) or '(not set)'})",
             f"Industries ({', '.join(profile_data.get('domain_expertise', [])) or '(not set)'})",
-            f"Min Compensation ({'$' + f\"{profile_data['comp_floor']:,}\" if profile_data.get('comp_floor') else '(not set)'})",
+            f"Min Compensation ({comp_display})",
             f"Dealbreakers ({', '.join(profile_data.get('dealbreakers', [])) or '(not set)'})",
             f"Minimum Score ({config_data['min_score']})",
             f"New Jobs Only ({'Yes' if config_data['new_only'] else 'No'})",
