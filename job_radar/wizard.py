@@ -92,6 +92,47 @@ class YearsExperienceValidator(Validator):
             )
 
 
+class CompensationValidator(Validator):
+    """Validate compensation is empty or a reasonable number."""
+
+    def validate(self, document):
+        text = document.text.strip()
+        if not text:  # Empty is OK (optional field)
+            return
+
+        # Remove common formatting (commas, dollar signs, 'k')
+        cleaned = text.replace(',', '').replace('$', '').strip()
+
+        # Handle 'k' suffix (e.g., "120k" -> "120000")
+        if cleaned.lower().endswith('k'):
+            try:
+                value = float(cleaned[:-1]) * 1000
+            except ValueError:
+                raise ValidationError(
+                    message="Enter a number (e.g., 120000 or 120k)",
+                    cursor_position=len(document.text)
+                )
+        else:
+            try:
+                value = float(cleaned)
+            except ValueError:
+                raise ValidationError(
+                    message="Enter a number (e.g., 120000 or 120k)",
+                    cursor_position=len(document.text)
+                )
+
+        if value < 0:
+            raise ValidationError(
+                message="Compensation must be positive",
+                cursor_position=len(document.text)
+            )
+        if value > 1000000:
+            raise ValidationError(
+                message="Please enter a realistic compensation (under $1M)",
+                cursor_position=len(document.text)
+            )
+
+
 # Custom style for cross-platform safe colors
 custom_style = Style([
     ('qmark', 'fg:cyan bold'),
@@ -222,8 +263,32 @@ def run_setup_wizard() -> bool:
             'key': 'location',
             'type': 'text',
             'message': "Location preference (optional):",
-            'instruction': "e.g., Remote, New York, Hybrid (press Enter to skip)",
+            'instruction': "e.g., Remote, New York, Boston area (press Enter to skip)",
             'validator': None,
+            'required': False,
+        },
+        {
+            'key': 'arrangement',
+            'type': 'text',
+            'message': "Work arrangement preference (optional):",
+            'instruction': "e.g., Remote, Hybrid, On-site (press Enter to skip)",
+            'validator': None,
+            'required': False,
+        },
+        {
+            'key': 'domain_expertise',
+            'type': 'text',
+            'message': "Industry/domain expertise (optional):",
+            'instruction': "e.g., Healthcare, Fintech, E-commerce (press Enter to skip)",
+            'validator': None,
+            'required': False,
+        },
+        {
+            'key': 'comp_floor',
+            'type': 'text',
+            'message': "Minimum compensation (optional):",
+            'instruction': "e.g., 120000, 150k (press Enter to skip)",
+            'validator': CompensationValidator(),
             'required': False,
         },
         {
@@ -360,6 +425,26 @@ def run_setup_wizard() -> bool:
     if answers.get('location') and answers['location'].strip():
         profile_data['location'] = answers['location'].strip()
 
+    if answers.get('arrangement') and answers['arrangement'].strip():
+        arrangement_list = [s.strip().lower() for s in answers['arrangement'].split(',') if s.strip()]
+        if arrangement_list:
+            profile_data['arrangement'] = arrangement_list
+
+    if answers.get('domain_expertise') and answers['domain_expertise'].strip():
+        domain_list = [s.strip() for s in answers['domain_expertise'].split(',') if s.strip()]
+        if domain_list:
+            profile_data['domain_expertise'] = domain_list
+
+    if answers.get('comp_floor') and answers['comp_floor'].strip():
+        comp_text = answers['comp_floor'].strip()
+        # Parse compensation (handle $, commas, k suffix)
+        cleaned = comp_text.replace(',', '').replace('$', '').strip()
+        if cleaned.lower().endswith('k'):
+            comp_value = int(float(cleaned[:-1]) * 1000)
+        else:
+            comp_value = int(float(cleaned))
+        profile_data['comp_floor'] = comp_value
+
     if answers.get('dealbreakers') and answers['dealbreakers'].strip():
         dealbreakers_list = [s.strip() for s in answers['dealbreakers'].split(',') if s.strip()]
         if dealbreakers_list:
@@ -385,6 +470,20 @@ def run_setup_wizard() -> bool:
         print(f"   Titles: {', '.join(profile_data['target_titles'])}")
         print(f"   Skills: {', '.join(profile_data['core_skills'])}")
         print(f"   Location: {profile_data.get('location', '(not set)')}")
+
+        arrangement_display = profile_data.get('arrangement')
+        if arrangement_display:
+            print(f"   Arrangement: {', '.join(arrangement_display)}")
+        else:
+            print(f"   Arrangement: (not set)")
+
+        domain_display = profile_data.get('domain_expertise')
+        if domain_display:
+            print(f"   Industries: {', '.join(domain_display)}")
+
+        comp_display = profile_data.get('comp_floor')
+        if comp_display:
+            print(f"   Min Compensation: ${comp_display:,}")
 
         dealbreakers_display = profile_data.get('dealbreakers')
         if dealbreakers_display:
@@ -422,6 +521,9 @@ def run_setup_wizard() -> bool:
             f"Titles ({', '.join(profile_data['target_titles'])})",
             f"Skills ({', '.join(profile_data['core_skills'])})",
             f"Location ({profile_data.get('location', '(not set)')})",
+            f"Arrangement ({', '.join(profile_data.get('arrangement', [])) or '(not set)'})",
+            f"Industries ({', '.join(profile_data.get('domain_expertise', [])) or '(not set)'})",
+            f"Min Compensation ({'$' + f\"{profile_data['comp_floor']:,}\" if profile_data.get('comp_floor') else '(not set)'})",
             f"Dealbreakers ({', '.join(profile_data.get('dealbreakers', [])) or '(not set)'})",
             f"Minimum Score ({config_data['min_score']})",
             f"New Jobs Only ({'Yes' if config_data['new_only'] else 'No'})",
@@ -498,6 +600,60 @@ def run_setup_wizard() -> bool:
                     profile_data['location'] = new_val.strip()
                 elif 'location' in profile_data:
                     del profile_data['location']
+
+        elif field_to_edit.startswith("Arrangement"):
+            current_arrangement = profile_data.get('arrangement', [])
+            new_val = questionary.text(
+                "Work arrangement preference (optional):",
+                default=', '.join(current_arrangement) if current_arrangement else '',
+                style=custom_style
+            ).ask()
+            if new_val is not None:
+                if new_val.strip():
+                    arrangement_list = [s.strip().lower() for s in new_val.split(',') if s.strip()]
+                    if arrangement_list:
+                        profile_data['arrangement'] = arrangement_list
+                    elif 'arrangement' in profile_data:
+                        del profile_data['arrangement']
+                elif 'arrangement' in profile_data:
+                    del profile_data['arrangement']
+
+        elif field_to_edit.startswith("Industries"):
+            current_industries = profile_data.get('domain_expertise', [])
+            new_val = questionary.text(
+                "Industry/domain expertise (optional):",
+                default=', '.join(current_industries) if current_industries else '',
+                style=custom_style
+            ).ask()
+            if new_val is not None:
+                if new_val.strip():
+                    domain_list = [s.strip() for s in new_val.split(',') if s.strip()]
+                    if domain_list:
+                        profile_data['domain_expertise'] = domain_list
+                    elif 'domain_expertise' in profile_data:
+                        del profile_data['domain_expertise']
+                elif 'domain_expertise' in profile_data:
+                    del profile_data['domain_expertise']
+
+        elif field_to_edit.startswith("Min Compensation"):
+            current_comp = profile_data.get('comp_floor')
+            new_val = questionary.text(
+                "Minimum compensation (optional):",
+                default=str(current_comp) if current_comp else '',
+                validate=CompensationValidator(),
+                style=custom_style
+            ).ask()
+            if new_val is not None:
+                if new_val.strip():
+                    comp_text = new_val.strip()
+                    cleaned = comp_text.replace(',', '').replace('$', '').strip()
+                    if cleaned.lower().endswith('k'):
+                        comp_value = int(float(cleaned[:-1]) * 1000)
+                    else:
+                        comp_value = int(float(cleaned))
+                    profile_data['comp_floor'] = comp_value
+                elif 'comp_floor' in profile_data:
+                    del profile_data['comp_floor']
 
         elif field_to_edit.startswith("Dealbreakers"):
             current_dealbreakers = profile_data.get('dealbreakers', [])
