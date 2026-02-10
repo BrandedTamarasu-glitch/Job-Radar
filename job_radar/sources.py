@@ -14,6 +14,7 @@ from bs4 import BeautifulSoup
 from .cache import fetch_with_retry
 from .api_config import get_api_key
 from .rate_limits import check_rate_limit
+from .deduplication import deduplicate_cross_source
 
 log = logging.getLogger(__name__)
 
@@ -1098,11 +1099,30 @@ def build_search_queries(profile: dict) -> list[dict]:
             "query": title,
         })
 
+    # Adzuna queries: each target title (same pattern as Dice)
+    for title in titles:
+        queries.append({
+            "source": "adzuna",
+            "query": title,
+            "location": location,
+        })
+
+    # Authentic Jobs queries: top 2 target titles
+    for title in titles[:2]:
+        queries.append({
+            "source": "authentic_jobs",
+            "query": title,
+            "location": location,
+        })
+
     return queries
 
 
 def fetch_all(profile: dict, on_progress=None, on_source_progress=None) -> list[JobResult]:
-    """Fetch from all automated sources in parallel.
+    """Fetch from all automated sources with sequential scraper-then-API flow.
+
+    Runs scrapers first (Dice, HN Hiring, RemoteOK, WWR), then APIs (Adzuna, Authentic Jobs).
+    All results are deduplicated using cross-source fuzzy matching.
 
     Args:
         profile: Candidate profile dict.
@@ -1112,6 +1132,14 @@ def fetch_all(profile: dict, on_progress=None, on_source_progress=None) -> list[
                            called when a source starts ('started') or finishes ('complete').
     """
     queries = build_search_queries(profile)
+
+    # Split queries into scraper and API groups
+    SCRAPER_SOURCES = {"dice", "hn_hiring", "remoteok", "weworkremotely"}
+    API_SOURCES = {"adzuna", "authentic_jobs"}
+
+    scraper_queries = [q for q in queries if q["source"] in SCRAPER_SOURCES]
+    api_queries = [q for q in queries if q["source"] in API_SOURCES]
+
     all_results = []
     seen = set()
     total = len(queries)
@@ -1137,47 +1165,76 @@ def fetch_all(profile: dict, on_progress=None, on_source_progress=None) -> list[
             return fetch_remoteok(q["query"])
         elif q["source"] == "weworkremotely":
             return fetch_weworkremotely(q["query"])
+        elif q["source"] == "adzuna":
+            return fetch_adzuna(q["query"], q.get("location", ""))
+        elif q["source"] == "authentic_jobs":
+            return fetch_authenticjobs(q["query"], q.get("location", ""))
         return []
 
-    log.info("Running %d search queries in parallel...", len(queries))
-    with ThreadPoolExecutor(max_workers=6) as executor:
-        # Submit queries grouped by source — fire START callback before each source's queries
-        futures = {}
-        started_sources = set()
-        for q in queries:
-            source = q["source"]
-            if source not in started_sources:
-                started_sources.add(source)
-                sources_started += 1
-                if on_source_progress:
-                    display_name = _SOURCE_DISPLAY_NAMES.get(source, source)
-                    on_source_progress(display_name, sources_started, total_sources, "started")
-            futures[executor.submit(run_query, q)] = q
+    def _run_queries_parallel(query_list, phase_name):
+        """Helper to run queries in parallel and collect results."""
+        nonlocal completed, sources_started, sources_done
+        phase_results = []
 
-        # Process results as they complete — fire COMPLETE callback when source finishes
-        for future in as_completed(futures):
-            q = futures[future]
-            completed += 1
-            try:
-                results = future.result()
-                for r in results:
-                    key = (r.title.lower().strip(), r.company.lower().strip())
-                    if key not in seen:
-                        seen.add(key)
-                        all_results.append(r)
-            except Exception as e:
-                log.error("Query failed (%s): %s", q, e)
-            if on_progress:
-                on_progress(completed, total, q["source"])
+        with ThreadPoolExecutor(max_workers=6) as executor:
+            # Submit queries grouped by source — fire START callback before each source's queries
+            futures = {}
+            started_sources_in_phase = set()
+            for q in query_list:
+                source = q["source"]
+                if source not in started_sources_in_phase:
+                    started_sources_in_phase.add(source)
+                    sources_started += 1
+                    if on_source_progress:
+                        display_name = _SOURCE_DISPLAY_NAMES.get(source, source)
+                        on_source_progress(display_name, sources_started, total_sources, "started")
+                futures[executor.submit(run_query, q)] = q
 
-            # Source-level completion tracking
-            source = q["source"]
-            source_completed[source] += 1
-            if source_completed[source] == source_query_counts[source]:
-                sources_done += 1
-                if on_source_progress:
-                    display_name = _SOURCE_DISPLAY_NAMES.get(source, source)
-                    on_source_progress(display_name, sources_done, total_sources, "complete")
+            # Process results as they complete — fire COMPLETE callback when source finishes
+            for future in as_completed(futures):
+                q = futures[future]
+                completed += 1
+                try:
+                    results = future.result()
+                    for r in results:
+                        key = (r.title.lower().strip(), r.company.lower().strip())
+                        if key not in seen:
+                            seen.add(key)
+                            phase_results.append(r)
+                except Exception as e:
+                    log.error("Query failed (%s): %s", q, e)
+                if on_progress:
+                    on_progress(completed, total, q["source"])
 
-    log.info("Total unique results: %d", len(all_results))
+                # Source-level completion tracking
+                source = q["source"]
+                source_completed[source] += 1
+                if source_completed[source] == source_query_counts[source]:
+                    sources_done += 1
+                    if on_source_progress:
+                        display_name = _SOURCE_DISPLAY_NAMES.get(source, source)
+                        on_source_progress(display_name, sources_done, total_sources, "complete")
+
+        return phase_results
+
+    log.info("Running %d search queries in sequential phases...", len(queries))
+
+    # Phase 1: Scrapers
+    if scraper_queries:
+        log.debug("Phase 1: Running %d scraper queries", len(scraper_queries))
+        scraper_results = _run_queries_parallel(scraper_queries, "scraper")
+        all_results.extend(scraper_results)
+
+    # Phase 2: APIs
+    if api_queries:
+        log.debug("Phase 2: Running %d API queries", len(api_queries))
+        api_results = _run_queries_parallel(api_queries, "api")
+        all_results.extend(api_results)
+
+    log.info("Total results before deduplication: %d", len(all_results))
+
+    # Cross-source deduplication
+    all_results = deduplicate_cross_source(all_results)
+
+    log.info("Total unique results after deduplication: %d", len(all_results))
     return all_results
