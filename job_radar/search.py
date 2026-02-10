@@ -592,8 +592,8 @@ def main():
     print(f"{'='*60}{C.RESET}")
     print(f"  Total results:      {report_stats['total']}")
     print(f"  New this run:       {C.GREEN}{report_stats['new']}{C.RESET}")
-    print(f"  Recommended (3.5+): {C.YELLOW}{report_stats['recommended']}{C.RESET}")
-    print(f"  Strong (4.0+):      {C.GREEN}{report_stats['strong']}{C.RESET}")
+    print(f"  Recommended (3.5+): {C.YELLOW}{len(recommended)}{C.RESET}")
+    print(f"  Strong (4.0+):      {C.GREEN}{len(strong)}{C.RESET}")
     if dealbreaker_count:
         print(f"  Dealbreakers:       {C.RED}{dealbreaker_count}{C.RESET}")
     print(f"\n  Report (HTML):      {html_path}")
