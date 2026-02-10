@@ -536,11 +536,20 @@ def main():
     # Step 1: Fetch
     print(f"{C.BOLD}Step 1:{C.RESET} Fetching job listings...")
 
-    def _on_fetch_progress(done, total, source):
-        # Clear line and print progress (carriage return overwrites previous)
-        print(f"\r  Fetching... {done}/{total} queries complete", end="", flush=True)
-        if done == total:
-            print()  # newline after final progress
+    def _on_source_progress(source_name, count, total, status):
+        """Display source-level progress — plain text, one line per event.
+
+        Called TWICE per source:
+        - status='started': prints "Fetching {source}... (N/M)" when source begins
+        - status='complete': prints "{source} complete" when source finishes
+
+        This provides real-time feedback: users see "Fetching..." the moment
+        a source starts, not after it's already done.
+        """
+        if status == "started":
+            print(f"  Fetching {source_name}... ({count}/{total})", flush=True)
+        elif status == "complete":
+            print(f"  {source_name} complete", flush=True)
 
     # Temporarily suppress fetch-level log output so it doesn't interleave with progress
     fetch_loggers = [logging.getLogger(n) for n in ("sources", "cache")]
@@ -549,7 +558,13 @@ def main():
         for l in fetch_loggers:
             l.setLevel(logging.WARNING)
 
-    all_results = fetch_all(profile, on_progress=_on_fetch_progress)
+    try:
+        all_results = fetch_all(profile, on_source_progress=_on_source_progress)
+    except Exception as e:
+        print("\nCouldn't fetch job listings — check your internet connection")
+        from .banner import log_error_to_file
+        log_error_to_file(f"Fetch failed: {e}", exception=e)
+        sys.exit(1)
 
     for l, prev in zip(fetch_loggers, prev_levels):
         l.setLevel(prev)
@@ -591,13 +606,19 @@ def main():
         scored = [r for r in scored if r["score"]["overall"] >= args.min_score]
         print(f"  {C.DIM}--min-score {args.min_score}: {before - len(scored)} results below threshold{C.RESET}")
 
+    # Check for zero results after scoring
+    min_score = args.min_score if args.min_score is not None else 2.8
+    if not scored:
+        print(f"\n  No matches found — try broadening your skills or lowering min_score")
+        print(f"  Current min_score: {min_score}")
+        # Continue to generate report (includes manual check URLs)
+
     # Step 5: Generate report
     manual_urls = generate_manual_urls(profile)
     sources_searched = list({r["job"].source for r in scored}) if scored else ["Dice", "HN Hiring", "RemoteOK", "WWR"]
     tracker_stats = get_stats()
 
     print(f"\n{C.BOLD}Step 5:{C.RESET} Generating report...")
-    min_score = args.min_score if args.min_score is not None else 2.8
 
     try:
         report_result = generate_report(
@@ -612,7 +633,10 @@ def main():
             min_score=min_score,
         )
     except Exception as e:
-        print(f"\n{C.RED}Error: Report generation failed: {e}{C.RESET}")
+        print(f"\nReport generation failed — your results were found but couldn't be saved")
+        print(f"Try running again or check available disk space")
+        from .banner import log_error_to_file
+        log_error_to_file(f"Report generation failed: {e}", exception=e)
         sys.exit(1)
 
     # Extract paths and stats from report result
