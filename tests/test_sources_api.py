@@ -9,6 +9,9 @@ from job_radar.sources import (
     fetch_adzuna,
     fetch_authenticjobs,
     build_search_queries,
+    generate_wellfound_url,
+    _slugify_for_wellfound,
+    generate_manual_urls,
     JobResult,
 )
 
@@ -397,3 +400,100 @@ def test_build_search_queries_authentic_jobs_uses_top_2_titles():
     assert "UX Designer" in query_titles
     assert "Product Designer" in query_titles
     assert "UI Designer" not in query_titles  # 3rd title not included
+
+
+# ==============================================================================
+# Wellfound URL Generator Tests
+# ==============================================================================
+
+def test_generate_wellfound_url_with_location():
+    """Location-based URL uses /role/l/ pattern."""
+    url = generate_wellfound_url("Software Engineer", "San Francisco, CA")
+
+    assert url == "https://wellfound.com/role/l/software-engineer/san-francisco-ca"
+
+
+def test_generate_wellfound_url_remote():
+    """Remote URL uses /role/r/ pattern."""
+    url = generate_wellfound_url("Backend Developer", "Remote")
+
+    assert url == "https://wellfound.com/role/r/backend-developer"
+
+
+def test_generate_wellfound_url_remote_case_insensitive():
+    """Remote detection is case-insensitive."""
+    url = generate_wellfound_url("Frontend Engineer", "remote - US")
+
+    assert url.startswith("https://wellfound.com/role/r/")
+    assert url == "https://wellfound.com/role/r/frontend-engineer"
+
+
+def test_generate_wellfound_url_slug_special_chars():
+    """Slug handles special characters and preserves hyphens."""
+    url = generate_wellfound_url("Senior Full-Stack Engineer", "New York, NY")
+
+    assert "senior-full-stack-engineer" in url
+    assert "new-york-ny" in url
+    assert url == "https://wellfound.com/role/l/senior-full-stack-engineer/new-york-ny"
+
+
+@pytest.mark.parametrize("text,expected", [
+    ("", ""),
+    ("  spaces  ", "spaces"),
+    ("Multiple   Spaces", "multiple-spaces"),
+    ("Already-Hyphenated", "already-hyphenated"),
+    ("San Francisco, CA", "san-francisco-ca"),
+    ("Senior Full-Stack Developer", "senior-full-stack-developer"),
+])
+def test_slugify_for_wellfound_edge_cases(text, expected):
+    """Slugifier handles edge cases correctly."""
+    assert _slugify_for_wellfound(text) == expected
+
+
+def test_generate_manual_urls_includes_wellfound():
+    """Wellfound appears in generate_manual_urls() output."""
+    profile = {
+        "target_titles": ["Software Engineer"],
+        "target_market": "Remote",
+    }
+
+    urls = generate_manual_urls(profile)
+
+    sources = [u["source"] for u in urls]
+    assert "Wellfound" in sources
+
+    wellfound_urls = [u for u in urls if u["source"] == "Wellfound"]
+    assert len(wellfound_urls) > 0
+    assert "wellfound.com" in wellfound_urls[0]["url"]
+
+
+def test_generate_manual_urls_wellfound_first():
+    """Wellfound appears BEFORE Indeed in manual URL list."""
+    profile = {
+        "target_titles": ["Developer"],
+        "target_market": "NYC",
+    }
+
+    urls = generate_manual_urls(profile)
+
+    sources = [u["source"] for u in urls]
+    wellfound_idx = sources.index("Wellfound")
+    indeed_idx = sources.index("Indeed")
+
+    assert wellfound_idx < indeed_idx
+
+
+def test_generate_manual_urls_wellfound_uses_first_three_titles():
+    """Wellfound URLs limited to first 3 titles."""
+    profile = {
+        "target_titles": ["A", "B", "C", "D", "E"],
+        "target_market": "Remote",
+    }
+
+    urls = generate_manual_urls(profile)
+
+    wellfound_urls = [u for u in urls if u["source"] == "Wellfound"]
+    assert len(wellfound_urls) == 3
+
+    titles = {u["title"] for u in wellfound_urls}
+    assert titles == {"A", "B", "C"}
