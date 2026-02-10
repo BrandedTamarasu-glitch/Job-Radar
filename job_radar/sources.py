@@ -12,6 +12,8 @@ from datetime import date
 from bs4 import BeautifulSoup
 
 from .cache import fetch_with_retry
+from .api_config import get_api_key
+from .rate_limits import check_rate_limit
 
 log = logging.getLogger(__name__)
 
@@ -672,6 +674,272 @@ def fetch_weworkremotely(query: str) -> list[JobResult]:
 
     log.info("[WWR] Found %d results for '%s'", len(results), query)
     return results
+
+
+# ---------------------------------------------------------------------------
+# Adzuna API fetcher
+# ---------------------------------------------------------------------------
+
+def fetch_adzuna(query: str, location: str = "", verbose: bool = False) -> list[JobResult]:
+    """Fetch job listings from Adzuna API."""
+    results = []
+
+    # Check credentials
+    app_id = get_api_key("ADZUNA_APP_ID", "Adzuna")
+    app_key = get_api_key("ADZUNA_APP_KEY", "Adzuna")
+    if not app_id or not app_key:
+        return results
+
+    # Check rate limit
+    if not check_rate_limit("adzuna", verbose=verbose):
+        return results
+
+    # Build API URL
+    params = {
+        "app_id": app_id,
+        "app_key": app_key,
+        "what": query,
+        "results_per_page": "50",
+    }
+    if location:
+        params["where"] = location
+
+    url = "https://api.adzuna.com/v1/api/jobs/us/search/1?" + urllib.parse.urlencode(params)
+
+    # Fetch with retry
+    try:
+        body = fetch_with_retry(url, headers=HEADERS, use_cache=True)
+        if body is None:
+            log.debug("[Adzuna] Fetch failed for '%s'", query)
+            return results
+
+        data = _json.loads(body)
+        items = data.get("results", [])
+
+        for item in items:
+            job = map_adzuna_to_job_result(item)
+            if job:
+                results.append(job)
+
+    except _json.JSONDecodeError as e:
+        log.debug("[Adzuna] JSON parse error: %s", e)
+    except Exception as e:
+        # Check for HTTPError-like exceptions
+        error_str = str(e).lower()
+        if "401" in error_str or "403" in error_str or "unauthorized" in error_str:
+            log.error("[Adzuna] Authentication failed - run 'job-radar --setup-apis' to reconfigure")
+        else:
+            log.debug("[Adzuna] Request failed: %s", e)
+
+    log.info("[Adzuna] Found %d results for '%s'", len(results), query)
+    return results
+
+
+def map_adzuna_to_job_result(item: dict) -> JobResult | None:
+    """Map Adzuna API response item to JobResult.
+
+    Validates required fields (title, company, url) and returns None if any are missing.
+    """
+    # Extract and validate required fields
+    title = item.get("title", "").strip()
+    company = item.get("company", {}).get("display_name", "").strip()
+    url = item.get("redirect_url", "").strip()
+
+    if not title or not company or not url:
+        log.debug("[Adzuna] Skipping job with missing required fields: title=%s, company=%s, url=%s",
+                 bool(title), bool(company), bool(url))
+        return None
+
+    # Location normalization
+    location_raw = item.get("location", {}).get("display_name", "")
+    location = parse_location_to_city_state(location_raw)
+
+    # Salary fields
+    salary_min = item.get("salary_min")
+    salary_max = item.get("salary_max")
+    salary_currency = "USD"  # Adzuna US endpoint
+
+    # Format salary string for backward compatibility
+    if salary_min and salary_max:
+        salary = f"${salary_min:,.0f} - ${salary_max:,.0f}"
+    elif salary_min:
+        salary = f"${salary_min:,.0f}+"
+    else:
+        salary = "Not specified"
+
+    # Description cleaning
+    description_raw = item.get("description", "")
+    description = strip_html_and_normalize(description_raw)
+    if len(description) > 500:
+        description = description[:497] + "..."
+
+    # Arrangement detection
+    arrangement = _parse_arrangement(f"{title} {description}")
+
+    # Employment type mapping
+    contract_type = item.get("contract_type", "").lower()
+    contract_time = item.get("contract_time", "").lower()
+    emp_type = ""
+    if "permanent" in contract_type:
+        emp_type = "Permanent"
+    if "full_time" in contract_time or "full-time" in contract_time:
+        emp_type = "Full-time" if not emp_type else f"{emp_type}, Full-time"
+
+    # Date posted
+    date_posted = item.get("created", "")
+
+    return JobResult(
+        title=_clean_field(title, _MAX_TITLE),
+        company=_clean_field(company, _MAX_COMPANY),
+        location=_clean_field(location, _MAX_LOCATION),
+        arrangement=arrangement,
+        salary=salary,
+        date_posted=date_posted,
+        description=description,
+        url=url,
+        source="adzuna",
+        employment_type=emp_type,
+        parse_confidence="high",
+        salary_min=salary_min,
+        salary_max=salary_max,
+        salary_currency=salary_currency,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Authentic Jobs API fetcher
+# ---------------------------------------------------------------------------
+
+def fetch_authenticjobs(query: str, location: str = "", verbose: bool = False) -> list[JobResult]:
+    """Fetch job listings from Authentic Jobs API."""
+    results = []
+
+    # Check credentials
+    api_key = get_api_key("AUTHENTIC_JOBS_API_KEY", "Authentic Jobs")
+    if not api_key:
+        return results
+
+    # Check rate limit
+    if not check_rate_limit("authentic_jobs", verbose=verbose):
+        return results
+
+    # Build API URL
+    params = {
+        "api_key": api_key,
+        "method": "aj.jobs.search",
+        "format": "json",
+        "keywords": query,
+        "perpage": "50",
+    }
+    if location:
+        params["location"] = location
+
+    url = "https://authenticjobs.com/api/?" + urllib.parse.urlencode(params)
+
+    # Fetch with retry
+    try:
+        body = fetch_with_retry(url, headers=HEADERS, use_cache=True)
+        if body is None:
+            log.debug("[Authentic Jobs] Fetch failed for '%s'", query)
+            return results
+
+        data = _json.loads(body)
+
+        # Handle response structure - may have listings.listing as array or single dict
+        listings = data.get("listings", {}).get("listing", [])
+        if isinstance(listings, dict):
+            listings = [listings]
+        elif not isinstance(listings, list):
+            listings = []
+
+        for item in listings:
+            job = map_authenticjobs_to_job_result(item)
+            if job:
+                results.append(job)
+
+    except _json.JSONDecodeError as e:
+        log.debug("[Authentic Jobs] JSON parse error: %s", e)
+    except Exception as e:
+        # Check for HTTPError-like exceptions
+        error_str = str(e).lower()
+        if "401" in error_str or "403" in error_str or "unauthorized" in error_str:
+            log.error("[Authentic Jobs] Authentication failed - run 'job-radar --setup-apis' to reconfigure")
+        else:
+            log.debug("[Authentic Jobs] Request failed: %s", e)
+
+    log.info("[Authentic Jobs] Found %d results for '%s'", len(results), query)
+    return results
+
+
+def map_authenticjobs_to_job_result(item: dict) -> JobResult | None:
+    """Map Authentic Jobs API response item to JobResult.
+
+    Validates required fields (title, company, url) and returns None if any are missing.
+    Defensive implementation for unclear API structure per RESEARCH.md.
+    """
+    # Extract and validate required fields
+    title = item.get("title", "").strip()
+
+    # Company may be nested or at top level
+    company_raw = item.get("company", {})
+    if isinstance(company_raw, dict):
+        company = company_raw.get("name", "").strip()
+    else:
+        company = str(company_raw).strip() if company_raw else ""
+
+    # Try both url and apply_url
+    url = item.get("url", "").strip() or item.get("apply_url", "").strip()
+
+    if not title or not company or not url:
+        log.debug("[Authentic Jobs] Skipping job with missing required fields: title=%s, company=%s, url=%s",
+                 bool(title), bool(company), bool(url))
+        return None
+
+    # Location normalization (defensive nested access)
+    location_raw = ""
+    if isinstance(company_raw, dict):
+        location_obj = company_raw.get("location", {})
+        if isinstance(location_obj, dict):
+            location_raw = location_obj.get("name", "")
+        elif location_obj:
+            location_raw = str(location_obj)
+    location = parse_location_to_city_state(location_raw)
+
+    # Salary - typically not available from Authentic Jobs
+    salary = "Not specified"
+
+    # Description cleaning
+    description_raw = item.get("description", "")
+    description = strip_html_and_normalize(description_raw)
+    if len(description) > 500:
+        description = description[:497] + "..."
+
+    # Arrangement detection
+    arrangement = _parse_arrangement(f"{title} {description}")
+
+    # Employment type (defensive access)
+    emp_type_obj = item.get("type", {})
+    if isinstance(emp_type_obj, dict):
+        emp_type = emp_type_obj.get("name", "")
+    else:
+        emp_type = str(emp_type_obj) if emp_type_obj else ""
+
+    # Date posted
+    date_posted = item.get("post_date", "")
+
+    return JobResult(
+        title=_clean_field(title, _MAX_TITLE),
+        company=_clean_field(company, _MAX_COMPANY),
+        location=_clean_field(location, _MAX_LOCATION),
+        arrangement=arrangement,
+        salary=salary,
+        date_posted=date_posted,
+        description=description,
+        url=url,
+        source="authentic_jobs",
+        employment_type=emp_type,
+        parse_confidence="high",
+    )
 
 
 # ---------------------------------------------------------------------------
