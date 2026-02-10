@@ -37,9 +37,25 @@ Download the latest release for your platform from the [GitHub Releases page](ht
 1. Download `job-radar-vX.X.X-macos.zip` from the Releases page
 2. Double-click the ZIP file to extract it
 3. Drag `JobRadar.app` to your Applications folder (optional but recommended)
-4. Right-click the app and select "Open" (required on first launch)
-5. Click "Open" in the security dialog that appears
-6. The setup wizard will guide you through creating your profile
+
+**Bypassing Gatekeeper (required for unsigned apps):**
+
+macOS will block the app because it's unsigned. Choose **either** method:
+
+**Method 1: Remove quarantine attribute (recommended)**
+```bash
+xattr -d com.apple.quarantine /Applications/JobRadar.app
+```
+After running this command, double-click the app normally.
+
+**Method 2: Right-click → Open**
+1. Right-click (or Control+click) `JobRadar.app`
+2. Select "Open" from the menu
+3. If you see "Move to Trash" and "Cancel", close the dialog
+4. Right-click → Open **again** - this time you'll see an "Open" button
+5. Click "Open"
+
+After first successful launch, the app will open normally going forward.
 
 ### Linux
 
