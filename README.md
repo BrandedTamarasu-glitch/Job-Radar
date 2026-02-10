@@ -52,12 +52,12 @@ xattr -d com.apple.quarantine /Applications/JobRadar.app
 Job Radar is a command-line tool, so it needs to run in Terminal:
 
 ```bash
-/Applications/JobRadar.app/Contents/MacOS/JobRadar
+/Applications/JobRadar.app/Contents/MacOS/job-radar
 ```
 
 **Optional: Create an alias** for easier access:
 ```bash
-echo 'alias job-radar="/Applications/JobRadar.app/Contents/MacOS/JobRadar"' >> ~/.zshrc
+echo 'alias job-radar="/Applications/JobRadar.app/Contents/MacOS/job-radar"' >> ~/.zshrc
 source ~/.zshrc
 ```
 
