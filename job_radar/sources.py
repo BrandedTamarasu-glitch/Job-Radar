@@ -947,6 +947,70 @@ def map_authenticjobs_to_job_result(item: dict) -> JobResult | None:
 # Manual-check URL generators
 # ---------------------------------------------------------------------------
 
+def _slugify_for_wellfound(text: str) -> str:
+    """Convert text to Wellfound URL slug format.
+
+    Wellfound uses lowercase, hyphen-separated slugs in URL paths.
+
+    Examples:
+        "Software Engineer" -> "software-engineer"
+        "San Francisco, CA" -> "san-francisco-ca"
+        "Senior Full-Stack Developer" -> "senior-full-stack-developer"
+
+    Args:
+        text: Text to slugify (job title or location)
+
+    Returns:
+        URL-safe slug (lowercase, hyphens, alphanumeric only)
+    """
+    # Lowercase and strip whitespace
+    slug = text.lower().strip()
+    # Remove commas (for locations like "San Francisco, CA")
+    slug = slug.replace(",", "")
+    # Replace spaces with hyphens
+    slug = slug.replace(" ", "-")
+    # Filter to alphanumeric + hyphens only
+    slug = "".join(c for c in slug if c.isalnum() or c == "-")
+    # Collapse consecutive hyphens
+    while "--" in slug:
+        slug = slug.replace("--", "-")
+    # Strip leading/trailing hyphens
+    return slug.strip("-")
+
+
+def generate_wellfound_url(title: str, location: str) -> str:
+    """Generate a Wellfound search URL with role and optional location.
+
+    Wellfound (formerly AngelList Talent) specializes in startup jobs and
+    equity-heavy roles. URL patterns:
+    - Remote only: https://wellfound.com/role/r/{role-slug}
+    - Role + location: https://wellfound.com/role/l/{role-slug}/{location-slug}
+
+    Examples:
+        generate_wellfound_url("Software Engineer", "Remote")
+        -> "https://wellfound.com/role/r/software-engineer"
+
+        generate_wellfound_url("Backend Developer", "San Francisco, CA")
+        -> "https://wellfound.com/role/l/backend-developer/san-francisco-ca"
+
+    Args:
+        title: Job title (e.g., "Software Engineer")
+        location: Location string (e.g., "San Francisco, CA" or "Remote")
+
+    Returns:
+        Wellfound search URL (no validation performed)
+    """
+    role_slug = _slugify_for_wellfound(title)
+
+    # Remote detection (case-insensitive)
+    if "remote" in location.lower():
+        return f"https://wellfound.com/role/r/{role_slug}"
+
+    # Location-specific URL
+    location_slug = _slugify_for_wellfound(location)
+    return f"https://wellfound.com/role/l/{role_slug}/{location_slug}"
+
+
 def generate_indeed_url(title: str, location: str, from_days: int = 3) -> str:
     """Generate an Indeed search URL with filters."""
     params = {
@@ -994,6 +1058,7 @@ def generate_manual_urls(profile: dict) -> list[dict]:
     location = profile.get("target_market", profile.get("location", ""))
 
     generators = [
+        ("Wellfound", generate_wellfound_url),
         ("Indeed", generate_indeed_url),
         ("LinkedIn", generate_linkedin_url),
         ("Glassdoor", generate_glassdoor_url),
