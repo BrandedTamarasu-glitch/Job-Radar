@@ -12,6 +12,7 @@ dependencies = ["requests", "beautifulsoup4", "platformdirs>=4.0", "pyfiglet", "
 
 [project.optional-dependencies]
 dev = ["pytest>=9.0", "pytest-mock"]
+build = ["pyinstaller", "pillow"]  # pillow for Windows icon conversion
 
 [tool.setuptools]
 packages = ["job_radar"]
