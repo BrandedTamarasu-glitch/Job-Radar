@@ -10,6 +10,9 @@ requires-python = ">=3.10"
 license = "MIT"
 dependencies = ["requests", "beautifulsoup4", "platformdirs>=4.0", "pyfiglet", "colorama", "certifi", "questionary"]
 
+[project.optional-dependencies]
+dev = ["pytest>=9.0", "pytest-mock"]
+
 [tool.setuptools]
 packages = ["job_radar"]
 
