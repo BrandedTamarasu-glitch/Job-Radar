@@ -42,20 +42,26 @@ Download the latest release for your platform from the [GitHub Releases page](ht
 
 macOS will block the app because it's unsigned. Choose **either** method:
 
-**Method 1: Remove quarantine attribute (recommended)**
+**Remove quarantine attribute:**
 ```bash
 xattr -d com.apple.quarantine /Applications/JobRadar.app
 ```
-After running this command, double-click the app normally.
 
-**Method 2: Right-click → Open**
-1. Right-click (or Control+click) `JobRadar.app`
-2. Select "Open" from the menu
-3. If you see "Move to Trash" and "Cancel", close the dialog
-4. Right-click → Open **again** - this time you'll see an "Open" button
-5. Click "Open"
+**Run from Terminal:**
 
-After first successful launch, the app will open normally going forward.
+Job Radar is a command-line tool, so it needs to run in Terminal:
+
+```bash
+/Applications/JobRadar.app/Contents/MacOS/JobRadar
+```
+
+**Optional: Create an alias** for easier access:
+```bash
+echo 'alias job-radar="/Applications/JobRadar.app/Contents/MacOS/JobRadar"' >> ~/.zshrc
+source ~/.zshrc
+```
+
+Then you can just type `job-radar` to run it.
 
 ### Linux
 
