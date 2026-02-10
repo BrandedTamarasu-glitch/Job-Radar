@@ -1,0 +1,109 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    name: Test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install pytest
+
+      - name: Run tests
+        run: pytest tests/
+
+  build:
+    name: Build on ${{ matrix.os }}
+    needs: test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            archive_name: job-radar-${{ github.ref_name }}-linux.tar.gz
+          - os: windows-latest
+            platform: windows
+            archive_name: job-radar-${{ github.ref_name }}-windows.zip
+          - os: macos-latest
+            platform: macos
+            archive_name: job-radar-${{ github.ref_name }}-macos.zip
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+          pip install -e .
+
+      - name: Build with PyInstaller
+        run: pyinstaller job-radar.spec --clean
+
+      - name: Create archive (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          cd dist
+          tar -czf ../job-radar-${{ github.ref_name }}-linux.tar.gz job-radar/
+
+      - name: Create archive (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          cd dist
+          Compress-Archive -Path job-radar -DestinationPath ..\job-radar-${{ github.ref_name }}-windows.zip
+
+      - name: Create archive (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          cd dist
+          zip -r ../job-radar-${{ github.ref_name }}-macos.zip JobRadar.app
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: job-radar-${{ matrix.platform }}
+          path: job-radar-${{ github.ref_name }}-*
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            job-radar-*/job-radar-${{ github.ref_name }}-*
