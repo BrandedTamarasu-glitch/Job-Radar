@@ -80,6 +80,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon='icon.png' if sys.platform == 'win32' else None,  # Windows uses .ico (converted by PyInstaller)
 )
 
 coll = COLLECT(
@@ -98,7 +99,7 @@ if sys.platform == 'darwin':
     app = BUNDLE(
         coll,
         name='JobRadar.app',
-        icon=None,
+        icon='icon.icns',
         bundle_identifier='com.jobradar.app',
         info_plist={
             'NSHighResolutionCapable': 'True',

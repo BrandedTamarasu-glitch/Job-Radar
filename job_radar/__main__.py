@@ -66,7 +66,7 @@ def main():
         from job_radar import __version__
         display_banner(version=__version__, profile_name=profile_name)
 
-        # First-run setup wizard (skip if --no-wizard flag present)
+        # Profile management (skip if --no-wizard flag present)
         import argparse as _argparse
         _pre = _argparse.ArgumentParser(add_help=False)
         _pre.add_argument("--no-wizard", action="store_true")
@@ -75,13 +75,49 @@ def main():
         if not _pre_args.no_wizard:
             try:
                 from job_radar.wizard import is_first_run, run_setup_wizard
+
                 if is_first_run():
+                    # First run: Run wizard
                     print("\nWelcome to Job Radar!")
                     print("Let's set up your profile before your first search.\n")
                     if not run_setup_wizard():
                         print("\nSetup cancelled. Run again when you're ready!")
                         sys.exit(0)
                     print()  # Blank line before search starts
+                else:
+                    # Profile exists: Ask what to do
+                    try:
+                        import questionary
+                        print()  # Blank line after banner
+                        choice = questionary.select(
+                            "What would you like to do?",
+                            choices=[
+                                "Run search with current profile",
+                                "Update existing profile",
+                                "Create new profile"
+                            ]
+                        ).ask()
+
+                        if choice == "Update existing profile":
+                            print("\nUpdating your profile...\n")
+                            if not run_setup_wizard():
+                                print("\nUpdate cancelled. Exiting.")
+                                sys.exit(0)
+                            print()
+                        elif choice == "Create new profile":
+                            print("\nCreating a new profile...\n")
+                            if not run_setup_wizard():
+                                print("\nProfile creation cancelled. Exiting.")
+                                sys.exit(0)
+                            print()
+                        elif choice is None:
+                            # User cancelled (Ctrl+C)
+                            print("\nCancelled. Goodbye!")
+                            sys.exit(0)
+                        # else: "Run search" - continue to search
+                    except ImportError:
+                        pass  # questionary not installed - skip prompt
+
             except ImportError:
                 pass  # questionary not installed -- skip wizard (dev mode without extras)
             except Exception:
