@@ -502,6 +502,15 @@ def _strip_html(text: str) -> str:
 # We Work Remotely fetcher
 # ---------------------------------------------------------------------------
 
+# Map source identifiers to display names for progress messages
+_SOURCE_DISPLAY_NAMES = {
+    "dice": "Dice",
+    "hn_hiring": "HN Hiring",
+    "remoteok": "RemoteOK",
+    "weworkremotely": "We Work Remotely",
+}
+
+
 def fetch_weworkremotely(query: str) -> list[JobResult]:
     """Fetch remote job listings from We Work Remotely.
 
@@ -744,19 +753,32 @@ def build_search_queries(profile: dict) -> list[dict]:
     return queries
 
 
-def fetch_all(profile: dict, on_progress=None) -> list[JobResult]:
+def fetch_all(profile: dict, on_progress=None, on_source_progress=None) -> list[JobResult]:
     """Fetch from all automated sources in parallel.
 
     Args:
         profile: Candidate profile dict.
         on_progress: Optional callback(completed, total, source_name) called
-                     after each query finishes.
+                     after each query finishes (backward compatibility).
+        on_source_progress: Optional callback(source_name, count, total, status)
+                           called when a source starts ('started') or finishes ('complete').
     """
     queries = build_search_queries(profile)
     all_results = []
     seen = set()
     total = len(queries)
     completed = 0
+
+    # Source-level tracking
+    source_names = list(dict.fromkeys(q["source"] for q in queries))  # unique, ordered
+    source_query_counts = {}
+    source_completed = {}
+    for q in queries:
+        source_query_counts[q["source"]] = source_query_counts.get(q["source"], 0) + 1
+        source_completed[q["source"]] = 0
+    sources_started = 0
+    sources_done = 0
+    total_sources = len(source_names)
 
     def run_query(q):
         if q["source"] == "dice":
@@ -771,7 +793,20 @@ def fetch_all(profile: dict, on_progress=None) -> list[JobResult]:
 
     log.info("Running %d search queries in parallel...", len(queries))
     with ThreadPoolExecutor(max_workers=6) as executor:
-        futures = {executor.submit(run_query, q): q for q in queries}
+        # Submit queries grouped by source — fire START callback before each source's queries
+        futures = {}
+        started_sources = set()
+        for q in queries:
+            source = q["source"]
+            if source not in started_sources:
+                started_sources.add(source)
+                sources_started += 1
+                if on_source_progress:
+                    display_name = _SOURCE_DISPLAY_NAMES.get(source, source)
+                    on_source_progress(display_name, sources_started, total_sources, "started")
+            futures[executor.submit(run_query, q)] = q
+
+        # Process results as they complete — fire COMPLETE callback when source finishes
         for future in as_completed(futures):
             q = futures[future]
             completed += 1
@@ -786,6 +821,15 @@ def fetch_all(profile: dict, on_progress=None) -> list[JobResult]:
                 log.error("Query failed (%s): %s", q, e)
             if on_progress:
                 on_progress(completed, total, q["source"])
+
+            # Source-level completion tracking
+            source = q["source"]
+            source_completed[source] += 1
+            if source_completed[source] == source_query_counts[source]:
+                sources_done += 1
+                if on_source_progress:
+                    display_name = _SOURCE_DISPLAY_NAMES.get(source, source)
+                    on_source_progress(display_name, sources_done, total_sources, "complete")
 
     log.info("Total unique results: %d", len(all_results))
     return all_results
