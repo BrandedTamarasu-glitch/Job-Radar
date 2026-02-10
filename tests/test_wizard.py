@@ -11,6 +11,8 @@ from job_radar.wizard import (
     NonEmptyValidator,
     CommaSeparatedValidator,
     ScoreValidator,
+    YearsExperienceValidator,
+    CompensationValidator,
     is_first_run,
     run_setup_wizard,
     _write_json_atomic,
@@ -153,9 +155,13 @@ def test_wizard_happy_path_all_fields(tmp_path, mocker):
     # Sequential answers for text prompts
     text_answers = [
         "John Doe",                                    # name
+        "5",                                            # years_experience
         "Software Engineer, Full Stack Developer",     # titles
         "Python, JavaScript, React, AWS",              # skills
         "Remote",                                       # location
+        "remote, hybrid",                               # arrangement
+        "fintech, saas",                                # domain_expertise
+        "150000",                                       # comp_floor
         "relocation required, on-site only",           # dealbreakers
         "3.0",                                          # min_score
     ]
@@ -200,9 +206,14 @@ def test_wizard_happy_path_all_fields(tmp_path, mocker):
     # Verify profile.json content
     profile_data = json.loads(profile_path.read_text())
     assert profile_data["name"] == "John Doe"
+    assert profile_data["years_experience"] == 5
+    assert profile_data["level"] == "mid"  # derived from 5 years
     assert profile_data["target_titles"] == ["Software Engineer", "Full Stack Developer"]
     assert profile_data["core_skills"] == ["Python", "JavaScript", "React", "AWS"]
     assert profile_data["location"] == "Remote"
+    assert profile_data["arrangement"] == ["remote", "hybrid"]
+    assert profile_data["domain_expertise"] == ["fintech", "saas"]
+    assert profile_data["comp_floor"] == 150000
     assert profile_data["dealbreakers"] == ["relocation required", "on-site only"]
 
     # Verify config.json content
@@ -219,12 +230,16 @@ def test_wizard_optional_fields_skipped(tmp_path, mocker):
     mock_confirm = mocker.patch('job_radar.wizard.questionary.confirm')
     mock_select = mocker.patch('job_radar.wizard.questionary.select')
 
-    # Answers with empty location and dealbreakers
+    # Answers with empty optional fields
     text_answers = [
         "Jane Smith",                  # name
+        "3",                            # years_experience
         "Data Scientist",              # titles
         "Python, R, SQL",              # skills
         "",                             # location (empty)
+        "",                             # arrangement (empty)
+        "",                             # domain_expertise (empty)
+        "",                             # comp_floor (empty)
         "",                             # dealbreakers (empty)
         "2.8",                          # min_score
     ]
@@ -260,8 +275,16 @@ def test_wizard_optional_fields_skipped(tmp_path, mocker):
     profile_path = tmp_path / "profile.json"
     profile_data = json.loads(profile_path.read_text())
 
+    # Required fields should be present
+    assert profile_data["name"] == "Jane Smith"
+    assert profile_data["years_experience"] == 3
+    assert profile_data["level"] == "mid"  # derived from 3 years
+
     # Optional fields should not be present (or present as empty)
     assert "location" not in profile_data or profile_data.get("location") == ""
+    assert "arrangement" not in profile_data or profile_data.get("arrangement") == []
+    assert "domain_expertise" not in profile_data or profile_data.get("domain_expertise") == []
+    assert "comp_floor" not in profile_data
     assert "dealbreakers" not in profile_data or profile_data.get("dealbreakers") == []
 
 
@@ -275,12 +298,16 @@ def test_wizard_cancel_at_confirmation(tmp_path, mocker):
 
     # Complete all prompts
     text_answers = [
-        "Cancel User",
-        "Engineer",
-        "Python",
-        "Remote",
-        "",
-        "3.0",
+        "Cancel User",      # name
+        "2",                 # years_experience
+        "Engineer",          # titles
+        "Python",            # skills
+        "Remote",            # location
+        "",                  # arrangement
+        "",                  # domain_expertise
+        "",                  # comp_floor
+        "",                  # dealbreakers
+        "3.0",               # min_score
     ]
 
     def text_side_effect(*args, **kwargs):
@@ -358,13 +385,17 @@ def test_wizard_edit_field_flow(tmp_path, mocker):
 
     # Initial answers
     text_answers = [
-        "Original Name",
-        "Engineer",
-        "Python",
-        "",
-        "",
-        "3.0",
-        "Edited Name",  # Edited name after "Edit a field"
+        "Original Name",    # name
+        "4",                 # years_experience
+        "Engineer",          # titles
+        "Python",            # skills
+        "",                  # location
+        "",                  # arrangement
+        "",                  # domain_expertise
+        "",                  # comp_floor
+        "",                  # dealbreakers
+        "3.0",               # min_score
+        "Edited Name",       # Edited name after "Edit a field"
     ]
 
     def text_side_effect(*args, **kwargs):
@@ -415,16 +446,20 @@ def test_wizard_back_navigation(tmp_path, mocker):
     mock_confirm = mocker.patch('job_radar.wizard.questionary.confirm')
     mock_select = mocker.patch('job_radar.wizard.questionary.select')
 
-    # Answer sequence: name -> /back on titles -> name again -> titles -> rest
+    # Answer sequence: name -> years_exp -> /back on titles -> years_exp again -> titles -> rest
     text_answers = [
-        "First Name",
-        "/back",           # Go back from titles
-        "Corrected Name",  # Re-enter name
-        "Engineer",        # titles
-        "Python",          # skills
-        "",                # location
-        "",                # dealbreakers
-        "3.0",             # min_score
+        "First Name",      # name
+        "5",                # years_experience
+        "/back",            # Go back from titles (returns to years_experience)
+        "6",                # Re-enter years_experience
+        "Engineer",         # titles
+        "Python",           # skills
+        "",                 # location
+        "",                 # arrangement
+        "",                 # domain_expertise
+        "",                 # comp_floor
+        "",                 # dealbreakers
+        "3.0",              # min_score
     ]
 
     def text_side_effect(*args, **kwargs):
@@ -454,10 +489,11 @@ def test_wizard_back_navigation(tmp_path, mocker):
 
     assert result is True
 
-    # Verify final name is the corrected one
+    # Verify final values
     profile_path = tmp_path / "profile.json"
     profile_data = json.loads(profile_path.read_text())
-    assert profile_data["name"] == "Corrected Name"
+    assert profile_data["name"] == "First Name"  # Name wasn't changed in this test
+    assert profile_data["years_experience"] == 6  # Corrected from 5 to 6
 
 
 def test_wizard_back_at_first_question(tmp_path, mocker):
@@ -472,11 +508,15 @@ def test_wizard_back_at_first_question(tmp_path, mocker):
     text_answers = [
         "/back",           # Back at first question (should stay)
         "Valid Name",      # Re-enter name
-        "Engineer",
-        "Python",
-        "",
-        "",
-        "3.0",
+        "5",                # years_experience
+        "Engineer",         # titles
+        "Python",           # skills
+        "",                 # location
+        "",                 # arrangement
+        "",                 # domain_expertise
+        "",                 # comp_floor
+        "",                 # dealbreakers
+        "3.0",              # min_score
     ]
 
     def text_side_effect(*args, **kwargs):
@@ -522,12 +562,16 @@ def test_wizard_no_default_values_on_profile_fields(tmp_path, mocker):
 
     # Provide all answers to complete wizard
     text_answers = [
-        "Test User",
-        "Engineer",
-        "Python",
-        "",
-        "",
-        "2.8",
+        "Test User",        # name
+        "7",                 # years_experience
+        "Engineer",          # titles
+        "Python",            # skills
+        "",                  # location
+        "",                  # arrangement
+        "",                  # domain_expertise
+        "",                  # comp_floor
+        "",                  # dealbreakers
+        "2.8",               # min_score
     ]
 
     def text_side_effect(*args, **kwargs):
