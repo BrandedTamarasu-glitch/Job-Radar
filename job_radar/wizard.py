@@ -68,6 +68,30 @@ class ScoreValidator(Validator):
             )
 
 
+class YearsExperienceValidator(Validator):
+    """Validate years of experience is a non-negative number."""
+
+    def validate(self, document):
+        text = document.text.strip()
+        try:
+            years = int(text)
+            if years < 0:
+                raise ValidationError(
+                    message="Years must be 0 or greater",
+                    cursor_position=len(document.text)
+                )
+            if years > 50:
+                raise ValidationError(
+                    message="Please enter a realistic number of years (0-50)",
+                    cursor_position=len(document.text)
+                )
+        except ValueError:
+            raise ValidationError(
+                message="Please enter a whole number (e.g., 3, 5, 10)",
+                cursor_position=len(document.text)
+            )
+
+
 # Custom style for cross-platform safe colors
 custom_style = Style([
     ('qmark', 'fg:cyan bold'),
@@ -168,6 +192,14 @@ def run_setup_wizard() -> bool:
             'message': "What's your name?",
             'instruction': "e.g., John Doe",
             'validator': NonEmptyValidator(),
+            'required': True,
+        },
+        {
+            'key': 'years_experience',
+            'type': 'text',
+            'message': "Years of professional experience:",
+            'instruction': "Enter a number (e.g., 3, 5, 10)",
+            'validator': YearsExperienceValidator(),
             'required': True,
         },
         {
@@ -305,8 +337,21 @@ def run_setup_wizard() -> bool:
     target_titles = [s.strip() for s in answers['titles'].split(',') if s.strip()]
     core_skills = [s.strip() for s in answers['skills'].split(',') if s.strip()]
 
+    # Derive level from years of experience
+    years = int(answers['years_experience'])
+    if years < 2:
+        level = "junior"
+    elif years < 5:
+        level = "mid"
+    elif years < 10:
+        level = "senior"
+    else:
+        level = "principal"
+
     profile_data = {
         "name": answers['name'],
+        "years_experience": years,
+        "level": level,
         "target_titles": target_titles,
         "core_skills": core_skills,
     }
@@ -336,6 +381,7 @@ def run_setup_wizard() -> bool:
         print("=" * 50)
         print("\n👤 Profile:")
         print(f"   Name: {profile_data['name']}")
+        print(f"   Experience: {profile_data['years_experience']} years ({profile_data['level']} level)")
         print(f"   Titles: {', '.join(profile_data['target_titles'])}")
         print(f"   Skills: {', '.join(profile_data['core_skills'])}")
         print(f"   Location: {profile_data.get('location', '(not set)')}")
@@ -372,6 +418,7 @@ def run_setup_wizard() -> bool:
         # Edit a field
         field_choices = [
             f"Name ({profile_data['name']})",
+            f"Experience ({profile_data['years_experience']} years - {profile_data['level']} level)",
             f"Titles ({', '.join(profile_data['target_titles'])})",
             f"Skills ({', '.join(profile_data['core_skills'])})",
             f"Location ({profile_data.get('location', '(not set)')})",
@@ -399,6 +446,26 @@ def run_setup_wizard() -> bool:
             ).ask()
             if new_val:
                 profile_data['name'] = new_val
+
+        elif field_to_edit.startswith("Experience"):
+            new_val = questionary.text(
+                "Years of professional experience:",
+                default=str(profile_data['years_experience']),
+                validate=YearsExperienceValidator(),
+                style=custom_style
+            ).ask()
+            if new_val:
+                years = int(new_val)
+                profile_data['years_experience'] = years
+                # Recalculate level
+                if years < 2:
+                    profile_data['level'] = "junior"
+                elif years < 5:
+                    profile_data['level'] = "mid"
+                elif years < 10:
+                    profile_data['level'] = "senior"
+                else:
+                    profile_data['level'] = "principal"
 
         elif field_to_edit.startswith("Titles"):
             new_val = questionary.text(
