@@ -207,7 +207,7 @@ def test_wizard_happy_path_all_fields(tmp_path, mocker):
     profile_data = json.loads(profile_path.read_text())
     assert profile_data["name"] == "John Doe"
     assert profile_data["years_experience"] == 5
-    assert profile_data["level"] == "mid"  # derived from 5 years
+    assert profile_data["level"] == "senior"  # derived from 5 years (>= 5 and < 10)
     assert profile_data["target_titles"] == ["Software Engineer", "Full Stack Developer"]
     assert profile_data["core_skills"] == ["Python", "JavaScript", "React", "AWS"]
     assert profile_data["location"] == "Remote"
@@ -607,9 +607,10 @@ def test_wizard_no_default_values_on_profile_fields(tmp_path, mocker):
     # (except min_score which should have default="2.8")
     text_calls = mock_text.call_args_list
 
-    # First 5 text calls are: name, titles, skills, location, dealbreakers
-    # These should NOT have 'default' in kwargs (or default=None)
-    for i in range(5):
+    # Text calls are: name, years_experience, titles, skills, location, arrangement,
+    # domain_expertise, comp_floor, dealbreakers, min_score
+    # Profile fields (not min_score) should NOT have 'default' in kwargs
+    for i in range(9):  # All text calls except min_score
         call_kwargs = text_calls[i][1]  # Get kwargs from call
         # Either 'default' is not in kwargs, or it's None
         if 'default' in call_kwargs:
@@ -618,7 +619,7 @@ def test_wizard_no_default_values_on_profile_fields(tmp_path, mocker):
             # Just verify min_score DOES have one
             pass  # We'll check min_score specifically
 
-    # The 6th text call is min_score - should have default="2.8"
-    min_score_call_kwargs = text_calls[5][1]
+    # The 10th text call (index 9) is min_score - should have default="2.8"
+    min_score_call_kwargs = text_calls[9][1]
     assert 'default' in min_score_call_kwargs
     assert min_score_call_kwargs['default'] == "2.8"
