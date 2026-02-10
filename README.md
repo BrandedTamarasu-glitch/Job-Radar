@@ -37,31 +37,25 @@ Download the latest release for your platform from the [GitHub Releases page](ht
 1. Download `job-radar-vX.X.X-macos.zip` from the Releases page
 2. Double-click the ZIP file to extract it
 3. Drag `JobRadar.app` to your Applications folder (optional but recommended)
+4. Remove the quarantine attribute (required for unsigned apps):
+   ```bash
+   xattr -d com.apple.quarantine /Applications/JobRadar.app
+   ```
+5. **Double-click `JobRadar.app`** to launch it
 
-**Bypassing Gatekeeper (required for unsigned apps):**
+The app will open a Terminal window and run the interactive setup wizard.
 
-macOS will block the app because it's unsigned. Choose **either** method:
+**Alternative: Run from Terminal directly**
 
-**Remove quarantine attribute:**
+For advanced users or to create an alias:
 ```bash
-xattr -d com.apple.quarantine /Applications/JobRadar.app
-```
+# Run directly
+/Applications/JobRadar.app/Contents/MacOS/job-radar-cli
 
-**Run from Terminal:**
-
-Job Radar is a command-line tool, so it needs to run in Terminal:
-
-```bash
-/Applications/JobRadar.app/Contents/MacOS/job-radar
-```
-
-**Optional: Create an alias** for easier access:
-```bash
-echo 'alias job-radar="/Applications/JobRadar.app/Contents/MacOS/job-radar"' >> ~/.zshrc
+# Or create an alias
+echo 'alias job-radar="/Applications/JobRadar.app/Contents/MacOS/job-radar-cli"' >> ~/.zshrc
 source ~/.zshrc
 ```
-
-Then you can just type `job-radar` to run it.
 
 ### Linux
 
