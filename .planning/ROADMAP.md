@@ -200,10 +200,10 @@ Plans:
   2. Hero jobs show prominent score badges using semantic green color with "Top Match" or "Excellent Match" label
   3. Hero job section appears at top of report before other listings with clear visual separation
   4. Focus indicators on hero jobs remain visible and meet WCAG AA contrast requirements
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 20-01: TBD
+- [ ] 20-01-PLAN.md — Hero CSS (shadows, badge labels, divider), hero section split, and tests
 
 #### Phase 21: Responsive Layout
 **Goal**: Report adapts to different screen sizes with tablet column reduction and mobile card layout
@@ -282,10 +282,10 @@ Phases execute in numeric order: 19 → 20 → 21 → 22 → 23
 | 17. Application Status Tracking | v1.3.0 | 2/2 | Complete | 2026-02-11 |
 | 18. WCAG 2.1 Level AA Compliance | v1.3.0 | 3/3 | Complete | 2026-02-11 |
 | 19. Typography & Color Foundation | v1.4.0 | 2/2 | Complete | 2026-02-11 |
-| 20. Hero Jobs Visual Hierarchy | v1.4.0 | 0/0 | Not started | - |
+| 20. Hero Jobs Visual Hierarchy | v1.4.0 | 0/1 | Planning complete | - |
 | 21. Responsive Layout | v1.4.0 | 0/0 | Not started | - |
 | 22. Interactive Features | v1.4.0 | 0/0 | Not started | - |
 | 23. Print & CI Validation | v1.4.0 | 0/0 | Not started | - |
 
 ---
-*Last updated: 2026-02-11 after Phase 19 execution complete*
+*Last updated: 2026-02-11 after Phase 20 planning complete*
