@@ -295,6 +295,9 @@ def _generate_html_report(
   <!-- Bootstrap 5.3 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
+  <!-- Notyf toast notifications -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
+
   <!-- Prism.js syntax highlighting -->
   <link href="https://cdn.jsdelivr.net/npm/prismjs@1/themes/prism.css" rel="stylesheet">
 
@@ -317,6 +320,41 @@ def _generate_html_report(
     .score-badge {{
       font-size: 1rem;
       padding: 0.5em 0.75em;
+    }}
+
+    /* Copy button styling */
+    .copy-btn {{
+      font-size: 0.75rem;
+      padding: 0.2em 0.5em;
+      margin-left: 0.5em;
+      transition: background-color 0.2s ease;
+    }}
+    .copy-btn.copied {{
+      background-color: #28a745 !important;
+      border-color: #28a745 !important;
+      color: white !important;
+    }}
+
+    /* Focus indicators for keyboard navigation */
+    .job-item:focus-visible {{
+      outline: 2px solid #005fcc;
+      outline-offset: 2px;
+      border-radius: 4px;
+    }}
+
+    /* Copy All button styling */
+    .copy-all-btn {{
+      transition: background-color 0.2s ease;
+    }}
+    .copy-all-btn.copied {{
+      background-color: #28a745 !important;
+      border-color: #28a745 !important;
+    }}
+
+    /* Keyboard shortcut hint */
+    .shortcut-hint {{
+      font-size: 0.8rem;
+      color: var(--bs-secondary-color);
     }}
   </style>
 </head>
@@ -345,6 +383,9 @@ def _generate_html_report(
 
   <!-- Bootstrap JS bundle -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Notyf toast notifications -->
+  <script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
 
   <!-- Prism.js for syntax highlighting -->
   <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-core.min.js"></script>
@@ -488,6 +529,7 @@ def _html_recommended_section(recommended: list[dict], profile: dict) -> str:
 
         if job.url:
             details.append(f'<li><strong>Link:</strong> <a href="{html.escape(job.url)}" target="_blank" class="btn btn-sm btn-outline-primary">{html.escape(job.source)}</a></li>')
+            details.append(f'<li><button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copySingleUrl(this)" data-url="{html.escape(job.url)}">Copy URL</button></li>')
 
         # Talking points
         highlights = profile.get("highlights", [])
@@ -500,8 +542,15 @@ def _html_recommended_section(recommended: list[dict], profile: dict) -> str:
 
         details_html = "".join(details)
 
+        # Add data attributes for clipboard functionality
+        data_attrs = ""
+        if job.url:
+            data_attrs = f'class="card mb-3 job-item" tabindex="0" data-job-url="{html.escape(job.url)}" data-score="{score_val:.1f}"'
+        else:
+            data_attrs = 'class="card mb-3"'
+
         card = f"""
-        <div class="card mb-3">
+        <div {data_attrs}>
           <div class="card-header">
             <h3 class="h5 mb-0">
               {i}. {html.escape(job.title)} — {html.escape(job.company)}
@@ -518,9 +567,21 @@ def _html_recommended_section(recommended: list[dict], profile: dict) -> str:
         cards.append(card)
 
     cards_html = "".join(cards)
+
+    # Add Copy All button with keyboard hint
+    copy_all_button = f"""
+    <div class="d-flex align-items-center mb-3">
+      <button class="btn btn-primary copy-all-btn" onclick="copyAllRecommendedUrls(this)">
+        Copy All Recommended URLs
+      </button>
+      <span class="shortcut-hint ms-2">Keyboard: <kbd>C</kbd> = copy focused, <kbd>A</kbd> = copy all</span>
+    </div>
+    """
+
     return f"""
     <div class="mb-4">
       <h2 class="h4 mb-3">Recommended Roles (Score >= 3.5)</h2>
+      {copy_all_button}
       {cards_html}
     </div>
     """
@@ -556,10 +617,16 @@ def _html_results_table(scored_results: list[dict]) -> str:
         emp_type = getattr(job, "employment_type", "") or job.arrangement
         snippet = _make_snippet(job.description, 80)
 
-        link_html = f'<a href="{html.escape(job.url)}" target="_blank" class="btn btn-sm btn-outline-primary">View</a>' if job.url else html.escape(job.source)
+        # Build link and copy button
+        if job.url:
+            link_html = f'<a href="{html.escape(job.url)}" target="_blank" class="btn btn-sm btn-outline-primary">View</a> <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copySingleUrl(this)" data-url="{html.escape(job.url)}">Copy</button>'
+            row_attrs = f'class="job-item" tabindex="0" data-job-url="{html.escape(job.url)}" data-score="{score:.1f}"'
+        else:
+            link_html = html.escape(job.source)
+            row_attrs = ''
 
         rows.append(f"""
-        <tr>
+        <tr {row_attrs}>
           <td>{i}</td>
           <td><span class="badge {badge_class}">{score:.1f}/5.0</span><br><small class="text-muted">({html.escape(rec)})</small></td>
           <td>{new_badge}</td>

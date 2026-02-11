@@ -150,15 +150,15 @@ Plans:
 **Requirements**: APPLY-01, APPLY-02, APPLY-03, APPLY-04
 **Success Criteria** (what must be TRUE):
   1. User can copy individual job URL with single click from HTML report
-  2. User can copy all recommended job URLs (score ≥3.5) with one "Copy All" action
+  2. User can copy all recommended job URLs (score >=3.5) with one "Copy All" action
   3. User can press 'C' key to copy focused job URL without mouse
   4. User can press 'A' key to copy all recommended URLs without mouse
   5. Copy actions show visual confirmation (toast notification or button state change)
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 16-01: TBD
-- [ ] 16-02: TBD
+- [ ] 16-01-PLAN.md -- Copy buttons, clipboard JS, keyboard shortcuts, and toast notifications in HTML report
+- [ ] 16-02-PLAN.md -- Tests for clipboard UI elements and browser verification checkpoint
 
 #### Phase 17: Application Status Tracking
 **Goal**: Users can track application status across sessions with persistent visual indicators
@@ -189,7 +189,7 @@ Plans:
   7. All text meets 4.5:1 contrast minimum (WCAG AA standard)
   8. CLI wizard prompts are navigable with NVDA, JAWS, and VoiceOver (tested and documented)
   9. Terminal colors meet contrast requirements for colorblind users
-  10. HTML reports achieve Lighthouse accessibility score ≥95
+  10. HTML reports achieve Lighthouse accessibility score >=95
 **Plans**: TBD
 
 Plans:
@@ -200,7 +200,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 16 → 17 → 18
+Phases execute in numeric order: 16 -> 17 -> 18
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -219,9 +219,9 @@ Phases execute in numeric order: 16 → 17 → 18
 | 13. Rate Limiting | v1.2.0 | 1/1 | Complete | 2026-02-05 |
 | 14. Deduplication | v1.2.0 | 1/1 | Complete | 2026-02-05 |
 | 15. Resume Intelligence | v1.2.0 | 3/3 | Complete | 2026-02-05 |
-| 16. Application Flow Essentials | v1.3.0 | 0/2 | Not started | - |
+| 16. Application Flow Essentials | v1.3.0 | 0/2 | In progress | - |
 | 17. Application Status Tracking | v1.3.0 | 0/2 | Not started | - |
 | 18. WCAG 2.1 Level AA Compliance | v1.3.0 | 0/3 | Not started | - |
 
 ---
-*Last updated: 2026-02-10 after v1.3.0 roadmap creation*
+*Last updated: 2026-02-11 after Phase 16 planning*
