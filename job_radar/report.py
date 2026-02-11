@@ -713,6 +713,141 @@ def _generate_html_report(
         background: linear-gradient(to right, transparent, #495057 20%, #495057 80%, transparent);
       }}
     }}
+
+    /* ---- Responsive Layout ---- */
+    /* Tablet: hide low-priority columns */
+    @media (max-width: 991px) {{
+      .col-new,
+      .col-salary,
+      .col-type,
+      .col-snippet {{
+        display: none;
+      }}
+    }}
+
+    /* Mobile: table to stacked cards */
+    @media (max-width: 767px) {{
+      /* Visually hide table headers (keep in DOM for ARIA) */
+      thead {{
+        position: absolute;
+        clip: rect(0 0 0 0);
+        height: 1px;
+        width: 1px;
+        overflow: hidden;
+        white-space: nowrap;
+      }}
+
+      /* Convert table elements to block stacking */
+      table.table, table.table tbody, table.table tr, table.table td, table.table th {{
+        display: block;
+        width: 100%;
+      }}
+
+      /* Remove Bootstrap striped/hover on mobile */
+      .table-striped > tbody > tr:nth-of-type(odd) > * {{
+        --bs-table-bg-type: transparent;
+      }}
+      .table-hover > tbody > tr:hover > * {{
+        --bs-table-bg-state: transparent;
+      }}
+
+      /* Each row becomes a card */
+      table.table tbody tr {{
+        margin-bottom: 1rem;
+        padding: 1rem;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        background: white;
+      }}
+
+      /* Preserve tier left borders on mobile cards */
+      table.table tbody tr.tier-strong {{
+        border-left: 5px solid var(--color-tier-strong-border);
+        background-color: var(--color-tier-strong-bg) !important;
+      }}
+      table.table tbody tr.tier-rec {{
+        border-left: 4px solid var(--color-tier-rec-border);
+        background-color: var(--color-tier-rec-bg) !important;
+      }}
+      table.table tbody tr.tier-review {{
+        border-left: 3px solid var(--color-tier-review-border);
+        background-color: var(--color-tier-review-bg) !important;
+      }}
+
+      /* Show ALL columns in mobile (override tablet hiding) */
+      .col-new,
+      .col-salary,
+      .col-type,
+      .col-snippet {{
+        display: block !important;
+      }}
+
+      /* Grid layout for each cell: label + value */
+      table.table td,
+      table.table th[scope="row"] {{
+        display: grid;
+        grid-template-columns: 7em 1fr;
+        gap: 0.5rem;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #e9ecef;
+        align-items: start;
+      }}
+
+      table.table td:last-child,
+      table.table th[scope="row"]:last-child {{
+        border-bottom: none;
+      }}
+
+      /* Label from data-label attribute */
+      table.table td::before,
+      table.table th[scope="row"]::before {{
+        content: attr(data-label);
+        font-weight: 600;
+        color: #6c757d;
+        font-size: var(--font-size-small);
+      }}
+
+      /* Hide label for cells that don't need one (e.g., Link column with self-explanatory button) */
+      table.table td.no-label::before {{
+        display: none;
+      }}
+      table.table td.no-label {{
+        grid-template-columns: 1fr;
+      }}
+
+      /* Touch targets: minimum 44x44px for interactive elements */
+      table.table td button,
+      table.table td select,
+      table.table td .btn,
+      table.table td .dropdown-toggle {{
+        min-height: 44px;
+        min-width: 44px;
+      }}
+
+      /* Row number cell: simplify display */
+      table.table th[scope="row"] {{
+        font-weight: 600;
+        color: #6c757d;
+        font-size: var(--font-size-small);
+        padding-top: 0.75rem;
+      }}
+    }}
+
+    /* Dark mode + mobile card adjustments */
+    @media (prefers-color-scheme: dark) and (max-width: 767px) {{
+      table.table tbody tr {{
+        background: #212529;
+        border-color: #495057;
+      }}
+      table.table td,
+      table.table th[scope="row"] {{
+        border-bottom-color: #343a40;
+      }}
+      table.table td::before,
+      table.table th[scope="row"]::before {{
+        color: #adb5bd;
+      }}
+    }}
   </style>
 
   <!-- Embedded tracker status (source of truth) -->
@@ -1289,6 +1424,23 @@ def _generate_html_report(
     document.addEventListener('DOMContentLoaded', function() {{
       hydrateApplicationStatus();
     }});
+
+    // ARIA role restoration for table semantics with display:block
+    // Source: Adrian Roselli pattern (2018, updated 2023)
+    function AddTableARIA() {{
+      try {{
+        document.querySelectorAll('table').forEach(function(t) {{ t.setAttribute('role', 'table'); }});
+        document.querySelectorAll('caption').forEach(function(c) {{ c.setAttribute('role', 'caption'); }});
+        document.querySelectorAll('thead, tbody, tfoot').forEach(function(rg) {{ rg.setAttribute('role', 'rowgroup'); }});
+        document.querySelectorAll('tr').forEach(function(r) {{ r.setAttribute('role', 'row'); }});
+        document.querySelectorAll('td').forEach(function(c) {{ c.setAttribute('role', 'cell'); }});
+        document.querySelectorAll('th').forEach(function(h) {{ h.setAttribute('role', 'columnheader'); }});
+        document.querySelectorAll('th[scope=row]').forEach(function(rh) {{ rh.setAttribute('role', 'rowheader'); }});
+      }} catch (e) {{
+        console.log('AddTableARIA(): ' + e);
+      }}
+    }}
+    AddTableARIA();
   </script>
 
   <!-- Dark mode handler -->
