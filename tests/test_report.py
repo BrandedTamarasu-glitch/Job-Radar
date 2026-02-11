@@ -623,3 +623,141 @@ def test_html_report_no_copy_all_button_when_no_recommended(sample_profile, tmp_
     # Verify Copy All button element doesn't appear (no recommended jobs)
     # The button element should not be in the HTML (JavaScript/CSS may still reference it)
     assert '<button class="btn btn-primary copy-all-btn"' not in html_content
+
+
+def test_html_report_contains_status_dropdown(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that HTML report contains status dropdowns with all status options."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+
+    html_content = Path(result["html"]).read_text()
+
+    # Check for status dropdown toggle button
+    assert "dropdown-toggle" in html_content
+
+    # Check for all status options with data-status attributes
+    assert 'data-status="applied"' in html_content
+    assert 'data-status="interviewing"' in html_content
+    assert 'data-status="rejected"' in html_content
+    assert 'data-status="offer"' in html_content
+    assert 'data-status=""' in html_content  # Clear status option
+
+
+def test_html_report_contains_status_column_in_table(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that results table has Status column with dropdowns."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+
+    html_content = Path(result["html"]).read_text()
+
+    # Check for Status column header
+    assert "<th>Status</th>" in html_content
+
+    # Check that table rows contain status dropdown elements
+    # Table rows should have data-job-key and contain data-status attributes
+    assert "<tr" in html_content
+    assert "data-job-key" in html_content
+    assert 'data-status="applied"' in html_content
+
+
+def test_html_report_contains_tracker_status_embed(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that HTML contains embedded tracker status JSON script tag."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+
+    html_content = Path(result["html"]).read_text()
+
+    # Check for embedded tracker status JSON script tag
+    assert '<script type="application/json" id="tracker-status">' in html_content
+
+
+def test_html_report_contains_status_javascript(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that HTML contains status management JavaScript functions."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+
+    html_content = Path(result["html"]).read_text()
+
+    # Check for key JavaScript functions
+    assert "hydrateApplicationStatus" in html_content
+    assert "renderStatusBadge" in html_content
+    assert "STATUS_CONFIG" in html_content
+    assert "exportPendingStatusUpdates" in html_content
+
+    # Check for localStorage key
+    assert "job-radar-application-status" in html_content
+
+
+def test_html_report_contains_job_key_attributes(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that HTML contains data-job-key attributes on job items."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+
+    html_content = Path(result["html"]).read_text()
+
+    # Check for data-job-key attributes
+    assert "data-job-key" in html_content
+
+    # Check for data-job-title and data-job-company attributes
+    assert "data-job-title" in html_content
+    assert "data-job-company" in html_content
+
+    # Verify the key format matches expected pattern (lowercase title||company)
+    # From fixtures: "Senior Python Engineer" at "TechCorp"
+    assert "senior python engineer||techcorp" in html_content.lower()
+
+
+def test_html_report_contains_export_button(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that HTML contains export status updates button."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+
+    html_content = Path(result["html"]).read_text()
+
+    # Check for export button with correct class
+    assert "export-status-btn" in html_content
+
+    # Check for export function
+    assert "exportPendingStatusUpdates" in html_content
