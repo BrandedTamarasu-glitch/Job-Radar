@@ -171,7 +171,7 @@ Plans:
 
 </details>
 
-### 🚧 v1.4.0 Visual Design & Polish (In Progress)
+### v1.4.0 Visual Design & Polish (In Progress)
 
 **Milestone Goal:** Improve report scannability through visual hierarchy, responsive design, and quality-of-life polish features
 
@@ -181,7 +181,7 @@ Plans:
 **Requirements**: VIS-02, VIS-03
 **Success Criteria** (what must be TRUE):
   1. Report displays with professional typography using system font stacks (sans-serif body, monospace scores) without any external font files
-  2. Score tiers have distinct semantic colors (green for ≥4.0, cyan for 3.5-3.9, indigo for 2.8-3.4, slate for <2.8) with WCAG AA contrast maintained
+  2. Score tiers have distinct semantic colors (green for >=4.0, cyan for 3.5-3.9, indigo for 2.8-3.4, slate for <2.8) with WCAG AA contrast maintained
   3. Dark mode support works with automatically adjusted semantic colors preserving readability
   4. Color system includes non-color indicators (icons, borders) for colorblind accessibility
   5. Typography and colors render instantly with zero file size overhead
@@ -192,11 +192,11 @@ Plans:
 - [x] 19-02-PLAN.md — Tier classes on cards/table rows, pill badges, non-color indicators, and tests
 
 #### Phase 20: Hero Jobs Visual Hierarchy
-**Goal**: Top-scoring jobs (≥4.0) display with prominent visual distinction to prioritize user attention
+**Goal**: Top-scoring jobs (>=4.0) display with prominent visual distinction to prioritize user attention
 **Depends on**: Phase 19 (requires semantic color system)
 **Requirements**: VIS-01
 **Success Criteria** (what must be TRUE):
-  1. Jobs with score ≥4.0 display with elevated card styling (borders, shadows, increased padding) distinct from other listings
+  1. Jobs with score >=4.0 display with elevated card styling (borders, shadows, increased padding) distinct from other listings
   2. Hero jobs show prominent score badges using semantic green color with "Top Match" or "Excellent Match" label
   3. Hero job section appears at top of report before other listings with clear visual separation
   4. Focus indicators on hero jobs remain visible and meet WCAG AA contrast requirements
@@ -210,7 +210,7 @@ Plans:
 **Depends on**: Phase 19 (uses typography system)
 **Requirements**: VIS-04, VIS-05
 **Success Criteria** (what must be TRUE):
-  1. Desktop view (≥992px) displays all 11 table columns with full data
+  1. Desktop view (>=992px) displays all 11 table columns with full data
   2. Tablet view (<992px) reduces to 7 core columns (#, score, title, company, location, status, link) while hiding 4 low-priority columns
   3. Mobile view (<768px) replaces table with stacked card layout showing all job data in readable format
   4. Table semantics preserved with explicit ARIA roles when using display:block for mobile cards
@@ -234,10 +234,11 @@ Plans:
   5. CSV export includes all visible job data with commas and quotes properly escaped
   6. CSV export respects current filter state (only exports visible jobs)
   7. CSV opens correctly in Excel on Windows with no character corruption
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 22-01: TBD
+- [ ] 22-01-PLAN.md — Status filtering UI with localStorage persistence and ARIA announcements
+- [ ] 22-02-PLAN.md — CSV export with UTF-8 BOM, RFC 4180 escaping, and tests for both features
 
 #### Phase 23: Print & CI Validation
 **Goal**: Print-optimized report output and automated accessibility enforcement in CI pipeline
@@ -248,7 +249,7 @@ Plans:
   2. Score colors preserve in print output using print-color-adjust CSS property
   3. Print layout includes page break control to avoid splitting job entries
   4. Print stylesheet overrides Bootstrap's background-color stripping with higher specificity
-  5. GitHub Actions CI runs Lighthouse accessibility audit (5 runs, median score ≥95) on every PR
+  5. GitHub Actions CI runs Lighthouse accessibility audit (5 runs, median score >=95) on every PR
   6. CI runs axe-core checks for WCAG violations blocking merge on failures
   7. Accessibility test reports upload as GitHub Actions artifacts for inspection
   8. CI handles localStorage hydration timing with explicit waits for dynamic content
@@ -260,7 +261,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 19 → 20 → 21 → 22 → 23
+Phases execute in numeric order: 19 -> 20 -> 21 -> 22 -> 23
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -285,8 +286,8 @@ Phases execute in numeric order: 19 → 20 → 21 → 22 → 23
 | 19. Typography & Color Foundation | v1.4.0 | 2/2 | Complete | 2026-02-11 |
 | 20. Hero Jobs Visual Hierarchy | v1.4.0 | 1/1 | Complete | 2026-02-11 |
 | 21. Responsive Layout | v1.4.0 | 2/2 | Complete | 2026-02-11 |
-| 22. Interactive Features | v1.4.0 | 0/0 | Not started | - |
+| 22. Interactive Features | v1.4.0 | 0/2 | Not started | - |
 | 23. Print & CI Validation | v1.4.0 | 0/0 | Not started | - |
 
 ---
-*Last updated: 2026-02-11 after Phase 21 execution complete*
+*Last updated: 2026-02-11 after Phase 22 planning complete*
