@@ -34,6 +34,22 @@ hidden_imports = [
     'idna',                 # requests dependency
     'urllib3',              # requests dependency
     'soupsieve',            # bs4 dependency
+    # PDF parsing (Phase 15)
+    'pdfplumber',
+    'pdfminer',
+    'pdfminer.high_level',
+    'pdfminer.layout',
+    'pdfminer.pdfparser',
+    'pdfminer.pdfdocument',
+    'pdfminer.pdfpage',
+    'pdfminer.pdfinterp',
+    'pdfminer.converter',
+    'pdfminer.cmapdb',
+    'pdfminer.psparser',
+    'pdfminer.pdftypes',
+    'pdfminer.utils',
+    'dateutil',
+    'dateutil.parser',
 ]
 
 a = Analysis(
