@@ -1346,6 +1346,11 @@ def _generate_html_report(
         notyf.error('Status storage quota exceeded');
       }}
 
+      // Re-apply filter after status change (if filter function is available)
+      if (typeof applyFilter === 'function') {{
+        applyFilter();
+      }}
+
       // Update export button count
       var pendingCount = 0;
       for (var key in statusMap) {{
@@ -1441,6 +1446,178 @@ def _generate_html_report(
       }}
     }}
     AddTableARIA();
+  </script>
+
+  <!-- Status filtering with localStorage persistence -->
+  <script>
+    // Filter state management
+    var filterState = {{
+      hideApplied: false,
+      hideRejected: false,
+      hideInterviewing: false,
+      hideOffer: false
+    }};
+
+    // Load filter state from localStorage
+    function loadFilterState() {{
+      try {{
+        var saved = localStorage.getItem('job-radar-filter-state');
+        if (saved) {{
+          var parsed = JSON.parse(saved);
+          filterState = Object.assign({{}}, filterState, parsed);
+        }}
+      }} catch (err) {{
+        console.warn('[filter] Failed to load filter state:', err);
+      }}
+    }}
+
+    // Save filter state to localStorage
+    function saveFilterState() {{
+      try {{
+        localStorage.setItem('job-radar-filter-state', JSON.stringify(filterState));
+      }} catch (err) {{
+        if (err.name === 'QuotaExceededError') {{
+          notyf.error('Storage quota exceeded');
+        }}
+        console.error('[filter] Failed to save filter state:', err);
+      }}
+    }}
+
+    // Apply filter to all jobs
+    function applyFilter() {{
+      // Load application status map
+      var statusMap = {{}};
+      try {{
+        var statusData = localStorage.getItem('job-radar-application-status');
+        statusMap = statusData ? JSON.parse(statusData) : {{}};
+      }} catch (err) {{
+        console.warn('[filter] Failed to load status map:', err);
+      }}
+
+      // Query all job elements
+      var jobElements = document.querySelectorAll('[data-job-key]');
+      var visibleCount = 0;
+      var totalCount = jobElements.length;
+
+      for (var i = 0; i < jobElements.length; i++) {{
+        var element = jobElements[i];
+        var jobKey = element.getAttribute('data-job-key');
+        if (!jobKey) continue;
+
+        // Check if job has a status
+        var statusEntry = statusMap[jobKey];
+        var jobStatus = statusEntry ? statusEntry.status : null;
+
+        // Determine if job should be hidden
+        var shouldHide = false;
+        if (jobStatus === 'applied' && filterState.hideApplied) {{
+          shouldHide = true;
+        }} else if (jobStatus === 'rejected' && filterState.hideRejected) {{
+          shouldHide = true;
+        }} else if (jobStatus === 'interviewing' && filterState.hideInterviewing) {{
+          shouldHide = true;
+        }} else if (jobStatus === 'offer' && filterState.hideOffer) {{
+          shouldHide = true;
+        }}
+
+        // Apply visibility
+        if (shouldHide) {{
+          element.style.display = 'none';
+          element.setAttribute('aria-hidden', 'true');
+        }} else {{
+          element.style.display = '';
+          element.removeAttribute('aria-hidden');
+          visibleCount++;
+        }}
+      }}
+
+      // Update filter count display and announce to screen readers
+      announceFilterCount(visibleCount, totalCount);
+      var filterCountEl = document.getElementById('filter-count');
+      if (filterCountEl) {{
+        if (visibleCount === totalCount) {{
+          filterCountEl.textContent = '';
+        }} else {{
+          filterCountEl.textContent = 'Showing ' + visibleCount + ' of ' + totalCount + ' jobs';
+        }}
+      }}
+    }}
+
+    // Announce filter count to screen readers
+    function announceFilterCount(visibleCount, totalCount) {{
+      var announcer = document.getElementById('status-announcer');
+      if (!announcer) return;
+
+      var message = visibleCount === totalCount
+        ? 'Showing all ' + totalCount + ' jobs'
+        : 'Showing ' + visibleCount + ' of ' + totalCount + ' jobs';
+
+      announcer.textContent = message;
+      setTimeout(function() {{
+        announcer.textContent = '';
+      }}, 1000);
+    }}
+
+    // Handle filter checkbox changes
+    function handleFilterChange(event) {{
+      var checkbox = event.target;
+      var checkboxId = checkbox.id;
+
+      // Derive state key from checkbox id (filter-applied -> hideApplied)
+      var stateKey = 'hide' + checkboxId.replace('filter-', '').charAt(0).toUpperCase() +
+                     checkboxId.replace('filter-', '').slice(1);
+
+      filterState[stateKey] = checkbox.checked;
+      saveFilterState();
+      applyFilter();
+    }}
+
+    // Clear all filters
+    function clearAllFilters() {{
+      filterState.hideApplied = false;
+      filterState.hideRejected = false;
+      filterState.hideInterviewing = false;
+      filterState.hideOffer = false;
+      saveFilterState();
+
+      // Update checkbox UI
+      document.getElementById('filter-applied').checked = false;
+      document.getElementById('filter-rejected').checked = false;
+      document.getElementById('filter-interviewing').checked = false;
+      document.getElementById('filter-offer').checked = false;
+
+      applyFilter();
+
+      var msg = 'All filters cleared';
+      notyf.success(msg);
+      announceToScreenReader(msg);
+    }}
+
+    // Initialize filters on page load
+    function initializeFilters() {{
+      loadFilterState();
+
+      // Set checkbox states from loaded filter state
+      document.getElementById('filter-applied').checked = filterState.hideApplied;
+      document.getElementById('filter-rejected').checked = filterState.hideRejected;
+      document.getElementById('filter-interviewing').checked = filterState.hideInterviewing;
+      document.getElementById('filter-offer').checked = filterState.hideOffer;
+
+      // Attach event listeners
+      document.getElementById('filter-applied').addEventListener('change', handleFilterChange);
+      document.getElementById('filter-rejected').addEventListener('change', handleFilterChange);
+      document.getElementById('filter-interviewing').addEventListener('change', handleFilterChange);
+      document.getElementById('filter-offer').addEventListener('change', handleFilterChange);
+      document.getElementById('clear-filters').addEventListener('click', clearAllFilters);
+
+      // Apply persisted filter state
+      applyFilter();
+    }}
+
+    // Initialize filters after status hydration
+    document.addEventListener('DOMContentLoaded', function() {{
+      initializeFilters();
+    }});
   </script>
 
   <!-- Dark mode handler -->
