@@ -169,11 +169,11 @@ Plans:
   2. User can mark job as "Rejected" or "Interviewing" with distinct visual badges
   3. User can see application status on job cards in all subsequent reports
   4. Status data survives browser refresh and multi-day gaps between searches
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 17-01: TBD
-- [ ] 17-02: TBD
+- [ ] 17-01-PLAN.md -- Status dropdown UI, embedded tracker hydration, localStorage sync, and export
+- [ ] 17-02-PLAN.md -- Tests for status UI elements and browser verification checkpoint
 
 #### Phase 18: WCAG 2.1 Level AA Compliance
 **Goal**: HTML reports and CLI wizard meet WCAG 2.1 Level AA standards for all users including those with disabilities
@@ -224,4 +224,4 @@ Phases execute in numeric order: 16 -> 17 -> 18
 | 18. WCAG 2.1 Level AA Compliance | v1.3.0 | 0/3 | Not started | - |
 
 ---
-*Last updated: 2026-02-11 after Phase 16 planning*
+*Last updated: 2026-02-11 after Phase 17 planning*
