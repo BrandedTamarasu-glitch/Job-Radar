@@ -274,6 +274,9 @@ def _generate_html_report(
     min_score: float = 2.8,
 ) -> None:
     """Generate an HTML report with Bootstrap 5.3 styling."""
+    # Import tracker locally to avoid circular dependency
+    from . import tracker
+
     name = html.escape(profile["name"])
     today = date.today().isoformat()
 
@@ -282,6 +285,11 @@ def _generate_html_report(
     total = len(scored_results)
     recommended = [r for r in scored_results if r["score"]["overall"] >= 3.5]
     new_count = sum(1 for r in scored_results if r.get("is_new", True))
+
+    # Load application statuses for embedding
+    import json as json_module
+    all_statuses = tracker.get_all_application_statuses()
+    embedded_status_json = json_module.dumps(all_statuses, indent=2)
 
     # Generate HTML content
     html_content = f"""<!DOCTYPE html>
@@ -356,7 +364,40 @@ def _generate_html_report(
       font-size: 0.8rem;
       color: var(--bs-secondary-color);
     }}
+
+    /* Status badge styling */
+    .status-badge {{
+      margin-right: 0.5rem;
+    }}
+
+    /* Status dropdown compact sizing */
+    .status-dropdown {{
+      font-size: 0.75rem;
+      padding: 0.2em 0.5em;
+    }}
+
+    /* Pending sync indicator dot */
+    .pending-dot {{
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      background-color: #ffc107;
+      border-radius: 50%;
+      margin-left: 4px;
+      vertical-align: middle;
+      title: "Pending sync to tracker.json";
+    }}
+
+    /* Export status button */
+    .export-status-btn {{
+      margin-left: 0.5rem;
+    }}
   </style>
+
+  <!-- Embedded tracker status (source of truth) -->
+  <script type="application/json" id="tracker-status">
+{embedded_status_json}
+  </script>
 </head>
 <body>
   <div class="container my-4">
@@ -672,12 +713,34 @@ def _html_recommended_section(recommended: list[dict], profile: dict) -> str:
 
         details_html = "".join(details)
 
-        # Add data attributes for clipboard functionality
+        # Generate job key for status tracking (matches tracker.job_key format)
+        job_key_val = f"{job.title.lower().strip()}||{job.company.lower().strip()}"
+
+        # Add data attributes for clipboard and status tracking functionality
         data_attrs = ""
         if job.url:
-            data_attrs = f'class="card mb-3 job-item" tabindex="0" data-job-url="{html.escape(job.url)}" data-score="{score_val:.1f}"'
+            data_attrs = f'class="card mb-3 job-item" tabindex="0" data-job-url="{html.escape(job.url)}" data-score="{score_val:.1f}" data-job-key="{html.escape(job_key_val)}" data-job-title="{html.escape(job.title)}" data-job-company="{html.escape(job.company)}"'
         else:
-            data_attrs = 'class="card mb-3"'
+            data_attrs = f'class="card mb-3" data-job-key="{html.escape(job_key_val)}" data-job-title="{html.escape(job.title)}" data-job-company="{html.escape(job.company)}"'
+
+        # Status dropdown HTML
+        status_dropdown = f"""
+          <div class="dropdown d-inline-block ms-2">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle status-dropdown"
+                    type="button" data-bs-toggle="dropdown"
+                    aria-label="Change application status">
+              Status
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li><a class="dropdown-item" href="#" data-status="applied">Applied</a></li>
+              <li><a class="dropdown-item" href="#" data-status="interviewing">Interviewing</a></li>
+              <li><a class="dropdown-item" href="#" data-status="rejected">Rejected</a></li>
+              <li><a class="dropdown-item" href="#" data-status="offer">Offer</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="#" data-status="">Clear Status</a></li>
+            </ul>
+          </div>
+        """
 
         card = f"""
         <div {data_attrs}>
@@ -685,6 +748,7 @@ def _html_recommended_section(recommended: list[dict], profile: dict) -> str:
             <h3 class="h5 mb-0">
               {i}. {html.escape(job.title)} — {html.escape(job.company)}
               <span class="badge {badge_class} score-badge">{score_val:.1f}/5.0</span>{new_tag}
+              {status_dropdown}
             </h3>
           </div>
           <div class="card-body">
@@ -698,11 +762,15 @@ def _html_recommended_section(recommended: list[dict], profile: dict) -> str:
 
     cards_html = "".join(cards)
 
-    # Add Copy All button with keyboard hint
+    # Add Copy All button with keyboard hint and Export Status button
     copy_all_button = f"""
     <div class="d-flex align-items-center mb-3">
       <button class="btn btn-primary copy-all-btn" onclick="copyAllRecommendedUrls(this)">
         Copy All Recommended URLs
+      </button>
+      <button class="btn btn-sm btn-outline-info export-status-btn no-print"
+              onclick="exportPendingStatusUpdates()">
+        Export Status Updates
       </button>
       <span class="shortcut-hint ms-2">Keyboard: <kbd>C</kbd> = copy focused, <kbd>A</kbd> = copy all</span>
     </div>
@@ -747,19 +815,42 @@ def _html_results_table(scored_results: list[dict]) -> str:
         emp_type = getattr(job, "employment_type", "") or job.arrangement
         snippet = _make_snippet(job.description, 80)
 
+        # Generate job key for status tracking
+        job_key_val = f"{job.title.lower().strip()}||{job.company.lower().strip()}"
+
         # Build link and copy button
         if job.url:
             link_html = f'<a href="{html.escape(job.url)}" target="_blank" class="btn btn-sm btn-outline-primary">View</a> <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copySingleUrl(this)" data-url="{html.escape(job.url)}">Copy</button>'
-            row_attrs = f'class="job-item" tabindex="0" data-job-url="{html.escape(job.url)}" data-score="{score:.1f}"'
+            row_attrs = f'class="job-item" tabindex="0" data-job-url="{html.escape(job.url)}" data-score="{score:.1f}" data-job-key="{html.escape(job_key_val)}" data-job-title="{html.escape(job.title)}" data-job-company="{html.escape(job.company)}"'
         else:
             link_html = html.escape(job.source)
-            row_attrs = ''
+            row_attrs = f'data-job-key="{html.escape(job_key_val)}" data-job-title="{html.escape(job.title)}" data-job-company="{html.escape(job.company)}"'
+
+        # Status dropdown (compact version for table)
+        status_dropdown = f"""
+          <div class="dropdown d-inline-block">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle status-dropdown"
+                    type="button" data-bs-toggle="dropdown"
+                    aria-label="Change application status">
+              Status
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li><a class="dropdown-item" href="#" data-status="applied">Applied</a></li>
+              <li><a class="dropdown-item" href="#" data-status="interviewing">Interviewing</a></li>
+              <li><a class="dropdown-item" href="#" data-status="rejected">Rejected</a></li>
+              <li><a class="dropdown-item" href="#" data-status="offer">Offer</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="#" data-status="">Clear Status</a></li>
+            </ul>
+          </div>
+        """
 
         rows.append(f"""
         <tr {row_attrs}>
           <td>{i}</td>
           <td><span class="badge {badge_class}">{score:.1f}/5.0</span><br><small class="text-muted">({html.escape(rec)})</small></td>
           <td>{new_badge}</td>
+          <td>{status_dropdown}</td>
           <td><strong>{html.escape(job.title)}</strong></td>
           <td>{html.escape(job.company)}</td>
           <td>{salary}</td>
@@ -781,6 +872,7 @@ def _html_results_table(scored_results: list[dict]) -> str:
               <th>#</th>
               <th>Score</th>
               <th>New</th>
+              <th>Status</th>
               <th>Title</th>
               <th>Company</th>
               <th>Salary</th>

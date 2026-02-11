@@ -123,3 +123,13 @@ def get_application_status(title: str, company: str) -> str | None:
     key = job_key(title, company)
     entry = tracker["applications"].get(key)
     return entry["status"] if entry else None
+
+
+def get_all_application_statuses() -> dict:
+    """Get all application statuses from tracker.
+
+    Returns the entire applications dict from tracker.json.
+    Avoids repeated file reads when embedding status for all jobs.
+    """
+    tracker = _load_tracker()
+    return tracker.get("applications", {})
