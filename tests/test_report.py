@@ -1028,3 +1028,186 @@ def test_html_report_external_links_accessibility(sample_profile, sample_scored_
 
     # Verify aria-labels contain descriptive text (job context)
     assert "opens in new tab" in html_content, "aria-label should indicate link opens in new tab"
+
+
+# -- Phase 19: Typography & Color Foundation Tests --------------------------------
+
+def test_html_report_system_font_stack(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that HTML report uses system font stack CSS variable."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_content = Path(result["html"]).read_text()
+    assert "--font-sans" in html_content, "System font stack variable missing"
+    assert "system-ui" in html_content, "system-ui font not in stack"
+    assert "font-family: var(--font-sans)" in html_content, "Body not using font-sans variable"
+
+
+def test_html_report_monospace_score_badges(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that score badges use monospace font stack."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_content = Path(result["html"]).read_text()
+    assert "--font-mono" in html_content, "Monospace font variable missing"
+    assert "ui-monospace" in html_content, "ui-monospace not in stack"
+
+
+def test_html_report_typography_hierarchy(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test newspaper-style type hierarchy with distinct heading sizes."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_content = Path(result["html"]).read_text()
+    assert "--font-size-title" in html_content, "Title size variable missing"
+    assert "--font-size-section" in html_content, "Section size variable missing"
+    assert "--font-size-body" in html_content, "Body size variable missing"
+
+
+def test_html_report_semantic_color_variables(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that 3-tier semantic color CSS variables are defined."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_content = Path(result["html"]).read_text()
+    # Green tier (strong, >= 4.0)
+    assert "--color-tier-strong-bg" in html_content, "Strong tier background color missing"
+    assert "--color-tier-strong-border" in html_content, "Strong tier border color missing"
+    # Cyan tier (recommended, 3.5-3.9)
+    assert "--color-tier-rec-bg" in html_content, "Recommended tier background color missing"
+    assert "--color-tier-rec-border" in html_content, "Recommended tier border color missing"
+    # Gray tier (review, 2.8-3.4)
+    assert "--color-tier-review-bg" in html_content, "Review tier background color missing"
+    assert "--color-tier-review-border" in html_content, "Review tier border color missing"
+
+
+def test_html_report_dark_mode_color_inversion(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that dark mode inverts tier color lightness via media query."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_content = Path(result["html"]).read_text()
+    assert "prefers-color-scheme: dark" in html_content, "Dark mode media query missing"
+    # Verify dark mode overrides lightness (should have multiple prefers-color-scheme blocks)
+    dark_mode_count = html_content.count("prefers-color-scheme: dark")
+    assert dark_mode_count >= 1, "Dark mode media query should appear at least once"
+
+
+def test_html_report_tier_classes_on_cards(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that job cards have tier-specific CSS classes based on score."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_content = Path(result["html"]).read_text()
+    # First result has score 4.2 (strong tier)
+    assert "tier-strong" in html_content, "Strong tier class missing on card"
+    # Second result has score 3.7 (recommended tier)
+    assert "tier-rec" in html_content, "Recommended tier class missing on card"
+
+
+def test_html_report_tier_classes_on_table_rows(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that table rows have tier-specific CSS classes."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_content = Path(result["html"]).read_text()
+    # Check that tr elements contain tier classes
+    # Third result has score 2.8 (review tier)
+    assert "tier-review" in html_content, "Review tier class missing on table row"
+
+
+def test_html_report_pill_shaped_score_badges(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that score badges use pill shape with tier colors."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_content = Path(result["html"]).read_text()
+    assert "rounded-pill" in html_content, "Pill shape class missing"
+    assert "tier-badge-strong" in html_content, "Strong tier badge class missing"
+    # Pill CSS rule
+    assert "border-radius: 999em" in html_content, "Pill border-radius CSS rule missing"
+
+
+def test_html_report_non_color_indicators(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test non-color indicators for colorblind accessibility (border thickness + icons)."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_content = Path(result["html"]).read_text()
+    # Border thickness variation in CSS
+    assert "border-left: 5px" in html_content, "5px border for strong tier missing"
+    assert "border-left: 4px" in html_content, "4px border for recommended tier missing"
+    assert "border-left: 3px" in html_content, "3px border for review tier missing"
+    # Icon indicators
+    assert "tier-icon" in html_content, "Tier icon class missing"
+
+
+def test_html_report_status_badges_pill_style(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that application status badges use pill style."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_content = Path(result["html"]).read_text()
+    # STATUS_CONFIG should include rounded-pill in class
+    assert "bg-success rounded-pill" in html_content or "rounded-pill" in html_content, \
+        "Status badges should use pill style"
