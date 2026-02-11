@@ -1729,17 +1729,17 @@ def _html_results_table(scored_results: list[dict]) -> str:
 
         rows.append(f"""
         <tr {row_attrs}>
-          <th scope="row">{i}</th>
-          <td>{score_badge_accessible}<br><small class="text-muted">({html.escape(rec)})</small></td>
-          <td>{new_badge_accessible}</td>
-          <td>{status_dropdown}</td>
-          <td><strong>{html.escape(job.title)}</strong></td>
-          <td>{html.escape(job.company)}</td>
-          <td>{salary}</td>
-          <td>{html.escape(emp_type)}</td>
-          <td>{html.escape(job.location)}</td>
-          <td>{html.escape(snippet)}</td>
-          <td>{link_html}</td>
+          <th scope="row" data-label="#">{i}</th>
+          <td data-label="Score">{score_badge_accessible}<br><small class="text-muted">({html.escape(rec)})</small></td>
+          <td data-label="New" class="col-new">{new_badge_accessible}</td>
+          <td data-label="Status">{status_dropdown}</td>
+          <td data-label="Title"><strong>{html.escape(job.title)}</strong></td>
+          <td data-label="Company">{html.escape(job.company)}</td>
+          <td data-label="Salary" class="col-salary">{salary}</td>
+          <td data-label="Type" class="col-type">{html.escape(emp_type)}</td>
+          <td data-label="Location">{html.escape(job.location)}</td>
+          <td data-label="Snippet" class="col-snippet">{html.escape(snippet)}</td>
+          <td data-label="Link" class="no-label">{link_html}</td>
         </tr>
         """)
 
@@ -1755,14 +1755,14 @@ def _html_results_table(scored_results: list[dict]) -> str:
               <tr>
                 <th scope="col">#</th>
                 <th scope="col">Score</th>
-                <th scope="col">New</th>
+                <th scope="col" class="col-new">New</th>
                 <th scope="col">Status</th>
                 <th scope="col">Title</th>
                 <th scope="col">Company</th>
-                <th scope="col">Salary</th>
-                <th scope="col">Type</th>
+                <th scope="col" class="col-salary">Salary</th>
+                <th scope="col" class="col-type">Type</th>
                 <th scope="col">Location</th>
-                <th scope="col">Snippet</th>
+                <th scope="col" class="col-snippet">Snippet</th>
                 <th scope="col">Link</th>
               </tr>
             </thead>
