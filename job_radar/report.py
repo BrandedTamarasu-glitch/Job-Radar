@@ -1699,7 +1699,7 @@ def _generate_html_report(
         data.push(jobElement.getAttribute('data-score') || '');
 
         // NEW badge - check for badge element
-        var newBadge = jobElement.querySelector('.badge.bg-success');
+        var newBadge = jobElement.querySelector('.badge.bg-primary');
         data.push(newBadge ? 'Yes' : 'No');
 
         // Status from badge
