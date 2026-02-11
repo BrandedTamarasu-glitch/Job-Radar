@@ -1,692 +1,478 @@
-# Pitfalls Research: v1.2.0 Job Board APIs & PDF Parsing
+# Pitfalls Research: v1.4.0 Visual Design & Polish
 
-**Domain:** Python CLI job aggregator with API integration and PDF resume parsing
-**Researched:** 2026-02-09
+**Domain:** Adding visual design improvements and responsive features to existing Bootstrap 5 HTML report generator
+**Researched:** 2026-02-11
 **Confidence:** HIGH
-
----
 
 ## Critical Pitfalls
 
-### Pitfall 1: API Rate Limit Bypass Through Cache Confusion
+### Pitfall 1: Base64 Font Embedding Bloat & FOUT/FOIT
 
 **What goes wrong:**
-Cache hits counting against rate limits because API requests happen before checking cache, or cache misses triggering rapid successive API calls that exceed rate limits.
+Embedding Inter and JetBrains Mono as base64 in the inline CSS creates massive file size bloat (fonts are 7-30x larger than typical images) with an additional 33% overhead from base64 encoding itself. Without subsetting, Inter Regular + JetBrains Mono can easily add 200-400KB to an already 120KB Bootstrap CSS inline bundle, pushing total file size past Google's 2MB crawl limit for search or causing significant performance degradation. Additionally, base64 encoding puts fonts on the critical path, blocking CSS rendering and causing FOIT (Flash of Invisible Text) where text is invisible until fonts load.
 
 **Why it happens:**
-Job Radar's existing `fetch_with_retry()` checks cache but doesn't enforce rate limiting. When adding 3 new API-based sources (Wellfound, Adzuna, Authentic Jobs), parallel fetching of multiple job pages can quickly exceed API rate limits (Adzuna: generous but unspecified, Wellfound/Authentic Jobs: unknown limits).
+Developers assume "single-file HTML = everything must be base64" and embed full font files with all glyphs. The promise of "no FOUT because CSS and fonts arrive together" is misleading — it doesn't speed up font delivery, it just delays the entire CSS from parsing and executing.
 
-**Consequences:**
-- 429 Too Many Requests errors block job fetching
-- Temporary IP bans from job boards
-- Users see incomplete job listings without understanding why
-- Existing 4-hour cache doesn't help if initial fetch exceeds limits
-
-**Prevention:**
-```python
-# Use requests-ratelimiter (drop-in replacement for requests.Session)
-from requests_ratelimiter import LimiterSession
-from requests_cache import CacheMixin
-from pyrate_limiter import Duration, RequestRate, Limiter
-
-# Combine caching + rate limiting
-class CachedLimiterSession(CacheMixin, LimiterSession):
-    pass
-
-session = CachedLimiterSession(
-    limiter=Limiter(RequestRate(5, Duration.SECOND)),  # 5 req/sec per source
-    backend='sqlite',
-    expire_after=14400  # 4 hours (existing TTL)
-)
-```
+**How to avoid:**
+1. **Subset fonts to English + basic Latin only** — reduces Inter from ~90KB TTF to ~28KB WOFF2 (70% reduction) using tools like glyphanger or pyftsubset
+2. **Convert to WOFF2** (not WOFF or TTF) — Brotli compression provides 30-50% additional reduction
+3. **Include only weights actually used** — Inter Regular (400) + Bold (700), JetBrains Mono Regular (400) for code
+4. **Add font-display: swap** to @font-face rules — shows fallback text immediately, swaps when custom font loads
+5. **Consider fallback-only for print** — print stylesheets can use system fonts (Georgia, Consolas) to avoid bloat
 
 **Warning signs:**
-- HTTP 429 status codes in logs
-- Incomplete job listings (some sources work, others fail)
-- Retry attempts exhausted without 200 response
-- Different results when running search minutes apart
+- HTML file size exceeds 500KB
+- Lighthouse reports "Ensure text remains visible during webfont load" warning
+- Time to First Contentful Paint (FCP) > 2 seconds on 3G
+- Users report blank white page on slow connections
 
 **Phase to address:**
-Phase 1: API Integration Foundation — implement rate limiting before connecting any APIs
-
-**Sources:**
-- [Python Request Optimization: Caching and Rate Limiting](https://medium.com/neural-engineer/python-request-optimization-caching-and-rate-limiting-79ceb5e6eb1e)
-- [requests-ratelimiter on PyPI](https://pypi.org/project/requests-ratelimiter/)
+Phase 1 (Font System) — Must establish font subsetting and WOFF2 conversion in Python build process before implementing font changes. Should include fallback font stack testing.
 
 ---
 
-### Pitfall 2: API Keys Hardcoded or Committed to Repository
+### Pitfall 2: WCAG Contrast Regression with Custom Semantic Colors
 
 **What goes wrong:**
-Developer hardcodes API keys (Adzuna requires app_id + app_key, Wellfound/Authentic Jobs require keys) for testing, commits to Git, and keys appear in public repository or are exposed in PyInstaller executable.
+Replacing Bootstrap's default blue contextual classes (primary, success, warning, danger) with custom semantic colors for job scores breaks WCAG 2.1 Level AA compliance. Bootstrap's own documentation warns that their default palette "may lead to insufficient color contrast (below the recommended WCAG 2.2 text color contrast ratio of 4.5:1 and the WCAG 2.2 non-text color contrast ratio of 3:1)". Custom brand colors often fail even worse — a "nice looking" teal that works on white backgrounds fails contrast ratio on gray table cells, or a "professional" dark blue creates insufficient contrast with black text.
 
 **Why it happens:**
-Project constraint: "No API keys required for basic usage" conflicts with reality that Adzuna, Wellfound, and Authentic Jobs all require authentication. Developer stores keys in code for convenience during development.
+Designers pick colors visually ("looks good to me") without testing contrast ratios, especially across all combinations (text on background, borders on backgrounds, disabled states). Bootstrap's built-in `color-contrast()` Sass function isn't available in runtime CSS customization, so developers manually override CSS variables without verification.
 
-**Consequences:**
-- API keys exposed in version control history (even after removal)
-- Keys extracted from PyInstaller bundle via `pyinstaller-extractor` + decompile
-- Malicious actors abuse exposed keys, exhausting rate limits
-- API providers revoke keys, breaking the application for all users
-
-**Prevention:**
-```python
-# Use keyring for cross-platform secure storage
-import keyring
-
-# First run: prompt user for API keys (optional flow)
-def get_api_key(service: str) -> Optional[str]:
-    """Retrieve API key from keyring, prompt if missing."""
-    key = keyring.get_password("job-radar", service)
-    if key is None and input(f"Enable {service}? (y/n): ").lower() == 'y':
-        key = input(f"Enter {service} API key: ")
-        keyring.set_password("job-radar", service, key)
-    return key
-
-# Use in fetchers
-adzuna_key = get_api_key("adzuna") or None  # Falls back to None for no-key mode
-```
+**How to avoid:**
+1. **Test ALL color combinations** with WebAIM Contrast Checker before implementation:
+   - Normal text: 4.5:1 minimum
+   - Large text (18pt+): 3:1 minimum
+   - UI components/borders: 3:1 minimum
+2. **Test with colorblind simulators** (Protanopia, Deuteranopia) — 8% of men have red-green colorblindness, so red/green for good/bad scores fails without additional visual indicators
+3. **Include non-color indicators** — icons (checkmark, warning triangle), patterns, or text labels alongside color coding
+4. **Document color values with contrast ratios** in code comments:
+   ```css
+   /* Success green: #22c55e on white = 3.4:1 (PASS AA Large) */
+   ```
+5. **Add Colour Contrast Analyser (CCA)** to CI/CD to automatically fail builds below WCAG AA thresholds
 
 **Warning signs:**
-- API keys visible in `git log --all -S "app_key"`
-- Config files (profile.json, config.json) contain keys
-- .env files tracked in Git
-- PyInstaller .toc file shows plaintext key strings
+- Existing accessibility tests start failing after color changes
+- Light-colored warning badges have poor readability
+- Color-coded scores look identical in grayscale screenshots
+- Lighthouse accessibility score drops below 100
 
 **Phase to address:**
-Phase 1: API Integration Foundation — establish secure key management before any API implementation
-
-**Sources:**
-- [Securely Storing Credentials in Python with Keyring](https://medium.com/@forsytheryan/securely-storing-credentials-in-python-with-keyring-d8972c3bd25f)
-- [Securing Sensitive Data in Python: Best Practices](https://systemweakness.com/securing-sensitive-data-in-python-best-practices-for-storing-api-keys-and-credentials-2bee9ede57ee)
+Phase 1 (Semantic Colors) — Before implementing any color changes, establish WCAG testing protocol. Phase 3 (Accessibility CI) should catch regressions automatically.
 
 ---
 
-### Pitfall 3: PDF Image Resumes Fail Silently with No Text Extracted
+### Pitfall 3: Responsive Table Display Block Losing Table Semantics
 
 **What goes wrong:**
-User uploads a PDF resume that's actually a scanned image or screenshot, parser returns empty strings for name/skills/experience, wizard pre-fill shows blank fields, user doesn't understand why.
+Converting Bootstrap tables to `display: block` or `display: flex` for mobile stacking completely removes native table semantics. Screen readers treat the table as a `<div>` soup, announcing cells as unrelated text chunks with no structural relationships. A table showing "Company | Position | Score" becomes "Company ABC Position Senior Developer Score 87 Company XYZ..." with no indication of column headers or row groupings. Even worse, if using `display: grid` or `display: flex` on Safari (pre-2024 versions), table semantics are completely dropped and assistive technology users lose all context.
 
 **Why it happens:**
-Text-based PDF parsers (pypdf, pdfplumber) can only extract highlightable text. Scanned PDFs or PDFs created from images (common from print-to-PDF workflows) have no text layer. pypdf's `extract_text()` succeeds but returns empty/whitespace strings.
+Popular CSS patterns for responsive tables use `display: block` + floats to stack rows vertically, which works visually but destroys accessibility. Developers test with visual inspection only, not with screen readers.
 
-**Consequences:**
-- Silent failure: no error message, just blank wizard fields
-- User wastes time manually entering everything (defeats purpose of PDF import)
-- User blames the tool, not their PDF format
-- Support burden: "PDF import doesn't work"
-
-**Prevention:**
-```python
-import pypdf
-
-def validate_pdf_has_text(pdf_path: str) -> tuple[bool, str]:
-    """Check if PDF contains extractable text (not image-only)."""
-    try:
-        reader = pypdf.PdfReader(pdf_path)
-        total_chars = sum(len(page.extract_text()) for page in reader.pages[:3])  # Check first 3 pages
-
-        if total_chars < 50:  # Arbitrary threshold for "empty"
-            return False, "This PDF appears to be a scanned image. Please use a text-based PDF."
-        return True, ""
-    except Exception as e:
-        return False, f"Could not read PDF: {e}"
-
-# In wizard flow
-is_valid, error = validate_pdf_has_text(pdf_path)
-if not is_valid:
-    print(f"❌ {error}")
-    print("💡 Export your resume as PDF from Word/Google Docs instead of scanning.")
-    # Fall back to manual entry
-```
+**How to avoid:**
+1. **Never use `display: block/flex/grid` on `<table>` without ARIA restoration**
+2. **When changing display properties, add explicit ARIA roles**:
+   ```css
+   @media (max-width: 768px) {
+     table { display: block; }
+   }
+   ```
+   ```html
+   <table role="table">
+     <thead role="rowgroup">
+       <tr role="row">
+         <th role="columnheader">Company</th>
+   ```
+3. **Better approach: Keep table semantics, hide non-critical columns**:
+   - Use `visibility: hidden` on less important columns (not `display: none` on parent)
+   - Show only critical data (company name, score) on mobile
+   - Provide "View Details" expandable row or link to full data
+4. **Card layout pattern**: Convert to actual cards with `<dl>` (definition list) structure:
+   ```html
+   <div role="article" aria-label="Job posting">
+     <dl>
+       <dt>Company:</dt><dd>ABC Corp</dd>
+       <dt>Score:</dt><dd>87</dd>
+     </dl>
+   </div>
+   ```
+5. **Test with actual screen readers** (NVDA on Windows, VoiceOver on Mac/iOS) at mobile viewport widths
 
 **Warning signs:**
-- All extracted fields empty despite non-zero PDF file size
-- User reports "PDF has content but nothing imported"
-- File size > 1MB for a 2-page resume (images are large)
-- PDF opens fine in viewer but extract_text() returns ""
+- Screen reader announces table content as plain text paragraph
+- NVDA/JAWS doesn't announce "Table with X rows" when entering table
+- axe DevTools reports "Elements must have their visible text as part of their accessible name"
+- Table navigation shortcuts (T to jump tables, Ctrl+Alt+arrows to navigate cells) don't work
 
 **Phase to address:**
-Phase 2: PDF Resume Parser — validate PDF format before attempting extraction
-
-**Sources:**
-- [Why PDF Resumes Sometimes Fail in Online Submissions](https://www.resumly.ai/blog/why-pdf-resumes-sometimes-fail-in-online-submissions)
-- [How to Fix OCR Errors in Scanned PDF Resumes](https://www.resumemakeroffer.com/en/blog/post/95162)
+Phase 2 (Mobile Responsive) — Critical to address during initial mobile layout implementation. Should include screen reader testing as acceptance criteria.
 
 ---
 
-### Pitfall 4: Non-ASCII Encoding Errors in PDF Text Extraction
+### Pitfall 4: Bootstrap Print Stylesheet Stripping Backgrounds with !important
 
 **What goes wrong:**
-Resume contains non-ASCII characters (accented names like "José García", em-dashes, smart quotes), `extract_text()` raises UnicodeEncodeError or returns garbled text like "Jos� Garc�a".
+Bootstrap's built-in print stylesheet includes `background-color: transparent !important` and forces table cells to `background-color: white !important` globally, completely overriding custom score-based color coding. Attempting to add print rules like `.score-high { background-color: #d4edda !important; }` fails because Bootstrap's print reset has higher specificity or loads after custom CSS. Even if backgrounds do print, users' browsers default to "omit background graphics" in print settings, so color-coded cells print as white regardless of CSS. This destroys the visual hierarchy that was the entire point of the color system upgrade.
 
 **Why it happens:**
-PDF fonts use custom encodings that pypdf may not decode correctly. When writing extracted text to profile.json (UTF-8), encoding mismatches cause errors. Legacy Python 2 code or Windows console defaults exacerbate this.
+Developers add print styles but don't realize Bootstrap's print CSS is already in the inline bundle fighting them. Testing print preview with default browser settings (background graphics off) doesn't reveal the issue, but users printing with that setting see broken layouts.
 
-**Consequences:**
-- Parser crashes with UnicodeEncodeError, no profile created
-- Garbled text in profile.json breaks skill matching (José's "Python" becomes "Pýthon")
-- International users disproportionately affected
-- Wizard fails to save profile due to JSON encoding error
-
-**Prevention:**
-```python
-import pypdf
-
-def extract_text_safe(pdf_path: str) -> str:
-    """Extract PDF text with encoding error handling."""
-    try:
-        reader = pypdf.PdfReader(pdf_path)
-        text_parts = []
-        for page in reader.pages:
-            text = page.extract_text()
-            # pypdf 6.x handles encoding better, but still normalize
-            text_parts.append(text)
-
-        full_text = "\n".join(text_parts)
-        # Normalize common issues
-        full_text = full_text.encode('utf-8', errors='replace').decode('utf-8')
-        return full_text
-    except Exception as e:
-        log.error(f"PDF extraction failed: {e}")
-        return ""
-
-# When writing to JSON
-import json
-with open("profile.json", "w", encoding="utf-8") as f:
-    json.dump(profile, f, ensure_ascii=False, indent=2)  # Preserve Unicode
-```
+**How to avoid:**
+1. **Override Bootstrap's print reset with higher specificity AFTER Bootstrap CSS**:
+   ```css
+   @media print {
+     /* Override Bootstrap's transparent backgrounds */
+     .table > tbody > tr > td.score-high,
+     .table > tbody > tr > th.score-high {
+       background-color: #d4edda !important;
+       -webkit-print-color-adjust: exact !important;
+       print-color-adjust: exact !important;
+     }
+   }
+   ```
+2. **Use `print-color-adjust: exact`** (and `-webkit-` prefix) to request browsers honor background colors — note this is a HINT, not a guarantee
+3. **Provide non-color fallback for prints**:
+   - Add borders/patterns to score ranges
+   - Include score numbers explicitly ("Score: 87/100")
+   - Add icons/symbols: ★★★★☆ for ratings
+4. **Test print preview with "background graphics: OFF"** (the default) — verify borders/text make visual hierarchy clear
+5. **Consider print-specific layout**: Simplified table with bold/italic instead of colors, or pre-computed summary section
 
 **Warning signs:**
-- `UnicodeEncodeError: 'charmap' codec can't encode character`
-- Garbled characters in profile.json or terminal output
-- Parser works on English resumes, fails on international names
-- Windows users report more encoding issues than macOS/Linux
+- Print preview shows all-white table cells
+- Color-coded scores visible on screen disappear in print
+- PDF exports from browser show no background colors
+- User bug reports: "Printed report loses all formatting"
 
 **Phase to address:**
-Phase 2: PDF Resume Parser — handle encoding during extraction and JSON serialization
-
-**Sources:**
-- [Encoding issue in extract_text() - pypdf GitHub](https://github.com/mstamy2/PyPDF2/issues/235)
-- [Extract Text from PDF pypdf Documentation](https://pypdf.readthedocs.io/en/stable/user/extract-text.html)
+Phase 2 (Print Stylesheet) — Address immediately when adding print support. Include print testing with backgrounds off in QA checklist.
 
 ---
 
-### Pitfall 5: PyInstaller Missing PDF Library Dependencies
+### Pitfall 5: CSV Export Missing UTF-8 BOM Breaks Excel Special Characters
 
 **What goes wrong:**
-PyInstaller bundle includes pypdf code but misses binary dependencies or data files, executable crashes with `ModuleNotFoundError: No module named 'Crypto'` or `FileNotFoundError` for font mappings.
+JavaScript Blob-based CSV export creates files that display correctly in text editors but show corrupted characters in Microsoft Excel when job titles, companies, or descriptions contain non-ASCII characters (é, ñ, ™, curly quotes, em-dashes). A job title like "Développeur Senior—Full Stack" appears as "DÃ©veloppeur Seniorâ€"Full Stack" when opened directly in Excel. Additionally, commas in company names ("Acme, Inc.") or job titles break CSV column structure, shifting data into wrong columns.
 
 **Why it happens:**
-pypdf has optional dependencies (PyCryptodome for encrypted PDFs) that PyInstaller doesn't auto-detect. pdfplumber uses pdfminer.six with font data files not collected by default. PyInstaller's static analysis misses runtime imports.
+CSV exports specify UTF-8 encoding (`charset=utf-8`) but omit the BOM (Byte Order Mark) that Excel requires to detect UTF-8. Without BOM bytes `\xEF\xBB\xBF` at the file start, Excel assumes Windows-1252 encoding. Developers test with simple ASCII data or open CSVs in text editors (which handle UTF-8 correctly) rather than Excel.
 
-**Consequences:**
-- Executable works in dev environment, crashes in production
-- "PDF import" feature unavailable in standalone .exe/.app
-- Users can't use key v1.2.0 feature on Windows/macOS builds
-- Rollback required, milestone fails
-
-**Prevention:**
-```python
-# In .spec file
-a = Analysis(
-    ['job_radar/cli.py'],
-    pathex=[],
-    binaries=[],
-    datas=[
-        # pdfminer.six font mappings (if using pdfplumber)
-        (os.path.join(site_packages, 'pdfminer', 'cmap'), 'pdfminer/cmap'),
-    ],
-    hiddenimports=[
-        'pypdf',           # Ensure pypdf is collected
-        'Crypto',          # PyCryptodome for encrypted PDFs (optional)
-        'pdfplumber',      # If using pdfplumber
-        'pdfminer',        # pdfplumber dependency
-        'pdfminer.six',
-    ],
-    hookspath=[],
-    ...
-)
-
-# Test before release
-# 1. Build executable with PyInstaller
-# 2. Test PDF import on clean VM (no Python installed)
-# 3. Try encrypted PDF, image PDF, multi-page PDF
-```
+**How to avoid:**
+1. **Add UTF-8 BOM prefix** to CSV content before creating Blob:
+   ```javascript
+   const BOM = "\uFEFF";
+   const csvContent = BOM + csvData;
+   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+   ```
+2. **Escape special characters** properly:
+   - Wrap all fields in double quotes: `"Acme, Inc.","Senior Dev—FT","Score: 87"`
+   - Escape embedded quotes by doubling: `"Company ""Quoted"" Name"` → `Company "Quoted" Name`
+   - Preserve newlines in multi-line descriptions: `"Line 1\nLine 2"` works in Excel
+3. **Test in actual Excel** (not Google Sheets or LibreOffice) on Windows with non-ASCII data:
+   - Test company names: Citroën, Nestlé, SAP®
+   - Test special chars: em-dash (—), curly quotes (" "), trademark (™)
+   - Test commas in values
+4. **Provide UTF-8 BOM as default**, document how to import if user manually changes encoding
 
 **Warning signs:**
-- `ModuleNotFoundError` only in bundled executable, not in source
-- PDF import works locally (pip install) but not in .exe
-- `import pypdf` succeeds but `pypdf.PdfReader()` fails
-- Different behavior on Windows vs macOS builds
+- Excel shows "DÃ©veloppeur" instead of "Développeur"
+- Commas in company names cause data to shift columns
+- Special characters like em-dashes (—) display as â€"
+- User bug reports: "CSV file is corrupted" (but only from Excel users)
 
 **Phase to address:**
-Phase 2: PDF Resume Parser — configure PyInstaller hidden imports during implementation, test in CI
-
-**Sources:**
-- [PyInstaller Common Issues and Pitfalls](https://pyinstaller.org/en/stable/common-issues-and-pitfalls.html)
-- [PyMuPDF with PyInstaller ModuleNotFoundError](https://github.com/pymupdf/PyMuPDF/issues/712)
+Phase 2 (CSV Export) — Must implement BOM and proper escaping from the start. Add test suite with non-ASCII sample data.
 
 ---
 
-## Moderate Pitfalls
-
-### Pitfall 6: Cache-Only Mode Breaks with API Sources
+### Pitfall 6: Lighthouse CI Flakiness from Dynamic Content & Timing Issues
 
 **What goes wrong:**
-User relies on cache-only mode (4-hour TTL) but new API sources (Wellfound, Adzuna, Authentic Jobs) have different data freshness patterns than scraped sources. Cached API responses become stale but aren't refreshed because user assumes cache is sufficient.
+Lighthouse accessibility scores fluctuate between runs (98, 100, 95, 100) in GitHub Actions CI despite identical code, causing builds to randomly fail. The HTML report loads application status from localStorage, updates counts dynamically with JavaScript, and applies filters — all of which execute at unpredictable times relative to Lighthouse's scan. Lighthouse may scan before JavaScript finishes, catching the page in an intermediate state with missing ARIA labels on filter buttons or dynamic count badges showing "0" (failing "button must have discernible text" rule). Multiple consecutive runs on the same code produce different accessibility scores, making the CI gate unreliable.
 
 **Why it happens:**
-BeautifulSoup scrapers fetch HTML which changes when new jobs posted. APIs return paginated JSON that may include `posted_date` fields allowing client-side freshness checks. Current cache uses URL hash, doesn't inspect response content for staleness.
+Lighthouse's default configuration doesn't wait for JavaScript execution to complete before auditing. Dynamic content loading (localStorage reads), DOM manipulation (updating counts), and async operations create race conditions. Running Lighthouse once per commit amplifies variance — single runs are inherently flaky for performance/timing-dependent audits.
 
-**Prevention:**
-```python
-# Extend cache metadata to track API response timestamps
-def _write_cache(url: str, body: str, response_headers: dict = None):
-    """Write response to cache with API metadata."""
-    entry = {
-        "url": url,
-        "ts": time.time(),
-        "body": body,
-    }
-    # Store API rate limit headers for intelligent retry
-    if response_headers:
-        entry["rate_limit_remaining"] = response_headers.get("X-RateLimit-Remaining")
-        entry["rate_limit_reset"] = response_headers.get("X-RateLimit-Reset")
+**How to avoid:**
+1. **Configure multiple Lighthouse runs** (minimum 3-5) and use median score:
+   ```yaml
+   # .lighthouserc.json
+   {
+     "ci": {
+       "collect": {
+         "numberOfRuns": 5
+       },
+       "assert": {
+         "preset": "lighthouse:recommended",
+         "assertions": {
+           "categories:accessibility": ["error", {"minScore": 0.95}]
+         }
+       }
+     }
+   }
+   ```
+2. **Add explicit waits** for dynamic content in Lighthouse config:
+   ```javascript
+   // Wait for specific elements to appear
+   await page.waitForSelector('[data-status-count]', { visible: true });
+   await page.waitForFunction(() => {
+     const count = document.querySelector('[data-status-count]');
+     return count && count.textContent !== '0';
+   });
+   ```
+3. **Separate static vs. dynamic audits**:
+   - Static audits (HTML structure, contrast, ARIA) run on every commit
+   - Dynamic audits (interactive elements, localStorage state) run only on main/release branches
+4. **Use axe-core directly** for more reliable accessibility testing — axe has zero false positives philosophy and better handles dynamic content
+5. **Add data-* attributes** for test stability:
+   ```html
+   <button data-filter="applied" aria-label="Filter: Applied (5)">
+     Applied <span data-testid="applied-count">5</span>
+   </button>
+   ```
+6. **Review failed audits manually** — if Lighthouse catches an issue 1 out of 5 runs, it's likely a real race condition
 
-    with open(_cache_path(url), "w", encoding="utf-8") as f:
-        json.dump(entry, f)
-
-# Check rate limits before refresh
-def should_refresh_cache(url: str) -> bool:
-    """Decide if cache should be refreshed based on rate limits."""
-    entry = _read_cache_entry(url)
-    if entry and entry.get("rate_limit_remaining") == "0":
-        reset_time = int(entry.get("rate_limit_reset", 0))
-        if time.time() < reset_time:
-            return False  # Wait until rate limit resets
-    return True
-```
+**Warning signs:**
+- Lighthouse accessibility scores vary by >3 points between identical runs
+- CI failures for "Elements must have discernible text" that pass locally
+- Intermittent failures on dynamic filter buttons or count badges
+- Lighthouse reports different number of accessibility issues on consecutive runs
+- GitHub Actions logs show timing differences in JavaScript execution
 
 **Phase to address:**
-Phase 1: API Integration Foundation — extend cache to store API response headers
+Phase 3 (Accessibility CI) — Essential to configure multiple runs and waits from the start. Consider axe-core as primary tool with Lighthouse as secondary validation.
 
 ---
 
-### Pitfall 7: PDF Parser Over-Extracts (Noise in Skills)
+### Pitfall 7: JavaScript Filter State Loss & Missing Accessibility Announcements
 
 **What goes wrong:**
-Parser extracts body text including headers/footers ("Page 1 of 2"), URLs ("github.com/username"), email signatures, and treats them as skills. Profile ends up with junk: `["Page", "of", "2", "github.com"]`.
+Implementing status filters (Applied, Interview, Rejected) with JavaScript filtering creates two critical issues: (1) Filter state is lost on page reload — users apply filters, reload the page (F5), and all jobs reappear without filter state persisted, and (2) Screen reader users have no indication that content changed after clicking a filter button. Sighted users see jobs disappear/reappear, but screen reader users hear "Filter: Applied, button" with no announcement that "Showing 5 of 47 jobs". Additionally, using URL fragments for state (`#filter=applied`) breaks accessibility because screen readers don't announce URL changes, and fragment-based routing isn't indexed by search engines.
 
 **Why it happens:**
-Rule-based extraction scans entire PDF text for skill keywords without context awareness. Resume formatting (headers, footers, contact info) isn't filtered out. pypdf's `extract_text()` returns all text in reading order, including non-content.
+Developers implement filtering as in-memory JavaScript state without persistence or live region announcements. URL fragment routing seems like an easy solution for state persistence, but it's a client-side-only approach that assistive technology doesn't recognize. Testing with mouse clicks doesn't reveal the lack of screen reader announcements.
 
-**Prevention:**
-```python
-# Filter extracted text to remove noise
-import re
+**How to avoid:**
+1. **Persist filter state in localStorage** AND URL query params (not fragments):
+   ```javascript
+   // Good: Query params are crawlable and can be announced
+   const params = new URLSearchParams(window.location.search);
+   params.set('filter', 'applied');
+   window.history.replaceState({}, '', `?${params}`);
+   localStorage.setItem('jobFilter', 'applied');
+   ```
+2. **Add ARIA live region** for filter results announcements:
+   ```html
+   <div aria-live="polite" aria-atomic="true" class="sr-only" id="filter-status">
+     <!-- JavaScript updates this -->
+   </div>
+   ```
+   ```javascript
+   function applyFilter(status) {
+     const count = filterJobs(status);
+     const statusEl = document.getElementById('filter-status');
+     statusEl.textContent = `Showing ${count} ${status} jobs out of ${totalJobs} total`;
+   }
+   ```
+3. **Use aria-pressed** on filter toggle buttons to indicate active state:
+   ```html
+   <button aria-pressed="true" data-filter="applied">
+     Applied (5)
+   </button>
+   ```
+4. **Sync state on load**:
+   ```javascript
+   window.addEventListener('DOMContentLoaded', () => {
+     const params = new URLSearchParams(window.location.search);
+     const savedFilter = params.get('filter') || localStorage.getItem('jobFilter');
+     if (savedFilter) applyFilter(savedFilter);
+   });
+   ```
+5. **Test with screen reader** (NVDA/VoiceOver) — verify announcements after filter clicks
 
-def clean_resume_text(text: str) -> str:
-    """Remove headers, footers, URLs from resume text."""
-    # Remove page numbers
-    text = re.sub(r'\bPage\s+\d+\s+of\s+\d+\b', '', text, flags=re.IGNORECASE)
-    # Remove URLs
-    text = re.sub(r'https?://[^\s]+', '', text)
-    # Remove email addresses
-    text = re.sub(r'\S+@\S+\.\S+', '', text)
-    # Remove phone numbers
-    text = re.sub(r'\+?1?\s*\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}', '', text)
-    return text
-
-# Extract skills from known sections only
-def extract_skills_from_section(text: str) -> list[str]:
-    """Find skills section and extract from that region only."""
-    # Look for "Skills", "Technical Skills", "Technologies" headers
-    skills_pattern = r'(?:Technical\s+)?Skills.*?(?=\n[A-Z][a-z]+:|\Z)'
-    match = re.search(skills_pattern, text, re.IGNORECASE | re.DOTALL)
-    if match:
-        return parse_skills(match.group())
-    return parse_skills(text)  # Fallback to full text
-```
-
-**Phase to address:**
-Phase 2: PDF Resume Parser — implement section detection and text cleaning
-
----
-
-### Pitfall 8: API Response Schema Changes Break Parsing
-
-**What goes wrong:**
-Adzuna or Wellfound changes JSON response structure (adds nesting, renames field `location` → `location.display_name`), parser expects old schema, raises `KeyError`, job source fails silently.
-
-**Why it happens:**
-Third-party APIs evolve without versioning or deprecation notices. Job Radar's parsers assume fixed schema. Current scraper pattern uses broad `except Exception` for crash tolerance, which hides schema changes.
-
-**Prevention:**
-```python
-# Defensive parsing with schema validation
-def parse_adzuna_job(data: dict) -> Optional[dict]:
-    """Parse Adzuna API response with defensive key access."""
-    try:
-        return {
-            "title": data.get("title", "Unknown Title"),
-            "company": data.get("company", {}).get("display_name", "Unknown Company"),
-            "location": data.get("location", {}).get("display_name", "Remote"),
-            "url": data.get("redirect_url", ""),
-            "description": data.get("description", ""),
-            "salary": data.get("salary_min"),  # May be None
-        }
-    except (KeyError, TypeError, AttributeError) as e:
-        log.warning(f"Failed to parse Adzuna job: {e} | Data: {data}")
-        return None  # Skip this job, continue with others
-
-# Log schema mismatches for debugging
-def validate_response_schema(data: dict, source: str):
-    """Check if API response matches expected schema."""
-    expected_keys = {"title", "company", "location", "url"}
-    missing = expected_keys - set(data.keys())
-    if missing:
-        log.warning(f"{source} API response missing keys: {missing}")
-```
+**Warning signs:**
+- Filters reset to "All" on page reload despite user setting filter
+- Screen reader testing reveals no announcement after clicking filter button
+- URL shows `#filter=applied` instead of `?filter=applied`
+- Users report "Filters don't stay applied when I refresh"
+- axe DevTools warns "aria-live region not updated"
 
 **Phase to address:**
-Phase 3: Individual Source Integration — implement defensive parsing for each API
-
----
-
-### Pitfall 9: PDF Tables Extracted Out of Order
-
-**What goes wrong:**
-Resume uses tables for skills (3-column layout: "Python | Java | JavaScript"), `extract_text()` reads left-to-right, top-to-bottom, resulting in garbled order: "Python React Django Java Node.js Express JavaScript".
-
-**Why it happens:**
-pypdf extracts text in PDF rendering order, which for tables is often horizontal (entire first column, then second column). Skill categories split across columns become interleaved.
-
-**Prevention:**
-```python
-# Use pypdf's layout mode (v4.0+) for better table handling
-from pypdf import PdfReader
-
-def extract_text_with_layout(pdf_path: str) -> str:
-    """Extract PDF text preserving layout structure."""
-    reader = PdfReader(pdf_path)
-    pages_text = []
-    for page in reader.pages:
-        # layout mode preserves spatial positioning
-        text = page.extract_text(extraction_mode="layout")
-        pages_text.append(text)
-    return "\n\n".join(pages_text)
-
-# Alternative: use pdfplumber for table detection
-import pdfplumber
-
-def extract_tables(pdf_path: str) -> list[list[str]]:
-    """Extract tables from PDF as structured data."""
-    with pdfplumber.open(pdf_path) as pdf:
-        all_tables = []
-        for page in pdf.pages:
-            tables = page.extract_tables()
-            all_tables.extend(tables)
-    return all_tables
-```
-
-**Phase to address:**
-Phase 2: PDF Resume Parser — test with table-heavy resumes, use layout mode
-
-**Sources:**
-- [pypdf Text Extraction Improvements](https://github.com/py-pdf/pypdf/discussions/2038)
-
----
-
-### Pitfall 10: Authentication Token Expiry Not Handled
-
-**What goes wrong:**
-Job board API uses short-lived tokens (1-hour expiry), Job Radar caches token at startup, after 1 hour all API requests return 401 Unauthorized, job fetching fails for remainder of search.
-
-**Why it happens:**
-OAuth/JWT tokens expire but caching doesn't account for token lifecycle. Wellfound/Authentic Jobs may use token-based auth. Current implementation assumes API keys are permanent.
-
-**Prevention:**
-```python
-# Token refresh logic
-class TokenManager:
-    def __init__(self, api_key: str):
-        self.api_key = api_key
-        self.token = None
-        self.token_expiry = 0
-
-    def get_valid_token(self) -> str:
-        """Return valid token, refreshing if needed."""
-        if time.time() >= self.token_expiry - 60:  # Refresh 1min before expiry
-            self.token, self.token_expiry = self._refresh_token()
-        return self.token
-
-    def _refresh_token(self) -> tuple[str, int]:
-        """Fetch new token from API."""
-        resp = requests.post(
-            "https://api.example.com/auth/token",
-            json={"api_key": self.api_key}
-        )
-        data = resp.json()
-        return data["access_token"], time.time() + data["expires_in"]
-
-# Use in API calls
-token_manager = TokenManager(api_key)
-headers = {"Authorization": f"Bearer {token_manager.get_valid_token()}"}
-```
-
-**Phase to address:**
-Phase 3: Individual Source Integration — implement token refresh for sources that require it
-
----
-
-## Minor Pitfalls
-
-### Pitfall 11: PDF Password Protection Blocks Extraction
-
-**What goes wrong:**
-User uploads password-protected PDF (common for resumes sent to recruiters), `PdfReader()` raises `pypdf.errors.FileNotDecryptedError`, wizard crashes.
-
-**Prevention:**
-```python
-def extract_with_password_prompt(pdf_path: str) -> str:
-    """Handle password-protected PDFs gracefully."""
-    try:
-        reader = pypdf.PdfReader(pdf_path)
-        if reader.is_encrypted:
-            password = input("This PDF is password-protected. Enter password: ")
-            if not reader.decrypt(password):
-                print("❌ Incorrect password. Using manual entry instead.")
-                return ""
-        return extract_text_safe(reader)
-    except pypdf.errors.FileNotDecryptedError:
-        print("❌ Could not decrypt PDF. Using manual entry instead.")
-        return ""
-```
-
-**Phase to address:**
-Phase 2: PDF Resume Parser — add password handling in wizard PDF import flow
-
----
-
-### Pitfall 12: API Documentation Lies About No-Auth Access
-
-**What goes wrong:**
-Documentation claims "public job listings don't require authentication," developer implements no-auth flow, API returns 401 or rate limits aggressively (10 req/hour vs 1000 req/hour for authenticated users).
-
-**Why it happens:**
-Job board APIs have tiered access: unauthenticated (severely limited), API key (standard), OAuth (full access). Docs don't clarify which tier is practical for production use.
-
-**Prevention:**
-- Test both authenticated and unauthenticated modes during Phase 3
-- Measure rate limits empirically (make 20 test requests, check headers)
-- Document actual limits in code comments
-- Provide graceful degradation: "Adzuna requires API key for reliable access. Get yours at developer.adzuna.com"
-
-**Phase to address:**
-Phase 3: Individual Source Integration — validate authentication requirements for each API
-
----
-
-### Pitfall 13: PDF Font Embedding Issues in PyInstaller
-
-**What goes wrong:**
-PyInstaller bundle works locally but fails on user machines with `FileNotFoundError: pdfminer/cmap/...` because font mapping files weren't included in bundle.
-
-**Prevention:**
-See Pitfall 5 for PyInstaller datas configuration. Test on clean VM.
-
-**Phase to address:**
-Phase 4: Testing & Polish — add CI test for PDF import in bundled executable
+Phase 2 (Status Filters) — Must implement localStorage + query param sync and ARIA live regions from the start. Include screen reader testing in acceptance criteria.
 
 ---
 
 ## Technical Debt Patterns
 
+Shortcuts that seem reasonable but create long-term problems.
+
 | Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
 |----------|-------------------|----------------|-----------------|
-| Skip rate limit handling initially | Faster MVP, fewer dependencies | 429 errors in production, IP bans | Never — rate limiting is critical for API integrations |
-| Use only pypdf (not pdfplumber) | Smaller bundle size (1 dependency) | Poor table extraction, layout issues | Acceptable for MVP if tables are rare in target resumes |
-| Store API keys in plain text config | Zero friction setup | Security risk, keys exposed in repo/bundle | Never — use keyring from day 1 |
-| Hardcode job board response schemas | Less code, no validation overhead | Silent failures when APIs change | Never — defensive parsing is table stakes |
-| Skip PDF format validation | Simpler code path | Silent failures with image PDFs | Never — validation prevents 80% of support issues |
-| Use broad `except Exception` in PDF parser | Crash tolerance | Hides bugs, unclear error messages | Acceptable in scrapers, NOT acceptable in PDF parser |
-| Cache API responses indefinitely | Reduces API calls | Stale job listings, out-of-date data | Only if combined with manual refresh option |
-
----
+| Embed full font files without subsetting | No build tooling needed, works immediately | +300KB file size, slow page loads, poor mobile UX | Never — subsetting is one-time 10min Python script |
+| Use Bootstrap default colors without testing | No design work, ships faster | WCAG AA failures, accessibility lawsuit risk, user complaints | Never on WCAG-compliant products |
+| `display: block` on tables without ARIA | Responsive layout works visually in 20 lines CSS | Screen reader users can't navigate data, ADA compliance fails | Never — ARIA restoration takes 5 minutes |
+| Skip UTF-8 BOM in CSV export | Works in Google Sheets and text editors | Excel users see corrupted data, support tickets, reputation damage | Never — BOM is 1 line of code (`const BOM = "\uFEFF"`) |
+| Single Lighthouse run in CI | Faster CI builds (30s vs. 2min) | Flaky tests, false positives/negatives, eroded trust in CI | Only for non-critical static sites; Never for accessibility compliance |
+| URL fragments instead of query params for filters | Easier JavaScript, no backend needed | Breaks accessibility, SEO, shareability; localStorage alone loses state on new device | Never — query params are equally easy |
+| Skip print testing with backgrounds OFF | Works in developer's print preview | Users print blank white tables, lose score context | Never — default browser setting, must test both modes |
+| Base64 embed fonts as TTF/WOFF instead of WOFF2 | Simpler conversion (no pyftsubset needed) | 3-5x larger file size (WOFF2 Brotli compression is crucial) | Never — WOFF2 support is 95%+ browsers since 2018 |
 
 ## Integration Gotchas
 
+Common mistakes when connecting to external services or existing systems.
+
 | Integration | Common Mistake | Correct Approach |
 |-------------|----------------|------------------|
-| Adzuna API | Assuming free tier has no limits | Check `X-RateLimit-*` headers, implement exponential backoff on 429 |
-| Wellfound | Using legacy AngelList endpoints | Verify current API base URL, Wellfound rebrand may have changed domains |
-| Authentic Jobs | Passing `api_key` as header instead of query param | Use `?api_key=${key}` in URL per docs |
-| pypdf | Using `PyPDF2` import (deprecated since 2023) | Import `pypdf` (lowercase), all new development on pypdf |
-| requests cache | Caching 429 rate limit responses | Check status code before caching: `if resp.status_code == 200: cache(resp)` |
-| PyInstaller + pypdf | Importing `fitz` instead of `pymupdf` | Use `import pymupdf` to avoid conflict with unrelated `fitz` package |
-| keyring | Assuming Windows Credential Manager always available | Fallback to encrypted file storage if `keyring.get_keyring()` returns None |
-
----
+| Bootstrap 5 existing inline CSS | Appending new CSS causes Bootstrap print reset to override colors | Place custom print CSS AFTER Bootstrap in concatenation order, use higher specificity selectors |
+| localStorage for filter state | Storing state but not syncing URL, breaks shareable links | Store in BOTH localStorage (persistence) AND URL query params (shareability) |
+| WCAG 2.1 AA existing compliance | Assuming new color scheme maintains compliance without testing | Test every color combination with WebAIM Contrast Checker, add automated contrast checks to CI |
+| Existing score color coding (Bootstrap contextual classes) | Direct replacement breaks semantics (.bg-success → .score-high) | Keep Bootstrap classes for base styling, layer custom colors via CSS variables, maintain non-color indicators |
+| file:// protocol requirement | Assuming `fetch()` or external resource loading works | Everything must be inline — no external font files, no CDN links, no XHR; test by opening file:// directly |
 
 ## Performance Traps
 
+Patterns that work at small scale but fail as usage grows.
+
 | Trap | Symptoms | Prevention | When It Breaks |
 |------|----------|------------|----------------|
-| Sequential API requests for paginated results | 3-5 minutes for full search, users complain of slowness | Use `concurrent.futures.ThreadPoolExecutor` to fetch pages in parallel | 50+ results across 3 sources |
-| Re-parsing same PDF multiple times | Wizard lag when user edits profile | Cache parsed PDF data in memory during wizard session | 10+ page resumes |
-| No request timeout on API calls | Hanging indefinitely on slow API, user kills process | Set `timeout=15` on all requests.get() calls (already done in cache.py) | First flaky API encountered |
-| Loading entire PDF into memory | 100MB+ memory usage for 5-page resume | Stream PDF reading page-by-page with pypdf's page iterator | 20+ page resumes |
-| Cache directory unbounded growth | 1GB+ .cache directory after weeks of use | Implement cache size limit + LRU eviction (not just TTL) | After 100+ searches |
-
----
+| Base64 embedding all fonts without subsetting | HTML file 800KB+, 4s load on 3G, browser hangs on open | Subset to 50-100KB total, use WOFF2, consider system font fallbacks for print | >200KB embedded fonts (Inter + JetBrains full = 400KB+) |
+| Inline CSS exceeding browser parser limits | Browser refuses to render, white screen, "file too large" errors | Keep total inline CSS <500KB, minify, remove unused Bootstrap components | Total HTML >2MB (Google crawl limit), CSS >1MB (parser stress) |
+| JavaScript filtering 1000+ jobs in DOM | Filter button clicks lag 500ms+, UI freezes, poor mobile performance | Virtual scrolling, pagination, or limit visible results to 200 | >500 table rows with complex filtering |
+| Inline JavaScript for filters/export without minification | Page load slows, Time to Interactive increases | Minify JavaScript, defer non-critical scripts with `<!-- defer -->` comments | >50KB inline JavaScript unminified |
+| Multiple font weights embedded (100-900) | 100-200KB per font family, unused weights waste bandwidth | Only embed weights actually used (400 regular + 700 bold), remove 100/200/300/500/600/800/900 | >3 font weights per family |
 
 ## Security Mistakes
 
+Domain-specific security issues beyond general web security.
+
 | Mistake | Risk | Prevention |
 |---------|------|------------|
-| Logging API keys in debug mode | Keys appear in log files, exposed if logs shared for debugging | Use `log.debug(f"API key: {'*' * len(api_key)}")` for logging |
-| Storing API keys in PyInstaller bundle | Extractable with `pyinstaller-extractor` + decompile | Always use keyring, fail if key not found rather than bundling default |
-| Not validating PDF file size before extraction | DoS via 500MB "resume" PDF | Reject PDFs > 10MB before calling `PdfReader()` |
-| SSRF via user-provided PDF URLs | User inputs `file:///etc/passwd`, parser reads local files | Only accept file uploads, never URLs to PDF locations |
-| Trusting API response without sanitization | XSS in HTML report if job description contains `<script>` | Escape HTML in templates, use Jinja2 autoescaping (already in v1.1) |
-
----
+| CSV export not escaping formulas (=, +, @, -) | CSV injection — Excel executes formulas, potential remote code execution if user opens CSV | Prefix values starting with `=+-@` with single quote: `'=SUM(A1:A10)` or tab character |
+| localStorage containing sensitive job application data | Data persists indefinitely, accessible to XSS, survives across sessions | Store only non-sensitive state (filter selections, sort order), never API keys or personal notes |
+| Missing Content-Security-Policy in inline HTML | XSS risk from user-generated content (job descriptions, company names) | Add CSP meta tag: `<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'">` |
+| Base64 encoded fonts from untrusted sources | Malicious font files can exploit rendering engine vulnerabilities | Only embed fonts from official sources (Google Fonts, JetBrains GitHub), verify checksums |
+| Print CSS exposing hidden data | Hidden columns (`display: none`) may print if print stylesheet isn't comprehensive | Explicitly set `display: none !important` on sensitive fields in print media query |
 
 ## UX Pitfalls
 
+Common user experience mistakes in this domain.
+
 | Pitfall | User Impact | Better Approach |
 |---------|-------------|-----------------|
-| No feedback during PDF parsing | User sees blank wizard screen for 10s, assumes crash | Show progress: "Extracting text from resume..." spinner |
-| Error message: "Failed to parse PDF" | User doesn't know why or how to fix | Specific error: "PDF is password-protected. Please upload unlocked version." |
-| API key required but not explained | User hits rate limit, sees "Failed to fetch Adzuna jobs" | Show: "Adzuna requires free API key. Get yours at: [URL] (optional but recommended)" |
-| All job sources fail silently | Report shows 0 jobs, user doesn't know if search worked | Summary: "Fetched 45 jobs (Dice: 20, RemoteOK: 15, HN: 10, Adzuna: 0 [rate limited])" |
-| PDF import pre-fills wrong data | Wizard shows "Page 1" as name | Show preview: "Extracted name: 'Page 1' — Edit below if incorrect" |
-
----
+| Hero jobs visually distinct but not sortable | Users can't filter to "show only hero jobs" or sort by hero status | Add hero status as filterable/sortable column, include in CSV export |
+| Mobile hides columns without indication | Users don't know data exists, assume fields are missing | Show "View Details" link/button to expand full row data, or tooltip "Tap for more" |
+| Responsive breakpoint at 768px only | Layout breaks on iPad Pro (1024px) in portrait, large phones (≥768px) | Test at 375px, 768px, 1024px, 1280px, use fluid layouts with clamp() |
+| Color-only score indicators | Colorblind users can't distinguish scores, fails WCAG 1.4.1 | Combine color + icon (★ rating) + text label ("Excellent: 87/100") |
+| Print opens new tab instead of print dialog | Users confused, have to manually File → Print, extra step | Use `window.print()` JavaScript to trigger print dialog directly |
+| CSV filename generic "export.csv" | Users download multiple reports, can't distinguish them | Include date + filter state: `job-radar-applied-2026-02-11.csv` |
+| No loading indicator during filter | Appears broken if filtering >200 jobs takes 200ms | Add spinner or "Filtering..." text during processing, use debounce for search inputs |
+| Font changes break pre-existing user zoom | Users with 150% browser zoom get clipped text or broken layouts | Test at 100%, 150%, 200% zoom, use relative units (rem, em), avoid fixed heights |
 
 ## "Looks Done But Isn't" Checklist
 
-- [ ] **API Integration:** Rate limiting implemented and tested with rapid requests (not just happy path)
-- [ ] **API Integration:** 429 response handling includes exponential backoff and doesn't exhaust retries immediately
-- [ ] **API Integration:** Cache doesn't store rate limit error responses as valid data
-- [ ] **API Key Storage:** Keys never appear in Git history (`git log -S "api_key"` returns nothing)
-- [ ] **API Key Storage:** `.gitignore` includes any config files that might contain keys
-- [ ] **PDF Parser:** Image-only PDFs detected and rejected with helpful error message
-- [ ] **PDF Parser:** Non-ASCII characters (José, München) preserved through extraction → JSON → display
-- [ ] **PDF Parser:** Password-protected PDFs handled gracefully (prompt or skip, not crash)
-- [ ] **PDF Parser:** Table-based resume layouts extract in correct reading order
-- [ ] **PyInstaller:** Hidden imports configured for pypdf and any dependencies
-- [ ] **PyInstaller:** PDF import tested in bundled .exe/.app on clean VM (no dev environment)
-- [ ] **Error Handling:** Each API source fails independently (one broken API doesn't crash entire search)
-- [ ] **Testing:** CI tests include rate limit simulation (mock 429 response)
-- [ ] **Testing:** CI tests include malformed PDF (empty, corrupted, image-only)
-- [ ] **Documentation:** README explains how to get API keys for Adzuna/Wellfound/Authentic Jobs
+Things that appear complete but are missing critical pieces.
 
----
+- [ ] **Font embedding:** Often missing subsetting — verify file size <150KB total for Inter + JetBrains Mono, check WOFF2 format, test FOUT with throttled network
+- [ ] **Semantic colors:** Often missing contrast verification — run WebAIM Contrast Checker on ALL combinations, test with Deuteranopia/Protanopia simulator, verify non-color indicators exist
+- [ ] **Responsive tables:** Often missing ARIA roles — test with NVDA/VoiceOver, verify table semantics preserved, check that hidden columns have `aria-hidden="true"`
+- [ ] **Print stylesheet:** Often missing background color preservation — test with "background graphics: OFF" in print settings, verify borders/text-based hierarchy exists
+- [ ] **CSV export:** Often missing UTF-8 BOM — open in Excel on Windows (not Mac, not Google Sheets), test with é, ñ, ™, —, verify commas in values don't break columns
+- [ ] **Accessibility CI:** Often missing multiple Lighthouse runs — verify 3-5 runs configured, check for explicit waits on dynamic content, confirm axe-core as primary tool
+- [ ] **Status filters:** Often missing ARIA live regions — test with screen reader, verify announcements on filter change, check localStorage + URL query param sync
+- [ ] **Mobile card layout:** Often missing semantic structure — verify `<dl>` or proper ARIA roles, test skip navigation, check expandable details work with keyboard
+- [ ] **Hero job visual hierarchy:** Often missing keyboard focus indicators — verify visible focus ring at 200% zoom, check color contrast on focus state ≥3:1
+- [ ] **Font rendering:** Often missing cross-platform testing — test on Windows (ClearType), macOS (retina), Linux, verify fallback stack works when custom fonts fail
 
 ## Recovery Strategies
 
+When pitfalls occur despite prevention, how to recover.
+
 | Pitfall | Recovery Cost | Recovery Steps |
 |---------|---------------|----------------|
-| API rate limited mid-search | LOW | Use cached results, show partial data, retry next run (cache will be fresh) |
-| Hardcoded API key leaked | MEDIUM | Revoke old key via API provider dashboard, generate new key, update keyring storage, push hotfix release |
-| PyInstaller missing PDF deps | HIGH | Add hidden imports to .spec, rebuild, re-release executables, notify users to download new version |
-| PDF encoding corruption in profile.json | LOW | Delete profile.json, re-run wizard (with manual entry as fallback) |
-| Cache directory corrupted | LOW | Run `job-radar --clear-cache` (existing command), next search rebuilds cache |
-| Authentication token expired | LOW | Token manager auto-refreshes on next request (if implemented), no user action needed |
-
----
+| Base64 fonts too large (>500KB) | LOW | 1. Generate font subset with pyftsubset/glyphanger 2. Convert to WOFF2 3. Test file size reduction 4. Re-inline into CSS |
+| WCAG contrast failures post-launch | MEDIUM | 1. Audit all color combinations with CCA 2. Adjust failing colors by +10% lightness/darkness 3. Add AAA-compliant borders as fallback 4. Re-run accessibility tests |
+| Table semantics lost on mobile | HIGH | 1. Add ARIA roles to ALL table elements 2. Consider card layout rewrite with `<dl>` 3. Add comprehensive screen reader testing 4. May require UX redesign |
+| Bootstrap print CSS stripping backgrounds | LOW | 1. Add print CSS overrides with `!important` after Bootstrap 2. Include `print-color-adjust: exact` 3. Add border-based visual hierarchy 4. Document print-with-backgrounds instructions |
+| CSV export breaks Excel | LOW | 1. Prepend UTF-8 BOM `\uFEFF` 2. Escape all values with quotes 3. Handle formula injection (prefix =, +, -, @) 4. Test with Excel on Windows |
+| Lighthouse CI too flaky | MEDIUM | 1. Configure 5 runs + median scoring 2. Add explicit waits for dynamic content 3. Switch to axe-core for reliability 4. Separate static vs. dynamic audit jobs |
+| Filter state lost on reload | MEDIUM | 1. Add URL query param sync 2. Implement localStorage fallback 3. Add ARIA live regions for announcements 4. Test reload scenarios |
+| Mobile layout breaks at unusual widths | MEDIUM | 1. Add intermediate breakpoints (375px, 1024px, 1280px) 2. Use `clamp()` for fluid typography 3. Test on real devices (iPhone SE, iPad Pro) 4. Use container queries if complex |
 
 ## Pitfall-to-Phase Mapping
 
+How roadmap phases should address these pitfalls.
+
 | Pitfall | Prevention Phase | Verification |
 |---------|------------------|--------------|
-| API Rate Limit Bypass Through Cache Confusion | Phase 1: API Integration Foundation | Load test: 100 rapid requests don't trigger 429s due to rate limiter |
-| API Keys Hardcoded or Committed | Phase 1: API Integration Foundation | `git log --all -S "app_key"` returns no commits, keyring stores all keys |
-| PDF Image Resumes Fail Silently | Phase 2: PDF Resume Parser | Test with scanned PDF, verify error message shown |
-| Non-ASCII Encoding Errors | Phase 2: PDF Resume Parser | Test with resume containing "José García", verify profile.json preserves UTF-8 |
-| PyInstaller Missing PDF Dependencies | Phase 2: PDF Resume Parser | CI builds executable, tests PDF import on Ubuntu/Windows/macOS VMs |
-| Cache-Only Mode Breaks with API Sources | Phase 1: API Integration Foundation | Verify cache stores API rate limit headers |
-| PDF Parser Over-Extracts | Phase 2: PDF Resume Parser | Test with resume containing "Page 1 of 2" footer, verify not in skills list |
-| API Response Schema Changes | Phase 3: Individual Source Integration | Mock API returns old schema, verify defensive parsing doesn't crash |
-| PDF Tables Extracted Out of Order | Phase 2: PDF Resume Parser | Test with 3-column skills table, verify skills list is coherent |
-| Authentication Token Expiry | Phase 3: Individual Source Integration | Sleep 61min in test, verify token auto-refreshes (if applicable) |
-| PDF Password Protection | Phase 2: PDF Resume Parser | Test with encrypted PDF, verify password prompt or graceful skip |
-| API Documentation Lies About No-Auth | Phase 3: Individual Source Integration | Test unauthenticated requests, measure rate limits, document findings |
-| PDF Font Embedding Issues | Phase 4: Testing & Polish | Test bundled executable on clean VM with multi-font PDF |
-
----
+| Base64 font bloat & FOUT/FOIT | Phase 1: Font System | File size <150KB for fonts, Lighthouse FCP <2s, font-display: swap present |
+| WCAG contrast regression | Phase 1: Semantic Colors | WebAIM Contrast Checker all combinations ≥4.5:1 text / ≥3:1 UI, colorblind simulator testing |
+| Table semantics lost (display: block) | Phase 2: Mobile Responsive | NVDA announces "table with X rows", ARIA roles verified, axe-core clean scan |
+| Bootstrap print CSS override | Phase 2: Print Stylesheet | Print preview with backgrounds OFF shows borders/hierarchy, color-adjust: exact confirmed |
+| CSV UTF-8 BOM missing | Phase 2: CSV Export | Excel on Windows opens with é, ñ, — correct, commas in values don't break columns |
+| Lighthouse CI flakiness | Phase 3: Accessibility CI | 5 Lighthouse runs with <3 point variance, axe-core zero failures, wait conditions documented |
+| Filter state loss & no SR announcements | Phase 2: Status Filters | localStorage + URL param sync works, ARIA live region announces filter results, NVDA testing passes |
+| Hero job accessibility | Phase 1: Hero Visual Hierarchy | Focus indicators visible at 200% zoom, ARIA labels present, keyboard navigation works |
+| Responsive breakpoint gaps | Phase 2: Mobile Responsive | Test at 375px, 768px, 1024px, 1280px, no horizontal scroll, text readable at 150% zoom |
+| Font rendering cross-platform | Phase 1: Font System | Visual test Windows/Mac/Linux, fallback stack tested (Georgia, Consolas), FOUT acceptable |
 
 ## Sources
 
-**API Rate Limiting:**
-- [Implementing Effective API Rate Limiting in Python](https://medium.com/neural-engineer/implementing-effective-api-rate-limiting-in-python-6147fdd7d516)
-- [Python Request Optimization: Caching and Rate Limiting](https://medium.com/neural-engineer/python-request-optimization-caching-and-rate-limiting-79ceb5e6eb1e)
-- [requests-ratelimiter on PyPI](https://pypi.org/project/requests-ratelimiter/)
-- [Best Practices for Avoiding Rate Limiting | Zendesk](https://developer.zendesk.com/documentation/ticketing/using-the-zendesk-api/best-practices-for-avoiding-rate-limiting/)
+**Font Embedding & Performance:**
+- [Web Font Anti-pattern: Data URIs—zachleat.com](https://www.zachleat.com/web/web-font-data-uris/)
+- [Base64 Encoding & Performance, Part 1 – CSS Wizardry](https://csswizardry.com/2017/02/base64-encoding-and-performance/)
+- [Performance Anti-Patterns: Base64 Encoding](https://calendar.perfplanet.com/2018/performance-anti-patterns-base64-encoding/)
+- [Font Subsetting: How to Optimize Font File Size - Rovity](https://rovity.io/reduce-web-font-size/)
+- [Optimize web fonts | web.dev](https://web.dev/learn/performance/optimize-web-fonts)
 
-**PDF Parsing:**
-- [Why PDF Resumes Sometimes Fail in Online Submissions](https://www.resumly.ai/blog/why-pdf-resumes-sometimes-fail-in-online-submissions)
-- [Top 10 ATS Resume Mistakes to Avoid in 2026](https://www.careerflow.ai/blog/ats-resume-mistakes-to-avoid)
-- [pypdf Text Extraction Documentation](https://pypdf.readthedocs.io/en/stable/user/extract-text.html)
-- [Encoding issue in extract_text() - pypdf GitHub](https://github.com/py-pdf/pypdf/issues/260)
-- [Text Extraction Improvements Discussion](https://github.com/py-pdf/pypdf/discussions/2038)
+**WCAG Color Contrast:**
+- [Accessibility · Bootstrap v5.3](https://getbootstrap.com/docs/5.3/getting-started/accessibility/)
+- [WebAIM: Contrast Checker](https://webaim.org/resources/contrastchecker/)
+- [Colour Contrast Analyser (CCA) - Vispero](https://vispero.com/color-contrast-checker/)
+- [Color Contrast for Accessibility: WCAG Guide (2026)](https://www.webability.io/blog/color-contrast-for-accessibility)
 
-**PyInstaller:**
-- [PyInstaller Common Issues and Pitfalls](https://pyinstaller.org/en/stable/common-issues-and-pitfalls.html)
-- [PyMuPDF ModuleNotFoundError with PyInstaller](https://github.com/pymupdf/PyMuPDF/issues/712)
+**Responsive Tables & Accessibility:**
+- [Accessible Front-End Patterns For Responsive Tables (Part 1) — Smashing Magazine](https://www.smashingmagazine.com/2022/12/accessible-front-end-patterns-responsive-tables-part1/)
+- [Tables, CSS Display Properties, and ARIA — Adrian Roselli](https://adrianroselli.com/2018/02/tables-css-display-properties-and-aria.html)
+- [Responsive tables - ADG](https://www.accessibility-developer-guide.com/examples/tables/responsive/)
+- [A Responsive Accessible Table — Adrian Roselli](https://adrianroselli.com/2017/11/a-responsive-accessible-table.html)
 
-**Security:**
-- [Securely Storing Credentials in Python with Keyring](https://medium.com/@forsytheryan/securely-storing-credentials-in-python-with-keyring-d8972c3bd25f)
-- [Securing Sensitive Data in Python: Best Practices](https://systemweakness.com/securing-sensitive-data-in-python-best-practices-for-storing-api-keys-and-credentials-2bee9ede57ee)
+**Print Stylesheets:**
+- [Print Styles Gone Wrong: Avoiding Pitfalls in Media Print CSS](https://blog.pixelfreestudio.com/print-styles-gone-wrong-avoiding-pitfalls-in-media-print-css/)
+- [Don't Rely on Background Colors Printing | CSS-Tricks](https://css-tricks.com/dont-rely-on-background-colors-printing/)
+- [Bootstrap striped table not printing to PDF | API2PDF](https://www.api2pdf.com/solved-bootstrap-striped-table-not-printing-to-pdf)
+- [Tables are not printing correctly · Issue #25453 · twbs/bootstrap](https://github.com/twbs/bootstrap/issues/25453)
 
-**Job Board APIs:**
-- [Adzuna API Overview](https://developer.adzuna.com/overview)
-- [AngelList API Documentation](https://docs.angellist.com/docs/overview)
-- [Authentic Jobs API](https://publicapis.io/authentic-jobs-api)
+**CSV Export:**
+- [Quick Fix for UTF-8 CSV files in Microsoft Excel — Edmundo Fuentes' Blog](https://www.edmundofuentes.com/blog/2020/06/13/excel-utf8-csv-bom-string/)
+- [Opening CSV UTF-8 files correctly in Excel - Microsoft Support](https://support.microsoft.com/en-us/office/opening-csv-utf-8-files-correctly-in-excel-8a935af5-3416-4edd-ba7e-3dfd2bc4a032)
+- [JavaScript CSV Download – Excel + Umlaute - DevAndy](https://devandy.de/javascript-csv-download-excel-umlaute/)
+- [JavaScript CSV Export with Unicode Symbols | Shield UI](https://www.shieldui.com/javascript-unicode-csv-export)
+
+**Lighthouse CI & Accessibility Testing:**
+- [GitHub - GoogleChrome/lighthouse-ci](https://github.com/GoogleChrome/lighthouse-ci)
+- [Lighthouse meets GitHub Actions - LogRocket Blog](https://blog.logrocket.com/lighthouse-meets-github-actions-use-lighthouse-ci/)
+- [GitHub - dequelabs/axe-core](https://github.com/dequelabs/axe-core)
+- [Axe-core by Deque | open source accessibility engine](https://www.deque.com/axe/axe-core/)
+
+**State Management & Accessibility:**
+- [Why URL state matters: A guide to useSearchParams in React - LogRocket Blog](https://blog.logrocket.com/url-state-usesearchparams/)
+- [Chapter 5: Convey changes of state to screen-readers](https://accessible-vue.com/chapter/5/)
+- [When a screen reader needs to announce content - VA.gov Design System](https://design.va.gov/accessibility/when-a-screen-reader-needs-to-announce-content)
+
+**Performance & File Size:**
+- [Inlining literally everything for better performance | Go Make Things](https://gomakethings.com/inlining-literally-everything-for-better-performance/)
+- [Inline vs. external .js and .css — Mathias Bynens](https://mathiasbynens.be/notes/inline-vs-separate-file)
+- [HTML, CSS, and JavaScript in One File: A Complete 2026 Guide](https://copyprogramming.com/howto/how-to-put-html-css-and-js-in-one-single-file)
+
+**Font Rendering Cross-Platform:**
+- [Why fonts look better on macOS than on Windows | UX Collective](https://uxdesign.cc/why-fonts-look-better-on-macos-than-on-windows-51a2b7c57975)
+- [Font rendering philosophies of Windows & Mac OS X - DamienG](https://damieng.com/blog/2007/06/13/font-rendering-philosophies-of-windows-and-mac-os-x/)
+- [The sad state of font rendering on Linux | Infosec scribbles](https://pandasauce.org/post/linux-fonts/)
 
 ---
 
-*Research completed for Job Radar v1.2.0 milestone: Enhanced Sources & Onboarding*
-*Focus: API integration pitfalls (rate limiting, authentication, schema changes) and PDF parsing pitfalls (encoding, format detection, PyInstaller bundling)*
+*Pitfalls research for: v1.4.0 Visual Design & Polish*
+*Researched: 2026-02-11*
