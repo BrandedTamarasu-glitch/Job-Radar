@@ -146,6 +146,8 @@ def test_write_json_atomic_creates_parent_dirs(tmp_path):
 def test_wizard_happy_path_all_fields(tmp_path, mocker):
     """Wizard collects all fields, user saves, returns True and writes files."""
     mocker.patch('job_radar.paths.get_data_dir', return_value=tmp_path)
+    # Mock PDF_SUPPORT to False to skip PDF upload flow
+    mocker.patch('job_radar.pdf_parser.PDF_SUPPORT', False)
 
     # Mock questionary prompts in sequence
     mock_text = mocker.patch('job_radar.wizard.questionary.text')
@@ -225,6 +227,8 @@ def test_wizard_happy_path_all_fields(tmp_path, mocker):
 def test_wizard_optional_fields_skipped(tmp_path, mocker):
     """Wizard handles empty optional fields (location, dealbreakers)."""
     mocker.patch('job_radar.paths.get_data_dir', return_value=tmp_path)
+    # Mock PDF_SUPPORT to False to skip PDF upload flow
+    mocker.patch('job_radar.pdf_parser.PDF_SUPPORT', False)
 
     mock_text = mocker.patch('job_radar.wizard.questionary.text')
     mock_confirm = mocker.patch('job_radar.wizard.questionary.confirm')
@@ -291,6 +295,8 @@ def test_wizard_optional_fields_skipped(tmp_path, mocker):
 def test_wizard_cancel_at_confirmation(tmp_path, mocker):
     """Wizard returns False when user selects 'Cancel setup' at confirmation."""
     mocker.patch('job_radar.paths.get_data_dir', return_value=tmp_path)
+    # Mock PDF_SUPPORT to False to skip PDF upload flow
+    mocker.patch('job_radar.pdf_parser.PDF_SUPPORT', False)
 
     mock_text = mocker.patch('job_radar.wizard.questionary.text')
     mock_confirm = mocker.patch('job_radar.wizard.questionary.confirm')
@@ -349,6 +355,8 @@ def test_wizard_cancel_at_confirmation(tmp_path, mocker):
 def test_wizard_ctrl_c_cancellation(tmp_path, mocker):
     """Wizard returns False when user presses Ctrl+C and confirms exit."""
     mocker.patch('job_radar.paths.get_data_dir', return_value=tmp_path)
+    # Mock PDF_SUPPORT to False to skip PDF upload flow
+    mocker.patch('job_radar.pdf_parser.PDF_SUPPORT', False)
 
     mock_text = mocker.patch('job_radar.wizard.questionary.text')
     mock_confirm = mocker.patch('job_radar.wizard.questionary.confirm')
@@ -378,6 +386,8 @@ def test_wizard_ctrl_c_cancellation(tmp_path, mocker):
 def test_wizard_edit_field_flow(tmp_path, mocker):
     """Wizard allows editing a field via 'Edit a field' option."""
     mocker.patch('job_radar.paths.get_data_dir', return_value=tmp_path)
+    # Mock PDF_SUPPORT to False to skip PDF upload flow
+    mocker.patch('job_radar.pdf_parser.PDF_SUPPORT', False)
 
     mock_text = mocker.patch('job_radar.wizard.questionary.text')
     mock_confirm = mocker.patch('job_radar.wizard.questionary.confirm')
@@ -441,6 +451,8 @@ def test_wizard_edit_field_flow(tmp_path, mocker):
 def test_wizard_back_navigation(tmp_path, mocker):
     """Wizard handles /back command to return to previous question."""
     mocker.patch('job_radar.paths.get_data_dir', return_value=tmp_path)
+    # Mock PDF_SUPPORT to False to skip PDF upload flow
+    mocker.patch('job_radar.pdf_parser.PDF_SUPPORT', False)
 
     mock_text = mocker.patch('job_radar.wizard.questionary.text')
     mock_confirm = mocker.patch('job_radar.wizard.questionary.confirm')
@@ -499,6 +511,8 @@ def test_wizard_back_navigation(tmp_path, mocker):
 def test_wizard_back_at_first_question(tmp_path, mocker):
     """Wizard handles /back at first question (stays at index 0)."""
     mocker.patch('job_radar.paths.get_data_dir', return_value=tmp_path)
+    # Mock PDF_SUPPORT to False to skip PDF upload flow
+    mocker.patch('job_radar.pdf_parser.PDF_SUPPORT', False)
 
     mock_text = mocker.patch('job_radar.wizard.questionary.text')
     mock_confirm = mocker.patch('job_radar.wizard.questionary.confirm')
@@ -555,6 +569,8 @@ def test_wizard_back_at_first_question(tmp_path, mocker):
 def test_wizard_no_default_values_on_profile_fields(tmp_path, mocker):
     """Wizard does not provide default values for profile fields (name, titles, skills, location, dealbreakers)."""
     mocker.patch('job_radar.paths.get_data_dir', return_value=tmp_path)
+    # Mock PDF_SUPPORT to False to skip PDF upload flow
+    mocker.patch('job_radar.pdf_parser.PDF_SUPPORT', False)
 
     mock_text = mocker.patch('job_radar.wizard.questionary.text')
     mock_confirm = mocker.patch('job_radar.wizard.questionary.confirm')
