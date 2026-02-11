@@ -5,22 +5,22 @@
 See: .planning/PROJECT.md (updated 2026-02-11)
 
 **Core value:** Accurate job-candidate scoring — if the scoring is wrong, nothing else matters.
-**Current focus:** Phase 19 - Typography & Color Foundation
+**Current focus:** Phase 20 - Hero Jobs Visual Hierarchy
 
 ## Current Position
 
-Phase: 19 of 23 (Typography & Color Foundation)
-Plan: 2 of 2 in current phase
+Phase: 20 of 23 (Hero Jobs Visual Hierarchy)
+Plan: 1 of 1 in current phase
 Status: Phase complete
-Last activity: 2026-02-11 — Completed 19-02 (Semantic tier system with pill badges and colorblind indicators)
+Last activity: 2026-02-11 — Completed 20-01 (Hero jobs elevated styling with multi-layer shadows and Top Match badges)
 
-Progress: [███████████████████████░] 83% (19 of 23 phases complete, 41 of 41 plans complete)
+Progress: [████████████████████████░] 87% (20 of 23 phases complete, 42 of 42 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 41
-- Average duration: 203s (v1.4.0 plans: 159s + 255s / 2)
+- Total plans completed: 42
+- Average duration: 264s (v1.4.0 plans: 159s + 255s + 379s / 3)
 - Total execution time: Not tracked
 
 **By Milestone:**
@@ -31,16 +31,18 @@ Progress: [███████████████████████
 | v1.1 | 5-10 | Complete (2026-01-20) |
 | v1.2.0 | 11-15 | Complete (2026-02-05) |
 | v1.3.0 | 16-18 | Complete (2026-02-11) |
-| v1.4.0 | 19-23 | In progress (Phase 19 complete: 2 of 2 plans) |
+| v1.4.0 | 19-23 | In progress (Phases 19-20 complete: 3 of 5 plans) |
 
 **Recent Trend:**
-- v1.3.0: 3 phases, 7 plans, completed in 1 day (2026-02-11)
+- v1.4.0: 2 phases completed, 3 plans, excellent velocity
 - Phase 19: 2 plans, completed in <1 hour (2026-02-11)
-- Velocity: Excellent (visual foundation delivered with full accessibility)
+- Phase 20: 1 plan, 379s (hero visual hierarchy)
+- Velocity: Excellent (visual enhancements with full test coverage)
 
 *Updated after each plan completion*
 | Phase 19 P01 | 159s | 2 tasks | 1 files |
 | Phase 19 P02 | 255s | 3 tasks | 2 files |
+| Phase 20 P01 | 379s | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -57,6 +59,10 @@ Recent decisions affecting current work:
 - [Phase 19-02]: Tier classes applied to cards (background + border) and table rows (border only) for different visual densities
 - [Phase 19-02]: Border thickness variation (5px/4px/3px) provides non-color tier distinction for colorblind users
 - [Phase 19-02]: All badges unified with pill style (score, status, NEW) for visual coherence
+- [Phase 20-01]: Multi-layer shadow depth (3 levels: 1px/4px/8px) for hero cards creates perceptible elevation without overwhelming
+- [Phase 20-01]: Hero threshold at score >= 4.0 maintains meaningful gap from recommended (3.5-3.9), aligns with quartile thinking
+- [Phase 20-01]: Separate hero section at top (not mixed) provides immediate prominence and clearer information hierarchy
+- [Phase 20-01]: "Top Match" badge label chosen for user-focused language over developer jargon ("Hero") or vague terms
 
 ### Pending Todos
 
@@ -80,7 +86,7 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-11 (plan execution)
-Stopped at: Completed 19-02-PLAN.md (Phase 19 complete)
+Stopped at: Completed 20-01-PLAN.md (Phase 20 complete)
 Resume file: None
 
-**Next action:** `/gsd:plan-phase 20` to plan Phase 20 or check ROADMAP.md for next milestone work
+**Next action:** `/gsd:plan-phase 21` to plan Phase 21 (Responsive Layout) or check ROADMAP.md for next milestone work
