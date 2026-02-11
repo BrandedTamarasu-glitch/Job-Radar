@@ -1896,9 +1896,38 @@ def _html_results_table(scored_results: list[dict]) -> str:
         """)
 
     rows_html = "".join(rows)
+
+    # Filter controls HTML
+    filter_controls = """
+    <div class="mb-4 no-print" role="region" aria-labelledby="filter-heading">
+      <h3 id="filter-heading" class="h5">Filter by Status</h3>
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <div class="btn-group" role="group" aria-label="Status filter checkboxes">
+          <input type="checkbox" class="btn-check" id="filter-applied" autocomplete="off">
+          <label class="btn btn-outline-secondary btn-sm" for="filter-applied">Hide Applied</label>
+
+          <input type="checkbox" class="btn-check" id="filter-rejected" autocomplete="off">
+          <label class="btn btn-outline-secondary btn-sm" for="filter-rejected">Hide Rejected</label>
+
+          <input type="checkbox" class="btn-check" id="filter-interviewing" autocomplete="off">
+          <label class="btn btn-outline-secondary btn-sm" for="filter-interviewing">Hide Interviewing</label>
+
+          <input type="checkbox" class="btn-check" id="filter-offer" autocomplete="off">
+          <label class="btn btn-outline-secondary btn-sm" for="filter-offer">Hide Offer</label>
+        </div>
+
+        <button class="btn btn-outline-primary btn-sm" id="clear-filters" aria-label="Clear all filters and show all jobs">Show All</button>
+
+        <span id="filter-count" class="text-muted small ms-2" aria-hidden="true"></span>
+      </div>
+      <p class="text-muted small mt-2 mb-0">Filter applies to jobs with status set. Unset jobs are always visible.</p>
+    </div>
+    """
+
     return f"""
     <section aria-labelledby="results-heading">
       <div class="mb-4">
+        {filter_controls}
         <h2 id="results-heading" class="h4 mb-3">All Results (sorted by score)</h2>
         <div class="table-responsive">
           <table class="table table-striped table-hover">
