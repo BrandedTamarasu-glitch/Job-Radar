@@ -210,8 +210,8 @@ Plans:
 **Depends on**: Phase 19 (uses typography system)
 **Requirements**: VIS-04, VIS-05
 **Success Criteria** (what must be TRUE):
-  1. Desktop view (≥992px) displays all 10 table columns with full data
-  2. Tablet view (<992px) reduces to 6 core columns (score, title, company, location, status, link) while hiding low-priority columns
+  1. Desktop view (≥992px) displays all 11 table columns with full data
+  2. Tablet view (<992px) reduces to 7 core columns (#, score, title, company, location, status, link) while hiding 4 low-priority columns
   3. Mobile view (<768px) replaces table with stacked card layout showing all job data in readable format
   4. Table semantics preserved with explicit ARIA roles when using display:block for mobile cards
   5. Screen readers announce table structure correctly on all viewport sizes
