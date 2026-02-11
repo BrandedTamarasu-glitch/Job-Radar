@@ -190,12 +190,12 @@ Plans:
   8. CLI wizard prompts are navigable with NVDA, JAWS, and VoiceOver (tested and documented)
   9. Terminal colors meet contrast requirements for colorblind users
   10. HTML reports achieve Lighthouse accessibility score >=95
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 18-01: TBD
-- [ ] 18-02: TBD
-- [ ] 18-03: TBD
+- [ ] 18-01-PLAN.md -- HTML semantic structure, ARIA landmarks, accessible tables, screen reader text, focus indicators, and contrast fixes
+- [ ] 18-02-PLAN.md -- CLI NO_COLOR support, colorblind-safe terminal output, and screen reader documentation
+- [ ] 18-03-PLAN.md -- Accessibility test suite and Lighthouse verification checkpoint
 
 ## Progress
 
@@ -224,4 +224,4 @@ Phases execute in numeric order: 16 -> 17 -> 18
 | 18. WCAG 2.1 Level AA Compliance | v1.3.0 | 0/3 | Not started | - |
 
 ---
-*Last updated: 2026-02-11 after Phase 17 planning*
+*Last updated: 2026-02-11 after Phase 18 planning*
