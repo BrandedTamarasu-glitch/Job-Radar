@@ -310,6 +310,81 @@ def _generate_html_report(
   <link href="https://cdn.jsdelivr.net/npm/prismjs@1/themes/prism.css" rel="stylesheet">
 
   <style>
+    /* CSS Custom Properties Foundation */
+    :root {{
+      /* Font stacks */
+      --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+      /* Typography scale */
+      --font-size-title: 2rem;
+      --font-size-section: 1.5rem;
+      --font-size-subsection: 1.125rem;
+      --font-size-body: 1rem;
+      --font-size-small: 0.875rem;
+      --line-height-tight: 1.25;
+      --line-height-normal: 1.5;
+      --line-height-relaxed: 1.6;
+
+      /* Three-tier semantic colors (HSL) */
+      /* Tier 1 - Strong (score >= 4.0): Green hue */
+      --tier-strong-h: 142;
+      --tier-strong-s: 55%;
+      --tier-strong-l: 93%;
+      --tier-strong-border-l: 33%;
+      --tier-strong-text-l: 25%;
+      --color-tier-strong-bg: hsl(142, 55%, 93%);
+      --color-tier-strong-border: hsl(142, 55%, 33%);
+      --color-tier-strong-text: hsl(142, 55%, 25%);
+
+      /* Tier 2 - Recommended (score 3.5-3.9): Cyan/teal hue */
+      --tier-rec-h: 180;
+      --tier-rec-s: 50%;
+      --tier-rec-l: 92%;
+      --tier-rec-border-l: 28%;
+      --tier-rec-text-l: 22%;
+      --color-tier-rec-bg: hsl(180, 50%, 92%);
+      --color-tier-rec-border: hsl(180, 50%, 28%);
+      --color-tier-rec-text: hsl(180, 50%, 22%);
+
+      /* Tier 3 - Worth Reviewing (score 2.8-3.4): Neutral gray-blue */
+      --tier-review-h: 210;
+      --tier-review-s: 10%;
+      --tier-review-l: 95%;
+      --tier-review-border-l: 45%;
+      --tier-review-text-l: 35%;
+      --color-tier-review-bg: hsl(210, 10%, 95%);
+      --color-tier-review-border: hsl(210, 10%, 45%);
+      --color-tier-review-text: hsl(210, 10%, 35%);
+    }}
+
+    /* Dark mode overrides */
+    @media (prefers-color-scheme: dark) {{
+      :root {{
+        /* Invert lightness for all three tiers, preserving hue */
+        --tier-strong-l: 14%;
+        --tier-strong-border-l: 52%;
+        --tier-strong-text-l: 60%;
+        --color-tier-strong-bg: hsl(142, 55%, 14%);
+        --color-tier-strong-border: hsl(142, 55%, 52%);
+        --color-tier-strong-text: hsl(142, 55%, 60%);
+
+        --tier-rec-l: 12%;
+        --tier-rec-border-l: 48%;
+        --tier-rec-text-l: 55%;
+        --color-tier-rec-bg: hsl(180, 50%, 12%);
+        --color-tier-rec-border: hsl(180, 50%, 48%);
+        --color-tier-rec-text: hsl(180, 50%, 55%);
+
+        --tier-review-l: 16%;
+        --tier-review-border-l: 42%;
+        --tier-review-text-l: 50%;
+        --color-tier-review-bg: hsl(210, 10%, 16%);
+        --color-tier-review-border: hsl(210, 10%, 42%);
+        --color-tier-review-text: hsl(210, 10%, 50%);
+      }}
+    }}
+
     /* Print-friendly styles */
     @media print {{
       .no-print {{ display: none !important; }}
