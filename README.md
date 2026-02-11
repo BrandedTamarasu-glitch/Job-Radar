@@ -1,6 +1,6 @@
 # Job Radar
 
-A job search tool that searches multiple job boards, scores listings against your profile, and generates ranked reports. Features include multi-source search (Dice, HN Hiring, RemoteOK, We Work Remotely), fuzzy skill matching, an interactive setup wizard, and dual-format HTML and Markdown reports.
+A job search tool that searches multiple job boards, scores listings against your profile, and generates ranked reports. Features include multi-source search (6 API sources: Dice, HN Hiring, RemoteOK, We Work Remotely, Adzuna, Authentic Jobs + 3 manual URLs: Wellfound, Indeed, LinkedIn), PDF resume import, fuzzy skill matching, cross-source deduplication, an interactive setup wizard, and dual-format HTML and Markdown reports.
 
 ## Installation
 
@@ -79,22 +79,79 @@ source ~/.zshrc
 On first launch, Job Radar runs an interactive setup wizard that guides you through creating your profile:
 
 1. **Launch the app** using the instructions above for your platform
-2. **Follow the wizard prompts** to enter:
+2. **Choose your setup method:**
+   - **Upload PDF resume** (recommended) — automatically extracts name, skills, titles, and experience
+   - **Fill manually** — guided prompts for each field
+3. **Follow the wizard prompts** to enter or review:
    - Your name
    - Your core skills (technologies you know)
    - Target job titles (roles you're searching for)
+   - Years of experience
    - Preferred location (optional)
    - Dealbreakers (requirements that disqualify a job)
    - Search preferences (minimum score, new-only mode)
-3. **Search runs automatically** after the wizard completes
-4. **View your results** in the HTML report that opens in your browser
+4. **Search runs automatically** after the wizard completes
+5. **View your results** in the HTML report that opens in your browser
 
 On subsequent launches, the search runs directly with your saved profile (no wizard).
+
+### Optional: API Credentials
+
+To use Adzuna and Authentic Jobs API sources, set up API keys:
+
+```bash
+job-radar --setup-apis
+```
+
+The wizard will guide you through obtaining and configuring API credentials. API keys are optional — the tool works without them using the 4 scraper-based sources.
 
 For advanced usage and all available options, run:
 ```bash
 job-radar --help
 ```
+
+## Uninstalling
+
+### Windows
+
+1. Delete the `job-radar` folder (wherever you extracted it)
+2. Delete the configuration directory:
+   - Press `Win+R`, type `%USERPROFILE%\.job-radar`, press Enter
+   - Delete the entire `.job-radar` folder
+
+### macOS
+
+**For unsigned apps like Job Radar, you cannot simply drag to Trash. Follow these steps:**
+
+1. **Remove the app bundle:**
+   ```bash
+   sudo rm -rf /Applications/JobRadar.app
+   ```
+   Enter your password when prompted.
+
+2. **Delete configuration files:**
+   ```bash
+   rm -rf ~/.job-radar
+   ```
+
+3. **Clear rate limit database (if using API sources):**
+   ```bash
+   rm -rf ~/.rate_limits
+   ```
+
+**Why sudo is needed:** macOS prevents unsigned apps from being deleted normally as a security measure. The `sudo rm` command bypasses this restriction.
+
+### Linux
+
+1. Delete the extracted `job-radar` directory
+2. Delete configuration files:
+   ```bash
+   rm -rf ~/.job-radar
+   ```
+3. If you used API sources, also delete:
+   ```bash
+   rm -rf ~/.rate_limits
+   ```
 
 ## Score Ratings
 
@@ -188,11 +245,11 @@ python -m job_radar
 
 ### Running Tests
 
-The project includes a comprehensive test suite with 48+ automated tests:
+The project includes a comprehensive test suite with 284 automated tests:
 
 ```bash
 # Install dev dependencies
-pip install pytest
+pip install pytest pytest-mock
 
 # Run all tests
 pytest tests/
@@ -207,7 +264,12 @@ pytest tests/test_scoring.py
 **Test coverage:**
 - Scoring functions (37 tests) - validates all `_score_*` functions with parametrized edge cases
 - Tracker functions (11 tests) - validates deduplication and stats aggregation with tmp_path isolation
-- UX polish (integration tests) - validates banner, help text, progress messages, and error handling
+- Config module (23 tests) - validates config file parsing, CLI override, defaults, validation
+- Wizard (38 tests) - validates setup flow, PDF integration, navigation, error handling
+- API integration (45 tests) - validates Adzuna/Authentic Jobs mappers, rate limiting, deduplication
+- PDF parser (34 tests) - validates extraction, validation, Unicode support, error handling
+- Report generation (28 tests) - validates HTML/Markdown output, browser launch, templating
+- UX polish (68 tests) - validates banner, help text, progress messages, error handling
 
 ### Building Executables
 
