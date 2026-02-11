@@ -391,6 +391,136 @@ def _generate_html_report(
   <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-core.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/prismjs@1/plugins/autoloader/prism-autoloader.min.js"></script>
 
+  <!-- Clipboard and keyboard functionality -->
+  <script>
+    // Initialize Notyf toast notifications
+    const notyf = new Notyf({{
+      duration: 3000,
+      position: {{ x: 'right', y: 'top' }},
+      dismissible: true
+    }});
+
+    // Two-tier clipboard: Clipboard API (HTTPS/localhost) with execCommand fallback (file://)
+    async function copyToClipboard(text) {{
+      if (typeof navigator.clipboard === 'object') {{
+        try {{
+          await navigator.clipboard.writeText(text);
+          return true;
+        }} catch (err) {{
+          console.warn('[clipboard] API failed, trying fallback', err);
+        }}
+      }}
+      // Fallback for file:// protocol
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus({{ preventScroll: true }});
+      ta.select();
+      try {{
+        const ok = document.execCommand('copy');
+        ta.remove();
+        return ok;
+      }} catch (err) {{
+        console.error('[clipboard] execCommand failed', err);
+        ta.remove();
+        return false;
+      }}
+    }}
+
+    // Copy single URL from button click
+    function copySingleUrl(btn) {{
+      const url = btn.dataset.url;
+      if (!url) {{ notyf.error('No URL available'); return; }}
+      copyToClipboard(url).then(function(ok) {{
+        if (ok) {{
+          notyf.success('Job URL copied to clipboard');
+          btn.classList.add('copied');
+          btn.textContent = 'Copied!';
+          setTimeout(function() {{
+            btn.classList.remove('copied');
+            btn.textContent = btn.closest('tr') ? 'Copy' : 'Copy URL';
+          }}, 2000);
+        }} else {{
+          notyf.error('Copy failed — try Ctrl+C');
+        }}
+      }});
+    }}
+
+    // Copy all recommended URLs (score >= 3.5)
+    function copyAllRecommendedUrls(btn) {{
+      const items = document.querySelectorAll('.job-item[data-job-url][data-score]');
+      const urls = Array.from(items)
+        .filter(function(el) {{
+          var s = parseFloat(el.dataset.score);
+          return !isNaN(s) && s >= 3.5;
+        }})
+        .map(function(el) {{ return el.dataset.jobUrl; }})
+        .filter(function(u) {{ return u && u.length > 0; }});
+
+      if (urls.length === 0) {{
+        notyf.error('No recommended jobs found (score >= 3.5)');
+        return;
+      }}
+
+      copyToClipboard(urls.join('\\n')).then(function(ok) {{
+        if (ok) {{
+          notyf.success(urls.length + ' job URL' + (urls.length > 1 ? 's' : '') + ' copied to clipboard');
+          if (btn) {{
+            btn.classList.add('copied');
+            btn.textContent = 'Copied ' + urls.length + ' URLs!';
+            setTimeout(function() {{
+              btn.classList.remove('copied');
+              btn.textContent = 'Copy All Recommended URLs';
+            }}, 2000);
+          }}
+        }} else {{
+          notyf.error('Copy failed — try selecting URLs manually');
+        }}
+      }});
+    }}
+
+    // Track focused job item for keyboard shortcuts
+    var currentFocusedJob = null;
+    document.querySelectorAll('.job-item').forEach(function(item) {{
+      item.addEventListener('focus', function() {{ currentFocusedJob = item; }});
+      item.addEventListener('blur', function() {{
+        if (currentFocusedJob === item) currentFocusedJob = null;
+      }});
+    }});
+
+    // Keyboard shortcuts: C = copy focused, A = copy all recommended
+    document.addEventListener('keydown', function(event) {{
+      // Don't interfere with form inputs
+      if (event.target.matches('input, textarea, select')) return;
+      // Don't interfere with browser shortcuts (Ctrl+C, Ctrl+A, etc.)
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
+
+      var key = event.key.toLowerCase();
+
+      if (key === 'c') {{
+        event.preventDefault();
+        if (!currentFocusedJob) {{
+          notyf.error('No job focused — click a job or use Tab to navigate');
+          return;
+        }}
+        var url = currentFocusedJob.dataset.jobUrl;
+        if (!url) {{
+          notyf.error('Focused job has no URL');
+          return;
+        }}
+        copyToClipboard(url).then(function(ok) {{
+          if (ok) notyf.success('Job URL copied to clipboard');
+          else notyf.error('Copy failed — try Ctrl+C');
+        }});
+      }} else if (key === 'a') {{
+        event.preventDefault();
+        copyAllRecommendedUrls(document.querySelector('.copy-all-btn'));
+      }}
+    }});
+  </script>
+
   <!-- Dark mode handler -->
   <script>
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
