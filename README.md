@@ -1,6 +1,6 @@
 # Job Radar
 
-A job search tool that searches multiple job boards, scores listings against your profile, and generates ranked reports. Features include multi-source search (6 API sources: Dice, HN Hiring, RemoteOK, We Work Remotely, Adzuna, Authentic Jobs + 3 manual URLs: Wellfound, Indeed, LinkedIn), PDF resume import, fuzzy skill matching, cross-source deduplication, an interactive setup wizard, and dual-format HTML and Markdown reports.
+A job search tool that searches multiple job boards, scores listings against your profile, and generates ranked reports. Features include multi-source search (6 API sources: Dice, HN Hiring, RemoteOK, We Work Remotely, Adzuna, Authentic Jobs + 4 manual URLs: Wellfound, Indeed, LinkedIn, Glassdoor), PDF resume import, fuzzy skill matching, cross-source deduplication, an interactive setup wizard, and dual-format HTML and Markdown reports with one-click URL copying, keyboard shortcuts, application status tracking, and WCAG 2.1 Level AA accessibility.
 
 ## Installation
 
@@ -95,6 +95,16 @@ On first launch, Job Radar runs an interactive setup wizard that guides you thro
 
 On subsequent launches, the search runs directly with your saved profile (no wizard).
 
+### Using Your Report
+
+The HTML report includes interactive features:
+
+- **Copy URL** buttons on each job listing for quick clipboard access
+- **Copy All Recommended** button to batch-copy all high-scoring job URLs
+- **Keyboard shortcuts:** Press `C` to copy a focused job's URL, `A` to copy all recommended URLs
+- **Status tracking:** Mark jobs as Applied, Interviewing, Rejected, or Offer — status persists across sessions
+- **Export:** Download your application statuses as JSON for external tracking
+
 ### Optional: API Credentials
 
 To use Adzuna and Authentic Jobs API sources, set up API keys:
@@ -188,6 +198,12 @@ job-radar --help
 | `--config PATH` | Path to config file (default: auto-detect) |
 | `--validate-profile PATH` | Validate a profile JSON file and exit |
 
+### Accessibility Options
+
+| Flag | Description |
+|---|---|
+| `--no-color` | Disable all terminal colors (also respects `NO_COLOR` env var) |
+
 ### Developer Options
 
 | Flag | Description |
@@ -245,7 +261,7 @@ python -m job_radar
 
 ### Running Tests
 
-The project includes a comprehensive test suite with 284 automated tests:
+The project includes a comprehensive test suite with 300+ automated tests:
 
 ```bash
 # Install dev dependencies
@@ -268,7 +284,7 @@ pytest tests/test_scoring.py
 - Wizard (38 tests) - validates setup flow, PDF integration, navigation, error handling
 - API integration (45 tests) - validates Adzuna/Authentic Jobs mappers, rate limiting, deduplication
 - PDF parser (34 tests) - validates extraction, validation, Unicode support, error handling
-- Report generation (28 tests) - validates HTML/Markdown output, browser launch, templating
+- Report generation (34 tests) - validates HTML/Markdown output, clipboard UI, status tracking, accessibility
 - UX polish (68 tests) - validates banner, help text, progress messages, error handling
 
 ### Building Executables

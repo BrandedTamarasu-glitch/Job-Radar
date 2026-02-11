@@ -1,5 +1,72 @@
 # Changelog
 
+## v1.3.0 — 2026-02-11
+
+### Application Flow
+- **One-click copy buttons** — Copy URL button on every job card and table row for instant clipboard access
+- **Batch copy** — "Copy All Recommended" button copies all high-scoring (≥3.5) job URLs at once, separated by newlines
+- **Keyboard shortcuts** — Press `C` to copy focused job URL, `A` to copy all recommended URLs. Modifier keys (Ctrl+C) and input fields are not intercepted
+- **Toast notifications** — Notyf-powered confirmations for all clipboard and status actions with ARIA live region announcements
+
+### Application Status Tracking
+- **Status dropdown** — Mark jobs as Applied, Interviewing, Rejected, or Offer with color-coded badges on every job card and table row
+- **Persistent status** — Application statuses saved to localStorage and embedded tracker.json, surviving browser refreshes and multi-day gaps
+- **Bidirectional sync** — Status data hydrated from tracker.json on report generation, merged with localStorage on page load
+- **JSON export** — Download pending status updates as JSON for importing into tracker.json or external tools
+
+### Accessibility (WCAG 2.1 Level AA)
+- **Skip navigation** — "Skip to main content" link as first focusable element for keyboard users
+- **ARIA landmarks** — Semantic HTML structure with explicit `role="banner"`, `role="main"`, `role="contentinfo"` for screen reader navigation
+- **Accessible tables** — `scope="col"` and `scope="row"` attributes on all table headers with visually-hidden caption
+- **Screen reader badge context** — Score badges announce as "Score 4.2 out of 5.0" (not "4.2/5.0"), NEW badges announce as "New listing, not seen in previous searches"
+- **Focus indicators** — Visible 2px outline on all interactive elements (links, buttons, dropdowns, job items) via `:focus-visible`
+- **Contrast compliance** — All text meets 4.5:1 minimum contrast ratio; Bootstrap `.text-muted` overridden from #6c757d to #595959
+- **ARIA live region** — Dynamic content changes (clipboard copies, status updates) announced to screen readers
+- **NO_COLOR support** — `NO_COLOR=1` environment variable and `--no-color` CLI flag disable all terminal ANSI codes per no-color.org standard
+- **Colorblind-safe output** — All terminal colors paired with text labels (scores show numbers, "[NEW]" tag, "Error:" prefix)
+- **Screen reader documentation** — CLI help documents `--profile` flag as wizard bypass for screen reader users
+
+## v1.2.0 — 2026-02-05
+
+### API Sources
+- **Adzuna API** — Job search via Adzuna REST API with app_id/app_key authentication and salary data extraction
+- **Authentic Jobs API** — Design and creative role search with key-based authentication
+- **Wellfound URLs** — Manual search URL generation with /role/r/ (remote) and /role/l/ (location) patterns
+
+### Credential Management
+- **python-dotenv** — Secure API key storage in `.env` file (gitignored) with automatic loading via `find_dotenv()`
+
+### Rate Limiting
+- **SQLite-backed limiter** — Persistent rate limiting with pyrate-limiter prevents API bans across restarts
+
+### Deduplication
+- **Cross-source matching** — rapidfuzz fuzzy matching at 85% similarity threshold prevents duplicate listings from different sources
+
+### Resume Intelligence
+- **PDF parser** — Extract name, years of experience, job titles, and skills from uploaded PDF resumes using pdfplumber
+- **Wizard integration** — PDF upload option in setup wizard pre-fills profile fields with extracted data (editable before saving)
+- **Validation** — Rejects image-only, encrypted, oversized, and corrupted PDFs with actionable error messages
+
+## v1.1.0 — 2026-01-20
+
+### Interactive Setup
+- **First-run wizard** — Questionary-based interactive setup with examples, validation, and profile generation
+- **Profile recovery** — Detects existing profiles and offers to reuse or recreate
+
+### HTML Reports
+- **Bootstrap 5 HTML** — Dual-format report generation (HTML + Markdown) with responsive design
+- **Browser auto-launch** — Reports open automatically in the default browser with headless detection
+
+### UX Polish
+- **Progress indicators** — Source-level progress callbacks during search
+- **Friendly errors** — Non-technical error messages with recovery suggestions
+- **Graceful Ctrl+C** — Clean shutdown with partial results preserved
+
+### Distribution
+- **Standalone executables** — PyInstaller onedir builds for Windows, macOS (.app bundle), and Linux
+- **CI/CD** — GitHub Actions tag-triggered workflow builds all platforms with pytest gates
+- **Manual URLs** — Indeed, LinkedIn, Glassdoor URL generation for manual searching
+
 ## v1.0.0 — 2026-02-08
 
 ### Test Suite
