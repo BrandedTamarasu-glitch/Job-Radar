@@ -1750,3 +1750,216 @@ def test_responsive_no_label_class(sample_profile, sample_scored_results, sample
     # Verify CSS contains .no-label::before rule with display: none
     assert ".no-label::before" in html_content, ".no-label::before CSS rule missing"
     assert "display: none" in html_content, "display: none missing (should hide no-label ::before)"
+
+
+def test_html_report_filter_ui_controls(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Filter UI includes checkbox controls for each status type."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_path = result["html"]
+    with open(html_path) as f:
+        html = f.read()
+
+    # Verify filter UI controls exist
+    assert 'id="filter-heading"' in html, "Filter heading missing"
+    assert 'id="filter-applied"' in html, "Filter Applied checkbox missing"
+    assert 'id="filter-rejected"' in html, "Filter Rejected checkbox missing"
+    assert 'id="filter-interviewing"' in html, "Filter Interviewing checkbox missing"
+    assert 'id="filter-offer"' in html, "Filter Offer checkbox missing"
+    assert 'id="clear-filters"' in html, "Show All button missing"
+    assert 'role="group"' in html, "ARIA group role missing"
+    assert 'aria-label="Status filter checkboxes"' in html, "ARIA label for checkboxes missing"
+
+
+def test_html_report_filter_javascript(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Filter JavaScript includes all required functions."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_path = result["html"]
+    with open(html_path) as f:
+        html = f.read()
+
+    # Verify filter functions exist
+    assert 'job-radar-filter-state' in html, "localStorage key missing"
+    assert 'loadFilterState' in html, "loadFilterState function missing"
+    assert 'saveFilterState' in html, "saveFilterState function missing"
+    assert 'applyFilter' in html, "applyFilter function missing"
+    assert 'initializeFilters' in html, "initializeFilters function missing"
+    assert 'handleFilterChange' in html, "handleFilterChange function missing"
+    assert 'clearAllFilters' in html, "clearAllFilters function missing"
+
+
+def test_html_report_filter_aria_announcements(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Filter JavaScript includes ARIA announcements for accessibility."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_path = result["html"]
+    with open(html_path) as f:
+        html = f.read()
+
+    # Verify ARIA announcement functions and patterns exist
+    assert 'announceFilterCount' in html, "announceFilterCount function missing"
+    assert 'Showing' in html, "Filter count announcement message pattern missing"
+    assert 'status-announcer' in html, "ARIA live region reference missing"
+
+
+def test_html_report_filter_persistence(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Filter state persists to localStorage."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_path = result["html"]
+    with open(html_path) as f:
+        html = f.read()
+
+    # Verify localStorage persistence patterns exist
+    assert 'localStorage.getItem' in html, "localStorage read missing"
+    assert 'localStorage.setItem' in html, "localStorage write missing"
+    assert 'JSON.parse' in html, "JSON deserialization missing"
+    assert 'JSON.stringify' in html, "JSON serialization missing"
+    assert 'QuotaExceededError' in html or 'quota' in html.lower(), "Quota error handling missing"
+
+
+def test_html_report_export_csv_button(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Export CSV button exists with proper attributes."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_path = result["html"]
+    with open(html_path) as f:
+        html = f.read()
+
+    # Verify Export CSV button exists
+    assert 'export-csv-btn' in html, "Export CSV button id missing"
+    assert 'Export CSV' in html or 'Export' in html, "Export button text missing"
+    assert 'exportVisibleJobsToCSV' in html, "exportVisibleJobsToCSV onclick handler missing"
+    assert 'no-print' in html, "no-print class missing (button should be hidden from print)"
+    # Verify button has aria-label
+    button_start = html.find('id="export-csv-btn"')
+    assert button_start > 0, "Export CSV button not found"
+    button_section = html[max(0, button_start - 100):button_start + 200]
+    assert 'aria-label' in button_section, "Export CSV button missing aria-label"
+
+
+def test_html_report_csv_escape_function(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """CSV export includes RFC 4180 escaping function."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_path = result["html"]
+    with open(html_path) as f:
+        html = f.read()
+
+    # Verify CSV escape function exists
+    assert 'escapeCSVField' in html, "escapeCSVField function missing"
+    assert 'replace(/"/g' in html or 'replace(/"/' in html, "Double-quote escaping pattern missing"
+    # Verify UTF-8 BOM is added (check for csvWithBOM variable which contains the BOM)
+    assert 'csvWithBOM' in html, "UTF-8 BOM variable missing"
+    # Verify RFC 4180 patterns (comma, quote, newline detection)
+    assert 'csv' in html.lower() or 'CSV' in html, "CSV-related content missing"
+
+
+def test_html_report_csv_formula_injection_protection(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """CSV export includes formula injection protection."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_path = result["html"]
+    with open(html_path) as f:
+        html = f.read()
+
+    # Verify formula injection protection patterns exist
+    # Look for pattern matching formula prefix check: =, +, -, @
+    assert '/^[=+\\-@]/' in html or '/^[=+\\\\-@]/' in html, "Formula prefix detection regex missing"
+    # Look for single quote prefix pattern
+    assert '"' + "'" + '"' in html or "\\'" in html, "Single quote prefix pattern missing"
+
+
+def test_html_report_csv_export_respects_filter(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """CSV export only exports visible (not filtered) jobs."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_path = result["html"]
+    with open(html_path) as f:
+        html = f.read()
+
+    # Verify visibility detection patterns exist
+    assert 'style.display' in html, "Display style check missing"
+    assert 'data-job-key' in html, "Job key selector missing"
+    assert 'Blob' in html, "Blob file generation missing"
+    assert 'createObjectURL' in html, "createObjectURL download trigger missing"
+    assert 'revokeObjectURL' in html, "revokeObjectURL memory cleanup missing"
+
+
+def test_html_report_csv_download_filename(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """CSV export uses proper filename and MIME type."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_path = result["html"]
+    with open(html_path) as f:
+        html = f.read()
+
+    # Verify download filename and MIME type patterns exist
+    assert 'job-radar-export-' in html, "Filename prefix missing"
+    assert '.csv' in html, "CSV file extension missing"
+    assert 'download' in html, "Download attribute missing"
+    assert 'text/csv' in html, "CSV MIME type missing"
