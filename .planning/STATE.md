@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-11)
 
 **Core value:** Accurate job-candidate scoring — if the scoring is wrong, nothing else matters
-**Current focus:** Phase 16 - Application Flow Essentials
+**Current focus:** Phase 17 - Application Status Tracking
 
 ## Current Position
 
-Phase: 16 of 18 (Application Flow Essentials)
-Plan: 2 of 2 in current phase (COMPLETE)
-Status: Phase complete
-Last activity: 2026-02-11 — Completed 16-02-PLAN.md
+Phase: 17 of 18 (Application Status Tracking)
+Plan: 1 of 2 in current phase
+Status: In progress
+Last activity: 2026-02-11 — Completed 17-01-PLAN.md
 
-Progress: [████████████████████████░] 89% (16/18 phases complete)
+Progress: [████████████████████████░] 89% (16/18 phases complete, 1/2 plans in phase 17)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 33
+- Total plans completed: 34
 - Average duration: 2.9 min
-- Total execution time: 93.7 min
+- Total execution time: 97.7 min
 
 **By Phase:**
 
@@ -43,6 +43,7 @@ Progress: [███████████████████████
 | 14-wellfound-urls | 1 | 2.6 min | 2.6 min |
 | 15-pdf-resume-parser | 3 | 16.4 min | 5.5 min |
 | 16-application-flow-essentials | 2 | 6.6 min | 3.3 min |
+| 17-application-status-tracking | 1 | 4 min | 4 min |
 
 **Recent Trend:**
 - Last 5 plans: 1.4-5.5 min range
@@ -60,6 +61,9 @@ Recent decisions affecting current work:
 - Phase structure: 16 (Copy/Keyboard) → 17 (Status Tracking) → 18 (Accessibility) for natural dependency flow
 - [Phase 16]: Two-tier clipboard: Clipboard API with execCommand fallback for file:// protocol compatibility
 - [Phase 16]: Inline JS in HTML report to maintain single-file portability
+- [Phase 17]: Embedded tracker.json status in HTML head as JSON script tag for state hydration
+- [Phase 17]: localStorage as session cache, tracker.json as source of truth with merge conflict resolution
+- [Phase 17]: Export-based sync pattern for broader browser support (not File System Access API)
 
 ### Pending Todos
 
@@ -70,7 +74,7 @@ None yet.
 **Research Gaps (from exploratory research):**
 - ~~Clipboard API file:// protocol behavior not verified~~ — Resolved: execCommand fallback implemented in 16-01
 - Questionary library screen reader support unknown (needs NVDA/JAWS/VoiceOver testing)
-- LocalStorage vs tracker.json sync strategy not designed
+- ~~LocalStorage vs tracker.json sync strategy not designed~~ — Resolved: Embedded JSON hydration with localStorage merge in 17-01
 
 **Technical Unknowns:**
 - Terminal color contrast for accessibility not yet validated
@@ -79,7 +83,7 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Completed Phase 16 (Application Flow Essentials) - 16-02-PLAN.md (clipboard UI test coverage & verification)
+Stopped at: Completed 17-01-PLAN.md (application status tracking UI with localStorage + tracker.json hydration)
 Resume file: None
 
 **What v1.3.0 will ship:**
@@ -89,4 +93,4 @@ Resume file: None
 - Lighthouse accessibility score ≥95
 
 ---
-*Last updated: 2026-02-11 after completing Phase 16 Plan 02 (Phase 16 complete)*
+*Last updated: 2026-02-11 after completing Phase 17 Plan 01*
