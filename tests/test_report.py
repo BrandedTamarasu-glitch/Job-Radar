@@ -664,8 +664,8 @@ def test_html_report_contains_status_column_in_table(sample_profile, sample_scor
 
     html_content = Path(result["html"]).read_text()
 
-    # Check for Status column header
-    assert "<th>Status</th>" in html_content
+    # Check for Status column header (with scope attribute from WCAG compliance)
+    assert '<th scope="col">Status</th>' in html_content
 
     # Check that table rows contain status dropdown elements
     # Table rows should have data-job-key and contain data-status attributes
@@ -761,3 +761,270 @@ def test_html_report_contains_export_button(sample_profile, sample_scored_result
 
     # Check for export function
     assert "exportPendingStatusUpdates" in html_content
+
+
+# ── WCAG 2.1 Level AA Accessibility Tests (Phase 18-03) ─────────────────────
+
+
+def test_html_report_skip_navigation_link(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that HTML report contains a skip navigation link for keyboard users."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+
+    html_content = Path(result["html"]).read_text()
+
+    # Verify skip link has visually-hidden-focusable class
+    assert "visually-hidden-focusable" in html_content
+
+    # Verify skip link targets #main-content
+    assert '#main-content"' in html_content
+
+    # Verify skip link appears before main content (ordering check)
+    skip_link_pos = html_content.find("visually-hidden-focusable")
+    main_content_pos = html_content.find('id="main-content"')
+    assert skip_link_pos < main_content_pos, "Skip link must appear before main content"
+
+
+def test_html_report_aria_landmarks(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that HTML report contains ARIA landmarks for screen reader navigation."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+
+    html_content = Path(result["html"]).read_text()
+
+    # Verify ARIA landmarks exist
+    assert 'role="banner"' in html_content, "Header landmark (banner) missing"
+    assert 'role="main"' in html_content, "Main content landmark missing"
+    assert 'role="contentinfo"' in html_content, "Footer landmark (contentinfo) missing"
+
+    # Verify skip link target exists
+    assert 'id="main-content"' in html_content, "Skip link target (main-content) missing"
+
+
+def test_html_report_section_landmarks(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that HTML report uses section landmarks with aria-labelledby."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+
+    html_content = Path(result["html"]).read_text()
+
+    # Verify section landmarks with aria-labelledby
+    assert 'aria-labelledby="profile-heading"' in html_content, "Profile section landmark missing"
+    assert 'aria-labelledby="recommended-heading"' in html_content, "Recommended section landmark missing"
+    assert 'aria-labelledby="results-heading"' in html_content, "Results section landmark missing"
+
+    # Verify heading IDs exist
+    assert 'id="profile-heading"' in html_content, "Profile heading ID missing"
+
+    # Verify <section> tags are used
+    assert "<section" in html_content, "Section element not used"
+
+
+def test_html_report_accessible_table_headers(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that results table has proper scope attributes and caption for accessibility."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+
+    html_content = Path(result["html"]).read_text()
+
+    # Verify scope="col" on column headers (11 columns: #, Score, New, Status, Title, Company, Salary, Type, Location, Snippet, Link)
+    col_scope_count = html_content.count('scope="col"')
+    assert col_scope_count >= 5, f"Expected at least 5 scope='col' attributes, found {col_scope_count}"
+
+    # Verify scope="row" on row number headers
+    assert 'scope="row"' in html_content, "Row scope attributes missing"
+
+    # Verify table caption exists
+    assert "<caption" in html_content, "Table caption missing"
+
+    # Verify caption describes table purpose
+    assert "Job search results" in html_content or "job search results" in html_content, "Caption text should describe table purpose"
+
+
+def test_html_report_score_badge_screen_reader_text(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that score badges contain visually-hidden screen reader context."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+
+    html_content = Path(result["html"]).read_text()
+
+    # Verify score badges contain visually-hidden spans with context
+    assert "visually-hidden" in html_content, "Visually-hidden class missing"
+
+    # Verify "Score " prefix appears in visually-hidden span
+    assert '>Score </span>' in html_content, "Score prefix screen reader text missing"
+
+    # Verify " out of 5.0" suffix appears in visually-hidden span
+    assert '> out of 5.0</span>' in html_content, "Score suffix screen reader text missing"
+
+    # Verify both recommended cards AND results table have this pattern
+    # The recommended section uses score-badge class, the table uses badge class
+    # Both should have the screen reader text
+    recommended_section_pos = html_content.find('id="recommended-heading"')
+    results_section_pos = html_content.find('id="results-heading"')
+    after_recommended = html_content[recommended_section_pos:results_section_pos]
+    after_results = html_content[results_section_pos:]
+
+    assert '>Score </span>' in after_recommended, "Score screen reader text missing in recommended section"
+    assert '>Score </span>' in after_results, "Score screen reader text missing in results table"
+
+
+def test_html_report_new_badge_screen_reader_text(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that NEW badges contain visually-hidden screen reader context."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+
+    html_content = Path(result["html"]).read_text()
+
+    # Verify NEW badge contains screen reader context text
+    assert "New listing, not seen in previous searches" in html_content, "NEW badge screen reader text missing"
+
+    # Verify visually-hidden span wraps the context
+    assert '<span class="visually-hidden">New listing, not seen in previous searches' in html_content, \
+        "NEW badge screen reader text not in visually-hidden span"
+
+    # Verify both recommended cards AND results table contain this pattern
+    recommended_section_pos = html_content.find('id="recommended-heading"')
+    results_section_pos = html_content.find('id="results-heading"')
+    after_recommended = html_content[recommended_section_pos:results_section_pos]
+    after_results = html_content[results_section_pos:]
+
+    assert "New listing, not seen in previous searches" in after_recommended, \
+        "NEW badge screen reader text missing in recommended section"
+    assert "New listing, not seen in previous searches" in after_results, \
+        "NEW badge screen reader text missing in results table"
+
+
+def test_html_report_aria_live_region(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that HTML report contains an ARIA live region for screen reader announcements."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+
+    html_content = Path(result["html"]).read_text()
+
+    # Verify ARIA live region element exists
+    assert 'id="status-announcer"' in html_content, "Status announcer element missing"
+    assert 'aria-live="polite"' in html_content, "aria-live=polite attribute missing"
+    assert 'aria-atomic="true"' in html_content, "aria-atomic=true attribute missing"
+    assert 'role="status"' in html_content, "role=status attribute missing"
+
+    # Verify element has visually-hidden class
+    assert 'class="visually-hidden"' in html_content, "Status announcer should be visually hidden"
+
+
+def test_html_report_focus_indicators_all_elements(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that CSS contains focus indicators for all interactive element types."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+
+    html_content = Path(result["html"]).read_text()
+
+    # Verify CSS focus-visible rules for all interactive element types
+    assert "a:focus-visible" in html_content, "Link focus indicator CSS missing"
+    assert ".btn:focus-visible" in html_content, "Button focus indicator CSS missing"
+    assert ".dropdown-item:focus" in html_content, "Dropdown item focus indicator CSS missing"
+    assert ".dropdown-toggle:focus-visible" in html_content, "Dropdown toggle focus indicator CSS missing"
+
+    # Verify existing job-item focus rule still present
+    assert ".job-item:focus-visible" in html_content, "Job item focus indicator CSS missing"
+
+
+def test_html_report_contrast_safe_colors(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that CSS contains contrast-safe color overrides for WCAG AA compliance."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+
+    html_content = Path(result["html"]).read_text()
+
+    # Verify contrast-safe muted text color
+    assert "#595959" in html_content, "Contrast-safe muted text color #595959 missing"
+
+    # Verify .text-muted override exists in the style block
+    assert ".text-muted" in html_content, ".text-muted CSS override missing"
+
+
+def test_html_report_external_links_accessibility(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that external links have rel='noopener' and descriptive aria-labels."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+
+    html_content = Path(result["html"]).read_text()
+
+    # Verify external links have rel="noopener" for security
+    assert 'rel="noopener"' in html_content, "External links missing rel='noopener'"
+
+    # Verify external links have descriptive aria-label attributes
+    assert "aria-label" in html_content, "External links missing aria-label attributes"
+
+    # Verify aria-labels contain descriptive text (job context)
+    assert "opens in new tab" in html_content, "aria-label should indicate link opens in new tab"
