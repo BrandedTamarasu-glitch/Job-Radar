@@ -262,6 +262,21 @@ def _match_highlights(highlights: list[str], matched_skills: list[str], job) -> 
     return relevant[:3]  # max 3 talking points
 
 
+def _score_tier(score: float) -> str:
+    """Return CSS tier class suffix based on score value."""
+    if score >= 4.0:
+        return "strong"
+    elif score >= 3.5:
+        return "rec"
+    else:
+        return "review"
+
+
+def _tier_icon_class(tier: str) -> str:
+    """Return CSS class for tier Unicode icon indicator."""
+    return f"tier-icon tier-icon-{tier}"
+
+
 def _generate_html_report(
     filepath: Path,
     profile: dict,
@@ -448,6 +463,91 @@ def _generate_html_report(
       font-family: var(--font-mono);
       font-variant-numeric: tabular-nums;
       font-size: 0.9375rem;
+      border-radius: 999em;
+      padding: 0.35em 0.65em;
+    }}
+
+    /* Tier card backgrounds with left border accent */
+    .tier-strong {{
+      background-color: var(--color-tier-strong-bg) !important;
+      border-left: 5px solid var(--color-tier-strong-border);
+    }}
+    .tier-rec {{
+      background-color: var(--color-tier-rec-bg) !important;
+      border-left: 4px solid var(--color-tier-rec-border);
+    }}
+    .tier-review {{
+      background-color: var(--color-tier-review-bg) !important;
+      border-left: 3px solid var(--color-tier-review-border);
+    }}
+
+    /* Table row tier indicators */
+    table tr.tier-strong {{
+      border-left: 5px solid var(--color-tier-strong-border);
+    }}
+    table tr.tier-rec {{
+      border-left: 4px solid var(--color-tier-rec-border);
+    }}
+    table tr.tier-review {{
+      border-left: 3px solid var(--color-tier-review-border);
+    }}
+
+    /* Pill score badges with tier colors */
+    .tier-badge-strong {{
+      background-color: var(--color-tier-strong-border) !important;
+      color: #fff !important;
+    }}
+    .tier-badge-rec {{
+      background-color: var(--color-tier-rec-border) !important;
+      color: #fff !important;
+    }}
+    .tier-badge-review {{
+      background-color: var(--color-tier-review-border) !important;
+      color: #fff !important;
+    }}
+
+    /* Dark mode badge text adjustments */
+    @media (prefers-color-scheme: dark) {{
+      .tier-badge-strong,
+      .tier-badge-rec,
+      .tier-badge-review {{
+        color: #fff !important;
+      }}
+    }}
+
+    /* Pill shape for all score and status badges */
+    .badge.rounded-pill {{
+      border-radius: 999em;
+      padding: 0.35em 0.65em;
+      font-weight: 500;
+    }}
+
+    /* Non-color tier icons for colorblind accessibility */
+    .tier-icon::before {{
+      margin-right: 0.25em;
+      font-weight: bold;
+    }}
+    .tier-icon-strong::before {{
+      content: "\\2605 ";
+    }}
+    .tier-icon-rec::before {{
+      content: "\\2713 ";
+    }}
+    .tier-icon-review::before {{
+      content: "\\25C6 ";
+    }}
+
+    /* Status badges inherit pill style */
+    .status-badge {{
+      margin-right: 0.5rem;
+      border-radius: 999em;
+      padding: 0.35em 0.65em;
+      font-size: 0.75rem;
+    }}
+
+    /* NEW badge refresh to pill style */
+    .badge.bg-primary {{
+      border-radius: 999em;
       padding: 0.35em 0.65em;
     }}
 
@@ -776,10 +876,10 @@ def _generate_html_report(
   <script>
     // Status configuration with semantic colors
     var STATUS_CONFIG = {{
-      applied:      {{ class: 'bg-success', label: 'Applied' }},
-      interviewing: {{ class: 'bg-primary', label: 'Interviewing' }},
-      rejected:     {{ class: 'bg-danger',  label: 'Rejected' }},
-      offer:        {{ class: 'bg-warning text-dark', label: 'Offer' }}
+      applied:      {{ class: 'bg-success rounded-pill', label: 'Applied' }},
+      interviewing: {{ class: 'bg-primary rounded-pill', label: 'Interviewing' }},
+      rejected:     {{ class: 'bg-danger rounded-pill',  label: 'Rejected' }},
+      offer:        {{ class: 'bg-warning text-dark rounded-pill', label: 'Offer' }}
     }};
 
     // Hydrate application status from embedded tracker data + localStorage
@@ -1193,14 +1293,9 @@ def _html_recommended_section(recommended: list[dict], profile: dict) -> str:
         is_new = r.get("is_new", True)
         new_tag = ' <span class="badge bg-primary"><span class="visually-hidden">New listing, not seen in previous searches. </span>NEW</span>' if is_new else ""
 
-        # Determine score badge color
+        # Determine tier based on score
         score_val = score["overall"]
-        if score_val >= 4.0:
-            badge_class = "bg-success"
-        elif score_val >= 3.5:
-            badge_class = "bg-warning"
-        else:
-            badge_class = "bg-secondary"
+        tier = _score_tier(score_val)
 
         # Build details list
         details = []
@@ -1256,9 +1351,9 @@ def _html_recommended_section(recommended: list[dict], profile: dict) -> str:
         # Add data attributes for clipboard and status tracking functionality
         data_attrs = ""
         if job.url:
-            data_attrs = f'class="card mb-3 job-item" tabindex="0" data-job-url="{html.escape(job.url)}" data-score="{score_val:.1f}" data-job-key="{html.escape(job_key_val)}" data-job-title="{html.escape(job.title)}" data-job-company="{html.escape(job.company)}"'
+            data_attrs = f'class="card mb-3 job-item tier-{tier}" tabindex="0" data-job-url="{html.escape(job.url)}" data-score="{score_val:.1f}" data-job-key="{html.escape(job_key_val)}" data-job-title="{html.escape(job.title)}" data-job-company="{html.escape(job.company)}"'
         else:
-            data_attrs = f'class="card mb-3" data-job-key="{html.escape(job_key_val)}" data-job-title="{html.escape(job.title)}" data-job-company="{html.escape(job.company)}"'
+            data_attrs = f'class="card mb-3 tier-{tier}" data-job-key="{html.escape(job_key_val)}" data-job-title="{html.escape(job.title)}" data-job-company="{html.escape(job.company)}"'
 
         # Status dropdown HTML
         status_dropdown = f"""
@@ -1279,8 +1374,9 @@ def _html_recommended_section(recommended: list[dict], profile: dict) -> str:
           </div>
         """
 
-        # Score badge with screen reader context
-        score_badge_html = f'<span class="badge {badge_class} score-badge"><span class="visually-hidden">Score </span>{score_val:.1f}<span class="visually-hidden"> out of 5.0</span></span>'
+        # Score badge with screen reader context and tier icon
+        tier_icon_html = f'<span class="{_tier_icon_class(tier)}" aria-hidden="true"></span>'
+        score_badge_html = f'{tier_icon_html}<span class="badge rounded-pill score-badge tier-badge-{tier}"><span class="visually-hidden">Score </span>{score_val:.1f}<span class="visually-hidden"> out of 5.0</span></span>'
 
         card = f"""
         <div {data_attrs}>
@@ -1347,13 +1443,8 @@ def _html_results_table(scored_results: list[dict]) -> str:
         is_new = r.get("is_new", True)
         new_badge = '<span class="badge bg-primary rounded-pill">NEW</span>' if is_new else ''
 
-        # Badge color based on score
-        if score >= 4.0:
-            badge_class = "bg-success"
-        elif score >= 3.5:
-            badge_class = "bg-warning"
-        else:
-            badge_class = "bg-secondary"
+        # Determine tier based on score
+        tier = _score_tier(score)
 
         salary = html.escape(job.salary) if job.salary != "Not listed" else "—"
         emp_type = getattr(job, "employment_type", "") or job.arrangement
@@ -1366,10 +1457,10 @@ def _html_results_table(scored_results: list[dict]) -> str:
         if job.url:
             view_aria_label = f"View {job.title} at {job.company}, opens in new tab"
             link_html = f'<a href="{html.escape(job.url)}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary" aria-label="{html.escape(view_aria_label)}">View</a> <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copySingleUrl(this)" data-url="{html.escape(job.url)}">Copy</button>'
-            row_attrs = f'class="job-item" tabindex="0" data-job-url="{html.escape(job.url)}" data-score="{score:.1f}" data-job-key="{html.escape(job_key_val)}" data-job-title="{html.escape(job.title)}" data-job-company="{html.escape(job.company)}"'
+            row_attrs = f'class="job-item tier-{tier}" tabindex="0" data-job-url="{html.escape(job.url)}" data-score="{score:.1f}" data-job-key="{html.escape(job_key_val)}" data-job-title="{html.escape(job.title)}" data-job-company="{html.escape(job.company)}"'
         else:
             link_html = html.escape(job.source)
-            row_attrs = f'data-job-key="{html.escape(job_key_val)}" data-job-title="{html.escape(job.title)}" data-job-company="{html.escape(job.company)}"'
+            row_attrs = f'class="tier-{tier}" data-job-key="{html.escape(job_key_val)}" data-job-title="{html.escape(job.title)}" data-job-company="{html.escape(job.company)}"'
 
         # Status dropdown (compact version for table)
         status_dropdown = f"""
@@ -1393,8 +1484,9 @@ def _html_results_table(scored_results: list[dict]) -> str:
         # Update NEW badge with screen reader context
         new_badge_accessible = '<span class="badge bg-primary rounded-pill"><span class="visually-hidden">New listing, not seen in previous searches. </span>NEW</span>' if is_new else ''
 
-        # Update score badge with screen reader context
-        score_badge_accessible = f'<span class="badge {badge_class}"><span class="visually-hidden">Score </span>{score:.1f}<span class="visually-hidden"> out of 5.0</span></span>'
+        # Update score badge with screen reader context and tier icon
+        tier_icon_html = f'<span class="{_tier_icon_class(tier)}" aria-hidden="true"></span>'
+        score_badge_accessible = f'{tier_icon_html}<span class="badge rounded-pill score-badge tier-badge-{tier}"><span class="visually-hidden">Score </span>{score:.1f}<span class="visually-hidden"> out of 5.0</span></span>'
 
         rows.append(f"""
         <tr {row_attrs}>
