@@ -53,21 +53,21 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| VIS-01 | TBD | Pending |
-| VIS-02 | TBD | Pending |
-| VIS-03 | TBD | Pending |
-| VIS-04 | TBD | Pending |
-| VIS-05 | TBD | Pending |
-| POL-01 | TBD | Pending |
-| POL-02 | TBD | Pending |
-| POL-03 | TBD | Pending |
-| POL-04 | TBD | Pending |
+| VIS-01 | Phase 20 | Pending |
+| VIS-02 | Phase 19 | Pending |
+| VIS-03 | Phase 19 | Pending |
+| VIS-04 | Phase 21 | Pending |
+| VIS-05 | Phase 21 | Pending |
+| POL-01 | Phase 22 | Pending |
+| POL-02 | Phase 23 | Pending |
+| POL-03 | Phase 22 | Pending |
+| POL-04 | Phase 23 | Pending |
 
 **Coverage:**
 - v1.4.0 requirements: 9 total
-- Mapped to phases: 0 (awaiting roadmap creation)
-- Unmapped: 9
+- Mapped to phases: 9 (100% coverage)
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-11*
-*Last updated: 2026-02-11 after initial definition*
+*Last updated: 2026-02-11 after v1.4.0 roadmap creation*
