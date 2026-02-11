@@ -38,6 +38,9 @@ log = logging.getLogger("search")
 
 def _colors_supported() -> bool:
     """Check if the terminal supports ANSI escape codes."""
+    # Respect NO_COLOR standard (https://no-color.org/)
+    if os.environ.get("NO_COLOR") is not None:
+        return False
     if not sys.stdout.isatty():
         return False
     if platform.system() != "Windows":
@@ -105,6 +108,11 @@ def parse_args(config: dict | None = None):
           job-radar                          Launch wizard (first run) or search
           job-radar --min-score 3.5          Search with higher quality threshold
           job-radar --profile path/to.json   Use a specific profile file
+          job-radar --no-color               Disable colored output
+
+        Accessibility:
+          Set NO_COLOR=1 to disable all terminal colors.
+          Use --profile to bypass the interactive wizard with screen readers.
 
         Docs: https://github.com/coryebert/job-radar
     """)
@@ -160,6 +168,11 @@ def parse_args(config: dict | None = None):
         "--no-open",
         action="store_true",
         help="Don't auto-open report in browser",
+    )
+    output_group.add_argument(
+        "--no-color",
+        action="store_true",
+        help="Disable colored output (also respects NO_COLOR env var)",
     )
 
     # Profile Options
@@ -472,6 +485,19 @@ def main():
     config = load_config(pre_args.config)
     args = parse_args(config)
 
+    # Handle --no-color flag by setting NO_COLOR env var
+    if args.no_color:
+        os.environ["NO_COLOR"] = "1"
+        # Reinitialize color codes
+        _Colors._enabled = False
+        _Colors.RESET = ""
+        _Colors.BOLD = ""
+        _Colors.GREEN = ""
+        _Colors.YELLOW = ""
+        _Colors.RED = ""
+        _Colors.CYAN = ""
+        _Colors.DIM = ""
+
     # Early exit handlers for API commands (no profile needed)
     if args.setup_apis:
         from .api_setup import setup_apis
@@ -684,7 +710,7 @@ def main():
     print(f"  Recommended (3.5+): {C.YELLOW}{len(recommended)}{C.RESET}")
     print(f"  Strong (4.0+):      {C.GREEN}{len(strong)}{C.RESET}")
     if dealbreaker_count:
-        print(f"  Dealbreakers:       {C.RED}{dealbreaker_count}{C.RESET}")
+        print(f"  Dealbreakers:       {C.RED}{dealbreaker_count} filtered{C.RESET}")
     print(f"\n  Report (HTML):      {html_path}")
     print(f"  Report (Markdown):  {md_path}")
 
