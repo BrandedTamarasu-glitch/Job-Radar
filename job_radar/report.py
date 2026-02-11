@@ -1618,6 +1618,199 @@ def _generate_html_report(
     document.addEventListener('DOMContentLoaded', function() {{
       initializeFilters();
     }});
+
+    // CSV Export Functions
+
+    // RFC 4180 CSV field escaping with formula injection protection
+    function escapeCSVField(value) {{
+      // Handle null/undefined/empty
+      if (value === null || value === undefined || value === '') {{
+        return '';
+      }}
+
+      // Convert to string
+      var str = String(value);
+
+      // Formula injection protection: prefix dangerous characters
+      if (/^[=+\-@]/.test(str)) {{
+        str = "'" + str;
+      }}
+
+      // RFC 4180 quoting: wrap if contains comma, quote, newline, or carriage return
+      if (/[",\r\n]/.test(str)) {{
+        str = '"' + str.replace(/"/g, '""') + '"';
+      }}
+
+      return str;
+    }}
+
+    // Extract job data from DOM element (table row or card)
+    function extractJobDataFromElement(jobElement, rank) {{
+      var isTableRow = jobElement.tagName === 'TR';
+      var data = [];
+
+      if (isTableRow) {{
+        // Extract from table row cells
+        var cells = jobElement.querySelectorAll('td, th');
+
+        // Rank
+        data.push(rank);
+
+        // Score (cell 1) - extract numeric value
+        var scoreText = cells[1] ? cells[1].textContent.trim() : '';
+        var scoreMatch = scoreText.match(/(\d+\.\d+)/);
+        data.push(scoreMatch ? scoreMatch[1] : scoreText);
+
+        // NEW badge (cell 2)
+        var newText = cells[2] ? cells[2].textContent.trim() : '';
+        data.push(newText === 'NEW' ? 'Yes' : 'No');
+
+        // Status (cell 3) - get from badge, strip bullet
+        var statusBadge = cells[3] ? cells[3].querySelector('.status-badge') : null;
+        var statusText = statusBadge ? statusBadge.textContent.trim().replace('●', '').trim() : '';
+        data.push(statusText);
+
+        // Title (cell 4)
+        data.push(cells[4] ? cells[4].textContent.trim() : '');
+
+        // Company (cell 5)
+        data.push(cells[5] ? cells[5].textContent.trim() : '');
+
+        // Salary (cell 6)
+        data.push(cells[6] ? cells[6].textContent.trim() : '');
+
+        // Type (cell 7)
+        data.push(cells[7] ? cells[7].textContent.trim() : '');
+
+        // Location (cell 8)
+        data.push(cells[8] ? cells[8].textContent.trim() : '');
+
+        // Snippet (cell 9)
+        data.push(cells[9] ? cells[9].textContent.trim() : '');
+
+        // URL from data attribute
+        data.push(jobElement.getAttribute('data-job-url') || '');
+
+      }} else {{
+        // Extract from card
+        data.push(rank);
+
+        // Score from data-score attribute
+        data.push(jobElement.getAttribute('data-score') || '');
+
+        // NEW badge - check for badge element
+        var newBadge = jobElement.querySelector('.badge.bg-success');
+        data.push(newBadge ? 'Yes' : 'No');
+
+        // Status from badge
+        var statusBadge = jobElement.querySelector('.status-badge');
+        var statusText = statusBadge ? statusBadge.textContent.trim().replace('●', '').trim() : '';
+        data.push(statusText);
+
+        // Title from data attribute
+        data.push(jobElement.getAttribute('data-job-title') || '');
+
+        // Company from data attribute
+        data.push(jobElement.getAttribute('data-job-company') || '');
+
+        // Salary - parse from card body list items
+        var salary = '';
+        var listItems = jobElement.querySelectorAll('.card-body li');
+        for (var i = 0; i < listItems.length; i++) {{
+          var itemText = listItems[i].textContent;
+          if (itemText.includes('Rate/Salary:')) {{
+            salary = itemText.replace('Rate/Salary:', '').trim();
+            break;
+          }}
+        }}
+        data.push(salary);
+
+        // Type - not available in cards, empty
+        data.push('');
+
+        // Location - parse from card body list items
+        var location = '';
+        for (var i = 0; i < listItems.length; i++) {{
+          var itemText = listItems[i].textContent;
+          if (itemText.includes('Location:')) {{
+            location = itemText.replace('Location:', '').trim();
+            break;
+          }}
+        }}
+        data.push(location);
+
+        // Snippet - not available in cards, empty
+        data.push('');
+
+        // URL from data attribute
+        data.push(jobElement.getAttribute('data-job-url') || '');
+      }}
+
+      return data;
+    }}
+
+    // Export visible jobs to CSV file
+    function exportVisibleJobsToCSV() {{
+      // Get all job elements
+      var allJobs = document.querySelectorAll('[data-job-key]');
+      var visibleJobs = [];
+
+      // Filter to visible jobs only
+      for (var i = 0; i < allJobs.length; i++) {{
+        var job = allJobs[i];
+        // Check if hidden by filter (inline style or CSS class)
+        if (job.style.display !== 'none' && job.offsetParent !== null) {{
+          visibleJobs.push(job);
+        }}
+      }}
+
+      // Check if there are visible jobs
+      if (visibleJobs.length === 0) {{
+        notyf.error('No visible jobs to export');
+        announceToScreenReader('No visible jobs to export');
+        return;
+      }}
+
+      // Build CSV header
+      var headers = ['Rank', 'Score', 'New', 'Status', 'Title', 'Company', 'Salary', 'Type', 'Location', 'Snippet', 'URL'];
+      var csvRows = [];
+      csvRows.push(headers.map(escapeCSVField).join(','));
+
+      // Build data rows
+      for (var i = 0; i < visibleJobs.length; i++) {{
+        var rowData = extractJobDataFromElement(visibleJobs[i], i + 1);
+        csvRows.push(rowData.map(escapeCSVField).join(','));
+      }}
+
+      // Join rows with CRLF
+      var csvContent = csvRows.join('\r\n');
+
+      // Prepend UTF-8 BOM for Excel compatibility
+      var csvWithBOM = '\uFEFF' + csvContent;
+
+      // Create Blob and download
+      var blob = new Blob([csvWithBOM], {{ type: 'text/csv;charset=utf-8;' }});
+      var url = URL.createObjectURL(blob);
+
+      // Create temporary download link
+      var downloadLink = document.createElement('a');
+      var filename = 'job-radar-export-' + new Date().toISOString().split('T')[0] + '.csv';
+      downloadLink.href = url;
+      downloadLink.download = filename;
+
+      // Trigger download
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+
+      // Clean up object URL
+      URL.revokeObjectURL(url);
+
+      // Show success notification
+      var msg = 'Exported ' + visibleJobs.length + ' jobs to CSV';
+      notyf.success(msg);
+      announceToScreenReader(msg);
+    }}
   </script>
 
   <!-- Dark mode handler -->
@@ -2094,6 +2287,8 @@ def _html_results_table(scored_results: list[dict]) -> str:
         </div>
 
         <button class="btn btn-outline-primary btn-sm" id="clear-filters" aria-label="Clear all filters and show all jobs">Show All</button>
+
+        <button class="btn btn-outline-success btn-sm no-print" id="export-csv-btn" onclick="exportVisibleJobsToCSV()" aria-label="Export visible jobs to CSV file">Export CSV</button>
 
         <span id="filter-count" class="text-muted small ms-2" aria-hidden="true"></span>
       </div>
