@@ -5,22 +5,22 @@
 See: .planning/PROJECT.md (updated 2026-02-11)
 
 **Core value:** Accurate job-candidate scoring — if the scoring is wrong, nothing else matters.
-**Current focus:** Phase 21 - Responsive Layout
+**Current focus:** Phase 22 - Interactive Features
 
 ## Current Position
 
-Phase: 21 of 23 (Responsive Layout)
-Plan: 2 of 2 in current phase
-Status: Complete
-Last activity: 2026-02-11 — Completed 21-02 (Responsive layout test coverage with human-verified visual behavior)
+Phase: 22 of 23 (Interactive Features)
+Plan: 1 of 2 in current phase
+Status: In progress
+Last activity: 2026-02-11 — Completed 22-01 (Status filtering with localStorage persistence and ARIA announcements)
 
-Progress: [█████████████████████████] 100% (21 of 23 phases complete, 44 of 44 plans complete)
+Progress: [█████████████████████████] 100% (21 of 23 phases complete, 45 of 46 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 44
-- Average duration: 221s (v1.4.0 plans: 159s + 255s + 379s + 147s + 57s / 5)
+- Total plans completed: 45
+- Average duration: 180s (v1.4.0 plans: 159s + 255s + 379s + 147s + 57s + 85s / 6)
 - Total execution time: Not tracked
 
 **By Milestone:**
@@ -31,14 +31,15 @@ Progress: [███████████████████████
 | v1.1 | 5-10 | Complete (2026-01-20) |
 | v1.2.0 | 11-15 | Complete (2026-02-05) |
 | v1.3.0 | 16-18 | Complete (2026-02-11) |
-| v1.4.0 | 19-23 | In progress (Phases 19-21 complete: 5 of 5 plans) |
+| v1.4.0 | 19-23 | In progress (Phases 19-21 complete, Phase 22: 1 of 2 plans) |
 
 **Recent Trend:**
-- v1.4.0: Phases 19-21 complete, 5 plans, excellent velocity
+- v1.4.0: Phases 19-21 complete, Phase 22 in progress (1 of 2 plans), 6 plans total, excellent velocity
 - Phase 19: 2 plans, completed in <1 hour (2026-02-11)
 - Phase 20: 1 plan, 379s (hero visual hierarchy)
 - Phase 21: 2 plans (responsive layout + tests), 147s + 57s = 204s total
-- Velocity: Excellent (visual enhancements with full test coverage)
+- Phase 22: 1 plan, 85s (status filtering with localStorage)
+- Velocity: Excellent (interactive features with accessibility integration)
 
 *Updated after each plan completion*
 | Phase 19 P01 | 159s | 2 tasks | 1 files |
@@ -46,6 +47,7 @@ Progress: [███████████████████████
 | Phase 20 P01 | 379s | 2 tasks | 2 files |
 | Phase 21 P01 | 147s | 2 tasks | 1 files |
 | Phase 21 P02 | 57s | 2 tasks | 1 files |
+| Phase 22 P01 | 85 | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -72,6 +74,11 @@ Recent decisions affecting current work:
 - [Phase 21-02]: 10 test functions verify responsive patterns via string assertions on generated HTML output
 - [Phase 21-02]: Human verification required for three-breakpoint visual behavior (desktop/tablet/mobile)
 - [Phase 21-02]: Checkpoint pattern established: automated setup, human approval, continuation flow
+- [Phase 22-01]: Filter state persisted to separate localStorage key 'job-radar-filter-state' for cleaner separation from status map
+- [Phase 22-01]: Filter operates on data-job-key attribute reading from 'job-radar-application-status' map to maintain single source of truth
+- [Phase 22-01]: Filter hides with display:none + aria-hidden='true' to preserve DOM structure while removing from accessibility tree
+- [Phase 22-01]: ARIA announcements clear after 1000ms timeout allowing screen readers to re-announce on repeated changes
+- [Phase 22-01]: Show All button clears all filters at once (not individual clear buttons) for simpler UX
 
 ### Pending Todos
 
@@ -95,7 +102,7 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-11 (plan execution)
-Stopped at: Completed 21-02-PLAN.md (Phase 21 complete)
+Stopped at: Completed 22-01-PLAN.md (Status filtering with localStorage persistence)
 Resume file: None
 
-**Next action:** Phase 21 complete. Check ROADMAP.md for next phase (Phase 22: CSV Export) or continue with v1.4.0 milestone plans
+**Next action:** Continue Phase 22 with plan 22-02 (remaining plan in Interactive Features phase)
