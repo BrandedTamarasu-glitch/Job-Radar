@@ -1070,7 +1070,7 @@ def _html_recommended_section(recommended: list[dict], profile: dict) -> str:
         skill = components["skill_match"]
         response = components["response"]
         is_new = r.get("is_new", True)
-        new_tag = ' <span class="badge bg-primary">NEW</span>' if is_new else ""
+        new_tag = ' <span class="badge bg-primary"><span class="visually-hidden">New listing, not seen in previous searches. </span>NEW</span>' if is_new else ""
 
         # Determine score badge color
         score_val = score["overall"]
@@ -1114,7 +1114,8 @@ def _html_recommended_section(recommended: list[dict], profile: dict) -> str:
             details.append(f"<li><strong>Apply:</strong> {html.escape(job.apply_info)}</li>")
 
         if job.url:
-            details.append(f'<li><strong>Link:</strong> <a href="{html.escape(job.url)}" target="_blank" class="btn btn-sm btn-outline-primary">{html.escape(job.source)}</a></li>')
+            source_aria_label = f"View on {job.source}, opens in new tab"
+            details.append(f'<li><strong>Link:</strong> <a href="{html.escape(job.url)}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary" aria-label="{html.escape(source_aria_label)}">{html.escape(job.source)}</a></li>')
             details.append(f'<li><button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copySingleUrl(this)" data-url="{html.escape(job.url)}">Copy URL</button></li>')
 
         # Talking points
@@ -1157,12 +1158,15 @@ def _html_recommended_section(recommended: list[dict], profile: dict) -> str:
           </div>
         """
 
+        # Score badge with screen reader context
+        score_badge_html = f'<span class="badge {badge_class} score-badge"><span class="visually-hidden">Score </span>{score_val:.1f}<span class="visually-hidden"> out of 5.0</span></span>'
+
         card = f"""
         <div {data_attrs}>
           <div class="card-header">
             <h3 class="h5 mb-0">
               {i}. {html.escape(job.title)} — {html.escape(job.company)}
-              <span class="badge {badge_class} score-badge">{score_val:.1f}/5.0</span>{new_tag}
+              {score_badge_html}{new_tag}
               {status_dropdown}
             </h3>
           </div>
@@ -1237,9 +1241,10 @@ def _html_results_table(scored_results: list[dict]) -> str:
         # Generate job key for status tracking
         job_key_val = f"{job.title.lower().strip()}||{job.company.lower().strip()}"
 
-        # Build link and copy button
+        # Build link and copy button with accessibility attributes
         if job.url:
-            link_html = f'<a href="{html.escape(job.url)}" target="_blank" class="btn btn-sm btn-outline-primary">View</a> <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copySingleUrl(this)" data-url="{html.escape(job.url)}">Copy</button>'
+            view_aria_label = f"View {job.title} at {job.company}, opens in new tab"
+            link_html = f'<a href="{html.escape(job.url)}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary" aria-label="{html.escape(view_aria_label)}">View</a> <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copySingleUrl(this)" data-url="{html.escape(job.url)}">Copy</button>'
             row_attrs = f'class="job-item" tabindex="0" data-job-url="{html.escape(job.url)}" data-score="{score:.1f}" data-job-key="{html.escape(job_key_val)}" data-job-title="{html.escape(job.title)}" data-job-company="{html.escape(job.company)}"'
         else:
             link_html = html.escape(job.source)
@@ -1264,11 +1269,17 @@ def _html_results_table(scored_results: list[dict]) -> str:
           </div>
         """
 
+        # Update NEW badge with screen reader context
+        new_badge_accessible = '<span class="badge bg-primary rounded-pill"><span class="visually-hidden">New listing, not seen in previous searches. </span>NEW</span>' if is_new else ''
+
+        # Update score badge with screen reader context
+        score_badge_accessible = f'<span class="badge {badge_class}"><span class="visually-hidden">Score </span>{score:.1f}<span class="visually-hidden"> out of 5.0</span></span>'
+
         rows.append(f"""
         <tr {row_attrs}>
-          <td>{i}</td>
-          <td><span class="badge {badge_class}">{score:.1f}/5.0</span><br><small class="text-muted">({html.escape(rec)})</small></td>
-          <td>{new_badge}</td>
+          <th scope="row">{i}</th>
+          <td>{score_badge_accessible}<br><small class="text-muted">({html.escape(rec)})</small></td>
+          <td>{new_badge_accessible}</td>
           <td>{status_dropdown}</td>
           <td><strong>{html.escape(job.title)}</strong></td>
           <td>{html.escape(job.company)}</td>
@@ -1287,19 +1298,20 @@ def _html_results_table(scored_results: list[dict]) -> str:
         <h2 id="results-heading" class="h4 mb-3">All Results (sorted by score)</h2>
         <div class="table-responsive">
           <table class="table table-striped table-hover">
+            <caption class="visually-hidden">Job search results sorted by relevance score, highest first</caption>
             <thead>
               <tr>
-                <th>#</th>
-                <th>Score</th>
-                <th>New</th>
-                <th>Status</th>
-                <th>Title</th>
-                <th>Company</th>
-                <th>Salary</th>
-                <th>Type</th>
-                <th>Location</th>
-                <th>Snippet</th>
-                <th>Link</th>
+                <th scope="col">#</th>
+                <th scope="col">Score</th>
+                <th scope="col">New</th>
+                <th scope="col">Status</th>
+                <th scope="col">Title</th>
+                <th scope="col">Company</th>
+                <th scope="col">Salary</th>
+                <th scope="col">Type</th>
+                <th scope="col">Location</th>
+                <th scope="col">Snippet</th>
+                <th scope="col">Link</th>
               </tr>
             </thead>
             <tbody>
