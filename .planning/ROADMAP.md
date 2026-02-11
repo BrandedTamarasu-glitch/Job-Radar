@@ -216,10 +216,11 @@ Plans:
   4. Table semantics preserved with explicit ARIA roles when using display:block for mobile cards
   5. Screen readers announce table structure correctly on all viewport sizes
   6. All interactive elements (copy buttons, status dropdowns, links) remain accessible on mobile
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 21-01: TBD
+- [ ] 21-01-PLAN.md — Responsive CSS (tablet column hiding, mobile card layout, dark mode), data-label attributes, ARIA restoration JS
+- [ ] 21-02-PLAN.md — Responsive layout tests and browser verification checkpoint
 
 #### Phase 22: Interactive Features
 **Goal**: Users can filter by application status and export results as CSV for external tracking
@@ -283,9 +284,9 @@ Phases execute in numeric order: 19 → 20 → 21 → 22 → 23
 | 18. WCAG 2.1 Level AA Compliance | v1.3.0 | 3/3 | Complete | 2026-02-11 |
 | 19. Typography & Color Foundation | v1.4.0 | 2/2 | Complete | 2026-02-11 |
 | 20. Hero Jobs Visual Hierarchy | v1.4.0 | 1/1 | Complete | 2026-02-11 |
-| 21. Responsive Layout | v1.4.0 | 0/0 | Not started | - |
+| 21. Responsive Layout | v1.4.0 | 0/2 | Planned | - |
 | 22. Interactive Features | v1.4.0 | 0/0 | Not started | - |
 | 23. Print & CI Validation | v1.4.0 | 0/0 | Not started | - |
 
 ---
-*Last updated: 2026-02-11 after Phase 20 execution complete*
+*Last updated: 2026-02-11 after Phase 21 planning complete*
