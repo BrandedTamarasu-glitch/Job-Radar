@@ -5,13 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-02-11)
 
 **Core value:** Accurate job-candidate scoring — if the scoring is wrong, nothing else matters
-**Current focus:** Planning next milestone
+**Current focus:** v1.4.0 Visual Design & Polish
 
 ## Current Position
 
-Milestone: v1.3.0 shipped (2026-02-11)
-Status: Between milestones
-Last activity: 2026-02-11 — v1.3.0 archived
+Milestone: v1.4.0
+Phase: Not started (defining requirements)
+Status: Defining requirements
+Last activity: 2026-02-11 — Milestone v1.4.0 started
 
 Progress: 4 milestones shipped (v1.0, v1.1, v1.2.0, v1.3.0)
 
@@ -34,15 +35,15 @@ None.
 
 ### Blockers/Concerns
 
-None — between milestones.
+None.
 
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: v1.3.0 milestone archived
+Stopped at: v1.4.0 milestone started, defining requirements
 Resume file: None
 
-**Next step:** `/gsd:new-milestone` to plan v1.4.0
+**Next step:** Define requirements → create roadmap → `/gsd:plan-phase 19`
 
 ---
-*Last updated: 2026-02-11 after v1.3.0 milestone archived*
+*Last updated: 2026-02-11 after v1.4.0 milestone start*

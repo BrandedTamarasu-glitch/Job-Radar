@@ -56,7 +56,29 @@ Accurate job-candidate scoring — if the scoring is wrong, nothing else matters
 
 ### Active
 
-(No active requirements — next milestone not yet planned)
+#### Visual Design (v1.4.0)
+- VIS-01: Hero jobs (≥4.0) display with distinct visual hierarchy (borders, shadows, prominent badges)
+- VIS-02: Semantic color system uses green (excellent), cyan (good), indigo (acceptable), slate (lower priority)
+- VIS-03: Enhanced typography with Inter body font and JetBrains Mono for scores/numbers
+- VIS-04: Responsive table reduces from 10 columns to 6 core columns
+- VIS-05: Mobile view displays job cards instead of tables for <768px screens
+
+#### Polish (v1.4.0)
+- POL-01: Status filters allow hiding already-applied jobs
+- POL-02: Automated accessibility audit blocks releases on violations (Lighthouse + axe in CI)
+- POL-03: CSV export for external tracking tools
+- POL-04: Print-friendly stylesheet
+
+## Current Milestone: v1.4.0 Visual Design & Polish
+
+**Goal:** Improve report scannability through visual hierarchy, responsive design, and quality-of-life polish features.
+
+**Target features:**
+- Hero job visual distinction for top-scoring matches (≥4.0)
+- Semantic color coding by score tier
+- Enhanced typography (Inter + JetBrains Mono)
+- Responsive table and mobile card layout
+- Status filtering, CSV export, print stylesheet, accessibility CI
 
 ### Out of Scope
 
@@ -122,4 +144,4 @@ Accurate job-candidate scoring — if the scoring is wrong, nothing else matters
 | --profile flag as screen reader bypass | Questionary has unknown screen reader support; bypass is safe | ✓ Good |
 
 ---
-*Last updated: 2026-02-11 after v1.3.0 milestone*
+*Last updated: 2026-02-11 after v1.4.0 milestone start*
