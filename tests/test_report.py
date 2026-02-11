@@ -85,7 +85,7 @@ def sample_scored_results():
                     "response": {"likelihood": "Medium", "reason": "Decent fit"},
                 },
             },
-            "is_new": False,
+            "is_new": True,
         },
         {
             "job": JobResult(
@@ -343,8 +343,8 @@ def test_report_stats_accuracy(sample_profile, sample_scored_results, sample_man
     # All 3 results have score >= 2.8
     assert stats["total"] == 3
 
-    # 2 are marked is_new=True (indices 0 and 2)
-    assert stats["new"] == 2
+    # All 3 are marked is_new=True (indices 0, 1, and 2)
+    assert stats["new"] == 3
 
     # 2 have score >= 3.5 (indices 0 and 1)
     assert stats["high_score"] == 2

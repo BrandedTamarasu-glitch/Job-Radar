@@ -298,7 +298,8 @@ def _generate_html_report(
     # Filter results
     scored_results = [r for r in scored_results if r["score"]["overall"] >= min_score]
     total = len(scored_results)
-    recommended = [r for r in scored_results if r["score"]["overall"] >= 3.5]
+    hero_jobs = [r for r in scored_results if r["score"]["overall"] >= 4.0]
+    recommended = [r for r in scored_results if 3.5 <= r["score"]["overall"] < 4.0]
     new_count = sum(1 for r in scored_results if r.get("is_new", True))
 
     # Load application statuses for embedding
@@ -371,6 +372,12 @@ def _generate_html_report(
       --color-tier-review-bg: hsl(210, 10%, 95%);
       --color-tier-review-border: hsl(210, 10%, 45%);
       --color-tier-review-text: hsl(210, 10%, 35%);
+
+      /* Hero job shadows (multi-layer elevation) */
+      --shadow-hero:
+        0 1px 3px rgba(0, 0, 0, 0.12),
+        0 4px 8px rgba(0, 0, 0, 0.08),
+        0 8px 16px rgba(0, 0, 0, 0.05);
     }}
 
     /* Dark mode overrides */
@@ -397,6 +404,12 @@ def _generate_html_report(
         --color-tier-review-bg: hsl(210, 10%, 16%);
         --color-tier-review-border: hsl(210, 10%, 42%);
         --color-tier-review-text: hsl(210, 10%, 50%);
+
+        /* Hero shadow dark mode (higher opacity for visibility) */
+        --shadow-hero:
+          0 1px 3px rgba(0, 0, 0, 0.3),
+          0 4px 8px rgba(0, 0, 0, 0.2),
+          0 8px 16px rgba(0, 0, 0, 0.15);
       }}
     }}
 
@@ -655,6 +668,51 @@ def _generate_html_report(
       white-space: nowrap;
       border: 0;
     }}
+
+    /* Hero job elevated styling */
+    .hero-job {{
+      box-shadow: var(--shadow-hero);
+      margin-bottom: 1.5rem;
+    }}
+    .hero-job .card-body {{
+      padding: 1.5rem;
+    }}
+
+    /* Badge label for "Top Match" text */
+    .badge-label {{
+      margin-left: 0.5em;
+      font-size: 0.85em;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.025em;
+    }}
+
+    /* Section divider between hero and recommended */
+    .section-divider {{
+      height: 1px;
+      background: linear-gradient(to right, transparent, #dee2e6 20%, #dee2e6 80%, transparent);
+      margin: 3rem 0;
+    }}
+
+    /* Enhanced focus indicator for hero cards */
+    .hero-job:focus-visible {{
+      outline: 3px solid var(--color-tier-strong-border);
+      outline-offset: 3px;
+    }}
+
+    /* Responsive badge label for mobile */
+    @media (max-width: 576px) {{
+      .badge-label {{
+        font-size: 0.7em;
+      }}
+    }}
+
+    /* Dark mode section divider */
+    @media (prefers-color-scheme: dark) {{
+      .section-divider {{
+        background: linear-gradient(to right, transparent, #495057 20%, #495057 80%, transparent);
+      }}
+    }}
   </style>
 
   <!-- Embedded tracker status (source of truth) -->
@@ -674,7 +732,7 @@ def _generate_html_report(
         <strong>Sources searched:</strong> {html.escape(', '.join(sources_searched))}<br>
         <strong>Date filter:</strong> {html.escape(from_date)} to {html.escape(to_date)}<br>
         <strong>Total results:</strong> {total} ({new_count} new)<br>
-        <strong>Above threshold (3.5+):</strong> {len(recommended)}
+        <strong>Top matches (4.0+):</strong> {len(hero_jobs)} | <strong>Recommended (3.5+):</strong> {len(recommended)}
       </div>
 
       {_html_tracker_stats(tracker_stats) if tracker_stats else ''}
@@ -684,6 +742,10 @@ def _generate_html_report(
   <main id="main-content" role="main">
     <div class="container">
       {_html_profile_section(profile)}
+
+      {_html_hero_section(hero_jobs, profile)}
+
+      {'<div class="section-divider" role="separator" aria-hidden="true"></div>' if hero_jobs and recommended else ''}
 
       {_html_recommended_section(recommended, profile)}
 
@@ -777,19 +839,54 @@ def _generate_html_report(
       }});
     }}
 
-    // Copy all recommended URLs (score >= 3.5)
+    // Copy all hero URLs (score >= 4.0)
+    function copyAllHeroUrls(btn) {{
+      const items = document.querySelectorAll('.hero-jobs-section .job-item[data-job-url]');
+      const urls = Array.from(items)
+        .map(function(el) {{ return el.dataset.jobUrl; }})
+        .filter(function(u) {{ return u && u.length > 0; }});
+
+      if (urls.length === 0) {{
+        const msg = 'No top match jobs found (score >= 4.0)';
+        notyf.error(msg);
+        announceToScreenReader(msg);
+        return;
+      }}
+
+      copyToClipboard(urls.join('\\n')).then(function(ok) {{
+        if (ok) {{
+          const msg = urls.length + ' job URL' + (urls.length > 1 ? 's' : '') + ' copied to clipboard';
+          notyf.success(msg);
+          announceToScreenReader(msg);
+          if (btn) {{
+            btn.classList.add('copied');
+            btn.textContent = 'Copied ' + urls.length + ' URLs!';
+            setTimeout(function() {{
+              btn.classList.remove('copied');
+              btn.textContent = 'Copy All Top Match URLs';
+            }}, 2000);
+          }}
+        }} else {{
+          const msg = 'Copy failed — try selecting URLs manually';
+          notyf.error(msg);
+          announceToScreenReader(msg);
+        }}
+      }});
+    }}
+
+    // Copy all recommended URLs (score 3.5 - 3.9)
     function copyAllRecommendedUrls(btn) {{
       const items = document.querySelectorAll('.job-item[data-job-url][data-score]');
       const urls = Array.from(items)
         .filter(function(el) {{
           var s = parseFloat(el.dataset.score);
-          return !isNaN(s) && s >= 3.5;
+          return !isNaN(s) && s >= 3.5 && s < 4.0;
         }})
         .map(function(el) {{ return el.dataset.jobUrl; }})
         .filter(function(u) {{ return u && u.length > 0; }});
 
       if (urls.length === 0) {{
-        const msg = 'No recommended jobs found (score >= 3.5)';
+        const msg = 'No recommended jobs found (score 3.5 - 3.9)';
         notyf.error(msg);
         announceToScreenReader(msg);
         return;
@@ -1267,6 +1364,148 @@ def _html_profile_section(profile: dict) -> str:
     """
 
 
+def _html_hero_section(hero_jobs: list[dict], profile: dict) -> str:
+    """Generate HTML for hero jobs section (score >= 4.0)."""
+    if not hero_jobs:
+        return ""
+
+    cards = []
+    for i, r in enumerate(hero_jobs, 1):
+        job = r["job"]
+        score = r["score"]
+        components = score["components"]
+        skill = components["skill_match"]
+        response = components["response"]
+        is_new = r.get("is_new", True)
+        new_tag = ' <span class="badge bg-primary"><span class="visually-hidden">New listing, not seen in previous searches. </span>NEW</span>' if is_new else ""
+
+        # Hero jobs are always tier-strong (score >= 4.0)
+        tier = "strong"
+        score_val = score["overall"]
+
+        # Build details list
+        details = []
+        details.append(f"<li><strong>Posted:</strong> {html.escape(job.date_posted)}</li>")
+        details.append(f"<li><strong>Rate/Salary:</strong> {html.escape(job.salary)}</li>")
+
+        emp_type = getattr(job, "employment_type", "")
+        type_str = f" | {html.escape(emp_type)}" if emp_type else ""
+        details.append(f"<li><strong>Location:</strong> {html.escape(job.location)} | {html.escape(job.arrangement)}{type_str}</li>")
+
+        matched_core = ", ".join(skill["matched_core"]) if skill["matched_core"] else "none"
+        details.append(f"<li><strong>Stack match:</strong> {html.escape(skill['ratio'])} — matched: {html.escape(matched_core)}</li>")
+
+        if skill.get("matched_secondary"):
+            matched_sec = ", ".join(skill["matched_secondary"])
+            details.append(f"<li><strong>Secondary skills:</strong> {html.escape(matched_sec)}</li>")
+
+        title_rel = components.get("title_relevance", {})
+        if title_rel:
+            details.append(f"<li><strong>Title match:</strong> {html.escape(title_rel.get('reason', 'N/A'))}</li>")
+
+        details.append(f"<li><strong>Seniority:</strong> {html.escape(components['seniority']['reason'])}</li>")
+        details.append(f"<li><strong>Response likelihood:</strong> {html.escape(response['likelihood'])} — {html.escape(response['reason'])}</li>")
+
+        if components.get("comp_note"):
+            details.append(f"<li><strong>Comp warning:</strong> {html.escape(components['comp_note'])}</li>")
+
+        if components.get("parse_note"):
+            details.append(f"<li><strong>Note:</strong> {html.escape(components['parse_note'])}</li>")
+
+        if job.apply_info:
+            details.append(f"<li><strong>Apply:</strong> {html.escape(job.apply_info)}</li>")
+
+        if job.url:
+            source_aria_label = f"View on {job.source}, opens in new tab"
+            details.append(f'<li><strong>Link:</strong> <a href="{html.escape(job.url)}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary" aria-label="{html.escape(source_aria_label)}">{html.escape(job.source)}</a></li>')
+            details.append(f'<li><button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copySingleUrl(this)" data-url="{html.escape(job.url)}">Copy URL</button></li>')
+
+        # Talking points
+        highlights = profile.get("highlights", [])
+        matched_core_list = skill.get("matched_core", [])
+        if highlights and matched_core_list:
+            relevant = _match_highlights(highlights, matched_core_list, job)
+            if relevant:
+                talking_points = "".join(f"<li>{html.escape(h)}</li>" for h in relevant)
+                details.append(f"<li><strong>Talking points:</strong><ul>{talking_points}</ul></li>")
+
+        details_html = "".join(details)
+
+        # Generate job key for status tracking
+        job_key_val = f"{job.title.lower().strip()}||{job.company.lower().strip()}"
+
+        # Add data attributes (hero-job class IN ADDITION to tier-strong)
+        data_attrs = ""
+        if job.url:
+            data_attrs = f'class="card mb-3 job-item hero-job tier-{tier}" tabindex="0" data-job-url="{html.escape(job.url)}" data-score="{score_val:.1f}" data-job-key="{html.escape(job_key_val)}" data-job-title="{html.escape(job.title)}" data-job-company="{html.escape(job.company)}"'
+        else:
+            data_attrs = f'class="card mb-3 hero-job tier-{tier}" data-job-key="{html.escape(job_key_val)}" data-job-title="{html.escape(job.title)}" data-job-company="{html.escape(job.company)}"'
+
+        # Status dropdown HTML
+        status_dropdown = f"""
+          <div class="dropdown d-inline-block ms-2">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle status-dropdown"
+                    type="button" data-bs-toggle="dropdown"
+                    aria-label="Change application status">
+              Status
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li><a class="dropdown-item" href="#" data-status="applied">Applied</a></li>
+              <li><a class="dropdown-item" href="#" data-status="interviewing">Interviewing</a></li>
+              <li><a class="dropdown-item" href="#" data-status="rejected">Rejected</a></li>
+              <li><a class="dropdown-item" href="#" data-status="offer">Offer</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="#" data-status="">Clear Status</a></li>
+            </ul>
+          </div>
+        """
+
+        # Score badge with "Top Match" label
+        tier_icon_html = f'<span class="{_tier_icon_class(tier)}" aria-hidden="true"></span>'
+        score_badge_html = f'{tier_icon_html}<span class="badge rounded-pill score-badge tier-badge-{tier}"><span class="visually-hidden">Score </span>{score_val:.1f}<span class="visually-hidden"> out of 5.0, </span><span class="badge-label">Top Match</span></span>'
+
+        card = f"""
+        <div {data_attrs}>
+          <div class="card-header">
+            <h3 class="h5 mb-0">
+              {i}. {html.escape(job.title)} — {html.escape(job.company)}
+              {score_badge_html}{new_tag}
+              {status_dropdown}
+            </h3>
+          </div>
+          <div class="card-body">
+            <ul class="mb-0">
+              {details_html}
+            </ul>
+          </div>
+        </div>
+        """
+        cards.append(card)
+
+    cards_html = "".join(cards)
+
+    # Copy All button for hero section
+    copy_all_button = f"""
+    <div class="d-flex align-items-center mb-3">
+      <button class="btn btn-primary copy-all-btn" onclick="copyAllHeroUrls(this)">
+        Copy All Top Match URLs
+      </button>
+      <span class="shortcut-hint ms-2">Keyboard: <kbd>C</kbd> = copy focused, <kbd>A</kbd> = copy all</span>
+    </div>
+    """
+
+    return f"""
+    <section aria-labelledby="hero-heading" class="hero-jobs-section">
+      <div class="mb-4">
+        <h2 id="hero-heading" class="h4 mb-3">Top Matches (Score >= 4.0)</h2>
+        <p class="text-muted mb-4">These jobs are excellent matches for your profile.</p>
+        {copy_all_button}
+        {cards_html}
+      </div>
+    </section>
+    """
+
+
 def _html_recommended_section(recommended: list[dict], profile: dict) -> str:
     """Generate HTML for recommended roles section."""
     if not recommended:
@@ -1274,10 +1513,10 @@ def _html_recommended_section(recommended: list[dict], profile: dict) -> str:
         <section aria-labelledby="recommended-heading">
           <div class="card mb-4">
             <div class="card-header">
-              <h2 id="recommended-heading" class="h4 mb-0">Recommended Roles (Score >= 3.5)</h2>
+              <h2 id="recommended-heading" class="h4 mb-0">Recommended Roles (Score 3.5 - 3.9)</h2>
             </div>
             <div class="card-body">
-              <p class="text-muted mb-0"><em>No results scored 3.5 or above in this search run.</em></p>
+              <p class="text-muted mb-0"><em>No results scored 3.5 to 3.9 in this search run.</em></p>
             </div>
           </div>
         </section>
@@ -1415,7 +1654,7 @@ def _html_recommended_section(recommended: list[dict], profile: dict) -> str:
     return f"""
     <section aria-labelledby="recommended-heading">
       <div class="mb-4">
-        <h2 id="recommended-heading" class="h4 mb-3">Recommended Roles (Score >= 3.5)</h2>
+        <h2 id="recommended-heading" class="h4 mb-3">Recommended Roles (Score 3.5 - 3.9)</h2>
         {copy_all_button}
         {cards_html}
       </div>
