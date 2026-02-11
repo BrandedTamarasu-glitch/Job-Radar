@@ -562,6 +562,320 @@ def _generate_html_report(
     }});
   </script>
 
+  <!-- Application status management -->
+  <script>
+    // Status configuration with semantic colors
+    var STATUS_CONFIG = {{
+      applied:      {{ class: 'bg-success', label: 'Applied' }},
+      interviewing: {{ class: 'bg-primary', label: 'Interviewing' }},
+      rejected:     {{ class: 'bg-danger',  label: 'Rejected' }},
+      offer:        {{ class: 'bg-warning text-dark', label: 'Offer' }}
+    }};
+
+    // Hydrate application status from embedded tracker data + localStorage
+    function hydrateApplicationStatus() {{
+      // Parse embedded tracker status (source of truth)
+      var trackerStatusEl = document.getElementById('tracker-status');
+      var trackerStatus = trackerStatusEl ? JSON.parse(trackerStatusEl.textContent) : {{}};
+
+      // Parse localStorage cache
+      var localStorageKey = 'job-radar-application-status';
+      var localStatus = {{}};
+      try {{
+        var localData = localStorage.getItem(localStorageKey);
+        localStatus = localData ? JSON.parse(localData) : {{}};
+      }} catch (err) {{
+        console.warn('[status] Failed to load localStorage:', err);
+      }}
+
+      // Merge: tracker.json wins for existing entries, localStorage adds new with pending_sync flag
+      var merged = {{}};
+      var pendingCount = 0;
+
+      // Copy tracker.json entries
+      for (var key in trackerStatus) {{
+        if (trackerStatus.hasOwnProperty(key)) {{
+          merged[key] = trackerStatus[key];
+        }}
+      }}
+
+      // Add localStorage entries that aren't in tracker.json
+      for (var key in localStatus) {{
+        if (localStatus.hasOwnProperty(key)) {{
+          if (!merged[key]) {{
+            // New status not yet in tracker.json
+            merged[key] = localStatus[key];
+            merged[key].pending_sync = true;
+            pendingCount++;
+          }} else if (localStatus[key].updated && merged[key].updated && localStatus[key].updated > merged[key].updated) {{
+            // localStorage has newer update (rare)
+            merged[key] = localStatus[key];
+            merged[key].pending_sync = true;
+            pendingCount++;
+          }}
+        }}
+      }}
+
+      // Save merged state back to localStorage
+      try {{
+        localStorage.setItem(localStorageKey, JSON.stringify(merged));
+      }} catch (err) {{
+        console.error('[status] Failed to save to localStorage:', err);
+        notyf.error('Status storage quota exceeded');
+      }}
+
+      // Render all status badges
+      renderAllStatusBadges(merged);
+
+      // Update export button count
+      updateExportButtonCount(pendingCount);
+    }}
+
+    // Render status badges on all job items
+    function renderAllStatusBadges(statusMap) {{
+      var jobElements = document.querySelectorAll('[data-job-key]');
+      for (var i = 0; i < jobElements.length; i++) {{
+        var element = jobElements[i];
+        var jobKey = element.getAttribute('data-job-key');
+        if (!jobKey) continue;
+
+        var statusEntry = statusMap[jobKey];
+        if (statusEntry && statusEntry.status) {{
+          var isPending = statusEntry.pending_sync === true;
+          renderStatusBadge(element, statusEntry.status, isPending);
+        }}
+      }}
+    }}
+
+    // Render status badge for a single job element
+    function renderStatusBadge(jobElement, status, isPending) {{
+      var config = STATUS_CONFIG[status];
+      if (!config) return;
+
+      // Find card header or table row
+      var header = jobElement.querySelector('.card-header');
+      var isTableRow = jobElement.tagName === 'TR';
+
+      if (isTableRow) {{
+        // For table rows, find the Status column (4th column after #, Score, New)
+        var statusCell = jobElement.children[3]; // 0-based: #, Score, New, Status
+        if (!statusCell) return;
+
+        // Remove existing badge if present
+        var existingBadge = statusCell.querySelector('.status-badge');
+        if (existingBadge) existingBadge.remove();
+
+        // Create badge
+        var badge = document.createElement('span');
+        badge.className = 'badge ' + config.class + ' status-badge';
+        badge.textContent = config.label;
+
+        // Add pending indicator if not synced
+        if (isPending) {{
+          var pendingIcon = document.createElement('span');
+          pendingIcon.className = 'pending-dot';
+          pendingIcon.title = 'Pending sync to tracker.json';
+          badge.appendChild(pendingIcon);
+        }}
+
+        // Insert badge before dropdown
+        var dropdown = statusCell.querySelector('.dropdown');
+        if (dropdown) {{
+          statusCell.insertBefore(badge, dropdown);
+        }} else {{
+          statusCell.appendChild(badge);
+        }}
+      }} else if (header) {{
+        // For cards, insert in header
+        // Remove existing badge if present
+        var existingBadge = header.querySelector('.status-badge');
+        if (existingBadge) existingBadge.remove();
+
+        // Create badge
+        var badge = document.createElement('span');
+        badge.className = 'badge ' + config.class + ' status-badge';
+        badge.textContent = config.label;
+
+        // Add pending indicator if not synced
+        if (isPending) {{
+          var pendingIcon = document.createElement('span');
+          pendingIcon.className = 'pending-dot';
+          pendingIcon.title = 'Pending sync to tracker.json';
+          badge.appendChild(pendingIcon);
+        }}
+
+        // Insert before status dropdown or at end of h3
+        var h3 = header.querySelector('h3');
+        if (h3) {{
+          var dropdown = h3.querySelector('.dropdown');
+          if (dropdown) {{
+            h3.insertBefore(badge, dropdown);
+          }} else {{
+            h3.appendChild(badge);
+          }}
+        }}
+      }}
+    }}
+
+    // Remove status badge from element
+    function removeStatusBadge(jobElement) {{
+      var isTableRow = jobElement.tagName === 'TR';
+      if (isTableRow) {{
+        var statusCell = jobElement.children[3];
+        if (statusCell) {{
+          var badge = statusCell.querySelector('.status-badge');
+          if (badge) badge.remove();
+        }}
+      }} else {{
+        var header = jobElement.querySelector('.card-header');
+        if (header) {{
+          var badge = header.querySelector('.status-badge');
+          if (badge) badge.remove();
+        }}
+      }}
+    }}
+
+    // Status change click handler (event delegation)
+    document.addEventListener('click', function(event) {{
+      if (!event.target.matches('.dropdown-item[data-status]')) return;
+
+      event.preventDefault();
+
+      var statusItem = event.target;
+      var newStatus = statusItem.getAttribute('data-status');
+      var dropdown = statusItem.closest('.dropdown');
+      if (!dropdown) return;
+
+      // Find parent job element (card or table row)
+      var jobElement = dropdown.closest('[data-job-key]');
+      if (!jobElement) {{
+        console.error('[status] No job element found with data-job-key');
+        return;
+      }}
+
+      var jobKey = jobElement.getAttribute('data-job-key');
+      var jobTitle = jobElement.getAttribute('data-job-title') || 'Unknown';
+      var jobCompany = jobElement.getAttribute('data-job-company') || 'Unknown';
+
+      if (!jobKey) {{
+        console.error('[status] No job key found');
+        return;
+      }}
+
+      // Load current status map
+      var localStorageKey = 'job-radar-application-status';
+      var statusMap = {{}};
+      try {{
+        var localData = localStorage.getItem(localStorageKey);
+        statusMap = localData ? JSON.parse(localData) : {{}};
+      }} catch (err) {{
+        console.warn('[status] Failed to load localStorage:', err);
+      }}
+
+      // Update or remove status
+      if (newStatus === '') {{
+        // Clear status
+        delete statusMap[jobKey];
+        removeStatusBadge(jobElement);
+        notyf.success('Status cleared');
+      }} else {{
+        // Set new status
+        statusMap[jobKey] = {{
+          title: jobTitle,
+          company: jobCompany,
+          status: newStatus,
+          updated: new Date().toISOString(),
+          pending_sync: true
+        }};
+        renderStatusBadge(jobElement, newStatus, true);
+        var statusLabel = STATUS_CONFIG[newStatus] ? STATUS_CONFIG[newStatus].label : newStatus;
+        notyf.success('Marked as ' + statusLabel);
+      }}
+
+      // Save to localStorage
+      try {{
+        localStorage.setItem(localStorageKey, JSON.stringify(statusMap));
+      }} catch (err) {{
+        console.error('[status] Failed to save to localStorage:', err);
+        notyf.error('Status storage quota exceeded');
+      }}
+
+      // Update export button count
+      var pendingCount = 0;
+      for (var key in statusMap) {{
+        if (statusMap.hasOwnProperty(key) && statusMap[key].pending_sync === true) {{
+          pendingCount++;
+        }}
+      }}
+      updateExportButtonCount(pendingCount);
+    }});
+
+    // Export pending status updates as JSON file
+    function exportPendingStatusUpdates() {{
+      var localStorageKey = 'job-radar-application-status';
+      var statusMap = {{}};
+      try {{
+        var localData = localStorage.getItem(localStorageKey);
+        statusMap = localData ? JSON.parse(localData) : {{}};
+      }} catch (err) {{
+        console.warn('[status] Failed to load localStorage:', err);
+        notyf.error('Failed to load status updates');
+        return;
+      }}
+
+      // Filter entries with pending_sync flag
+      var pendingUpdates = {{}};
+      for (var key in statusMap) {{
+        if (statusMap.hasOwnProperty(key) && statusMap[key].pending_sync === true) {{
+          pendingUpdates[key] = {{
+            title: statusMap[key].title,
+            company: statusMap[key].company,
+            status: statusMap[key].status,
+            updated: statusMap[key].updated
+          }};
+        }}
+      }}
+
+      var count = Object.keys(pendingUpdates).length;
+      if (count === 0) {{
+        notyf.error('No pending status updates to export');
+        return;
+      }}
+
+      // Create JSON blob with applications structure
+      var exportData = {{ applications: pendingUpdates }};
+      var blob = new Blob(
+        [JSON.stringify(exportData, null, 2)],
+        {{ type: 'application/json' }}
+      );
+      var url = URL.createObjectURL(blob);
+      var link = document.createElement('a');
+      link.href = url;
+      link.download = 'job-status-updates-' + new Date().toISOString().split('T')[0] + '.json';
+      link.click();
+      URL.revokeObjectURL(url);
+
+      notyf.success('Exported ' + count + ' status update' + (count > 1 ? 's' : ''));
+    }}
+
+    // Update export button count
+    function updateExportButtonCount(count) {{
+      var btn = document.querySelector('.export-status-btn');
+      if (!btn) return;
+
+      if (count > 0) {{
+        btn.textContent = 'Export Status Updates (' + count + ')';
+      }} else {{
+        btn.textContent = 'Export Status Updates';
+      }}
+    }}
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {{
+      hydrateApplicationStatus();
+    }});
+  </script>
+
   <!-- Dark mode handler -->
   <script>
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
