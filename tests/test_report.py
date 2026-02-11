@@ -392,3 +392,234 @@ def test_generate_report_creates_output_dir(sample_profile, sample_scored_result
     # Check files exist in the nested directory
     assert Path(result["markdown"]).exists()
     assert Path(result["html"]).exists()
+
+
+def test_html_report_contains_copy_buttons(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that HTML report contains copy buttons for individual jobs and batch copy all button."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+
+    html_content = Path(result["html"]).read_text()
+
+    # Check for individual copy buttons
+    assert "copy-btn" in html_content
+    assert "Copy URL" in html_content or "Copy" in html_content
+
+    # Check for Copy All Recommended button
+    assert "copy-all-btn" in html_content
+    assert "Copy All Recommended URLs" in html_content
+
+
+def test_html_report_contains_data_attributes(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that HTML report contains data-job-url and data-score attributes."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+
+    html_content = Path(result["html"]).read_text()
+
+    # Check for data attributes from sample fixtures
+    assert "data-job-url" in html_content
+    assert 'data-job-url="https://example.com/job/1"' in html_content
+    assert "data-score" in html_content
+    assert 'data-score="4.2"' in html_content
+
+    # Check for keyboard navigation tabindex
+    assert 'tabindex="0"' in html_content
+
+
+def test_html_report_contains_notyf_cdn(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that HTML report includes Notyf CDN for toast notifications."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+
+    html_content = Path(result["html"]).read_text()
+
+    # Check for Notyf CSS and JS CDN links
+    assert "notyf.min.css" in html_content
+    assert "notyf.min.js" in html_content
+
+
+def test_html_report_contains_clipboard_javascript(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that HTML report includes clipboard JavaScript functionality."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+
+    html_content = Path(result["html"]).read_text()
+
+    # Check for clipboard functions and API usage
+    assert "copyToClipboard" in html_content
+    assert "navigator.clipboard" in html_content
+    assert "execCommand" in html_content  # Fallback for file:// protocol
+
+    # Check for keyboard shortcut event listener
+    assert "keydown" in html_content
+
+
+def test_html_report_contains_keyboard_shortcut_hints(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that HTML report includes keyboard shortcut hints."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+
+    html_content = Path(result["html"]).read_text()
+
+    # Check for keyboard hint elements (using <kbd> tags)
+    assert "<kbd>C</kbd>" in html_content or "<kbd>A</kbd>" in html_content
+    assert "Keyboard:" in html_content
+
+
+def test_html_report_focus_styles(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that HTML report includes focus indicator styles for keyboard navigation."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+
+    html_content = Path(result["html"]).read_text()
+
+    # Check for focus-visible styles in CSS
+    assert "focus-visible" in html_content
+    assert "job-item" in html_content
+
+
+def test_html_report_copy_button_absent_when_no_url(tmp_path):
+    """Test that copy buttons are not added for jobs without URLs."""
+    profile = {
+        "name": "Test User",
+        "target_titles": ["Developer"],
+        "core_skills": ["Python"],
+        "level": "senior",
+        "years_experience": 5,
+        "location": "Remote",
+        "arrangement": ["remote"],
+    }
+
+    # Create a job result with empty URL
+    scored_results = [
+        {
+            "job": JobResult(
+                title="Test Job",
+                company="TestCo",
+                location="Remote",
+                arrangement="remote",
+                salary="$100k",
+                date_posted="2026-02-08",
+                description="Test description",
+                url="",  # Empty URL
+                source="Test",
+            ),
+            "score": {
+                "overall": 4.0,
+                "recommendation": "Strong match",
+                "components": {
+                    "skill_match": {"ratio": "1/1", "matched_core": ["Python"], "matched_secondary": []},
+                    "title_relevance": {"reason": "Match"},
+                    "seniority": {"reason": "Good"},
+                    "response": {"likelihood": "High", "reason": "Good"},
+                },
+            },
+            "is_new": True,
+        }
+    ]
+
+    result = generate_report(
+        profile=profile,
+        scored_results=scored_results,
+        manual_urls=[],
+        sources_searched=["Test"],
+        from_date="2026-02-08",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+
+    html_content = Path(result["html"]).read_text()
+
+    # Verify no empty data-job-url attributes
+    assert 'data-job-url=""' not in html_content
+
+
+def test_html_report_no_copy_all_button_when_no_recommended(sample_profile, tmp_path):
+    """Test that Copy All button does not appear when there are no recommended jobs."""
+    # Create only low-scored results (below 3.5 threshold)
+    low_scored_results = [
+        {
+            "job": JobResult(
+                title="Junior Developer",
+                company="TestCo",
+                location="Remote",
+                arrangement="remote",
+                salary="$80k",
+                date_posted="2026-02-08",
+                description="Entry level position",
+                url="https://example.com/job/low",
+                source="Test",
+            ),
+            "score": {
+                "overall": 2.9,
+                "recommendation": "Below threshold",
+                "components": {
+                    "skill_match": {"ratio": "1/3", "matched_core": ["Python"], "matched_secondary": []},
+                    "title_relevance": {"reason": "Mismatch"},
+                    "seniority": {"reason": "Too junior"},
+                    "response": {"likelihood": "Low", "reason": "Poor fit"},
+                },
+            },
+            "is_new": True,
+        }
+    ]
+
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=low_scored_results,
+        manual_urls=[],
+        sources_searched=["Test"],
+        from_date="2026-02-08",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+        min_score=2.0,  # Lower threshold to include the low-scored result
+    )
+
+    html_content = Path(result["html"]).read_text()
+
+    # Verify Copy All button element doesn't appear (no recommended jobs)
+    # The button element should not be in the HTML (JavaScript/CSS may still reference it)
+    assert '<button class="btn btn-primary copy-all-btn"' not in html_content
