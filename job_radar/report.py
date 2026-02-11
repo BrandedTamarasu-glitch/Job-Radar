@@ -399,10 +399,56 @@ def _generate_html_report(
       --bs-body-color: #dee2e6;
     }}
 
-    /* Score badge sizing */
+    /* Typography application */
+    body {{
+      font-family: var(--font-sans);
+      font-size: var(--font-size-body);
+      line-height: var(--line-height-normal);
+    }}
+
+    h1, .h1 {{
+      font-size: var(--font-size-title);
+      line-height: var(--line-height-tight);
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }}
+
+    h2, .h2 {{
+      font-size: var(--font-size-section);
+      line-height: 1.3;
+      font-weight: 600;
+    }}
+
+    h3, .h3 {{
+      font-size: var(--font-size-subsection);
+      line-height: 1.4;
+      font-weight: 600;
+    }}
+
+    /* Comfortable spacing */
+    .card-body {{
+      padding: 1.25rem;
+    }}
+
+    .card-body ul {{
+      line-height: var(--line-height-relaxed);
+    }}
+
+    .card-header h3, .card-header .h5 {{
+      line-height: 1.4;
+    }}
+
+    .text-small, small, .metadata {{
+      font-size: var(--font-size-small);
+      line-height: var(--line-height-normal);
+    }}
+
+    /* Score badge with monospace font */
     .score-badge {{
-      font-size: 1rem;
-      padding: 0.5em 0.75em;
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+      font-size: 0.9375rem;
+      padding: 0.35em 0.65em;
     }}
 
     /* Copy button styling */
