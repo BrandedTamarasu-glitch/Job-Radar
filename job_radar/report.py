@@ -1340,7 +1340,7 @@ def _html_manual_urls_section(manual_urls: list[dict]) -> str:
     for source, urls in groups.items():
         links = []
         for u in urls:
-            links.append(f'<li>{html.escape(u["title"])}: <a href="{html.escape(u["url"])}" target="_blank">{html.escape(u["source"])} Search</a></li>')
+            links.append(f'<li>{html.escape(u["title"])}: <a href="{html.escape(u["url"])}" target="_blank" rel="noopener" aria-label="{html.escape(u["title"])} on {html.escape(u["source"])}, opens in new tab">{html.escape(u["source"])} Search</a></li>')
         links_html = "".join(links)
         sections.append(f"""
         <div class="mb-3">
