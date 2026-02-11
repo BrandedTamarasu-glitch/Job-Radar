@@ -237,8 +237,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 22-01-PLAN.md — Status filtering UI with localStorage persistence and ARIA announcements
-- [ ] 22-02-PLAN.md — CSV export with UTF-8 BOM, RFC 4180 escaping, and tests for both features
+- [x] 22-01-PLAN.md — Status filtering UI with localStorage persistence and ARIA announcements
+- [x] 22-02-PLAN.md — CSV export with UTF-8 BOM, RFC 4180 escaping, and tests for both features
 
 #### Phase 23: Print & CI Validation
 **Goal**: Print-optimized report output and automated accessibility enforcement in CI pipeline
@@ -286,8 +286,8 @@ Phases execute in numeric order: 19 -> 20 -> 21 -> 22 -> 23
 | 19. Typography & Color Foundation | v1.4.0 | 2/2 | Complete | 2026-02-11 |
 | 20. Hero Jobs Visual Hierarchy | v1.4.0 | 1/1 | Complete | 2026-02-11 |
 | 21. Responsive Layout | v1.4.0 | 2/2 | Complete | 2026-02-11 |
-| 22. Interactive Features | v1.4.0 | 0/2 | Not started | - |
+| 22. Interactive Features | v1.4.0 | 2/2 | Complete | 2026-02-11 |
 | 23. Print & CI Validation | v1.4.0 | 0/0 | Not started | - |
 
 ---
-*Last updated: 2026-02-11 after Phase 22 planning complete*
+*Last updated: 2026-02-11 after Phase 22 execution complete*

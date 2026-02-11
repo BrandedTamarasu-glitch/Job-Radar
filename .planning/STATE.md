@@ -47,9 +47,8 @@ Progress: [███████████████████████
 | Phase 20 P01 | 379s | 2 tasks | 2 files |
 | Phase 21 P01 | 147s | 2 tasks | 1 files |
 | Phase 21 P02 | 57s | 2 tasks | 1 files |
-| Phase 22 P01 | 85 | 2 tasks | 1 files |
+| Phase 22 P01 | 85s | 2 tasks | 1 files |
 | Phase 22 P02 | 200s | 2 tasks | 2 files |
-| Phase 22 P02 | 200 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
