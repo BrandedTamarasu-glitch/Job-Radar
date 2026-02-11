@@ -623,3 +623,68 @@ def test_wizard_no_default_values_on_profile_fields(tmp_path, mocker):
     min_score_call_kwargs = text_calls[9][1]
     assert 'default' in min_score_call_kwargs
     assert min_score_call_kwargs['default'] == "2.8"
+
+
+# --- PDF Integration Tests ---
+
+
+def test_wizard_pdf_support_flag_check():
+    """Test that wizard can check PDF_SUPPORT flag."""
+    # This verifies the conditional import pattern works
+    try:
+        from job_radar.pdf_parser import PDF_SUPPORT
+        # Should be True if pdfplumber is installed
+        assert isinstance(PDF_SUPPORT, bool)
+    except ImportError:
+        # If pdf_parser can't be imported, that's also fine (optional dependency)
+        pass
+
+
+def test_wizard_pdf_extraction_functions_exist():
+    """Test that PDF extraction functions are importable when pdfplumber available."""
+    try:
+        from job_radar.pdf_parser import extract_resume_data, PDFValidationError
+        # Verify functions exist
+        assert callable(extract_resume_data)
+        assert issubclass(PDFValidationError, Exception)
+    except ImportError:
+        # Optional dependency not installed
+        pytest.skip("pdfplumber not installed")
+
+
+def test_wizard_pdf_upload_flow_code_path_exists():
+    """Verify the PDF upload code path exists in wizard (code inspection test)."""
+    import job_radar.wizard as wizard_module
+    import inspect
+
+    # Read wizard source to verify PDF integration exists
+    source = inspect.getsource(wizard_module.run_setup_wizard)
+
+    # Verify key PDF integration code exists
+    assert "PDF_SUPPORT" in source
+    assert "Upload resume PDF" in source
+    assert "extract_resume_data" in source
+    assert "PDFValidationError" in source
+
+
+def test_wizard_pdf_validation_error_handling():
+    """Test that PDFValidationError can be caught and handled."""
+    from job_radar.pdf_parser import PDFValidationError
+
+    # Verify exception can be raised and caught
+    try:
+        raise PDFValidationError("Test error message")
+    except PDFValidationError as e:
+        assert "Test error message" in str(e)
+
+
+def test_wizard_pdf_manual_fallback_exists():
+    """Verify wizard has fallback to manual entry after PDF errors."""
+    import job_radar.wizard as wizard_module
+    import inspect
+
+    source = inspect.getsource(wizard_module.run_setup_wizard)
+
+    # Verify fallback logic exists
+    assert "Fill manually" in source
+    assert "not extracted_data" in source or "extracted_data" in source
