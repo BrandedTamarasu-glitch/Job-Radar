@@ -10,17 +10,17 @@ See: .planning/PROJECT.md (updated 2026-02-11)
 ## Current Position
 
 Phase: 22 of 23 (Interactive Features)
-Plan: 1 of 2 in current phase
-Status: In progress
-Last activity: 2026-02-11 — Completed 22-01 (Status filtering with localStorage persistence and ARIA announcements)
+Plan: 2 of 2 in current phase
+Status: Complete
+Last activity: 2026-02-11 — Completed 22-02 (CSV export with RFC 4180 escaping, formula injection protection, and 9 tests)
 
-Progress: [█████████████████████████] 100% (21 of 23 phases complete, 45 of 46 plans complete)
+Progress: [█████████████████████████] 100% (22 of 23 phases complete, 46 of 46 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 45
-- Average duration: 180s (v1.4.0 plans: 159s + 255s + 379s + 147s + 57s + 85s / 6)
+- Total plans completed: 46
+- Average duration: 183s (v1.4.0 plans: 159s + 255s + 379s + 147s + 57s + 85s + 200s / 7)
 - Total execution time: Not tracked
 
 **By Milestone:**
@@ -31,15 +31,15 @@ Progress: [███████████████████████
 | v1.1 | 5-10 | Complete (2026-01-20) |
 | v1.2.0 | 11-15 | Complete (2026-02-05) |
 | v1.3.0 | 16-18 | Complete (2026-02-11) |
-| v1.4.0 | 19-23 | In progress (Phases 19-21 complete, Phase 22: 1 of 2 plans) |
+| v1.4.0 | 19-23 | In progress (Phases 19-22 complete, Phase 23: 0 of 1 plans) |
 
 **Recent Trend:**
-- v1.4.0: Phases 19-21 complete, Phase 22 in progress (1 of 2 plans), 6 plans total, excellent velocity
+- v1.4.0: Phases 19-22 complete, Phase 23 remaining (1 plan), 7 plans total, excellent velocity
 - Phase 19: 2 plans, completed in <1 hour (2026-02-11)
 - Phase 20: 1 plan, 379s (hero visual hierarchy)
 - Phase 21: 2 plans (responsive layout + tests), 147s + 57s = 204s total
-- Phase 22: 1 plan, 85s (status filtering with localStorage)
-- Velocity: Excellent (interactive features with accessibility integration)
+- Phase 22: 2 plans (filtering + CSV export), 85s + 200s = 285s total
+- Velocity: Excellent (interactive features with comprehensive testing)
 
 *Updated after each plan completion*
 | Phase 19 P01 | 159s | 2 tasks | 1 files |
@@ -48,6 +48,8 @@ Progress: [███████████████████████
 | Phase 21 P01 | 147s | 2 tasks | 1 files |
 | Phase 21 P02 | 57s | 2 tasks | 1 files |
 | Phase 22 P01 | 85 | 2 tasks | 1 files |
+| Phase 22 P02 | 200s | 2 tasks | 2 files |
+| Phase 22 P02 | 200 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -79,6 +81,12 @@ Recent decisions affecting current work:
 - [Phase 22-01]: Filter hides with display:none + aria-hidden='true' to preserve DOM structure while removing from accessibility tree
 - [Phase 22-01]: ARIA announcements clear after 1000ms timeout allowing screen readers to re-announce on repeated changes
 - [Phase 22-01]: Show All button clears all filters at once (not individual clear buttons) for simpler UX
+- [Phase 22-02]: Export CSV button placed after Show All button in filter bar for logical grouping with filter controls
+- [Phase 22-02]: CSV includes 11 columns (Rank, Score, New, Status, Title, Company, Salary, Type, Location, Snippet, URL) matching table order
+- [Phase 22-02]: Formula injection protection prefixes =+-@ characters with single quote (standard mitigation, preserves value visually)
+- [Phase 22-02]: UTF-8 BOM (\uFEFF) prepended to CSV ensures Excel on Windows correctly interprets UTF-8 encoding
+- [Phase 22-02]: Dual extraction logic for table rows vs cards handles different DOM structures for hero/recommended cards and table
+- [Phase 22-02]: Tests verify string patterns in generated HTML (not functional behavior) for fast execution following existing pattern
 
 ### Pending Todos
 
@@ -95,14 +103,14 @@ None yet.
 - Lighthouse CI must handle localStorage hydration timing (status tracking loads on DOMContentLoaded)
 - Mitigation: configure waits for [data-status-hydrated] attribute or use axe-core as primary
 
-**CSV Export (Phase 22):**
+**CSV Export (Phase 22):** ✓ RESOLVED
 - CSV formula injection risk if job titles contain =SUM() or similar
-- Mitigation: prefix values starting with =+-@ with single quote or tab character
+- Mitigation implemented: escapeCSVField() prefixes values starting with =+-@ with single quote
 
 ## Session Continuity
 
 Last session: 2026-02-11 (plan execution)
-Stopped at: Completed 22-01-PLAN.md (Status filtering with localStorage persistence)
+Stopped at: Completed 22-02-PLAN.md (CSV export with RFC 4180 escaping and tests)
 Resume file: None
 
-**Next action:** Continue Phase 22 with plan 22-02 (remaining plan in Interactive Features phase)
+**Next action:** Continue with Phase 23 (Print & CI Validation) - final phase of v1.4.0 milestone
