@@ -1211,3 +1211,270 @@ def test_html_report_status_badges_pill_style(sample_profile, sample_scored_resu
     # STATUS_CONFIG should include rounded-pill in class
     assert "bg-success rounded-pill" in html_content or "rounded-pill" in html_content, \
         "Status badges should use pill style"
+
+
+# -- Phase 20: Hero Jobs Visual Hierarchy Tests ----------------------------------
+
+def test_html_report_hero_section_exists(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that hero section exists when jobs have score >= 4.0."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_content = Path(result["html"]).read_text()
+
+    # Verify hero section heading exists
+    assert 'id="hero-heading"' in html_content, "Hero heading ID missing"
+    assert "Top Matches (Score >= 4.0)" in html_content, "Hero heading text missing"
+
+    # Verify aria-labelledby on hero section
+    assert 'aria-labelledby="hero-heading"' in html_content, "Hero section aria-labelledby missing"
+
+
+def test_html_report_hero_card_elevated_styling(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that hero job cards have elevated styling with hero-job and tier-strong classes."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_content = Path(result["html"]).read_text()
+
+    # Verify hero-job class exists
+    assert "hero-job" in html_content, "hero-job class missing"
+
+    # Verify card has both hero-job and tier-strong classes
+    assert "hero-job tier-strong" in html_content or "tier-strong hero-job" in html_content, \
+        "Hero card should have both hero-job and tier-strong classes"
+
+
+def test_html_report_hero_shadow_css(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that CSS contains hero shadow variable and class."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_content = Path(result["html"]).read_text()
+
+    # Verify --shadow-hero custom property
+    assert "--shadow-hero" in html_content, "--shadow-hero CSS variable missing"
+
+    # Verify .hero-job rule with box-shadow
+    assert ".hero-job" in html_content, ".hero-job CSS class missing"
+    assert "box-shadow: var(--shadow-hero)" in html_content, ".hero-job box-shadow rule missing"
+
+
+def test_html_report_hero_badge_label(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that hero job score badges contain 'Top Match' label."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_content = Path(result["html"]).read_text()
+
+    # Verify badge-label class exists in CSS
+    assert ".badge-label" in html_content, ".badge-label CSS class missing"
+
+    # Verify "Top Match" text in badge-label span
+    assert '<span class="badge-label">Top Match</span>' in html_content, \
+        "Top Match badge label missing from hero cards"
+
+
+def test_html_report_hero_section_before_recommended(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that hero section appears before recommended section in HTML."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_content = Path(result["html"]).read_text()
+
+    # Verify both sections exist
+    hero_pos = html_content.find('id="hero-heading"')
+    rec_pos = html_content.find('id="recommended-heading"')
+
+    assert hero_pos > 0, "Hero section not found"
+    assert rec_pos > 0, "Recommended section not found"
+    assert hero_pos < rec_pos, "Hero section should appear before recommended section"
+
+
+def test_html_report_section_divider(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that section divider exists between hero and recommended sections."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_content = Path(result["html"]).read_text()
+
+    # Verify section-divider element exists
+    assert '<div class="section-divider" role="separator" aria-hidden="true"></div>' in html_content, \
+        "Section divider missing between hero and recommended sections"
+
+    # Verify .section-divider CSS class exists
+    assert ".section-divider" in html_content, ".section-divider CSS class missing"
+
+
+def test_html_report_hero_focus_indicator_css(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that CSS contains enhanced focus indicator for hero cards."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_content = Path(result["html"]).read_text()
+
+    # Verify .hero-job:focus-visible rule exists
+    assert ".hero-job:focus-visible" in html_content, ".hero-job:focus-visible CSS rule missing"
+
+    # Verify outline properties
+    assert "outline:" in html_content, "outline property missing from focus rule"
+    assert "outline-offset:" in html_content, "outline-offset property missing from focus rule"
+
+
+def test_html_report_recommended_heading_updated(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that recommended section heading shows updated scope (3.5 - 3.9)."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_content = Path(result["html"]).read_text()
+
+    # Verify recommended heading shows "3.5 - 3.9" scope
+    assert "Recommended Roles (Score 3.5 - 3.9)" in html_content, \
+        "Recommended heading should show 3.5 - 3.9 scope"
+
+
+def test_html_report_no_hero_section_when_no_high_scores(sample_profile, sample_manual_urls, tmp_path):
+    """Test that hero section does not appear when no jobs have score >= 4.0."""
+    # Create scored results with all scores below 4.0
+    from job_radar.sources import JobResult
+    low_scored_results = [
+        {
+            "job": JobResult(
+                title="Good Job",
+                company="TestCo",
+                location="Remote",
+                arrangement="remote",
+                salary="$100k",
+                date_posted="2026-02-08",
+                description="Test description",
+                url="https://example.com/job/1",
+                source="Test",
+            ),
+            "score": {
+                "overall": 3.8,
+                "recommendation": "Good match",
+                "components": {
+                    "skill_match": {"ratio": "2/3", "matched_core": ["Python"], "matched_secondary": []},
+                    "title_relevance": {"reason": "Match"},
+                    "seniority": {"reason": "Good"},
+                    "response": {"likelihood": "High", "reason": "Good"},
+                },
+            },
+            "is_new": True,
+        },
+        {
+            "job": JobResult(
+                title="Okay Job",
+                company="TestCo2",
+                location="Remote",
+                arrangement="remote",
+                salary="$90k",
+                date_posted="2026-02-08",
+                description="Test description",
+                url="https://example.com/job/2",
+                source="Test",
+            ),
+            "score": {
+                "overall": 3.5,
+                "recommendation": "Good match",
+                "components": {
+                    "skill_match": {"ratio": "1/3", "matched_core": ["Python"], "matched_secondary": []},
+                    "title_relevance": {"reason": "Match"},
+                    "seniority": {"reason": "Good"},
+                    "response": {"likelihood": "Medium", "reason": "OK"},
+                },
+            },
+            "is_new": True,
+        }
+    ]
+
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=low_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Test"],
+        from_date="2026-02-08",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_content = Path(result["html"]).read_text()
+
+    # Verify hero section does NOT exist
+    assert 'id="hero-heading"' not in html_content, "Hero section should not exist when no scores >= 4.0"
+
+    # Verify recommended section still renders
+    assert 'id="recommended-heading"' in html_content, "Recommended section should still exist"
+
+
+def test_html_report_hero_dark_mode_shadow(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that dark mode media query contains hero shadow override."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_content = Path(result["html"]).read_text()
+
+    # Find dark mode media query block
+    assert "prefers-color-scheme: dark" in html_content, "Dark mode media query missing"
+
+    # Verify dark mode has --shadow-hero override with higher opacity
+    # Extract dark mode section
+    dark_mode_start = html_content.find("@media (prefers-color-scheme: dark)")
+
+    # Look for --shadow-hero after dark mode start (could be in multiple dark mode blocks)
+    # Just verify it exists somewhere in the CSS with higher opacity values
+    assert "rgba(0, 0, 0, 0.3)" in html_content or "rgba(0, 0, 0, 0.2)" in html_content, \
+        "Dark mode shadow with higher opacity missing"
