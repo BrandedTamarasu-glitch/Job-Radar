@@ -85,3 +85,33 @@
 **What's next:** v1.1 will focus on job data aggregation (LinkedIn/Indeed API integration) and application tracking CLI commands
 
 ---
+
+## v1.3.0 Critical Friction & Accessibility (Shipped: 2026-02-11)
+
+**Delivered:** Eliminate application flow friction and achieve WCAG 2.1 Level AA compliance for HTML reports and CLI
+
+**Phases completed:** 16-18 (7 plans total)
+
+**Key accomplishments:**
+
+- One-click copy buttons and batch "Copy All Recommended" action on HTML reports with Clipboard API + execCommand fallback for file:// compatibility
+- C/A keyboard shortcuts for clipboard operations with modifier key passthrough and input field protection
+- Application status tracking (Applied/Interviewing/Rejected/Offer) with localStorage persistence and embedded tracker.json hydration
+- Bidirectional sync: server-embedded status JSON + client-side localStorage merge + downloadable JSON export
+- WCAG 2.1 Level AA compliance: skip navigation, ARIA landmarks, accessible tables with scope attributes, screen reader badge context ("Score 4.2 out of 5.0"), focus indicators, 4.5:1 contrast minimum
+- Terminal accessibility: NO_COLOR standard support, --no-color CLI flag, colorblind-safe output with text labels paired to all colors
+
+**Stats:**
+
+- 25 files changed, +6,646 / -179 lines
+- 3 phases, 7 plans, ~12 tasks
+- 1 day (2026-02-11)
+
+**Git range:** `feat(16-01)` → `docs(phase-18)`
+
+**Requirements:** 17/17 satisfied (7 APPLY + 10 A11Y requirements)
+
+**What's next:** v1.4.0 visual hierarchy and enhanced scannability, or new milestone planning
+
+---
+
