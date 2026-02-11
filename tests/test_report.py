@@ -1478,3 +1478,275 @@ def test_html_report_hero_dark_mode_shadow(sample_profile, sample_scored_results
     # Just verify it exists somewhere in the CSS with higher opacity values
     assert "rgba(0, 0, 0, 0.3)" in html_content or "rgba(0, 0, 0, 0.2)" in html_content, \
         "Dark mode shadow with higher opacity missing"
+
+
+# -- Phase 21: Responsive Layout Tests -------------------------------------------
+
+def test_responsive_data_labels_on_table_cells(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that all table cells have data-label attributes for mobile cards."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_content = Path(result["html"]).read_text()
+
+    # Verify all 11 column data-label attributes exist
+    assert 'data-label="#"' in html_content, "data-label='#' missing"
+    assert 'data-label="Score"' in html_content, "data-label='Score' missing"
+    assert 'data-label="New"' in html_content, "data-label='New' missing"
+    assert 'data-label="Status"' in html_content, "data-label='Status' missing"
+    assert 'data-label="Title"' in html_content, "data-label='Title' missing"
+    assert 'data-label="Company"' in html_content, "data-label='Company' missing"
+    assert 'data-label="Salary"' in html_content, "data-label='Salary' missing"
+    assert 'data-label="Type"' in html_content, "data-label='Type' missing"
+    assert 'data-label="Location"' in html_content, "data-label='Location' missing"
+    assert 'data-label="Snippet"' in html_content, "data-label='Snippet' missing"
+    assert 'data-label="Link"' in html_content, "data-label='Link' missing"
+
+
+def test_responsive_column_hide_classes(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that low-priority columns have col-* CSS classes on th and td elements."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_content = Path(result["html"]).read_text()
+
+    # Verify col-* classes for 4 low-priority columns
+    assert 'class="col-new"' in html_content, "col-new class missing"
+    assert 'class="col-salary"' in html_content, "col-salary class missing"
+    assert 'class="col-type"' in html_content, "col-type class missing"
+    assert 'class="col-snippet"' in html_content, "col-snippet class missing"
+
+    # Verify both th and td have these classes
+    assert '<th scope="col" class="col-new"' in html_content or '<th class="col-new"' in html_content, \
+        "col-new class missing on <th>"
+    assert '<td data-label="Salary" class="col-salary"' in html_content, \
+        "col-salary class missing on <td>"
+
+
+def test_responsive_tablet_breakpoint_css(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that CSS contains tablet breakpoint at 991px hiding 4 columns."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_content = Path(result["html"]).read_text()
+
+    # Verify tablet breakpoint media query exists
+    assert "@media (max-width: 991px)" in html_content, "Tablet breakpoint media query missing"
+
+    # Verify it hides the 4 low-priority columns
+    tablet_section_start = html_content.find("@media (max-width: 991px)")
+    tablet_section_end = html_content.find("}", tablet_section_start + 500)  # Search in next 500 chars
+    tablet_section = html_content[tablet_section_start:tablet_section_end]
+
+    assert ".col-new" in tablet_section or ".col-salary" in tablet_section, \
+        "Tablet breakpoint should reference col-* classes"
+    assert "display: none" in tablet_section, \
+        "Tablet breakpoint should set display: none"
+
+
+def test_responsive_mobile_card_css(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that CSS contains mobile breakpoint at 767px with card layout."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_content = Path(result["html"]).read_text()
+
+    # Verify mobile breakpoint media query exists
+    assert "@media (max-width: 767px)" in html_content, "Mobile breakpoint media query missing"
+
+    # Verify mobile card layout features
+    mobile_section_start = html_content.find("@media (max-width: 767px)")
+    mobile_section_end = html_content.find("@media", mobile_section_start + 100)
+    if mobile_section_end == -1:
+        mobile_section_end = len(html_content)
+    mobile_section = html_content[mobile_section_start:mobile_section_end]
+
+    # Check for display: block on table elements
+    assert "display: block" in mobile_section, \
+        "Mobile breakpoint should set display: block"
+
+    # Check for grid-template-columns for cell layout
+    assert "grid-template-columns" in mobile_section, \
+        "Mobile card layout should use grid-template-columns"
+
+    # Check for ::before pseudo-element with attr(data-label)
+    assert "content: attr(data-label)" in mobile_section, \
+        "Mobile cards should use data-label attribute for labels"
+
+
+def test_responsive_mobile_shows_all_columns(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that mobile CSS overrides tablet hiding with display: block !important."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_content = Path(result["html"]).read_text()
+
+    # Verify mobile section contains display: block !important for col-* classes
+    mobile_section_start = html_content.find("@media (max-width: 767px)")
+    mobile_section_end = html_content.find("@media", mobile_section_start + 100)
+    if mobile_section_end == -1:
+        mobile_section_end = len(html_content)
+    mobile_section = html_content[mobile_section_start:mobile_section_end]
+
+    # Check for !important override
+    assert "display: block !important" in mobile_section, \
+        "Mobile breakpoint should use display: block !important to override tablet hiding"
+
+    # Check that col-* classes are referenced in mobile section
+    assert ".col-new" in mobile_section or ".col-salary" in mobile_section, \
+        "Mobile breakpoint should restore visibility of col-* columns"
+
+
+def test_responsive_aria_restoration_js(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that JavaScript contains AddTableARIA function with role assignments."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_content = Path(result["html"]).read_text()
+
+    # Verify AddTableARIA function exists
+    assert "function AddTableARIA()" in html_content, "AddTableARIA function missing"
+
+    # Verify ARIA role assignments
+    assert "setAttribute('role', 'table')" in html_content, "ARIA role='table' missing"
+    assert "setAttribute('role', 'row')" in html_content, "ARIA role='row' missing"
+    assert "setAttribute('role', 'cell')" in html_content, "ARIA role='cell' missing"
+    assert "setAttribute('role', 'columnheader')" in html_content, "ARIA role='columnheader' missing"
+    assert "setAttribute('role', 'rowheader')" in html_content, "ARIA role='rowheader' missing"
+
+    # Verify function is called
+    assert "AddTableARIA();" in html_content, "AddTableARIA function not called"
+
+
+def test_responsive_touch_targets(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that CSS contains 44px minimum touch target rules for mobile."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_content = Path(result["html"]).read_text()
+
+    # Verify 44px touch target rules exist
+    assert "min-height: 44px" in html_content, "min-height: 44px touch target rule missing"
+    assert "min-width: 44px" in html_content, "min-width: 44px touch target rule missing"
+
+    # Verify these rules are in mobile context
+    mobile_section_start = html_content.find("@media (max-width: 767px)")
+    if mobile_section_start > 0:
+        mobile_section_end = html_content.find("@media", mobile_section_start + 100)
+        if mobile_section_end == -1:
+            mobile_section_end = len(html_content)
+        mobile_section = html_content[mobile_section_start:mobile_section_end]
+        assert "min-height: 44px" in mobile_section or "44px" in html_content, \
+            "44px touch targets should be in mobile CSS"
+
+
+def test_responsive_dark_mode_mobile(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that CSS contains combined dark mode + mobile media query."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_content = Path(result["html"]).read_text()
+
+    # Verify combined dark mode + mobile media query exists
+    assert "@media (prefers-color-scheme: dark) and (max-width: 767px)" in html_content, \
+        "Combined dark mode + mobile media query missing"
+
+    # Verify it contains color overrides
+    dark_mobile_start = html_content.find("@media (prefers-color-scheme: dark) and (max-width: 767px)")
+    if dark_mobile_start > 0:
+        dark_mobile_end = html_content.find("}", dark_mobile_start + 500)
+        dark_mobile_section = html_content[dark_mobile_start:dark_mobile_end]
+        assert "background" in dark_mobile_section or "border" in dark_mobile_section or "color" in dark_mobile_section, \
+            "Dark mode mobile section should contain color overrides"
+
+
+def test_responsive_tier_borders_mobile(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that mobile CSS preserves tier border styles."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_content = Path(result["html"]).read_text()
+
+    # Verify tier border thickness rules exist in CSS (could be in base or mobile section)
+    assert "border-left: 5px" in html_content, "5px tier border missing (tier-strong)"
+    assert "border-left: 4px" in html_content, "4px tier border missing (tier-rec)"
+    assert "border-left: 3px" in html_content, "3px tier border missing (tier-review)"
+
+    # Verify tier classes are applied to table rows (from Phase 19)
+    assert "tier-strong" in html_content, "tier-strong class missing"
+    assert "tier-rec" in html_content, "tier-rec class missing"
+
+
+def test_responsive_no_label_class(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that Link column has no-label class to hide ::before label."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_content = Path(result["html"]).read_text()
+
+    # Verify Link column td has no-label class
+    assert 'class="no-label"' in html_content, "no-label class missing on Link column"
+
+    # Verify CSS contains .no-label::before rule with display: none
+    assert ".no-label::before" in html_content, ".no-label::before CSS rule missing"
+    assert "display: none" in html_content, "display: none missing (should hide no-label ::before)"
