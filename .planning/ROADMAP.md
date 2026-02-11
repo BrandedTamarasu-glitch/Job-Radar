@@ -185,10 +185,11 @@ Plans:
   3. Dark mode support works with automatically adjusted semantic colors preserving readability
   4. Color system includes non-color indicators (icons, borders) for colorblind accessibility
   5. Typography and colors render instantly with zero file size overhead
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 19-01: TBD
+- [ ] 19-01-PLAN.md — CSS variables for typography, font stacks, and 3-tier semantic color system with dark mode
+- [ ] 19-02-PLAN.md — Tier classes on cards/table rows, pill badges, non-color indicators, and tests
 
 #### Phase 20: Hero Jobs Visual Hierarchy
 **Goal**: Top-scoring jobs (≥4.0) display with prominent visual distinction to prioritize user attention
@@ -280,11 +281,11 @@ Phases execute in numeric order: 19 → 20 → 21 → 22 → 23
 | 16. Application Flow Essentials | v1.3.0 | 2/2 | Complete | 2026-02-11 |
 | 17. Application Status Tracking | v1.3.0 | 2/2 | Complete | 2026-02-11 |
 | 18. WCAG 2.1 Level AA Compliance | v1.3.0 | 3/3 | Complete | 2026-02-11 |
-| 19. Typography & Color Foundation | v1.4.0 | 0/0 | Not started | - |
+| 19. Typography & Color Foundation | v1.4.0 | 0/2 | Planning complete | - |
 | 20. Hero Jobs Visual Hierarchy | v1.4.0 | 0/0 | Not started | - |
 | 21. Responsive Layout | v1.4.0 | 0/0 | Not started | - |
 | 22. Interactive Features | v1.4.0 | 0/0 | Not started | - |
 | 23. Print & CI Validation | v1.4.0 | 0/0 | Not started | - |
 
 ---
-*Last updated: 2026-02-11 after v1.4.0 roadmap creation*
+*Last updated: 2026-02-11 after Phase 19 planning*
