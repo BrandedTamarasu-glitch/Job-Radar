@@ -323,6 +323,86 @@ def run_setup_wizard() -> bool:
     print("\n" + "=" * 60)
     print("🎯 Job Radar - First Time Setup")
     print("=" * 60)
+
+    # Check if PDF parsing is available
+    pdf_available = False
+    try:
+        from .pdf_parser import PDF_SUPPORT
+        pdf_available = PDF_SUPPORT
+    except ImportError:
+        pass
+
+    extracted_data = {}
+    if pdf_available:
+        print("\nSpeed up setup by uploading your resume PDF to auto-fill fields.\n")
+
+        upload_choice = questionary.select(
+            "How would you like to create your profile?",
+            choices=[
+                "Upload resume PDF",
+                "Fill manually",
+            ],
+            style=custom_style
+        ).ask()
+
+        if upload_choice and "PDF" in upload_choice:
+            # Prompt for file path
+            pdf_path_str = questionary.path(
+                "Path to your resume PDF:",
+                only_directories=False,
+                style=custom_style
+            ).ask()
+
+            if pdf_path_str:
+                from pathlib import Path as _Path
+                pdf_path = _Path(pdf_path_str)
+
+                # Validate extension before calling parser
+                if pdf_path.suffix.lower() != '.pdf':
+                    print("\nFile must be a PDF (.pdf extension required)")
+                elif not pdf_path.exists():
+                    print(f"\nFile not found: {pdf_path}")
+                else:
+                    print(f"\nParsing resume PDF...\n")
+                    try:
+                        from .pdf_parser import extract_resume_data, PDFValidationError
+                        extracted_data = extract_resume_data(pdf_path_str)
+
+                        # Disclaimer - shown ONCE after parsing (CONTEXT.md locked decision)
+                        print("Resume parsed successfully!")
+                        print("\n  Please review - extraction may contain errors\n")
+
+                        # Show what was extracted
+                        if extracted_data:
+                            print("Extracted fields:")
+                            for key in extracted_data:
+                                print(f"   - {key}")
+                            print()
+
+                    except PDFValidationError as e:
+                        # Per CONTEXT.md: show specific actionable error message
+                        print(f"\n{str(e)}\n")
+
+                    except Exception as e:
+                        # Catch-all for unexpected errors
+                        print(f"\nPDF parsing encountered an error: {e}")
+                        print("Continuing with manual entry...\n")
+                        extracted_data = {}
+
+                # If extraction failed or had errors, offer manual fallback
+                # Per CONTEXT.md: "every error path ends with manual option"
+                if not extracted_data and upload_choice and "PDF" in upload_choice:
+                    fallback = questionary.confirm(
+                        "Would you like to fill your profile manually?",
+                        default=True,
+                        style=custom_style
+                    ).ask()
+
+                    if not fallback:
+                        return False
+
+                    extracted_data = {}
+
     print("\nTip: Type /back at any prompt to return to the previous question.\n")
 
     # Sequential prompts with back navigation support
@@ -357,6 +437,20 @@ def run_setup_wizard() -> bool:
         if key in answers:
             if q['type'] == 'text':
                 prompt_kwargs['default'] = str(answers[key])
+        elif key in extracted_data:
+            # Pre-fill with PDF-extracted data (per CONTEXT.md: pre-display validation)
+            value = extracted_data[key]
+            if key == 'years_experience' and isinstance(value, int) and 0 <= value <= 50:
+                prompt_kwargs['default'] = str(value)
+            elif key == 'name' and isinstance(value, str) and value.strip() and len(value) < 100:
+                prompt_kwargs['default'] = value
+            elif key == 'titles' and isinstance(value, list) and value:
+                prompt_kwargs['default'] = ', '.join(value)
+            elif key == 'skills' and isinstance(value, list) and value:
+                # Filter out overly long items (sanity check per CONTEXT.md)
+                valid_skills = [s for s in value if len(s) < 50]
+                if valid_skills:
+                    prompt_kwargs['default'] = ', '.join(valid_skills)
         elif q.get('default') is not None and q['type'] == 'text':
             # Only use default for new answers on fields with defaults
             prompt_kwargs['default'] = q['default']
