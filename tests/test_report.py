@@ -195,7 +195,7 @@ def test_html_report_contains_bootstrap(sample_profile, sample_scored_results, s
         output_dir=str(tmp_path),
     )
 
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     assert "bootstrap" in html_content.lower()
     assert "data-bs-theme" in html_content
@@ -215,7 +215,7 @@ def test_html_report_contains_job_data(sample_profile, sample_scored_results, sa
         output_dir=str(tmp_path),
     )
 
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Check profile name
     assert "Jane Developer" in html_content
@@ -277,7 +277,7 @@ def test_html_report_escapes_html_entities(tmp_path):
         output_dir=str(tmp_path),
     )
 
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Check that script tags are escaped
     assert "&lt;script&gt;" in html_content
@@ -296,7 +296,7 @@ def test_markdown_report_still_generated(sample_profile, sample_scored_results, 
         output_dir=str(tmp_path),
     )
 
-    md_content = Path(result["markdown"]).read_text()
+    md_content = Path(result["markdown"]).read_text(encoding='utf-8')
 
     assert md_content.startswith("# Job Search Results")
     assert "## Candidate Profile Summary" in md_content
@@ -367,7 +367,7 @@ def test_empty_results_generates_reports(sample_profile, sample_manual_urls, tmp
     assert Path(result["html"]).exists()
 
     # Check HTML contains "No results" message
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
     assert "No results" in html_content or "no results" in html_content.lower()
 
 
@@ -406,7 +406,7 @@ def test_html_report_contains_copy_buttons(sample_profile, sample_scored_results
         output_dir=str(tmp_path),
     )
 
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Check for individual copy buttons
     assert "copy-btn" in html_content
@@ -429,7 +429,7 @@ def test_html_report_contains_data_attributes(sample_profile, sample_scored_resu
         output_dir=str(tmp_path),
     )
 
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Check for data attributes from sample fixtures
     assert "data-job-url" in html_content
@@ -453,7 +453,7 @@ def test_html_report_contains_notyf_cdn(sample_profile, sample_scored_results, s
         output_dir=str(tmp_path),
     )
 
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Check for Notyf CSS and JS CDN links
     assert "notyf.min.css" in html_content
@@ -472,7 +472,7 @@ def test_html_report_contains_clipboard_javascript(sample_profile, sample_scored
         output_dir=str(tmp_path),
     )
 
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Check for clipboard functions and API usage
     assert "copyToClipboard" in html_content
@@ -495,7 +495,7 @@ def test_html_report_contains_keyboard_shortcut_hints(sample_profile, sample_sco
         output_dir=str(tmp_path),
     )
 
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Check for keyboard hint elements (using <kbd> tags)
     assert "<kbd>C</kbd>" in html_content or "<kbd>A</kbd>" in html_content
@@ -514,7 +514,7 @@ def test_html_report_focus_styles(sample_profile, sample_scored_results, sample_
         output_dir=str(tmp_path),
     )
 
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Check for focus-visible styles in CSS
     assert "focus-visible" in html_content
@@ -571,7 +571,7 @@ def test_html_report_copy_button_absent_when_no_url(tmp_path):
         output_dir=str(tmp_path),
     )
 
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Verify no empty data-job-url attributes
     assert 'data-job-url=""' not in html_content
@@ -618,7 +618,7 @@ def test_html_report_no_copy_all_button_when_no_recommended(sample_profile, tmp_
         min_score=2.0,  # Lower threshold to include the low-scored result
     )
 
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Verify Copy All button element doesn't appear (no recommended jobs)
     # The button element should not be in the HTML (JavaScript/CSS may still reference it)
@@ -637,7 +637,7 @@ def test_html_report_contains_status_dropdown(sample_profile, sample_scored_resu
         output_dir=str(tmp_path),
     )
 
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Check for status dropdown toggle button
     assert "dropdown-toggle" in html_content
@@ -662,7 +662,7 @@ def test_html_report_contains_status_column_in_table(sample_profile, sample_scor
         output_dir=str(tmp_path),
     )
 
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Check for Status column header (with scope attribute from WCAG compliance)
     assert '<th scope="col">Status</th>' in html_content
@@ -686,7 +686,7 @@ def test_html_report_contains_tracker_status_embed(sample_profile, sample_scored
         output_dir=str(tmp_path),
     )
 
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Check for embedded tracker status JSON script tag
     assert '<script type="application/json" id="tracker-status">' in html_content
@@ -704,7 +704,7 @@ def test_html_report_contains_status_javascript(sample_profile, sample_scored_re
         output_dir=str(tmp_path),
     )
 
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Check for key JavaScript functions
     assert "hydrateApplicationStatus" in html_content
@@ -728,7 +728,7 @@ def test_html_report_contains_job_key_attributes(sample_profile, sample_scored_r
         output_dir=str(tmp_path),
     )
 
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Check for data-job-key attributes
     assert "data-job-key" in html_content
@@ -754,7 +754,7 @@ def test_html_report_contains_export_button(sample_profile, sample_scored_result
         output_dir=str(tmp_path),
     )
 
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Check for export button with correct class
     assert "export-status-btn" in html_content
@@ -778,7 +778,7 @@ def test_html_report_skip_navigation_link(sample_profile, sample_scored_results,
         output_dir=str(tmp_path),
     )
 
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Verify skip link has visually-hidden-focusable class
     assert "visually-hidden-focusable" in html_content
@@ -804,7 +804,7 @@ def test_html_report_aria_landmarks(sample_profile, sample_scored_results, sampl
         output_dir=str(tmp_path),
     )
 
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Verify ARIA landmarks exist
     assert 'role="banner"' in html_content, "Header landmark (banner) missing"
@@ -827,7 +827,7 @@ def test_html_report_section_landmarks(sample_profile, sample_scored_results, sa
         output_dir=str(tmp_path),
     )
 
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Verify section landmarks with aria-labelledby
     assert 'aria-labelledby="profile-heading"' in html_content, "Profile section landmark missing"
@@ -853,7 +853,7 @@ def test_html_report_accessible_table_headers(sample_profile, sample_scored_resu
         output_dir=str(tmp_path),
     )
 
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Verify scope="col" on column headers (11 columns: #, Score, New, Status, Title, Company, Salary, Type, Location, Snippet, Link)
     col_scope_count = html_content.count('scope="col"')
@@ -881,7 +881,7 @@ def test_html_report_score_badge_screen_reader_text(sample_profile, sample_score
         output_dir=str(tmp_path),
     )
 
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Verify score badges contain visually-hidden spans with context
     assert "visually-hidden" in html_content, "Visually-hidden class missing"
@@ -916,7 +916,7 @@ def test_html_report_new_badge_screen_reader_text(sample_profile, sample_scored_
         output_dir=str(tmp_path),
     )
 
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Verify NEW badge contains screen reader context text
     assert "New listing, not seen in previous searches" in html_content, "NEW badge screen reader text missing"
@@ -949,7 +949,7 @@ def test_html_report_aria_live_region(sample_profile, sample_scored_results, sam
         output_dir=str(tmp_path),
     )
 
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Verify ARIA live region element exists
     assert 'id="status-announcer"' in html_content, "Status announcer element missing"
@@ -973,7 +973,7 @@ def test_html_report_focus_indicators_all_elements(sample_profile, sample_scored
         output_dir=str(tmp_path),
     )
 
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Verify CSS focus-visible rules for all interactive element types
     assert "a:focus-visible" in html_content, "Link focus indicator CSS missing"
@@ -997,7 +997,7 @@ def test_html_report_contrast_safe_colors(sample_profile, sample_scored_results,
         output_dir=str(tmp_path),
     )
 
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Verify contrast-safe muted text color
     assert "#595959" in html_content, "Contrast-safe muted text color #595959 missing"
@@ -1018,7 +1018,7 @@ def test_html_report_external_links_accessibility(sample_profile, sample_scored_
         output_dir=str(tmp_path),
     )
 
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Verify external links have rel="noopener" for security
     assert 'rel="noopener"' in html_content, "External links missing rel='noopener'"
@@ -1043,7 +1043,7 @@ def test_html_report_system_font_stack(sample_profile, sample_scored_results, sa
         to_date="2026-02-09",
         output_dir=str(tmp_path),
     )
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
     assert "--font-sans" in html_content, "System font stack variable missing"
     assert "system-ui" in html_content, "system-ui font not in stack"
     assert "font-family: var(--font-sans)" in html_content, "Body not using font-sans variable"
@@ -1060,7 +1060,7 @@ def test_html_report_monospace_score_badges(sample_profile, sample_scored_result
         to_date="2026-02-09",
         output_dir=str(tmp_path),
     )
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
     assert "--font-mono" in html_content, "Monospace font variable missing"
     assert "ui-monospace" in html_content, "ui-monospace not in stack"
 
@@ -1076,7 +1076,7 @@ def test_html_report_typography_hierarchy(sample_profile, sample_scored_results,
         to_date="2026-02-09",
         output_dir=str(tmp_path),
     )
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
     assert "--font-size-title" in html_content, "Title size variable missing"
     assert "--font-size-section" in html_content, "Section size variable missing"
     assert "--font-size-body" in html_content, "Body size variable missing"
@@ -1093,7 +1093,7 @@ def test_html_report_semantic_color_variables(sample_profile, sample_scored_resu
         to_date="2026-02-09",
         output_dir=str(tmp_path),
     )
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
     # Green tier (strong, >= 4.0)
     assert "--color-tier-strong-bg" in html_content, "Strong tier background color missing"
     assert "--color-tier-strong-border" in html_content, "Strong tier border color missing"
@@ -1116,7 +1116,7 @@ def test_html_report_dark_mode_color_inversion(sample_profile, sample_scored_res
         to_date="2026-02-09",
         output_dir=str(tmp_path),
     )
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
     assert "prefers-color-scheme: dark" in html_content, "Dark mode media query missing"
     # Verify dark mode overrides lightness (should have multiple prefers-color-scheme blocks)
     dark_mode_count = html_content.count("prefers-color-scheme: dark")
@@ -1134,7 +1134,7 @@ def test_html_report_tier_classes_on_cards(sample_profile, sample_scored_results
         to_date="2026-02-09",
         output_dir=str(tmp_path),
     )
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
     # First result has score 4.2 (strong tier)
     assert "tier-strong" in html_content, "Strong tier class missing on card"
     # Second result has score 3.7 (recommended tier)
@@ -1152,7 +1152,7 @@ def test_html_report_tier_classes_on_table_rows(sample_profile, sample_scored_re
         to_date="2026-02-09",
         output_dir=str(tmp_path),
     )
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
     # Check that tr elements contain tier classes
     # Third result has score 2.8 (review tier)
     assert "tier-review" in html_content, "Review tier class missing on table row"
@@ -1169,7 +1169,7 @@ def test_html_report_pill_shaped_score_badges(sample_profile, sample_scored_resu
         to_date="2026-02-09",
         output_dir=str(tmp_path),
     )
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
     assert "rounded-pill" in html_content, "Pill shape class missing"
     assert "tier-badge-strong" in html_content, "Strong tier badge class missing"
     # Pill CSS rule
@@ -1187,7 +1187,7 @@ def test_html_report_non_color_indicators(sample_profile, sample_scored_results,
         to_date="2026-02-09",
         output_dir=str(tmp_path),
     )
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
     # Border thickness variation in CSS
     assert "border-left: 5px" in html_content, "5px border for strong tier missing"
     assert "border-left: 4px" in html_content, "4px border for recommended tier missing"
@@ -1207,7 +1207,7 @@ def test_html_report_status_badges_pill_style(sample_profile, sample_scored_resu
         to_date="2026-02-09",
         output_dir=str(tmp_path),
     )
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
     # STATUS_CONFIG should include rounded-pill in class
     assert "bg-success rounded-pill" in html_content or "rounded-pill" in html_content, \
         "Status badges should use pill style"
@@ -1226,7 +1226,7 @@ def test_html_report_hero_section_exists(sample_profile, sample_scored_results, 
         to_date="2026-02-09",
         output_dir=str(tmp_path),
     )
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Verify hero section heading exists
     assert 'id="hero-heading"' in html_content, "Hero heading ID missing"
@@ -1247,7 +1247,7 @@ def test_html_report_hero_card_elevated_styling(sample_profile, sample_scored_re
         to_date="2026-02-09",
         output_dir=str(tmp_path),
     )
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Verify hero-job class exists
     assert "hero-job" in html_content, "hero-job class missing"
@@ -1268,7 +1268,7 @@ def test_html_report_hero_shadow_css(sample_profile, sample_scored_results, samp
         to_date="2026-02-09",
         output_dir=str(tmp_path),
     )
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Verify --shadow-hero custom property
     assert "--shadow-hero" in html_content, "--shadow-hero CSS variable missing"
@@ -1289,7 +1289,7 @@ def test_html_report_hero_badge_label(sample_profile, sample_scored_results, sam
         to_date="2026-02-09",
         output_dir=str(tmp_path),
     )
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Verify badge-label class exists in CSS
     assert ".badge-label" in html_content, ".badge-label CSS class missing"
@@ -1310,7 +1310,7 @@ def test_html_report_hero_section_before_recommended(sample_profile, sample_scor
         to_date="2026-02-09",
         output_dir=str(tmp_path),
     )
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Verify both sections exist
     hero_pos = html_content.find('id="hero-heading"')
@@ -1332,7 +1332,7 @@ def test_html_report_section_divider(sample_profile, sample_scored_results, samp
         to_date="2026-02-09",
         output_dir=str(tmp_path),
     )
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Verify section-divider element exists
     assert '<div class="section-divider" role="separator" aria-hidden="true"></div>' in html_content, \
@@ -1353,7 +1353,7 @@ def test_html_report_hero_focus_indicator_css(sample_profile, sample_scored_resu
         to_date="2026-02-09",
         output_dir=str(tmp_path),
     )
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Verify .hero-job:focus-visible rule exists
     assert ".hero-job:focus-visible" in html_content, ".hero-job:focus-visible CSS rule missing"
@@ -1374,7 +1374,7 @@ def test_html_report_recommended_heading_updated(sample_profile, sample_scored_r
         to_date="2026-02-09",
         output_dir=str(tmp_path),
     )
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Verify recommended heading shows "3.5 - 3.9" scope
     assert "Recommended Roles (Score 3.5 - 3.9)" in html_content, \
@@ -1445,7 +1445,7 @@ def test_html_report_no_hero_section_when_no_high_scores(sample_profile, sample_
         to_date="2026-02-09",
         output_dir=str(tmp_path),
     )
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Verify hero section does NOT exist
     assert 'id="hero-heading"' not in html_content, "Hero section should not exist when no scores >= 4.0"
@@ -1465,7 +1465,7 @@ def test_html_report_hero_dark_mode_shadow(sample_profile, sample_scored_results
         to_date="2026-02-09",
         output_dir=str(tmp_path),
     )
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Find dark mode media query block
     assert "prefers-color-scheme: dark" in html_content, "Dark mode media query missing"
@@ -1493,7 +1493,7 @@ def test_responsive_data_labels_on_table_cells(sample_profile, sample_scored_res
         to_date="2026-02-09",
         output_dir=str(tmp_path),
     )
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Verify all 11 column data-label attributes exist
     assert 'data-label="#"' in html_content, "data-label='#' missing"
@@ -1520,7 +1520,7 @@ def test_responsive_column_hide_classes(sample_profile, sample_scored_results, s
         to_date="2026-02-09",
         output_dir=str(tmp_path),
     )
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Verify col-* classes for 4 low-priority columns
     assert 'class="col-new"' in html_content, "col-new class missing"
@@ -1546,7 +1546,7 @@ def test_responsive_tablet_breakpoint_css(sample_profile, sample_scored_results,
         to_date="2026-02-09",
         output_dir=str(tmp_path),
     )
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Verify tablet breakpoint media query exists
     assert "@media (max-width: 991px)" in html_content, "Tablet breakpoint media query missing"
@@ -1573,7 +1573,7 @@ def test_responsive_mobile_card_css(sample_profile, sample_scored_results, sampl
         to_date="2026-02-09",
         output_dir=str(tmp_path),
     )
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Verify mobile breakpoint media query exists
     assert "@media (max-width: 767px)" in html_content, "Mobile breakpoint media query missing"
@@ -1609,7 +1609,7 @@ def test_responsive_mobile_shows_all_columns(sample_profile, sample_scored_resul
         to_date="2026-02-09",
         output_dir=str(tmp_path),
     )
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Verify mobile section contains display: block !important for col-* classes
     mobile_section_start = html_content.find("@media (max-width: 767px)")
@@ -1638,7 +1638,7 @@ def test_responsive_aria_restoration_js(sample_profile, sample_scored_results, s
         to_date="2026-02-09",
         output_dir=str(tmp_path),
     )
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Verify AddTableARIA function exists
     assert "function AddTableARIA()" in html_content, "AddTableARIA function missing"
@@ -1665,7 +1665,7 @@ def test_responsive_touch_targets(sample_profile, sample_scored_results, sample_
         to_date="2026-02-09",
         output_dir=str(tmp_path),
     )
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Verify 44px touch target rules exist
     assert "min-height: 44px" in html_content, "min-height: 44px touch target rule missing"
@@ -1693,7 +1693,7 @@ def test_responsive_dark_mode_mobile(sample_profile, sample_scored_results, samp
         to_date="2026-02-09",
         output_dir=str(tmp_path),
     )
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Verify combined dark mode + mobile media query exists
     assert "@media (prefers-color-scheme: dark) and (max-width: 767px)" in html_content, \
@@ -1719,7 +1719,7 @@ def test_responsive_tier_borders_mobile(sample_profile, sample_scored_results, s
         to_date="2026-02-09",
         output_dir=str(tmp_path),
     )
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Verify tier border thickness rules exist in CSS (could be in base or mobile section)
     assert "border-left: 5px" in html_content, "5px tier border missing (tier-strong)"
@@ -1742,7 +1742,7 @@ def test_responsive_no_label_class(sample_profile, sample_scored_results, sample
         to_date="2026-02-09",
         output_dir=str(tmp_path),
     )
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Verify Link column td has no-label class
     assert 'class="no-label"' in html_content, "no-label class missing on Link column"
@@ -1978,7 +1978,7 @@ def test_html_report_print_hides_interactive_elements(sample_profile, sample_sco
         to_date="2026-02-09",
         output_dir=str(tmp_path),
     )
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Verify print media query contains hide rules for interactive elements
     assert '.copy-btn' in html_content, ".copy-btn selector missing from print CSS"
@@ -2002,7 +2002,7 @@ def test_html_report_print_color_adjust(sample_profile, sample_scored_results, s
         to_date="2026-02-09",
         output_dir=str(tmp_path),
     )
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Verify both prefixed and unprefixed print-color-adjust properties exist
     assert 'print-color-adjust: exact' in html_content, "print-color-adjust: exact missing from CSS"
@@ -2023,7 +2023,7 @@ def test_html_report_print_page_break_control(sample_profile, sample_scored_resu
         to_date="2026-02-09",
         output_dir=str(tmp_path),
     )
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Verify both modern and legacy page break properties
     assert 'break-inside: avoid' in html_content, "break-inside: avoid missing from print CSS"
@@ -2041,7 +2041,7 @@ def test_html_report_print_shadow_removal(sample_profile, sample_scored_results,
         to_date="2026-02-09",
         output_dir=str(tmp_path),
     )
-    html_content = Path(result["html"]).read_text()
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
 
     # Verify box-shadow: none exists in print stylesheet
     assert 'box-shadow: none' in html_content, "box-shadow: none missing from print CSS"
