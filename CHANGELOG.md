@@ -1,5 +1,55 @@
 # Changelog
 
+## v1.5.0 — 2026-02-12
+
+### Profile Infrastructure
+- **Centralized profile I/O** — All profile reads/writes route through `profile_manager.py` with atomic writes (temp file + fsync + rename), preventing corruption on interrupted saves
+- **Automatic backups** — Timestamped backup created before every profile update; keeps the 10 most recent, deletes older
+- **Schema versioning** — Profile JSON includes `schema_version` field; legacy v0 profiles auto-migrate to v1 on load
+- **Shared validation** — Single `validate_profile()` function used by wizard, interactive editor, and CLI flags with friendly error messages
+
+### Profile Preview
+- **Startup preview** — Running `job-radar` shows a formatted profile summary (name, skills, titles, experience, location, preferences) before the search begins
+- **View command** — `job-radar --view-profile` displays your current profile settings and exits without running a search
+- **Sectioned display** — Profile table with bordered sections (Identity, Skills, Preferences, Filters) using tabulate library
+- **Quiet mode** — `--no-wizard` suppresses both the setup wizard and the profile preview
+
+### Interactive Quick-Edit
+- **Edit command** — `job-radar --edit-profile` launches an interactive editor with a categorized field menu
+- **Field types** — Text fields pre-fill current value; list fields offer add/remove/replace submenu; booleans use Yes/No choice
+- **Diff preview** — Before/after comparison shown before every save with "Apply this change? (y/N)" confirmation (default No)
+- **Validator reuse** — All field validators imported from wizard module (zero duplication)
+- **Multi-field editing** — After each save or cancel, returns to field menu for additional edits; "Done" exits
+
+### CLI Update Flags
+- **`--update-skills "python,react,typescript"`** — Replace skills list and exit without running a search
+- **`--set-min-score 3.5`** — Update minimum score threshold (0.0-5.0 range enforced) and exit
+- **`--set-titles "Backend Developer,SRE"`** — Replace target titles list and exit
+- **Diff output** — All update flags show old/new values after saving
+- **Mutual exclusion** — Update flags cannot be combined with each other or with `--view-profile`/`--edit-profile`
+- **Validation** — Invalid values rejected at parse time with friendly error messages and non-zero exit code
+
+## v1.4.0 — 2026-02-11
+
+### Visual Hierarchy
+- **Hero jobs** — Top matches (score ≥4.0) appear in an elevated section with multi-layer shadows, "Top Match" badges, and distinct styling
+- **Semantic color system** — Green (4.0+), Cyan (3.5-3.9), Indigo (2.8-3.4) tier colors with CSS variables and dark mode support
+- **System font stacks** — Zero-overhead fonts using OS native type for instant rendering
+
+### Responsive Design
+- **Desktop** — Full 11-column table layout
+- **Tablet** — Reduced to 7 core columns at 992px breakpoint
+- **Mobile** — Stacked card layout at 768px with all data preserved via `data-label` attributes
+- **ARIA restoration** — JavaScript restores table semantics (`role="row"`, `role="cell"`) for screen readers when CSS transforms layout to `display: block`
+
+### Interactive Features
+- **Status filtering** — Hide/show jobs by application status (Applied, Interviewing, Rejected, Offer) with localStorage persistence
+- **CSV export** — Download visible results as spreadsheet with UTF-8 BOM for Excel compatibility, RFC 4180 escaping, and formula injection protection (`=`/`+`/`-`/`@` prefix protection)
+
+### Print & CI
+- **Print stylesheet** — `@media print` rules preserve tier colors (`print-color-adjust: exact`), hide interactive chrome, prevent mid-card page breaks
+- **Accessibility CI** — GitHub Actions workflow runs Lighthouse (5 runs, ≥95% median) and axe-core WCAG checks, blocking merge on failures
+
 ## v1.3.0 — 2026-02-11
 
 ### Application Flow

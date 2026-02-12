@@ -93,7 +93,26 @@ On first launch, Job Radar runs an interactive setup wizard that guides you thro
 4. **Search runs automatically** after the wizard completes
 5. **View your results** in the HTML report that opens in your browser
 
-On subsequent launches, the search runs directly with your saved profile (no wizard).
+On subsequent launches, the search runs directly with your saved profile (no wizard). A profile preview shows your current settings before the search begins.
+
+### Updating Your Profile
+
+After initial setup, you can update your profile without re-running the full wizard:
+
+```bash
+# View your current profile
+job-radar --view-profile
+
+# Interactive editor — select a field, change it, see diff, confirm
+job-radar --edit-profile
+
+# Quick CLI updates for scripted workflows
+job-radar --update-skills "python,react,typescript"
+job-radar --set-min-score 3.5
+job-radar --set-titles "Backend Developer,SRE"
+```
+
+All profile updates use atomic writes (no corruption risk) and create automatic backups.
 
 ### Using Your Report
 
@@ -204,6 +223,11 @@ job-radar --help
 |---|---|
 | `--profile PATH` | Path to candidate profile JSON file |
 | `--config PATH` | Path to config file (default: auto-detect) |
+| `--view-profile` | Display your current profile settings and exit |
+| `--edit-profile` | Launch interactive profile editor |
+| `--update-skills "a,b,c"` | Replace skills list and exit (comma-separated) |
+| `--set-min-score N` | Set minimum score threshold (0.0-5.0) and exit |
+| `--set-titles "a,b"` | Replace target titles and exit (comma-separated) |
 | `--validate-profile PATH` | Validate a profile JSON file and exit |
 
 ### Accessibility Options
@@ -269,7 +293,7 @@ python -m job_radar
 
 ### Running Tests
 
-The project includes a comprehensive test suite with 300+ automated tests:
+The project includes a comprehensive test suite with 450+ automated tests:
 
 ```bash
 # Install dev dependencies
@@ -294,6 +318,10 @@ pytest tests/test_scoring.py
 - PDF parser (34 tests) - validates extraction, validation, Unicode support, error handling
 - Report generation (34 tests) - validates HTML/Markdown output, clipboard UI, status tracking, accessibility
 - UX polish (68 tests) - validates banner, help text, progress messages, error handling
+- Profile manager (22 tests) - validates atomic writes, backups, rotation, schema migration, validation
+- Profile display (16 tests) - validates formatted output, field filtering, NO_COLOR compliance
+- Profile editor (23 tests) - validates field menu, diff preview, editing, validator reuse
+- CLI update flags (40 tests) - validates validators, handlers, mutual exclusion, integration
 
 ### Building Executables
 
