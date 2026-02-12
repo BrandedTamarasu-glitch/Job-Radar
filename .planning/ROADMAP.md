@@ -253,10 +253,11 @@ Plans:
   6. CI runs axe-core checks for WCAG violations blocking merge on failures
   7. Accessibility test reports upload as GitHub Actions artifacts for inspection
   8. CI handles localStorage hydration timing with explicit waits for dynamic content
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 23-01: TBD
+- [ ] 23-01-PLAN.md — Print CSS: hide interactive elements, preserve tier colors, page break control, and tests
+- [ ] 23-02-PLAN.md — Accessibility CI: Lighthouse (5 runs, >=95) + axe-core workflow, config, and report generator
 
 ## Progress
 
@@ -287,7 +288,7 @@ Phases execute in numeric order: 19 -> 20 -> 21 -> 22 -> 23
 | 20. Hero Jobs Visual Hierarchy | v1.4.0 | 1/1 | Complete | 2026-02-11 |
 | 21. Responsive Layout | v1.4.0 | 2/2 | Complete | 2026-02-11 |
 | 22. Interactive Features | v1.4.0 | 2/2 | Complete | 2026-02-11 |
-| 23. Print & CI Validation | v1.4.0 | 0/0 | Not started | - |
+| 23. Print & CI Validation | v1.4.0 | 0/2 | Planned | - |
 
 ---
 *Last updated: 2026-02-11 after Phase 22 execution complete*
