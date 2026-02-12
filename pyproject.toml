@@ -8,7 +8,7 @@ version = "1.1.4"
 description = "CLI job search tool that scores listings against your profile"
 requires-python = ">=3.10"
 license = "MIT"
-dependencies = ["requests", "beautifulsoup4", "platformdirs>=4.0", "pyfiglet", "colorama", "certifi", "questionary", "python-dotenv", "pyrate-limiter", "rapidfuzz", "pdfplumber>=0.11.9", "python-dateutil>=2.9.0"]
+dependencies = ["requests", "beautifulsoup4", "platformdirs>=4.0", "pyfiglet", "colorama", "certifi", "questionary", "python-dotenv", "pyrate-limiter", "rapidfuzz", "pdfplumber>=0.11.9", "python-dateutil>=2.9.0", "tabulate>=0.9.0"]
 
 [project.optional-dependencies]
 dev = ["pytest>=9.0", "pytest-mock"]
