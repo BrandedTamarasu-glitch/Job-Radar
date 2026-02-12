@@ -272,11 +272,12 @@ Plans:
 4. Progress updates from worker threads appear correctly in GUI without crashes or freezes
 5. Separate executables exist for CLI (with console) and GUI (without console) modes
 
-**Plans:** TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] 28-01: TBD
-- [ ] 28-02: TBD
+- [ ] 28-01-PLAN.md — GUI window shell + entry point detection
+- [ ] 28-02-PLAN.md — Threading infrastructure + progress demo
+- [ ] 28-03-PLAN.md — Human verification checkpoint
 
 #### Phase 29: Profile Setup & Search Controls
 
