@@ -1,342 +1,397 @@
-# Pitfalls Research: Profile Management Features
+# Pitfalls Research
 
-**Domain:** CLI Profile Management (Update, Preview, Quick-Edit)
-**Researched:** 2026-02-11
+**Domain:** Adding Desktop GUI to Existing Python CLI Application
+**Researched:** 2026-02-12
 **Confidence:** HIGH
 
 ## Critical Pitfalls
 
-### Pitfall 1: Partial Update File Corruption
+### Pitfall 1: UI Thread Blocking During Long Operations
 
 **What goes wrong:**
-Profile JSON becomes corrupted (truncated, invalid JSON) when update operation is interrupted mid-write by crash, Ctrl+C, disk-full, or power loss. User loses entire profile, not just failed update.
+The GUI completely freezes when existing CLI job search operations run, making the application appear crashed. Users cannot interact with the window, see progress updates, or cancel operations. This is particularly critical for Job Radar's job fetching operations that use ThreadPoolExecutor.
 
 **Why it happens:**
-Direct file writes (`open(path, 'w') → json.dump()`) are not atomic. If Python process is killed between truncating file and completing write, profile.json contains partial content. JSON parser then fails on next read, making profile unrecoverable without backup.
-
-**Consequences:**
-- Total profile data loss (wizard re-run required)
-- Search breaks silently if profile read fails
-- User loses trust in CLI update features
-- No recovery path without backup
+Tkinter applications are single-threaded by default. All GUI updates and event handling occur in the main thread. When you directly call long-running CLI functions (job searching, PDF parsing) from the GUI event handlers, the main thread becomes blocked processing the task and cannot respond to user interactions or update the progress bar.
 
 **How to avoid:**
-Implement atomic write pattern:
-```python
-import os
-import json
-import tempfile
-
-def atomic_write_json(path, data):
-    """Write JSON atomically using temp + rename."""
-    dir_path = os.path.dirname(path)
-    with tempfile.NamedTemporaryFile(
-        mode='w',
-        dir=dir_path,
-        delete=False,
-        suffix='.tmp'
-    ) as tmp_file:
-        tmp_path = tmp_file.name
-        json.dump(data, tmp_file, indent=2)
-        tmp_file.flush()
-        os.fsync(tmp_file.fileno())  # Force to disk
-
-    # Atomic rename (same filesystem)
-    os.replace(tmp_path, path)  # os.replace is atomic on POSIX/Windows
-```
+1. **Never directly modify Tkinter widgets from worker threads** - Use `root.after()` to schedule GUI updates in the main thread
+2. **Use queue-based communication** - Worker threads put results in `queue.Queue`, main thread polls with `root.after(100, check_queue)`
+3. **Integrate existing ThreadPoolExecutor carefully** - Submit tasks to executor, use callbacks with `future.add_done_callback()` that schedule GUI updates via `root.after(0, update_function)`
+4. **Example pattern:**
+   ```python
+   def on_search_clicked():
+       self.executor.submit(search_jobs).add_done_callback(
+           lambda future: root.after(0, self.display_results, future.result())
+       )
+   ```
 
 **Warning signs:**
-- Profile corruption reports from users
-- "JSON decode error" in error logs
-- Empty or truncated profile.json files
-- No temp file usage in update code
+- GUI becomes unresponsive during operations
+- Progress bar doesn't update
+- Window shows "Not Responding" in task manager
+- Users report application appears to hang
 
 **Phase to address:**
-Phase 1 (Foundation) - Must be in place before ANY profile update features ship. Non-negotiable for data integrity.
-
-**Real-world examples:**
-- [Docker config.json corruption on crashes](https://github.com/moby/moby/discussions/48529)
-- [OpenCode storage corruption mid-write](https://github.com/anomalyco/opencode/issues/7733)
-- [GitLens removed git remotes silently](https://github.com/gitkraken/vscode-gitlens/issues/4851)
+Phase 1 (GUI Foundation) - Establish thread-safe GUI update patterns from the start. Test with actual job search operations to verify responsiveness.
 
 ---
 
-### Pitfall 2: Validation Inconsistency Between Wizard and CLI Flags
+### Pitfall 2: PyInstaller Missing Hidden Imports for GUI Framework
 
 **What goes wrong:**
-Wizard validates profile fields strictly (type checking, range validation), but `--update-skills` or `--set-min-score` flags accept invalid values that corrupt profile. Example: `--set-min-score 99` succeeds even though scoring system uses 0.0-5.0 scale.
+The bundled executable launches but crashes immediately with ImportError or displays blank window because PyInstaller didn't detect and bundle required GUI framework data files (.json, .otf fonts for CustomTkinter) or dynamic imports.
 
 **Why it happens:**
-Developers implement wizard validation once, then add CLI flags later without extracting/reusing validation logic. Each update path has separate validation (or none for CLI flags), leading to divergence.
-
-**Consequences:**
-- Invalid profile values break scoring engine
-- Wizard-created profiles work, CLI-updated profiles fail
-- Silent data corruption (no error, but scoring wrong)
-- User confusion ("worked yesterday, broken today")
+PyInstaller uses static analysis to detect imports. GUI frameworks often use dynamic imports (`__import__()`, `importlib.import_module()`) or include non-.py assets (JSON configs, fonts, themes) that PyInstaller doesn't automatically detect. Job Radar already has hidden import complexity with pdfplumber and questionary - adding a GUI framework multiplies this risk.
 
 **How to avoid:**
-1. Extract validation to shared schema module:
-```python
-# profile_schema.py
-from typing import Literal, List
-from pydantic import BaseModel, Field, validator
-
-class ProfileSchema(BaseModel):
-    name: str = Field(min_length=1)
-    level: Literal["entry", "mid", "senior", "lead"]
-    years_experience: int = Field(ge=0, le=50)
-    core_skills: List[str] = Field(min_items=1, max_items=20)
-    comp_floor: float | None = Field(ge=0)
-
-    @validator('core_skills')
-    def no_empty_skills(cls, v):
-        if any(not s.strip() for s in v):
-            raise ValueError("Skills cannot be empty strings")
-        return v
-```
-
-2. Use in wizard AND CLI flags:
-```python
-# Wizard
-profile = ProfileSchema(**wizard_answers)
-
-# CLI flag
-profile = ProfileSchema.parse_file(profile_path)
-profile.core_skills = args.update_skills.split(',')
-profile = ProfileSchema(**profile.dict())  # Re-validate
-```
+1. **Use --onedir mode for GUI frameworks** - Cannot use --onefile with CustomTkinter because it includes .json and .otf files that cannot be packed into single executable
+2. **Add explicit hidden imports in spec file:**
+   ```python
+   hiddenimports=[
+       'customtkinter',  # or tkinter.ttk for themed widgets
+       'PIL._tkinter_finder',  # if using images
+   ]
+   ```
+3. **Include data files with --add-data:**
+   ```python
+   datas=[
+       ('path/to/customtkinter', 'customtkinter'),  # entire directory
+   ]
+   ```
+4. **Test with --debug=imports flag** - Build with debug, run executable, examine output for missing imports
+5. **Verify on clean machine** - Test bundled executable on machine without Python installed
 
 **Warning signs:**
-- Scoring errors after CLI updates
-- Invalid values in profile.json
-- Different behavior wizard vs. CLI
-- No shared validation module
+- Executable builds successfully but crashes on launch
+- "ModuleNotFoundError" in bundled app but works in development
+- GUI window appears but has no styling/theme
+- Fonts missing or widgets display incorrectly
 
 **Phase to address:**
-Phase 1 (Foundation) - Validation schema must exist BEFORE implementing CLI flags. Add CLI flags in Phase 2 only after validation is unified.
-
-**Real-world examples:**
-- [npm config validation conflicts](https://github.com/npm/cli/issues/8353) - strict validation caused friction with other tools
-- [Git config manual edits break](https://teamtreehouse.com/community/git-stopped-working-fatal-bad-config-line-1-in-file-usersusernamegitconfig)
+Phase 2 (GUI Implementation) - Configure PyInstaller spec file with GUI framework requirements before building first prototype. Document in build scripts (build.sh, build.bat).
 
 ---
 
-### Pitfall 3: No Confirmation for Destructive CLI Flag Updates
+### Pitfall 3: Cross-Platform File Path Handling in Bundled Executable
 
 **What goes wrong:**
-User runs `job-radar --update-skills "Python,JavaScript"` expecting to ADD skills, but flag REPLACES entire skills list. No confirmation prompt, no undo, original skills gone.
+File dialogs, browser launching with local files, and resource loading (icons, images) fail on bundled executable or work on one platform but break on others. Critical for Job Radar's browser launch functionality and any GUI icons/assets.
 
 **Why it happens:**
-CLI flags are designed for non-interactive use (scripts, CI/CD), so confirmation prompts break automation. But users expect CLI flags to behave like interactive commands with safety guardrails.
-
-**Consequences:**
-- Accidental data loss (skills, certifications)
-- User frustration with "destructive" CLI
-- Support requests for recovery
-- Hesitation to use CLI flags
+PyInstaller extracts bundled files to temporary directory (`sys._MEIPASS`) at runtime. Hardcoded relative paths like `"./icons/app.png"` fail because working directory != bundle location. Additionally, `webbrowser.open()` with `file://` URLs doesn't work reliably across platforms - macOS uses `open`, Linux uses `xdg-open`, Windows uses `os.startfile()`, and all have different behaviors with file URLs.
 
 **How to avoid:**
-1. **Default to append mode**, require explicit replacement:
-```bash
-# Safe (append)
-job-radar --add-skills "Docker,Kubernetes"
+1. **Use resource_path helper function:**
+   ```python
+   def resource_path(relative_path):
+       """Get absolute path to resource, works for dev and PyInstaller."""
+       if hasattr(sys, '_MEIPASS'):
+           return os.path.join(sys._MEIPASS, relative_path)
+       return os.path.join(os.path.abspath('.'), relative_path)
 
-# Explicit destructive (replace)
-job-radar --set-skills "Python,JavaScript" --confirm
-
-# Error without confirmation
-job-radar --set-skills "..."
-# Error: --set-skills is destructive. Add --confirm or use --add-skills
-```
-
-2. **Show before/after diff** when confirmation required:
-```python
-if args.set_skills and not args.confirm:
-    print("🚨 DESTRUCTIVE CHANGE:")
-    print(f"  Current: {', '.join(profile.core_skills)}")
-    print(f"  New:     {', '.join(new_skills)}")
-    print("\nAdd --confirm to proceed, or use --add-skills to append")
-    sys.exit(1)
-```
-
-3. **Dry-run mode** for preview:
-```bash
-job-radar --set-min-score 3.5 --dry-run
-# Would update min_score: 2.0 → 3.5
-```
+   icon = resource_path('resources/icon.png')
+   ```
+2. **For browser launching, use platform-specific approach:**
+   ```python
+   import platform
+   if platform.system() == 'Darwin':  # macOS
+       subprocess.run(['open', file_path])
+   elif platform.system() == 'Windows':
+       os.startfile(file_path)
+   else:  # Linux
+       subprocess.run(['xdg-open', file_path])
+   ```
+3. **Always use absolute paths with file:// URLs:** Use `os.path.realpath()` not relative paths
+4. **Add resources to spec file datas section:**
+   ```python
+   datas=[
+       ('resources', 'resources'),  # source:dest
+   ]
+   ```
 
 **Warning signs:**
-- User complaints about lost data
-- Support requests for "undo" or recovery
-- Hesitation to use CLI flags in docs/issues
-- No --dry-run or --confirm flags
+- FileNotFoundError for icons/images in bundled executable
+- Browser doesn't open or opens wrong file
+- Works in development but fails in .exe/.app bundle
+- Different behavior on Windows vs macOS vs Linux
 
 **Phase to address:**
-Phase 2 (CLI Flags) - Before implementing ANY destructive flags, decide on safety model (append vs. replace, confirmation, dry-run).
-
-**Real-world examples:**
-- [Gemini CLI safe mode confirmation](https://addyosmani.com/blog/gemini-cli/) - default requires approval
-- [Salesforce CLI validation without args](https://github.com/forcedotcom/cli/issues/2246) - no confirmation for destructive deploys
+Phase 2 (GUI Implementation) - Establish resource path patterns when adding first GUI assets. Test browser launch functionality on all target platforms early.
 
 ---
 
-### Pitfall 4: Profile Schema Evolution Without Migration Path
+### Pitfall 4: macOS Code Signing and Notarization Failures
 
 **What goes wrong:**
-v1.6.0 adds `preferred_languages` field to profile. Old profiles (v1.5.0) don't have this field. Code expects field to exist, crashes on profile load with `KeyError: 'preferred_languages'`.
+macOS Gatekeeper blocks unsigned .app bundle with "App is damaged and can't be opened" or users must right-click > Open to bypass security warnings. Hardened Runtime causes crashes with "killed: 9" when importing NumPy or other scientific libraries. App bundle structure violations fail notarization.
 
 **Why it happens:**
-No version tracking in profile JSON. No migration system to upgrade old profiles. Code assumes current schema, fails when loading profiles created by older versions.
-
-**Consequences:**
-- App crashes on version upgrade
-- Users forced to re-run wizard (lose profile)
-- Breaking change in "minor" version
-- Backward compatibility broken
+macOS requires code signing for distribution. Unsigned apps get quarantine attribute and Gatekeeper warnings. Hardened Runtime (required for notarization) restricts memory operations that PyInstaller and libraries like NumPy/pdfplumber rely on. Incorrect bundle structure (e.g., putting .pkg files in Contents/Helpers instead of Contents/Resources) causes signing validation failures.
 
 **How to avoid:**
-1. **Add schema version** to profile:
-```json
-{
-  "schema_version": 2,
-  "name": "...",
-  ...
-}
-```
-
-2. **Implement migration system**:
-```python
-CURRENT_SCHEMA = 2
-
-def migrate_profile(profile_data):
-    version = profile_data.get('schema_version', 1)
-
-    if version == 1:
-        # Add preferred_languages (default to languages)
-        profile_data['preferred_languages'] = profile_data.get('languages', ['English'])
-        profile_data['schema_version'] = 2
-
-    if version == 2:
-        # Future migration
-        pass
-
-    return profile_data
-
-def load_profile(path):
-    with open(path) as f:
-        data = json.load(f)
-
-    # Auto-migrate and save
-    data = migrate_profile(data)
-    if data['schema_version'] != CURRENT_SCHEMA:
-        atomic_write_json(path, data)  # Persist migration
-
-    return ProfileSchema(**data)
-```
-
-3. **Test migrations**:
-```python
-def test_migration_v1_to_v2():
-    v1_profile = {"name": "Test", "languages": ["Spanish"]}
-    migrated = migrate_profile(v1_profile)
-    assert migrated['schema_version'] == 2
-    assert migrated['preferred_languages'] == ["Spanish"]
-```
+1. **Enable unsigned executable memory entitlement for Python apps:**
+   ```xml
+   <!-- entitlements.plist -->
+   <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+   <true/>
+   ```
+2. **Sign with timestamp and hardened runtime:**
+   ```bash
+   codesign --deep --force --options runtime --timestamp \
+     --entitlements entitlements.plist \
+     --sign "Developer ID Application: Your Name" \
+     dist/YourApp.app
+   ```
+3. **Notarize before distribution:**
+   ```bash
+   # Zip, submit, wait for approval
+   xcrun notarytool submit YourApp.zip --wait
+   # Staple ticket to bundle
+   xcrun stapler staple YourApp.app
+   ```
+4. **Place all data files in Contents/Resources** - NOT Contents/Helpers (code only)
+5. **Test unsigned flow first** - Use `xattr -dr com.apple.quarantine YourApp.app` to remove quarantine for testing
+6. **Budget for $99/year Apple Developer account** - Required for signing certificates
 
 **Warning signs:**
-- No `schema_version` field in profile
-- KeyError on profile load after updates
-- No migration tests
-- Breaking changes in minor versions
+- "App is damaged" message on macOS
+- App crashes with "killed: 9" immediately after launch
+- Notarization submission rejected
+- Different behavior between signed and unsigned builds
+- Works on your Mac but not on users' Macs
 
 **Phase to address:**
-Phase 1 (Foundation) - Add schema versioning IMMEDIATELY, before v1.5.0 ships. Migrations can be added incrementally, but version field must exist from start.
-
-**Real-world examples:**
-- [JSON schema compatibility checker](https://github.com/json-schema-org/community/issues/984) - detecting breaking changes
-- [ORS config migration tool](https://github.com/GIScience/ors-config-migration) - JSON to YAML with schema changes
-- [Native image metadata upgrades](https://github.com/oracle/graal/issues/8534)
+Phase 3 (Packaging & Distribution) - Set up code signing workflow after GUI is stable. Start with unsigned testing, then add signing, finally notarization. Document in build scripts.
 
 ---
 
-### Pitfall 5: No Backup Before Profile Updates
+### Pitfall 5: Dual CLI/GUI Entry Point Conflicts
 
 **What goes wrong:**
-User runs `--update-skills` with typo. Realizes mistake immediately, but no undo. Previous profile state lost. Must manually reconstruct skills list from memory or re-run wizard.
+Both CLI and GUI entry points try to parse command-line arguments, causing conflicts. GUI launches with unwanted console window on Windows or CLI breaks when GUI dependencies are imported. Build scripts produce only one executable instead of both.
 
 **Why it happens:**
-Backup considered "extra complexity" for initial implementation. Developers assume atomic writes prevent corruption, but atomic writes don't prevent USER ERRORS.
-
-**Consequences:**
-- No recovery from user mistakes
-- Anxiety about using CLI flags
-- Feature abandonment (users stick to wizard)
-- Support burden for recovery requests
+Single entry point means shared initialization code. On Windows, `console_scripts` attach to console (shows terminal), `gui_scripts` don't (no terminal). PyInstaller spec files typically define one entry point. Importing GUI frameworks in CLI code adds unnecessary dependencies and startup time.
 
 **How to avoid:**
-1. **Automatic timestamped backups**:
-```python
-from datetime import datetime
-import shutil
+1. **Separate entry point modules:**
+   ```
+   job_radar/
+     __main__.py       # CLI entry point
+     gui_main.py       # GUI entry point
+     cli/              # CLI-specific code
+     gui/              # GUI-specific code
+     core/             # Shared business logic
+   ```
+2. **Configure separate scripts in pyproject.toml:**
+   ```toml
+   [project.scripts]
+   job-radar = "job_radar.__main__:main"  # CLI
 
-def backup_profile(profile_path):
-    """Create timestamped backup before update."""
-    if not os.path.exists(profile_path):
-        return None
+   [project.gui-scripts]
+   job-radar-gui = "job_radar.gui_main:main"  # GUI (no console on Windows)
+   ```
+3. **PyInstaller spec file with multiple executables:**
+   ```python
+   # Create separate Analysis objects
+   cli_a = Analysis(['job_radar/__main__.py'], ...)
+   gui_a = Analysis(['job_radar/gui_main.py'], ...)
 
-    backup_dir = os.path.join(os.path.dirname(profile_path), '.backups')
-    os.makedirs(backup_dir, exist_ok=True)
+   # Separate EXE objects
+   cli_exe = EXE(PYZ(cli_a.pure), cli_a.scripts, name='job-radar', console=True)
+   gui_exe = EXE(PYZ(gui_a.pure), gui_a.scripts, name='job-radar-gui', console=False)
 
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    backup_path = os.path.join(backup_dir, f'profile_{timestamp}.json')
+   # Single COLLECT with both
+   COLLECT(cli_exe, gui_exe, ...)
+   ```
+4. **Lazy import GUI dependencies** - Only import tkinter/customtkinter in gui_main.py, not in shared core
+5. **Conditional argument parsing:**
+   ```python
+   # CLI entry
+   if __name__ == '__main__':
+       args = parse_cli_args()
+       run_cli(args)
 
-    shutil.copy2(profile_path, backup_path)
-
-    # Cleanup: keep last 10 backups
-    backups = sorted(glob.glob(os.path.join(backup_dir, 'profile_*.json')))
-    for old_backup in backups[:-10]:
-        os.remove(old_backup)
-
-    return backup_path
-
-def update_profile(profile_path, updates):
-    backup_path = backup_profile(profile_path)
-    print(f"💾 Backup saved: {backup_path}")
-
-    # ... perform update with atomic write ...
-
-    return backup_path
-```
-
-2. **Easy restore command**:
-```bash
-job-radar --restore-profile
-# Lists recent backups with preview
-# User selects which to restore
-```
-
-3. **Post-update summary**:
-```
-✓ Profile updated successfully
-  Updated: core_skills
-  Backup: ~/.job-radar/.backups/profile_20260211_143052.json
-  Restore: job-radar --restore-profile
-```
+   # GUI entry - no argparse
+   if __name__ == '__main__':
+       launch_gui()
+   ```
 
 **Warning signs:**
-- No backup directory or mechanism
-- User complaints about irreversible changes
-- Support requests for manual recovery
-- Feature usage drops over time
+- Console window appears when launching GUI on Windows
+- GUI crashes on CLI arguments like `--help`
+- Only one executable produced by build script
+- CLI becomes slower after adding GUI dependencies
+- Import errors when running CLI without GUI dependencies installed
 
 **Phase to address:**
-Phase 2 (CLI Flags) - Implement before shipping CLI update flags. Backup is table-stakes for any destructive operation.
+Phase 2 (GUI Implementation) - Design separation immediately when creating gui_main.py. Update build scripts to produce both executables.
 
-**Real-world examples:**
-- [Git config backup best practices](https://labex.io/tutorials/git-how-to-fix-fatal-unable-to-read-config-file-error-in-git-417550) - "create regular backups"
-- [Network config backup automation](https://www.manageengine.com/network-configuration-manager/best-practices-for-backing-up-network-configurations.html)
-- [Fortinet config backup](https://docs.fortinet.com/document/fortigate/7.6.5/administration-guide/702257/configuration-backups-and-reset) - before firmware updates
+---
+
+### Pitfall 6: GUI Testing Strategy Gaps
+
+**What goes wrong:**
+Existing 452 pytest tests all use mocking and don't cover GUI code. GUI tests fail in CI/CD because no display available. Manual testing doesn't catch cross-platform visual differences. Regression testing becomes manual and incomplete.
+
+**Why it happens:**
+GUI testing requires different strategies than CLI testing. Tkinter expects display (headless CI fails). Heavy mocking of GUI widgets tests nothing useful. Visual layout differences across platforms aren't caught by unit tests. Team's existing pytest expertise focuses on I/O mocking, not GUI interaction patterns.
+
+**How to avoid:**
+1. **Three-tier testing strategy:**
+   - **Unit tests (80%):** Test GUI-independent logic (validators, formatters, business rules) with existing pytest/mock approach
+   - **Integration tests (15%):** Test GUI event handlers with minimal widget mocking using pytest with xvfb
+   - **Manual tests (5%):** Platform-specific visual verification checklist
+
+2. **Headless CI setup for GitHub Actions:**
+   ```yaml
+   - name: Install xvfb for GUI tests
+     run: sudo apt-get install -y xvfb libxkbcommon-x11-0
+
+   - name: Run GUI tests headless
+     run: xvfb-run python -m pytest tests/gui/
+     env:
+       DISPLAY: :99
+   ```
+   Or use `pytest-xvfb` plugin which handles setup automatically
+
+3. **Use GabrielBB/xvfb-action for simpler setup:**
+   ```yaml
+   - uses: GabrielBB/xvfb-action@v1
+     with:
+       run: pytest tests/gui/
+   ```
+
+4. **Minimal GUI mocking approach:**
+   ```python
+   # Good: Test logic extracted from GUI
+   def test_validate_search_params():
+       assert validate_query("Python Developer") == True
+       assert validate_query("") == False
+
+   # Acceptable: Test handler behavior
+   def test_search_button_handler(mocker):
+       mock_search = mocker.patch('job_radar.core.search_jobs')
+       handler = SearchHandler()
+       handler.on_search_clicked("Python")
+       mock_search.assert_called_once_with("Python")
+
+   # Avoid: Deep widget hierarchy mocking (brittle, low value)
+   ```
+
+5. **Cross-platform visual testing checklist (manual):**
+   - [ ] Font rendering (Windows vs macOS vs Linux)
+   - [ ] High DPI scaling (4K, Retina displays)
+   - [ ] Window sizing on different screen resolutions
+   - [ ] Dark mode appearance (if supported)
+   - [ ] Dialog button order (OK/Cancel varies by platform)
+
+6. **Add smoke test for GUI importability:**
+   ```python
+   def test_gui_imports():
+       """Ensure GUI module can be imported without display."""
+       import sys
+       sys.modules['tkinter'] = MagicMock()  # Mock before import
+       from job_radar import gui_main  # Should not crash
+   ```
+
+**Warning signs:**
+- GUI code has 0% test coverage
+- Tests pass in CI but GUI broken in release
+- Regressions caught only by users
+- "Works on my machine" syndrome
+- Team avoids touching GUI code due to fear of breaking
+
+**Phase to address:**
+Phase 2 (GUI Implementation) - Extract testable logic from start. Set up xvfb in CI before first GUI PR. Phase 3 (Packaging) - Add cross-platform visual testing checklist to release process.
+
+---
+
+### Pitfall 7: High DPI and Multi-Monitor Rendering Issues
+
+**What goes wrong:**
+GUI looks blurry on Windows with 150%+ scaling. Text cut off on 4K monitors. App opens on wrong monitor or off-screen on multi-monitor setups. Layout breaks on macOS Retina displays. Job Radar's progress bar and form layout become unusable.
+
+**Why it happens:**
+Windows requires DPI awareness flag or apps default to bitmap scaling (blurry). Tkinter has inconsistent DPI handling across platforms. CustomTkinter auto-handles DPI on Windows but requires manual configuration for custom scaling. Window geometry restoration saves screen coordinates that become invalid when monitor setup changes. macOS handles Retina automatically, but Windows and Linux don't.
+
+**How to avoid:**
+1. **CustomTkinter handles DPI automatically on Windows and macOS:**
+   - Windows: Sets `windll.shcore.SetProcessDpiAwareness(2)` automatically
+   - macOS: Tk handles Retina scaling automatically
+   - Both platforms detect scaling factor and scale widgets
+
+2. **For manual control (if needed):**
+   ```python
+   import customtkinter as ctk
+
+   # Set widget scaling (affects dimensions and text)
+   ctk.set_widget_scaling(1.0)  # 1.0 = 100%, 1.5 = 150%
+
+   # Set window scaling (affects geometry)
+   ctk.set_window_scaling(1.0)
+   ```
+
+3. **Don't disable DPI awareness** - Causes blurriness on Windows >100% scaling
+
+4. **Window positioning with multi-monitor safety:**
+   ```python
+   def safe_window_geometry(self, saved_geometry):
+       """Restore geometry with bounds checking."""
+       try:
+           # Parse saved geometry: "800x600+100+50"
+           self.geometry(saved_geometry)
+
+           # Check if window is visible on any screen
+           self.update_idletasks()
+           x = self.winfo_x()
+           y = self.winfo_y()
+           screen_width = self.winfo_screenwidth()
+           screen_height = self.winfo_screenheight()
+
+           # If off-screen, center instead
+           if x < 0 or y < 0 or x > screen_width or y > screen_height:
+               self.center_window()
+       except:
+           self.center_window()  # Fallback to centered
+
+   def center_window(self):
+       """Center window on screen."""
+       self.update_idletasks()
+       width = self.winfo_width()
+       height = self.winfo_height()
+       screen_width = self.winfo_screenwidth()
+       screen_height = self.winfo_screenheight()
+       x = (screen_width - width) // 2
+       y = (screen_height - height) // 2
+       self.geometry(f"{width}x{height}+{x}+{y}")
+   ```
+
+5. **Test on different scaling factors:**
+   - Windows: 100%, 125%, 150%, 200%
+   - macOS: Retina (2x) and non-Retina
+   - Linux: Various desktop environments (GNOME, KDE)
+
+6. **Use relative widget sizing, not absolute pixels:**
+   ```python
+   # Good: Relative to parent
+   frame.pack(fill='both', expand=True)
+
+   # Avoid: Hard-coded pixels
+   frame.place(x=100, y=50, width=800, height=600)
+   ```
+
+**Warning signs:**
+- Blurry text on Windows high-DPI displays
+- Widgets cut off or overlapping on 4K monitors
+- Window opens off-screen after monitor change
+- Different layout on developer's monitor vs user's monitor
+- Text too small on macOS Retina displays
+
+**Phase to address:**
+Phase 2 (GUI Implementation) - Use CustomTkinter (includes DPI handling), test on high-DPI display early. Phase 3 (Packaging) - Add multi-monitor and DPI testing to cross-platform checklist.
 
 ---
 
@@ -346,31 +401,27 @@ Shortcuts that seem reasonable but create long-term problems.
 
 | Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
 |----------|-------------------|----------------|-----------------|
-| Skip atomic writes, use direct `open('w')` | 5 fewer lines of code | Profile corruption on crashes, user data loss, support burden | **Never** - atomic writes are non-negotiable |
-| Duplicate validation (wizard vs. CLI) | Faster initial implementation | Validation divergence, silent corruption, test explosion | **Never** - extract validation from day 1 |
-| No schema versioning | Simpler initial design | Breaking changes on every schema update, forced wizard re-runs | **Never** - add version field immediately |
-| Skip backups ("atomic writes are enough") | Less disk I/O, simpler code | No recovery from user errors, feature anxiety | **Never** for destructive operations |
-| CLI flags default to REPLACE instead of APPEND | Simpler flag parsing | User data loss, confusion, support requests | Only with `--confirm` flag requirement |
-| String-based skill parsing (`"Python,JS"`) instead of JSON | Easier CLI usage | Can't handle commas in skill names, quote escaping issues | Acceptable for MVP; migrate to JSON in later versions |
-| No dry-run mode | Fewer code paths to test | Users afraid to use CLI flags without preview | Only if confirmation prompts show diffs |
-
----
+| Blocking GUI calls to CLI functions | Fast to implement, reuses existing code | Frozen UI, poor UX, difficult to refactor | Never - always use threading from start |
+| Hardcoded file paths instead of resource_path() | Works in development | Breaks in bundled executable | Never - set pattern in first prototype |
+| Single entry point for CLI and GUI | One build script, simpler structure | Console window on GUI, slow CLI startup, harder to maintain | Never for this project - different execution contexts |
+| Skipping xvfb CI setup "until GUI is complete" | Faster initial CI runs | No GUI test coverage, regressions slip through | Only if team commits to adding before Phase 2 merge |
+| Using Tkinter instead of CustomTkinter | Built-in, no dependencies | Dated appearance, manual DPI handling, more platform-specific code | Small internal tools, but not user-facing apps in 2026 |
+| Mocking entire GUI for tests | High test coverage number | Tests don't catch real issues, false confidence | Only for extracted business logic, not widget interactions |
+| Manual code signing workflow | No upfront setup cost | Inconsistent releases, manual errors, unsigned builds slip out | Early prototypes only - automate before Phase 3 |
 
 ## Integration Gotchas
 
-Common mistakes when integrating profile updates with existing system.
+Common mistakes when connecting to external services.
 
 | Integration | Common Mistake | Correct Approach |
 |-------------|----------------|------------------|
-| **Wizard → CLI flag validation** | Wizard uses Questionary validation, CLI flags use argparse types. Different validation rules. | Extract to shared Pydantic schema. Both paths validate through schema. |
-| **Profile load in search.py** | Assumes profile.json always valid, crashes on corruption. | Try/except with helpful error: "Profile corrupted. Restore backup with --restore-profile or re-run wizard." |
-| **Preview display** | Dumps entire JSON to console, overwhelming and unreadable. | Format as human-readable table with sections (Personal Info, Skills, Preferences). |
-| **CLI flag parsing** | `--update-skills "Python, JavaScript"` splits on comma WITHOUT trimming whitespace → skills: `["Python", " JavaScript"]` | Strip whitespace: `[s.strip() for s in args.update_skills.split(',')]` |
-| **Backup cleanup** | Never delete old backups → fills disk over months. | Keep last 10-20 backups, delete older. Or size-based limit (e.g., 1 MB total). |
-| **Profile path resolution** | Hardcode `~/.job-radar/profile.json`, breaks on Windows if `~` not expanded. | Use `os.path.expanduser('~/.job-radar/profile.json')` |
-| **Schema migration timing** | Migrate on every profile read → unnecessary I/O. | Migrate once, persist updated profile. Track current schema version. |
-
----
+| PyInstaller + GUI framework | Using --onefile with CustomTkinter | Use --onedir, explicitly add data files with --add-data |
+| PyInstaller + existing ThreadPoolExecutor | Assuming executor works identically in bundle | Test threading in bundled executable - some platforms need initialization changes |
+| Browser launching from GUI | Using webbrowser.open() for local files | Platform-specific commands (open/xdg-open/startfile) with absolute paths |
+| System file dialogs | Using tkinter.filedialog without parent window | Always pass parent: `filedialog.askopenfilename(parent=root)` |
+| macOS .app bundle + data files | Putting resources in Contents/Helpers | Use Contents/Resources for data, Helpers for code only |
+| GUI progress updates from threads | Directly updating tkinter widgets from worker thread | Use root.after(0, callback) to schedule updates in main thread |
+| Window geometry persistence | Saving geometry without validation | Check bounds, handle multi-monitor changes, center if off-screen |
 
 ## Performance Traps
 
@@ -378,12 +429,12 @@ Patterns that work at small scale but fail as usage grows.
 
 | Trap | Symptoms | Prevention | When It Breaks |
 |------|----------|------------|----------------|
-| Loading entire backup directory to list backups | CLI hangs when listing restore options | Use `os.scandir()` with `stat()`, don't read file contents | >100 backups (months of daily updates) |
-| Validating profile on every scorer instantiation | Scoring becomes slow, test suite timeout | Validate once at load, cache validated object | >1000 job listings per search |
-| Re-parsing JSON skills normalization on every match | CPU spike during scoring | Pre-normalize skills on profile load, cache normalized lookup | Already resolved in v1.0 (normalize at lookup) |
-| Keeping all schema versions in migration chain | Migration code grows forever, slow startup | Archive migrations: support N-1 and N-2 versions, force wizard for older | Schema version >10 |
-
----
+| Updating GUI on every job fetch result | Progress bar thrashes, GUI sluggish | Batch updates: queue results, update GUI every 100ms with root.after() | >50 concurrent job fetches |
+| Loading all job results into GUI at once | Slow rendering, memory spike | Implement pagination or virtual scrolling | >500 job results |
+| Blocking GUI thread for PDF parsing | UI freeze during resume operations | Already have ThreadPoolExecutor - ensure GUI uses it properly | Any PDF parsing >100ms |
+| Creating new ThreadPoolExecutor per GUI action | Thread explosion, resource exhaustion | Reuse existing application-wide executor | Not a scale issue - architectural |
+| Polling queue too frequently | CPU usage spike | Use root.after(100, check_queue) not while True with sleep | Heavy GUI usage |
+| Synchronous browser launches | GUI blocks waiting for browser | Use subprocess.Popen (async) not subprocess.run (blocking) | Not scale - UX issue |
 
 ## Security Mistakes
 
@@ -391,13 +442,11 @@ Domain-specific security issues beyond general web security.
 
 | Mistake | Risk | Prevention |
 |---------|------|------------|
-| **Path traversal in `--restore-profile <path>`** | User provides `../../etc/passwd`, app tries to load it | Validate path is within `~/.job-radar/.backups/`, reject `..` segments |
-| **Arbitrary code execution via JSON** | Attacker modifies profile.json to inject code (e.g., `__import__` in deserializer) | Use `json.load()` NOT `pickle` or `eval()`. Never execute profile values. |
-| **No validation on restored backups** | User restores old backup with invalid schema, app crashes | Validate + migrate restored profiles before saving |
-| **World-readable profile.json** | Profile contains PII (name, location, email in highlights) | Set restrictive permissions: `os.chmod(profile_path, 0o600)` (owner read/write only) |
-| **Command injection via skill names** | Skill name `"; rm -rf /"` executed if passed to shell | Never pass profile values to shell commands. No `os.system()` or `subprocess.shell=True`. |
-
----
+| Unsigned macOS distribution | Users bypass Gatekeeper, malware impersonation risk | Code sign and notarize all macOS releases |
+| Storing credentials in GUI config files | Plaintext passwords in user directories | Use system keyring (keyring library), never plaintext |
+| Allowing arbitrary file paths in file dialogs | Path traversal if processing user-selected files | Validate extensions, use pathlib to resolve safely |
+| Including debug info in production builds | Exposes code structure, API keys in error messages | Strip debug symbols, use --strip in PyInstaller for production |
+| Bundling .env or config files with secrets | API keys distributed to all users | Use environment variables, exclude sensitive files from bundle |
 
 ## UX Pitfalls
 
@@ -405,39 +454,31 @@ Common user experience mistakes in this domain.
 
 | Pitfall | User Impact | Better Approach |
 |---------|-------------|-----------------|
-| **Profile preview dumps raw JSON** | Overwhelming, hard to read, looks broken | Format as sections with labels: `Personal Info`, `Skills` (with counts), `Preferences` |
-| **No indication which fields quick-edit can change** | User guesses, gets errors, gives up | `job-radar --help` shows: "Editable fields: skills, min_score, target_titles, location" |
-| **CLI flag updates with zero feedback** | "Did it work? Let me check the file..." | Print confirmation: "✓ Updated core_skills (5 skills)" |
-| **No diff shown before destructive change** | User confirms without knowing what's changing | Show before/after: `core_skills: ["Python", "JS"] → ["Go", "Rust"]` |
-| **Error messages reference internal field names** | "ValidationError: comp_floor must be >= 0" → user doesn't know what comp_floor is | "Error: Minimum salary must be a positive number (or leave blank)" |
-| **Quick-edit mode shows ALL fields** | Overwhelms user with 15 fields, most unchanged | Show only common fields (skills, location, min_score). Advanced flag for full edit. |
-| **Preview runs before EVERY search** | Adds 2-3 seconds to startup, annoying for daily use | Preview only on `--profile-preview` flag, or first run each day |
-| **Restore command doesn't show backup contents** | User picks wrong backup, restores old version | Show first few fields + timestamp: `20260211_1430: John Doe, Python/JS, 5 skills` |
-
----
+| No visual feedback during long searches | Users think app crashed, force quit | Always show progress bar with cancel button |
+| Console window alongside GUI on Windows | Looks unprofessional, confusing for users | Use gui_scripts entry point, set console=False in PyInstaller |
+| Generic error messages "Search failed" | Users can't self-help, support burden | Show actionable errors: "No internet connection - check network settings" |
+| Window opens in random position | Inconsistent experience, may open off-screen | Center on first launch, restore saved position with bounds checking |
+| No keyboard shortcuts | Power users forced to use mouse | Add Cmd+N/Ctrl+N for new search, Enter to submit, Esc to cancel |
+| Blocking during browser launch | Unnecessary wait, feels sluggish | Use async subprocess.Popen, don't wait for browser |
+| Platform-inconsistent dialogs | Feels "wrong" on each platform | Use native file dialogs (tkinter.filedialog uses native) |
+| No dark mode support | Jarring on systems with dark theme | CustomTkinter supports dark/light modes with set_appearance_mode() |
 
 ## "Looks Done But Isn't" Checklist
 
 Things that appear complete but are missing critical pieces.
 
-- [ ] **Profile update**: Atomic write implemented — verify `os.replace()` used (not `os.rename()` which fails cross-filesystem)
-- [ ] **Profile update**: Backup created — verify backup timestamp in output
-- [ ] **Profile update**: Old backups cleaned up — verify only N most recent kept
-- [ ] **Validation**: Same rules wizard and CLI — verify shared schema module used
-- [ ] **Validation**: Profile validated after restore — verify restore path calls schema validation
-- [ ] **CLI flags**: Confirmation for destructive changes — verify `--set-*` flags error without `--confirm`
-- [ ] **CLI flags**: Helpful error messages — verify field names translated to user language
-- [ ] **Preview**: Formatted output, not raw JSON — verify sections, labels, readable layout
-- [ ] **Preview**: Performance acceptable — verify preview takes <100ms
-- [ ] **Schema migration**: Version field in profile — verify all profiles have `schema_version`
-- [ ] **Schema migration**: Migration tests — verify test for each schema version upgrade
-- [ ] **Error handling**: Corrupted profile helpful error — verify suggests restore or wizard
-- [ ] **Error handling**: Invalid flag value helpful error — verify shows valid range/options
-- [ ] **Security**: File permissions set — verify profile.json is 0o600 (owner only)
-- [ ] **Security**: Backup permissions set — verify backup files are 0o600
-- [ ] **Security**: Path traversal prevented — verify restore path validated
-
----
+- [ ] **GUI Tests:** Often missing headless CI setup - verify xvfb configured and tests run in GitHub Actions
+- [ ] **Resource paths:** Often missing sys._MEIPASS handling - verify icons/images load in bundled executable, not just development
+- [ ] **Cross-platform browser launch:** Often missing platform detection - verify file opening works on Windows, macOS, and Linux
+- [ ] **Thread-safe GUI updates:** Often missing root.after() wrapper - verify no direct widget updates from threads
+- [ ] **macOS code signing:** Often missing entitlements.plist - verify hardened runtime allows unsigned executable memory
+- [ ] **PyInstaller hidden imports:** Often missing GUI framework data files - verify themed widgets render correctly in bundle
+- [ ] **Dual entry points:** Often missing console=False flag - verify no console window with GUI on Windows
+- [ ] **High DPI support:** Often missing DPI awareness - verify crisp rendering on 4K/Retina displays at various scaling factors
+- [ ] **Multi-monitor handling:** Often missing bounds checking - verify window appears on-screen when monitor setup changes
+- [ ] **Error handling in GUI:** Often missing user-friendly messages - verify errors show actionable guidance, not stack traces
+- [ ] **Progress cancelation:** Often missing cancel implementation - verify long operations can be stopped mid-execution
+- [ ] **Window state persistence:** Often missing geometry validation - verify saved position/size loads safely
 
 ## Recovery Strategies
 
@@ -445,15 +486,14 @@ When pitfalls occur despite prevention, how to recover.
 
 | Pitfall | Recovery Cost | Recovery Steps |
 |---------|---------------|----------------|
-| **Corrupted profile (no backup)** | HIGH | 1. Check `.backups/` for automatic backups<br>2. If none, attempt manual JSON repair with `jq` or text editor<br>3. Last resort: re-run wizard (`job-radar --wizard`) |
-| **Corrupted profile (with backup)** | LOW | 1. `job-radar --restore-profile`<br>2. Select most recent backup<br>3. Verify with `--profile-preview` |
-| **Invalid value from CLI flag** | LOW | 1. Validation should prevent this (fail fast)<br>2. If persisted: load profile, fix value, save with atomic write<br>3. Add test for this validation case |
-| **Lost skills from REPLACE instead of APPEND** | MEDIUM | 1. `job-radar --restore-profile`<br>2. Select backup before destructive change<br>3. Use `--add-skills` instead of `--set-skills` |
-| **Schema migration failed** | MEDIUM | 1. Check migration error message for version<br>2. Manual migration: load JSON, add missing fields, increment version<br>3. Report bug with profile structure (anonymized) |
-| **Backup directory full** | LOW | 1. Manual cleanup: `rm ~/.job-radar/.backups/profile_2026011*` (old month)<br>2. Or increase retention limit in code |
-| **Permissions error (can't write profile)** | LOW | 1. Check ownership: `ls -l ~/.job-radar/profile.json`<br>2. Fix: `chmod 600 ~/.job-radar/profile.json`<br>3. Check parent directory permissions |
-
----
+| Frozen UI from blocking calls | MEDIUM | 1. Extract blocking code to function 2. Wrap in executor.submit() 3. Add GUI update via root.after() in callback 4. Test responsiveness |
+| Missing PyInstaller imports | LOW | 1. Run with --debug=imports 2. Add missing modules to hiddenimports in spec 3. Rebuild and test 4. Document in build scripts |
+| Broken resource paths in bundle | LOW | 1. Implement resource_path() helper 2. Replace all relative paths 3. Add resources to spec datas 4. Test bundled executable |
+| macOS Gatekeeper rejection | HIGH | 1. Obtain Apple Developer certificate ($99) 2. Create entitlements.plist 3. Sign with --options runtime 4. Notarize with xcrun notarytool 5. Staple ticket |
+| Dual entry point conflicts | MEDIUM | 1. Separate into gui_main.py and __main__.py 2. Update spec file with multiple Analysis/EXE 3. Reconfigure build scripts 4. Test both executables |
+| No GUI test coverage | MEDIUM | 1. Install pytest-xvfb or setup GabrielBB/xvfb-action 2. Extract testable logic from handlers 3. Write integration tests for critical paths 4. Add to CI |
+| High DPI rendering broken | LOW-MEDIUM | 1. Switch to CustomTkinter (handles automatically) or 2. Add DPI awareness manually 3. Test on high-DPI display 4. Adjust scaling if needed |
+| Off-screen window positioning | LOW | 1. Add geometry validation function 2. Implement center_window() fallback 3. Call on geometry restoration 4. Test with monitor disconnection |
 
 ## Pitfall-to-Phase Mapping
 
@@ -461,70 +501,72 @@ How roadmap phases should address these pitfalls.
 
 | Pitfall | Prevention Phase | Verification |
 |---------|------------------|--------------|
-| **Partial update corruption** | Phase 1: Foundation (atomic writes) | Test: kill process mid-write, profile still valid (old or new, never corrupted) |
-| **Validation inconsistency** | Phase 1: Foundation (schema) | Test: same invalid value rejected by wizard AND CLI flags with same error |
-| **No confirmation for destructive changes** | Phase 2: CLI Flags | Test: `--set-skills` without `--confirm` exits with error + diff |
-| **Schema evolution without migration** | Phase 1: Foundation (versioning) | Test: load v1 profile, migrates to v2, saves v2 |
-| **No backup before updates** | Phase 2: CLI Flags | Test: update creates backup, backup listed in `--restore-profile` |
-| **Preview dumps raw JSON** | Phase 3: Preview & Quick-Edit | Manual test: preview output is human-readable with sections |
-| **No diff before confirmation** | Phase 2: CLI Flags | Manual test: confirmation prompt shows before/after diff |
-| **Path traversal in restore** | Phase 2: CLI Flags | Test: `--restore-profile ../../../etc/passwd` rejected |
-| **World-readable profile** | Phase 1: Foundation | Test: new profile has 0o600 permissions on Unix |
-| **Command injection via skills** | N/A (not applicable) | Code review: no `subprocess` or `os.system` with profile values |
-
----
+| UI thread blocking | Phase 1: GUI Foundation | Create test GUI with mock long operation, verify progress bar updates smoothly |
+| PyInstaller hidden imports | Phase 2: GUI Implementation | Build executable after adding GUI framework, test on clean machine |
+| Cross-platform file paths | Phase 2: GUI Implementation | Implement resource_path(), test bundled executable loads icons on all platforms |
+| macOS code signing | Phase 3: Packaging & Distribution | Sign and notarize build, verify no Gatekeeper warnings on fresh macOS |
+| Dual entry point conflicts | Phase 2: GUI Implementation | Build both executables, verify CLI has no GUI import overhead, GUI has no console |
+| GUI testing gaps | Phase 2: GUI Implementation | Set up xvfb in CI before merging first GUI PR, verify tests run headless |
+| High DPI rendering | Phase 2: GUI Implementation | Test on 4K monitor and Retina display, verify crisp text and layout |
+| Browser launch failures | Phase 2: GUI Implementation | Test file opening on Windows, macOS, Linux with local and HTTP URLs |
+| Window positioning issues | Phase 2: GUI Implementation | Test geometry save/restore, verify centering on first launch, off-screen detection |
+| Thread-unsafe GUI updates | Phase 1: GUI Foundation | Code review for direct widget updates from threads, enforce root.after() pattern |
 
 ## Sources
 
-### File Corruption & Atomic Writes
-- [Storage resilience: atomic writes, safer temp cleanup](https://github.com/anomalyco/opencode/issues/7733) - OpenCode corruption prevention strategies
-- [Docker config.json rewrite on every run](https://github.com/moby/moby/discussions/48529) - Docker's atomic write approach
-- [Registry corruption after crash during atomic rename](https://github.com/openclaw/openclaw/issues/1469) - Real-world atomic write failure
-- [Better File Writing in Python: Embrace Atomic Updates](https://sahmanish20.medium.com/better-file-writing-in-python-embrace-atomic-updates-593843bfab4f) - Python atomic write patterns
+**PyInstaller and GUI Framework Packaging:**
+- [Packaging with PyInstaller - CustomTkinter Discussion #939](https://github.com/TomSchimansky/CustomTkinter/discussions/939)
+- [PyInstaller GUI packaging issues - GitHub Topics](https://github.com/topics/pyinstaller-gui)
+- [PyInstaller on macOS frustration - Python GUIs](https://www.pythonguis.com/faq/pyinstaller-on-macos-frustration/)
+- [2026 Showdown: PyInstaller vs. cx_Freeze vs. Nuitka](https://ahmedsyntax.com/2026-comparison-pyinstaller-vs-cx-freeze-vs-nui/)
+- [Understanding PyInstaller Hooks - Official Documentation](https://pyinstaller.org/en/stable/hooks.html)
+- [When Things Go Wrong - PyInstaller Documentation](https://pyinstaller.org/en/stable/when-things-go-wrong.html)
 
-### Validation Consistency
-- [npm config validation warnings](https://github.com/npm/cli/issues/8353) - Strict validation friction with other tools
-- [Testing CLI the way people use it](https://www.smashingmagazine.com/2022/04/testing-cli-way-people-use-it/) - Independence and validation testing
-- [CLI flags force interactive mode discussion](https://github.com/serverless/serverless/discussions/11275) - Consistency between modes
+**Threading and GUI Responsiveness:**
+- [Use PyQt's QThread to Prevent Freezing GUIs - Real Python](https://realpython.com/python-pyqt-qthread/)
+- [Tkinter and Threading: Building Responsive Python GUI Applications - Medium](https://medium.com/tomtalkspython/tkinter-and-threading-building-responsive-python-gui-applications-02eed0e9b0a7)
+- [Tkinter and Threading: Preventing Freezing GUIs - Pythoneo](https://pythoneo.com/tkinter-and-threading/)
+- [Overcoming GUI Freezes in PyQt - Medium](https://foongminwong.medium.com/overcoming-gui-freezes-in-pyqt-from-threading-multiprocessing-to-zeromq-qprocess-9cac8101077e)
+- [Using Tkinter With ThreadPoolExecutor Class - Python Forum](https://python-forum.io/thread-38963.html)
 
-### Confirmation & Safety
-- [Gemini CLI safe mode confirmation](https://addyosmani.com/blog/gemini-cli/) - Default approval requirements
-- [CLI Tools with previews, dry runs](https://nickjanetakis.com/blog/cli-tools-that-support-previews-dry-runs-or-non-destructive-actions) - Safety patterns
-- [Salesforce CLI validation without args](https://github.com/forcedotcom/cli/issues/2246) - Destructive change confirmation
+**macOS Code Signing and Notarization:**
+- [Signing and notarizing a Python macOS UI application](https://haim.dev/posts/2020-08-08-python-macos-app/)
+- [Code Signing a GUI python App for notarization on macOS - Apple Developer Forums](https://developer.apple.com/forums/thread/680719)
+- [How to pass Gatekeeper checking - Apple Developer Forums](https://developer.apple.com/forums/thread/713051)
+- [Gatekeeper and runtime protection in macOS - Apple Support](https://support.apple.com/guide/security/gatekeeper-and-runtime-protection-sec5599b66df/web)
+- [Automatic Code-signing and Notarization for macOS apps using GitHub Actions](https://federicoterzi.com/blog/automatic-code-signing-and-notarization-for-macos-apps-using-github-actions/)
 
-### Schema Evolution & Migration
-- [JSON Schema Compatibility Checker](https://github.com/json-schema-org/community/issues/984) - Detecting breaking changes
-- [JSON Metadata Versioning, Backwards Compatibility](https://github.com/oracle/graal/issues/8534) - Native image metadata upgrades
-- [ORS config migration tool](https://github.com/GIScience/ors-config-migration) - JSON schema migration patterns
-- [Migrations.Json.Net](https://github.com/Weingartner/Migrations.Json.Net) - Framework for data migrations
+**PyInstaller Configuration:**
+- [PyInstaller doesn't respect LSUIElement=1 in OS X - Issue #1917](https://github.com/pyinstaller/pyinstaller/issues/1917)
+- [Using PyInstaller - Official Documentation](https://pyinstaller.org/en/stable/usage.html)
+- [Using Spec Files - PyInstaller Documentation](https://pyinstaller.org/en/stable/spec-files.html)
+- [Multiple entrypoint executables - PyInstaller Discussion #6634](https://github.com/orgs/pyinstaller/discussions/6634)
+- [Run-time Information - PyInstaller Documentation](https://pyinstaller.org/en/stable/runtime-information.html)
 
-### Git Config Corruption Examples
-- [Git config corruption: fatal bad config line](https://github.com/orgs/community/discussions/22483)
-- [GitLens removed git remotes silently](https://github.com/gitkraken/vscode-gitlens/issues/4851)
-- [Super long branch names corrupt config](https://github.com/git/git-scm.com/issues/188)
-- [How to fix fatal unable to read config file](https://labex.io/tutorials/git-how-to-fix-fatal-unable-to-read-config-file-error-in-git-417550)
+**GUI Testing:**
+- [5 Effective Methods for Functional Testing a Python Tkinter Application](https://blog.finxter.com/5-effective-methods-for-functional-testing-a-python-tkinter-application/)
+- [How to do automated test of non-web GUI applications - GitHub Gist](https://gist.github.com/howardrotterdam/63c06754d9f7e1b1fa2c390be6319a44)
+- [How to run headless unit tests for GUIs on GitHub actions](https://arbitrary-but-fixed.net/2022/01/21/headless-gui-github-actions.html)
+- [GabrielBB/xvfb-action - GitHub Marketplace](https://github.com/marketplace/actions/gabrielbb-xvfb-action)
+- [pytest-qt Troubleshooting - Official Documentation](https://pytest-qt.readthedocs.io/en/latest/troubleshooting.html)
 
-### Backup Best Practices
-- [Configuration backups and reset](https://docs.fortinet.com/document/fortigate/7.6.5/administration-guide/702257/configuration-backups-and-reset)
-- [Best practices for backing up network configurations](https://www.manageengine.com/network-configuration-manager/best-practices-for-backing-up-network-configurations.html)
-- [Performing a configuration backup](https://docs.fortinet.com/document/fortigate/6.2.0/best-practices/262994/performing-a-configuration-backup)
+**Cross-Platform Considerations:**
+- [Which Python GUI library should you use in 2026? - Python GUIs](https://www.pythonguis.com/faq/which-python-gui-library/)
+- [Writing cross-platform Tkinter - O'Reilly](https://www.oreilly.com/library/view/python-gui-programming/9781788835886/8b49ca9b-cf6c-4d22-bf9d-284543d3b298.xhtml)
+- [Support for file:// urls in webbrowser.open - Python.org Discussions](https://discuss.python.org/t/support-for-file-urls-in-webbrowser-open/81612)
+- [How to Make Python Automatically Open Chrome Instead of Edge: 2026 Best Practices](https://copyprogramming.com/howto/python-webbrowser-open-to-open-chrome-browser)
 
-### Transaction Rollback & Error Handling
-- [How to Fix transaction aborted Errors in PostgreSQL](https://oneuptime.com/blog/post/2026-01-25-fix-transaction-aborted-postgresql/view) - Savepoint patterns
-- [Handling UnexpectedRollbackException in Spring](https://www.baeldung.com/spring-unexpected-rollback-exception)
-- [Transaction rollback performs partial rollback](https://github.com/sequelize/sequelize/issues/9105)
+**High DPI and Scaling:**
+- [Scaling - CustomTkinter Wiki](https://github.com/TomSchimansky/CustomTkinter/wiki/Scaling)
+- [DPI scaling - CustomTkinter Issue #46](https://github.com/TomSchimansky/CustomTkinter/issues/46)
+- [How to improve Tkinter window resolution - CodersLegacy](https://coderslegacy.com/python/problem-solving/improve-tkinter-resolution/)
+- [Python Tkinter: Getting Window Rectangle, Multi-Monitor Display & 2026 Best Practices](https://copyprogramming.com/howto/how-to-open-tkinter-gui-on-second-monitor-display-windows)
 
-### UX Patterns
-- [UX patterns for CLI tools](https://www.lucasfcosta.com/blog/ux-patterns-cli-tools) - CLI documentation and examples
-- [CLI UX best practices: progress displays](https://evilmartians.com/chronicles/cli-ux-best-practices-3-patterns-for-improving-progress-displays)
-- [20 profile page design examples with expert UX advice](https://www.eleken.co/blog-posts/profile-page-design) - Edit mode patterns
-
-### Validation Approaches
-- [How Zod Changed TypeScript Validation Forever](https://iamshadi.medium.com/how-zod-changed-typescript-validation-forever-the-power-of-runtime-and-compile-time-validation-531cd63799cf)
-- [AJV CLI: Command-line interface for Ajv JSON Validator](https://github.com/ajv-validator/ajv-cli)
-- [Standalone validation code with Ajv](https://ajv.js.org/standalone.html)
+**Entry Points and Packaging:**
+- [Entry points specification - Python Packaging User Guide](https://packaging.python.org/specifications/entry-points/)
+- [How to structure a python project with multiple entry points](https://blog.claude.nl/posts/how-to-structure-a-python-project-with-multiple-entry-points/)
+- [Entry Points - setuptools Documentation](https://setuptools.pypa.io/en/latest/userguide/entry_point.html)
 
 ---
-*Pitfalls research for: Job Radar v1.5.0 Profile Management*
-*Researched: 2026-02-11*
-*Confidence: HIGH - based on verified sources (GitHub issues, official docs, real-world examples)*
+*Pitfalls research for: Adding Desktop GUI to Existing Python CLI Application (Job Radar)*
+*Researched: 2026-02-12*

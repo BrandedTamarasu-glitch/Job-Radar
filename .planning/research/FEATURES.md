@@ -1,8 +1,8 @@
-# Feature Research: CLI Profile Management
+# Feature Research: Desktop GUI Launcher
 
-**Domain:** CLI developer tools (configuration management)
-**Researched:** 2026-02-11
-**Confidence:** HIGH
+**Domain:** Desktop GUI wrapper for CLI job search tool
+**Researched:** 2026-02-12
+**Confidence:** MEDIUM
 
 ## Feature Landscape
 
@@ -12,12 +12,16 @@ Features users assume exist. Missing these = product feels incomplete.
 
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| View current profile | Standard in all CLI config tools (git config list, gh config list, aws configure list) | LOW | Display all fields in human-readable format |
-| Get single field value | Common pattern for scripting (git config get, gh config get, aws configure get) | LOW | Return just the value, no formatting for pipe-ability |
-| Set single field value | Essential for quick updates without wizard (aws configure set, git config set, gh config set) | LOW | Update one value, persist immediately |
-| Edit in $EDITOR | Power user expectation (git config --edit) | MEDIUM | Open config JSON in editor, validate on save |
-| Field validation | Config tools reject invalid values immediately | MEDIUM | Validate data types, required fields, format constraints |
-| --help for config commands | CLI standard - users expect help text | LOW | Document all flags and subcommands |
+| Profile creation form | GUI users expect forms, not CLI wizards | LOW | Replace questionary prompts with labeled input fields |
+| File upload dialog for resume | Standard desktop pattern for file selection | LOW | Use native OS file picker (tkinter.filedialog.askopenfilename) |
+| Search configuration panel | Users expect to set parameters before running | LOW | Date pickers, numeric input, checkboxes for flags |
+| Run/Start button | Primary action must be obvious and single-click | LOW | Clear CTA, disabled state while running |
+| Progress feedback | Visual indication during long operations (6 sources queried) | MEDIUM | Determinate or indeterminate progress bar with status text |
+| Auto-open results in browser | CLI already does this, users expect same behavior | LOW | Use webbrowser.open() after search completes |
+| View current profile | See existing settings without editing | LOW | Read-only display or pre-filled form |
+| Edit profile without wizard | Update settings after initial creation | MEDIUM | Same form as creation, pre-populated with current values |
+| Input validation | Prevent invalid data before submission | MEDIUM | Client-side validation with helpful error messages |
+| Window state persistence | Remember size, position across sessions | MEDIUM | Save to config file on close, restore on open |
 
 ### Differentiators (Competitive Advantage)
 
@@ -25,12 +29,14 @@ Features that set the product apart. Not required, but valuable.
 
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| Preview on startup | Shows current settings without extra command - reduces friction | LOW | 2-3 line summary before main action runs |
-| Diff preview before save | Confidence in changes (kubectl diff, terraform plan pattern) | MEDIUM | Show old vs new values before confirming |
-| Interactive edit mode | Guided updates without full wizard (npm init, aws configure) | MEDIUM | Prompt only for fields user wants to change |
-| Validation with helpful errors | Better than generic "invalid value" messages | MEDIUM | Context-specific guidance (e.g., "min_score must be 0-100") |
-| Undo last change | Safety net for mistakes | MEDIUM | Store previous version, allow rollback |
-| Multiple profiles support | Context switching (aws --profile, git config --local) | HIGH | Load different configs for different use cases |
+| Live CLI output display | Show real-time progress from underlying CLI | MEDIUM | ScrolledText widget with threading, captures stdout/stderr |
+| Quick re-run with last settings | One-click to repeat previous search | LOW | Remember last search params, "Run Again" button |
+| Date range presets | Common filters (Today, Last 7 Days, Last 30 Days) | LOW | Dropdown or button group for quick selection |
+| Validation preview | Show what will be searched before running | LOW | Summary panel: "Searching 6 sources from X to Y with score >= Z" |
+| Resume path indicator | Show currently uploaded resume filename | LOW | Label showing basename, change button to re-upload |
+| Search history | View past searches and their parameters | MEDIUM | Store search metadata, display in list/table |
+| Keyboard shortcuts | Power users expect Ctrl+Enter to run, Esc to cancel | LOW | Bind accelerators to primary actions |
+| Minimal UI mode | Hide advanced options by default, show on expand | MEDIUM | Collapsible sections or tabbed interface |
 
 ### Anti-Features (Commonly Requested, Often Problematic)
 
@@ -38,192 +44,424 @@ Features that seem good but create problems.
 
 | Feature | Why Requested | Why Problematic | Alternative |
 |---------|---------------|-----------------|-------------|
-| GUI config editor | "Easier than CLI" | Scope creep, maintenance burden, defeats CLI purpose | Use --edit to open in user's preferred editor |
-| Auto-update profile during run | "Convenience" | Hidden side effects, unclear when changes happen | Explicit --set flags only, require confirmation |
-| Unlimited config history | "Track all changes" | Storage bloat, complexity | Store only last version for undo, not full history |
-| Profile templates/presets | "Common configurations" | Premature optimization, unknown use cases | Wait for user feedback on common patterns |
-| Real-time validation during typing | "Immediate feedback" | Complex for CLI, not expected behavior | Validate on save/submit only |
+| Inline results display | "Why leave the app?" | Duplicates existing HTML report, high complexity, defeats purpose of launcher | Keep auto-open browser behavior, GUI is launcher not viewer |
+| Real-time job filtering UI | "Filter without re-running" | Requires parsing HTML output, couples GUI to report format | Use HTML report's built-in interactive filtering |
+| Custom browser selection | "I use Firefox not Chrome" | OS already handles default browser, unnecessary config | Use webbrowser.open() which respects OS default |
+| Advanced CLI flag exposure | "Power users want all flags" | GUI becomes cluttered, defeats simplicity | Keep CLI for power users, GUI for common workflows |
+| Profile templates/presets | "Job types: SWE, DevOps, etc." | Premature optimization, unclear patterns | Wait for user feedback, manual profile copy for now |
+| Minimize to system tray | "Keep running in background" | Search is one-shot operation, not daemon | Close after opening results, no background process |
+| Multi-profile switching | "Different searches for different roles" | High complexity, unclear demand for GUI users | Single profile, CLI supports --profile for advanced use |
 
 ## Feature Dependencies
 
 ```
-[View Profile] ──────────────> [No dependencies]
-    │
-    └──enhances──> [Preview on Startup]
+[Profile Creation Form]
+    ├──requires──> [Input Validation]
+    └──requires──> [File Upload Dialog] (optional resume)
 
-[Set Single Field]
-    ├──requires──> [Field Validation]
-    └──enhances──> [Diff Preview]
+[Search Configuration Panel]
+    ├──requires──> [Input Validation]
+    └──enhances──> [Validation Preview]
 
-[Edit in $EDITOR]
-    ├──requires──> [Field Validation]
-    └──enhances──> [Diff Preview]
+[Run Button]
+    ├──requires──> [Profile Creation Form] (must exist first)
+    ├──triggers──> [Progress Feedback]
+    └──triggers──> [Auto-open Browser]
 
-[Interactive Edit Mode]
-    ├──requires──> [Field Validation]
-    ├──requires──> [View Profile] (to show current values)
-    └──conflicts──> [Non-interactive/scripting use]
+[Progress Feedback]
+    ├──requires──> [Run Button] (initiates process)
+    └──enhances──> [Live CLI Output Display]
 
-[Undo Last Change]
-    └──requires──> [Version Storage] (simple: just previous version)
+[Live CLI Output Display]
+    ├──requires──> [Progress Feedback] (base requirement)
+    └──requires──> [Threading] (non-blocking UI)
+
+[Edit Profile]
+    ├──requires──> [Profile Creation Form] (reuses same form)
+    ├──requires──> [View Current Profile] (load existing data)
+    └──conflicts──> [Multiple Profile Switching] (single profile model)
+
+[Window State Persistence]
+    └──no dependencies (independent feature)
+
+[Search History]
+    └──enhances──> [Quick Re-run] (populate from history)
+
+[Keyboard Shortcuts]
+    └──enhances──> [Run Button] (alternate trigger)
 ```
 
 ### Dependency Notes
 
-- **Preview on Startup enhances View Profile:** Automatically shows profile without explicit command
-- **Field Validation required by Set/Edit:** Both modes need validation to prevent bad data
-- **Diff Preview enhances Set/Edit:** Shows changes before applying them
-- **Interactive Edit conflicts with scripting:** Must detect TTY and disable prompts in non-interactive environments
+- **Profile Creation must precede Search:** User must have profile before running search
+- **Threading required for Live Output:** UI must remain responsive during subprocess execution
+- **Form reuse for Edit:** Same form component serves creation and editing modes
+- **History enhances Re-run:** History provides source of previous searches to restore
+- **CLI output depends on Progress:** Base progress indicator must exist before adding live output
 
 ## MVP Definition
 
-### Launch With (v1 - This Milestone)
+### Launch With (GUI v1 - This Milestone)
 
-Minimum viable profile management — what's needed to reduce friction vs manual JSON editing.
+Minimum viable GUI launcher — what's needed for basic users to avoid CLI entirely.
 
-- [x] **View profile** (`--show-profile` or `profile show`) — Users need to see current settings without opening JSON
-- [x] **Set single field** (`--set-field key=value`) — Core use case: update 1-2 fields without full wizard
-- [x] **Field validation** — Prevent invalid data (wrong types, out of range values)
-- [x] **Preview on startup** (optional, 2-3 lines) — Awareness of current profile state
-- [ ] **Basic help text** — Document new flags/commands
+- [ ] **Profile creation form** — GUI replacement for questionary wizard (name, email, location, skills, titles, min_score)
+- [ ] **File upload dialog** — Native file picker for optional resume PDF
+- [ ] **Search configuration panel** — Date range (from/to), min score override, new-only checkbox
+- [ ] **Run search button** — Primary action, clear visual state (enabled/disabled/running)
+- [ ] **Progress indicator** — Indeterminate progress bar with "Searching 6 sources..." text
+- [ ] **Auto-open browser** — Launch HTML report when complete (existing behavior)
+- [ ] **Edit profile access** — Button/menu to modify existing profile
+- [ ] **Input validation** — Client-side checks for required fields, valid formats, range limits
+- [ ] **Basic window layout** — Organized sections, clear visual hierarchy
 
-**Rationale:** These 4-5 features solve the core friction: "I want to update my min_score without re-running the wizard or editing JSON manually."
+**Rationale:** These 9 features provide complete parity with CLI for basic workflows. User never needs terminal for standard job searches.
 
 ### Add After Validation (v1.x)
 
-Features to add once core profile updates are working.
+Features to add once core GUI functionality is working.
 
-- [ ] **Interactive edit mode** (`--edit-profile` interactive prompts) — Better UX than --set-field for multiple changes, trigger: users request easier multi-field updates
-- [ ] **Diff preview** (show old→new before save) — Safety feature, trigger: users make mistakes and want confidence
-- [ ] **Edit in $EDITOR** (`--edit-profile` opens JSON) — Power user feature, trigger: advanced users request direct access
-- [ ] **Get single field** (`--get-field key`) — Scripting support, trigger: users want to script against profile values
+- [ ] **Live CLI output display** — ScrolledText showing real-time progress from underlying CLI, trigger: users want visibility into what's happening
+- [ ] **Date range presets** — Quick buttons for common ranges (Today, Last 7 Days, Last 30 Days), trigger: repetitive date entry frustration
+- [ ] **Quick re-run button** — One-click repeat with last parameters, trigger: users run same search multiple times
+- [ ] **Validation preview** — Summary of search before running, trigger: users want confirmation of settings
+- [ ] **Resume path indicator** — Show current resume filename if uploaded, trigger: users forget if they uploaded resume
+- [ ] **Window state persistence** — Remember size/position, trigger: users annoyed by reset layout
+- [ ] **Keyboard shortcuts** — Ctrl+Enter to run, Esc to close dialogs, trigger: power users request efficiency
 
 ### Future Consideration (v2+)
 
 Features to defer until product-market fit is established.
 
-- [ ] **Undo last change** — Nice safety net, defer: complexity doesn't justify v1, wait for actual mistakes in wild
-- [ ] **Multiple profiles** (`--profile name`) — Advanced feature, defer: unclear if users need context switching for job search
-- [ ] **Profile export/import** — Sharing configs, defer: wait for collaboration use case validation
+- [ ] **Search history** — View and restore past searches, defer: unclear if GUI users need history vs just re-running
+- [ ] **Minimal UI mode** — Collapsible advanced options, defer: wait to see if UI feels cluttered first
+- [ ] **Profile export/import** — Share profiles across machines, defer: wait for collaboration use case validation
+- [ ] **Custom theming** — Dark mode, color schemes, defer: nice-to-have, not core functionality
+- [ ] **Notification on completion** — OS notification when search finishes, defer: searches are fast (<1 min), unclear value
 
 ## Feature Prioritization Matrix
 
 | Feature | User Value | Implementation Cost | Priority |
 |---------|------------|---------------------|----------|
-| View profile | HIGH | LOW | P1 |
-| Set single field | HIGH | LOW | P1 |
-| Field validation | HIGH | MEDIUM | P1 |
-| Preview on startup | MEDIUM | LOW | P1 |
-| Help text | HIGH | LOW | P1 |
-| Interactive edit mode | MEDIUM | MEDIUM | P2 |
-| Diff preview | MEDIUM | MEDIUM | P2 |
-| Edit in $EDITOR | MEDIUM | LOW | P2 |
-| Get single field | LOW | LOW | P2 |
-| Undo last change | LOW | MEDIUM | P3 |
-| Multiple profiles | LOW | HIGH | P3 |
+| Profile creation form | HIGH | MEDIUM | P1 |
+| File upload dialog | HIGH | LOW | P1 |
+| Search config panel | HIGH | MEDIUM | P1 |
+| Run button | HIGH | LOW | P1 |
+| Progress indicator | HIGH | MEDIUM | P1 |
+| Auto-open browser | HIGH | LOW | P1 |
+| Edit profile access | HIGH | LOW | P1 |
+| Input validation | HIGH | MEDIUM | P1 |
+| Basic window layout | HIGH | MEDIUM | P1 |
+| Live CLI output | MEDIUM | MEDIUM | P2 |
+| Date range presets | MEDIUM | LOW | P2 |
+| Quick re-run | MEDIUM | LOW | P2 |
+| Validation preview | MEDIUM | LOW | P2 |
+| Resume path indicator | LOW | LOW | P2 |
+| Window state persistence | MEDIUM | MEDIUM | P2 |
+| Keyboard shortcuts | LOW | LOW | P2 |
+| Search history | LOW | MEDIUM | P3 |
+| Minimal UI mode | LOW | MEDIUM | P3 |
 | Profile export/import | LOW | MEDIUM | P3 |
+| Custom theming | LOW | MEDIUM | P3 |
+| Completion notifications | LOW | LOW | P3 |
 
 **Priority key:**
-- P1: Must have for launch (solves core friction)
+- P1: Must have for launch (core GUI functionality)
 - P2: Should have, add when possible (enhances UX)
 - P3: Nice to have, future consideration (unclear demand)
 
-## CLI Tool Patterns Analysis
+## GUI Wrapper Pattern Analysis
 
-### How Leading Tools Handle Config
+### How GUI Wrappers Typically Work
 
-| Tool | View All | Get Single | Set Single | Edit | Interactive |
-|------|----------|------------|------------|------|-------------|
-| **git** | `config --list` | `config --get key` | `config --set key value` | `config --edit` | No (all explicit) |
-| **gh** | `config list` | `config get key` | `config set key value` | Opens editor via `editor` setting | No |
-| **aws** | `configure list` | `configure get key` | `configure set key value` | N/A | `configure` (wizard) |
-| **npm** | `config list` | `config get key` | `config set key value` | `config edit` | `init` (separate) |
+Based on research into CLI wrapper tools and desktop GUI patterns:
 
-### Common Patterns Identified
+**Architecture Pattern:**
+- GUI is separate layer, calls CLI as subprocess
+- Settings managed in config files, not hardcoded in GUI
+- Output captured via stdout/stderr streaming
+- Browser launch via OS default handler
 
-**1. Verb-noun command structure:**
-- Modern tools: `<tool> config <verb> [args]` (gh, aws)
-- Classic tools: `<tool> config --<verb>` (git)
-- **Recommendation:** Use subcommand style (`profile show`, `profile set`) - more discoverable with --help
+**User Flow:**
+1. **First run:** Profile creation form (one-time setup)
+2. **Subsequent runs:** Search config → Run → Progress → Results in browser
+3. **Profile updates:** Edit form (same as creation, pre-filled)
 
-**2. Interactive vs non-interactive:**
-- **Best practice:** Support both, detect TTY
-- Interactive for initial setup (wizard)
-- Flags for daily updates and scripting
-- **Never require prompts** when stdin is not TTY
+**Progress Feedback:**
+- Indeterminate progress (spinning/pulsing) when duration unknown
+- Determinate progress (0-100%) when endpoint measurable
+- Status text describing current operation
+- Best practice: Show what's happening ("Querying Indeed...") not just "Please wait"
 
-**3. Configuration hierarchy:**
-- Flags > Environment > Project config > User config > System
-- **Job-Radar context:** Single user tool, so hierarchy is: Flags > Project-level profile
-- `--profile path/to/profile.json` for override already exists
+**File Upload:**
+- Native OS file picker dialog
+- Filter by file type (.pdf for resumes)
+- Display selected filename after upload
+- Validation: check file exists, readable, correct type
 
-**4. Validation timing:**
-- Validate immediately on set (don't persist bad data)
-- Show clear error messages with guidance
-- Example: "min_score must be 0-100, got 150"
+**Browser Launch:**
+- Use `webbrowser.open()` in Python (respects OS default)
+- Security: Validate file paths to prevent injection
+- Best practice: Confirm action with user if from external data
 
-**5. Preview/dry-run patterns:**
-- Destructive operations show diff before applying
-- Examples: `kubectl diff`, `terraform plan`, `pulumi preview --diff`
-- **Job-Radar application:** Show old→new values before saving profile changes
+### Wizard vs Form Design
+
+**Traditional Wizard (Multi-step):**
+- Used when process is unfamiliar or complex
+- Progress indicator showing steps
+- Back/Next navigation
+- Best for: Infrequent operations, learning curve
+
+**Single Form (All-at-once):**
+- Used when fields are familiar or few
+- All inputs visible at once
+- Single Submit button
+- Best for: Frequent operations, power users
+
+**Recommendation for Job-Radar:**
+- **Profile creation (first run):** Single form with clear sections, not multi-step wizard
+  - Rationale: Only ~6-8 fields, users familiar with job applications, no complex branching
+  - Use visual grouping: "Personal Info" section, "Preferences" section
+  - Optional fields clearly marked
+- **Search config:** Simple panel, 3-4 controls max
+  - Date range, score override, new-only toggle
+  - Always visible, not hidden in wizard
+
+### State Persistence Patterns
+
+**What to persist:**
+- Window size and position (UX continuity)
+- Last search parameters (quick re-run)
+- Profile location if non-default (rare)
+
+**Where to store:**
+- Per-user config directory (e.g., `~/.job-radar/gui-settings.json`)
+- NOT in registry (cross-platform issues)
+- NOT in same file as profile (separation of concerns)
+
+**When to save:**
+- On window close (size/position)
+- On successful search (parameters)
+- NOT continuously (performance, file wear)
+
+**Validation on load:**
+- Check values are in valid range (prevent crash)
+- Fall back to defaults if corrupted
+- Critical: Malformed settings shouldn't prevent startup
+
+## GUI Framework Feature Comparison
+
+| Feature | Tkinter | PyQt5/6 | wxPython | PySimpleGUI |
+|---------|---------|---------|----------|-------------|
+| **File dialog** | filedialog.askopenfilename() | QFileDialog.getOpenFileName() | wx.FileDialog | sg.popup_get_file() |
+| **Progress bar** | ttk.Progressbar | QProgressBar | wx.Gauge | sg.ProgressBar |
+| **Forms** | Manual grid/pack layout | QFormLayout | wx.FlexGridSizer | Auto-layout columns |
+| **Threading** | threading.Thread | QThread | wx.CallAfter | Works with threading |
+| **Native look** | Basic (themed with ttk) | Full native | Full native | Themed |
+| **Browser launch** | webbrowser.open() | webbrowser.open() | webbrowser.open() | webbrowser.open() |
+
+**Note:** All frameworks support the core features needed. Choice is based on other factors (dependencies, complexity, maintenance).
 
 ## Workflow Examples
 
-### Current Friction (Before Profile Management)
+### Current CLI Workflow
 
 ```bash
-# User wants to update min_score from 75 to 80
+# First run: Terminal wizard
+python job_radar.py
+# 10+ questions in terminal
 
-# Option 1: Re-run wizard (tedious, 10+ questions)
-python job_radar.py  # Goes through full wizard again
+# Run search with flags
+python job_radar.py --from 2026-02-01 --to 2026-02-12 --min-score 75 --new-only
 
-# Option 2: Manual JSON edit (error-prone)
+# Update profile: Manual JSON edit or re-run wizard
 nano ~/.job-radar/profile.json
-# Find the field, edit carefully, save, hope it's valid JSON
 ```
 
-### Proposed Workflow (After Profile Management)
+### Proposed GUI Workflow
 
-```bash
-# Quick single-field update
-python job_radar.py profile set min_score=80
-# Profile updated: min_score 75 → 80
-
-# View current settings
-python job_radar.py profile show
-# Shows formatted profile
-
-# Interactive multi-field edit (v1.x)
-python job_radar.py profile edit
-# Prompts:
-# Update min_score? (75): 80
-# Update skills? (Python, Django): Python, Django, FastAPI
-# ... (only changed fields)
-# Preview changes and confirm
-
-# Power user: direct edit (v1.x)
-python job_radar.py profile edit --open
-# Opens ~/.job-radar/profile.json in $EDITOR
-# Validates on save
 ```
+# First run: GUI form
+[Launch Job-Radar GUI]
+┌─────────────────────────────────────┐
+│ Create Your Job Search Profile     │
+├─────────────────────────────────────┤
+│ Name:        [Jane Doe            ] │
+│ Email:       [jane@example.com    ] │
+│ Location:    [San Francisco, CA   ] │
+│                                     │
+│ Skills:      [Python, Django, React]│
+│              (comma-separated)      │
+│                                     │
+│ Job Titles:  [Software Engineer,   ]│
+│              [Senior Developer     ]│
+│                                     │
+│ Min Score:   [75] (0-100)          │
+│                                     │
+│ Resume (opt): [Choose File]         │
+│               resume.pdf            │
+│                                     │
+│          [Create Profile]           │
+└─────────────────────────────────────┘
+
+# Subsequent runs: Search panel
+┌─────────────────────────────────────┐
+│ Job Search Configuration            │
+├─────────────────────────────────────┤
+│ Date Range:                         │
+│   From: [2026-02-01] To: [2026-02-12]│
+│   Presets: [Today][Last 7d][Last 30d]│
+│                                     │
+│ Min Score: [75] (default: 75)       │
+│                                     │
+│ [✓] New listings only               │
+│ [✓] Skip cache                      │
+│                                     │
+│          [Run Search]               │
+│      [Edit Profile]                 │
+└─────────────────────────────────────┘
+
+# During search: Progress
+┌─────────────────────────────────────┐
+│ Searching Job Boards...             │
+├─────────────────────────────────────┤
+│ [=====>                    ] 25%    │
+│ Querying LinkedIn...                │
+│                                     │
+│ Sources: Indeed ✓, LinkedIn ⏳      │
+│          Dice ⏳, GitHub ⏳         │
+│          RemoteOK ⏳, Otta ⏳       │
+│                                     │
+│          [Cancel]                   │
+└─────────────────────────────────────┘
+
+# After search: Auto-open browser
+[Browser opens with HTML report]
+[GUI shows success message]
+┌─────────────────────────────────────┐
+│ Search Complete!                    │
+├─────────────────────────────────────┤
+│ Found 47 jobs matching your profile │
+│ Report opened in browser            │
+│                                     │
+│     [Run Again] [Edit Profile]      │
+│              [Close]                │
+└─────────────────────────────────────┘
+```
+
+### Edit Profile Workflow
+
+```
+# Click "Edit Profile" button
+[Reuses creation form, pre-filled with current values]
+┌─────────────────────────────────────┐
+│ Edit Your Job Search Profile       │
+├─────────────────────────────────────┤
+│ Name:        [Jane Doe            ] │
+│ Email:       [jane@example.com    ] │
+│ Location:    [San Francisco, CA   ] │
+│                                     │
+│ Skills:      [Python, Django, React,]│
+│              [FastAPI             ] │ ← Modified
+│                                     │
+│ Job Titles:  [Software Engineer,   ]│
+│              [Senior Developer     ]│
+│                                     │
+│ Min Score:   [80]                  │ ← Modified
+│                                     │
+│ Resume:      [resume.pdf          ] │
+│              [Change File]          │
+│                                     │
+│     [Save Changes] [Cancel]         │
+└─────────────────────────────────────┘
+```
+
+## Desktop GUI Job Search Tools Comparison
+
+| Feature | Our Approach | Typical Job Apps | Rationale |
+|---------|-------------|------------------|-----------|
+| **Results display** | Browser (external) | In-app list/grid | We're a launcher, not full app; HTML report already rich |
+| **Search config** | Simple panel (dates, score) | Complex filters (salary, remote, etc.) | Filtering done in HTML report, not pre-search |
+| **Profile management** | Single profile, edit form | Multiple profiles, switching | Simplicity; CLI handles multi-profile for power users |
+| **Progress feedback** | Progress bar + status text | Spinning loader | 6 sources = measurable progress (0%, 17%, 33%...) |
+| **Resume upload** | Optional, file picker | Often required, paste or upload | We extract from PDF, not required for search |
+| **Application tracking** | N/A | Built-in feature | Out of scope; we aggregate, not track applications |
+| **Saved searches** | Quick re-run with last params | Named saved searches | Simpler; most users have one search pattern |
+
+**Key Insight:** Commercial job search apps are full-featured platforms (search, apply, track, network). Job-Radar GUI is a launcher — it configures and runs the CLI tool, then hands off to the browser. This scoping prevents feature bloat and maintains the tool's core value: aggregation and scoring.
+
+## UX Principles for Minimal Launchers
+
+Based on minimalist GUI design research:
+
+**Simplicity:**
+- Show only essential controls
+- Hide advanced options (or defer to CLI)
+- Use whitespace, don't cram UI
+
+**Clarity:**
+- Clear labels, no jargon
+- Visual hierarchy (primary action prominent)
+- Helpful validation messages
+
+**Efficiency:**
+- Minimize clicks to primary action (Run Search)
+- Remember last settings for quick re-run
+- Keyboard shortcuts for power users
+
+**Feedback:**
+- Always show what's happening (progress text)
+- Confirm destructive actions (profile overwrite)
+- Success/error states clearly visible
+
+**Consistency:**
+- Follow OS conventions (file dialogs, buttons)
+- Consistent terminology (Profile, Search, Run)
+- Predictable behavior (buttons do what they say)
 
 ## Sources
 
 **Official Documentation (HIGH confidence):**
-- [GitHub CLI: gh config](https://cli.github.com/manual/gh_config) - Config management subcommands (list, get, set)
-- [AWS CLI: configure set](https://docs.aws.amazon.com/cli/latest/reference/configure/set.html) - Single-field update pattern
-- [Git: git-config](https://git-scm.com/docs/git-config) - Classic CLI config tool patterns
-- [Command Line Interface Guidelines](https://clig.dev/) - Interactive vs non-interactive best practices
+- [Python Tkinter Dialogs Documentation](https://docs.python.org/3/library/dialog.html) - Native file dialogs, standard GUI components
+- [Microsoft: Progress Controls Guidelines](https://learn.microsoft.com/en-us/windows/apps/design/controls/progress-controls) - Determinate vs indeterminate progress patterns
+- [Command Line Interface Guidelines](https://clig.dev/) - Best practices for CLI design that inform wrapper behavior
 
-**Community Best Practices (MEDIUM confidence):**
-- [UX patterns for CLI tools](https://www.lucasfcosta.com/blog/ux-patterns-cli-tools) - Interactive wizard vs flags
-- [CLI Design Best Practices](https://codyaray.com/2020/07/cli-design-best-practices) - Configuration hierarchy
-- [CLI Tools Preview/Dry-run Patterns](https://nickjanetakis.com/blog/cli-tools-that-support-previews-dry-runs-or-non-destructive-actions) - Diff preview patterns
+**GUI Wrapper Tools & Patterns (MEDIUM confidence):**
+- [GUIwrapper - Cross-platform GUI wrapper](https://github.com/frodal/GUIwrapper) - Common patterns for CLI wrappers
+- [UGUI: Universal GUI for CLI Applications](https://ugui.io/) - Approaches to wrapping CLI tools
+- [Persistent Settings in Desktop Applications](https://info.erdosmiller.com/blog/persistent-settings-in-desktop-applications) - Configuration persistence patterns
 
-**2026 Ecosystem Research (MEDIUM confidence):**
-- [kubectl diff preview](https://oneuptime.com/blog/post/2026-01-25-kubectl-diff-preview-changes/view) - Preview changes pattern
-- [Azure CLI Configuration](https://learn.microsoft.com/en-us/cli/azure/azure-cli-configuration) - Modern config management
+**UX Design Patterns (MEDIUM confidence):**
+- [NN/G: Wizards Design Recommendations](https://www.nngroup.com/articles/wizards/) - When to use wizards vs forms
+- [Wizard UI Pattern Best Practices](https://lollypop.design/blog/2026/january/wizard-ui-design/) - Step structure, progress indicators (2026)
+- [IxDF: UI Form Design 2026](https://www.interaction-design.org/literature/article/ui-form-design) - Modern form design best practices
+- [Minimalist UI Design Principles](https://www.stan.vision/journal/minimalist-ui-design-how-less-is-more-in-web-design) - Simplicity, whitespace, clarity
+
+**Job Aggregator Features (MEDIUM confidence):**
+- [Best Job Board Aggregators Guide](https://www.chiefjobs.com/the-best-job-board-aggregators-in-the-us-a-comprehensive-guide/) - Common features in job aggregation tools (2026)
+- [Top Job Search Apps 2026](https://www.eztrackr.app/blog/best-job-search-apps) - Feature comparison of leading apps
+
+**Implementation Patterns (MEDIUM confidence):**
+- [Run Process with Realtime Output to Tkinter](https://www.tutorialspoint.com/run-process-with-realtime-output-to-a-tkinter-gui) - Threading + subprocess for live output
+- [PyQt External Programs with QProcess](https://www.pythonguis.com/tutorials/qprocess-external-programs/) - Streams and progress bars
+- [Python File Upload Dialog Patterns](https://pythonguides.com/upload-a-file-in-python-tkinter/) - Tkinter file selection implementation
+
+**Anti-Patterns & Pitfalls (MEDIUM-LOW confidence):**
+- [User Interface Anti-Patterns](https://ui-patterns.com/blog/User-Interface-AntiPatterns) - Bloated UI, hide-and-hover pitfalls
+- [UX Anti-Patterns of User Experience Design](https://www.ics.com/blog/anti-patterns-user-experience-design) - Common mistakes in desktop UX
+- [Software Bloat - Wikipedia](https://en.wikipedia.org/wiki/Software_bloat) - Feature creep and bloat characteristics
+- [UX Patterns for CLI Tools](https://lucasfcosta.com/2022/06/01/ux-patterns-cli-tools.html) - What to avoid when wrapping CLI tools
+
+**Confidence Notes:**
+- HIGH: Official Python/Microsoft documentation on GUI components and patterns
+- MEDIUM: Recent (2026) articles on UX design, job aggregator features, established GUI wrapper projects
+- MEDIUM-LOW: General anti-pattern articles (not GUI-specific), older sources
+
+**Areas requiring phase-specific research:**
+- Specific GUI framework choice (Tkinter vs PyQt vs wxPython) — needs architecture decision
+- Threading implementation details — needs technical spike
+- Cross-platform testing considerations — needs deployment planning
 
 ---
-*Feature research for: CLI Profile Management (Job-Radar milestone)*
-*Researched: 2026-02-11*
+*Feature research for: Desktop GUI Launcher (Job-Radar milestone)*
+*Researched: 2026-02-12*

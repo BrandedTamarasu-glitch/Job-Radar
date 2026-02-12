@@ -1,195 +1,267 @@
-# Stack Research: Profile Management Features
+# Stack Research
 
-**Domain:** CLI profile management and display
-**Researched:** 2026-02-11
+**Domain:** Python Desktop GUI Launcher for CLI Application
+**Researched:** 2026-02-12
 **Confidence:** HIGH
 
 ## Recommended Stack
 
-### Core Technologies (No Changes)
+### Core GUI Framework
 
 | Technology | Version | Purpose | Why Recommended |
 |------------|---------|---------|-----------------|
-| Python | 3.10+ | Runtime environment | Existing requirement; supports all needed features |
-| argparse | stdlib | CLI argument parsing | Already used; sufficient for new flags (--update-skills, --set-min-score) |
-| json | stdlib | Profile serialization | Already used; no change needed |
-| colorama | 0.4.6 | Cross-platform ANSI color | Already in dependencies; sufficient for colored output |
+| CustomTkinter | 5.2.2 | Modern GUI framework | Built on tkinter with modern flat design, dark/light themes, high-DPI support. Works seamlessly with PyInstaller. Zero licensing concerns. Minimal bundle size increase. [CustomTkinter is the easiest modern GUI option](https://www.pythonguis.com/faq/which-python-gui-library/) with consistent cross-platform appearance. |
+| tkinter | Built-in | Base GUI toolkit | Included with Python 3.10+. No installation needed. Native file dialogs, proven cross-platform stability. [CustomTkinter extends tkinter](https://github.com/TomSchimansky/CustomTkinter) while maintaining compatibility. |
 
-### New Supporting Libraries
+### Packaging & Distribution
+
+| Technology | Version | Purpose | Why Recommended |
+|------------|---------|---------|-----------------|
+| PyInstaller | 6.18.0 | Bundler for executables | [Latest version (Jan 2026)](https://pyinstaller.org/en/stable/) with Python 3.8-3.14 support. Works [out-of-the-box with CustomTkinter](https://customtkinter.tomschimansky.com/documentation/packaging/) using onedir mode. You already use this successfully for CLI distribution. |
+
+### Supporting Libraries
 
 | Library | Version | Purpose | When to Use |
 |---------|---------|---------|-------------|
-| tabulate | 0.9.0 | Profile preview table formatting | Profile display on startup, diff comparison tables |
-| difflib | stdlib | Profile change diff generation | Before/after comparison in quick-edit mode |
-
-### Development Tools (No Changes)
-
-| Tool | Purpose | Notes |
-|------|---------|-------|
-| pytest | Test framework | Existing; add tests for profile preview/edit |
-| PyInstaller | Executable bundling | tabulate is pure Python; no config changes needed |
+| threading | Built-in | Background task execution | Run job searches without freezing GUI. [Use for I/O-bound operations](https://www.infoworld.com/article/2257425/python-threading-and-subprocesses-explained.html) like web scraping. |
+| webbrowser | Built-in | Launch HTML reports | [Open generated reports](https://docs.python.org/3/library/webbrowser.html) in default browser. Already generating HTML, just need to open it. |
+| queue | Built-in | Thread-safe communication | Pass progress updates from worker threads to GUI thread for progress bar updates. |
 
 ## Installation
 
 ```bash
-# Add to existing dependencies in pyproject.toml
-dependencies = [
-    "requests",
-    "beautifulsoup4",
-    "platformdirs>=4.0",
-    "pyfiglet",
-    "colorama",
-    "certifi",
-    "questionary",
-    "python-dotenv",
-    "pyrate-limiter",
-    "rapidfuzz",
-    "pdfplumber>=0.11.9",
-    "python-dateutil>=2.9.0",
-    "tabulate"  # NEW: for profile preview tables
-]
+# GUI framework (only new dependency)
+pip install customtkinter==5.2.2
+
+# Packaging (already have this)
+pip install pyinstaller==6.18.0
+
+# All other libraries are Python built-ins
 ```
+
+## PyInstaller Integration
+
+### CustomTkinter Data Files
+
+CustomTkinter requires explicit data inclusion in PyInstaller:
+
+```bash
+pyinstaller --name="JobRadar" \
+    --onedir \
+    --windowed \
+    --add-data "venv/lib/python3.10/site-packages/customtkinter:customtkinter" \
+    launcher.py
+```
+
+**Rationale:** [PyInstaller doesn't automatically include .json theme files](https://github.com/TomSchimansky/CustomTkinter/discussions/939) from CustomTkinter library. Must use `--add-data` flag.
+
+### Platform-Specific Flags
+
+**Windows:**
+```bash
+--windowed  # No console window
+--icon=icon.ico
+```
+
+**macOS:**
+```bash
+--windowed  # .app bundle without terminal
+--icon=icon.icns
+--osx-bundle-identifier=com.jobradar.launcher
+```
+
+**Linux:**
+```bash
+--windowed  # No terminal on launch
+```
+
+### Build Mode
+
+**Use onedir mode** (already doing this):
+- [Easier debugging](https://pyinstaller.org/en/stable/operating-mode.html) - see exactly what files are included
+- CustomTkinter [works best with onedir](https://github.com/TomSchimansky/CustomTkinter/discussions/423)
+- Can update executable without redistributing entire bundle
+- [Recommended for GUI applications](https://pyinstaller.org/en/stable/usage.html)
 
 ## Alternatives Considered
 
 | Recommended | Alternative | When to Use Alternative |
 |-------------|-------------|-------------------------|
-| tabulate | rich (13.x-14.x) | If project adds syntax highlighting, progress bars, or complex styling needs beyond profile display. Rich is 4MB+ with Pygments dependency. |
-| tabulate | prettytable (3.x) | If you need incremental table building or PostgreSQL-style formatting. Heavier API than needed. |
-| tabulate | Manual string formatting | Never. Error-prone, doesn't handle alignment/wrapping, not maintainable. |
-| difflib (stdlib) | python-unidiff | If parsing existing unified diff files. Not needed for in-memory comparison. |
-| colorama (existing) | rich | If you need 24-bit color or complex styling. colorama is already in deps and sufficient. |
+| CustomTkinter | PyQt6/PySide6 | If you need advanced widgets (charts, complex tables, rich text editor). [PyQt6 requires commercial license](https://www.pythonguis.com/faq/pyqt6-vs-pyside6/) for proprietary apps. [PySide6 is LGPL-free](https://doc.qt.io/qtforpython-6/commercial/index.html) but adds 80-120MB to bundle vs tkinter's ~5MB. Overkill for form-based launcher. |
+| CustomTkinter | wxPython | If you need truly native widgets. [wxPython has platform quirks](https://charleswan111.medium.com/choosing-the-best-python-gui-library-comparing-tkinter-pyqt-and-wxpython-1c835746586a) and doesn't abstract cross-platform differences as well. Smaller community than tkinter. |
+| CustomTkinter | Plain tkinter | If you want absolute minimal dependencies (zero new installs). But [tkinter looks dated](https://www.pythonguis.com/faq/which-python-gui-library/) without significant custom styling work. CustomTkinter provides modern appearance with minimal effort. |
+| CustomTkinter | Kivy/BeeWare | If targeting mobile or need touch-first UI. Not suitable for traditional desktop applications. |
 
 ## What NOT to Use
 
 | Avoid | Why | Use Instead |
 |-------|-----|-------------|
-| rich | 4MB+ distribution size from Pygments dependency; overkill for simple table display | tabulate (minimal) + colorama (existing) |
-| pandas | 50MB+ dependency for data manipulation; massive overkill for displaying 8-10 profile fields | tabulate |
-| argcomplete | Adds shell completion but requires shell-specific setup; breaks zero-config philosophy | Standard argparse (users can use shell history) |
-| click | Would require migrating entire CLI from argparse; not worth refactor for minor features | argparse with sub-parsers if complexity grows |
+| PySimpleGUI | [Changed to proprietary license](https://www.pythonguis.com/faq/which-python-gui-library/) requiring commercial purchase (2022). Previously free versions deprecated. Community abandoned it. | CustomTkinter (similar simplicity, MIT license) |
+| customtkinter-pyinstaller | [Modified fork for onefile mode](https://pypi.org/project/customtkinter-pyinstaller/). Hasn't been updated in 12+ months. Onedir mode works fine with official CustomTkinter. | Official CustomTkinter + onedir mode |
+| Tkinter Boostrap/ttkbootstrap | Alternative modern tkinter wrapper. Less mature than CustomTkinter, smaller community, fewer examples for PyInstaller packaging. | CustomTkinter (better documentation, proven PyInstaller integration) |
+| Electron/Tauri with Python | Massive bundle sizes (150-300MB minimum). Separate web stack to learn. Python would run as subprocess, adding complexity. | CustomTkinter (5-15MB total increase, pure Python) |
 
 ## Stack Patterns by Use Case
 
-### Profile Preview Display
+**For simple launcher UI (your use case):**
+- CustomTkinter + threading + built-in file dialogs
+- Total new dependencies: 1 (customtkinter)
+- Bundle size increase: ~5-10MB
+- Development time: Minimal (familiar Python, simple API)
 
-**Pattern:**
-```python
-from tabulate import tabulate
-from colorama import Fore, Style
+**If you needed database browser in GUI:**
+- Add SQLite browser widget from CustomTkinter examples
+- Still no additional dependencies (sqlite3 is built-in)
 
-data = [
-    ["Name", profile["name"]],
-    ["Years Experience", profile["years"]],
-    ["Skills", ", ".join(profile["skills"][:5]) + "..."],
-    ["Min Score", f"{profile['min_score']:.1f}"]
-]
-
-table = tabulate(data, tablefmt="simple", colalign=("left", "left"))
-print(f"{Fore.CYAN}{table}{Style.RESET_ALL}")
-```
-
-**Why:** tabulate handles column alignment automatically; colorama adds color without complexity.
-
-### Diff Display (Before/After)
-
-**Pattern:**
-```python
-import difflib
-from colorama import Fore, Style
-
-old_skills = "Python, JavaScript, Docker"
-new_skills = "Python, JavaScript, Docker, Kubernetes"
-
-diff = difflib.unified_diff(
-    old_skills.splitlines(keepends=True),
-    new_skills.splitlines(keepends=True),
-    lineterm=""
-)
-
-for line in diff:
-    if line.startswith('+'):
-        print(f"{Fore.GREEN}{line}{Style.RESET_ALL}")
-    elif line.startswith('-'):
-        print(f"{Fore.RED}{line}{Style.RESET_ALL}")
-    else:
-        print(line)
-```
-
-**Why:** difflib is stdlib (zero dependencies); colorama provides cross-platform color for +/- lines.
-
-### CLI Flag Extensions
-
-**Pattern:**
-```python
-parser.add_argument(
-    '--update-skills',
-    nargs='+',
-    metavar='SKILL',
-    help='Update profile skills (space-separated)'
-)
-
-parser.add_argument(
-    '--set-min-score',
-    type=float,
-    metavar='SCORE',
-    help='Set minimum job score threshold (0.0-5.0)'
-)
-```
-
-**Why:** argparse handles this natively; no library additions needed.
+**If you needed real-time data visualization:**
+- Reconsider stack - would need PyQt6/PySide6 with QtCharts
+- Or keep CustomTkinter for UI, generate charts in HTML reports
 
 ## Version Compatibility
 
 | Package | Compatible With | Notes |
 |---------|-----------------|-------|
-| tabulate 0.9.0 | Python 3.7+ | Works with existing Python 3.10+ requirement |
-| tabulate 0.9.0 | PyInstaller 6.x | Pure Python package; no hooks needed |
-| tabulate 0.9.0 | colorama 0.4.6 | Independent; both output to stdout |
-| difflib (stdlib) | All Python 3.10+ | No version concerns |
+| customtkinter 5.2.2 | Python 3.7-3.14 | [Requires Python >=3.7](https://pypi.org/project/customtkinter/). Python 3.10+ gets [dark window headers on macOS](https://github.com/TomSchimansky/CustomTkinter/discussions/311) (Tcl/Tk 8.6.9+). |
+| PyInstaller 6.18.0 | Python 3.8-3.14 | [Avoid Python 3.10.0 specifically](https://github.com/pyinstaller/pyinstaller/issues/5693) (has bug). Use 3.10.1+ instead. |
+| CustomTkinter | PyInstaller 6.x | [Well-documented integration](https://customtkinter.tomschimansky.com/documentation/packaging/). Requires `--add-data` flag for theme files. |
 
-## PyInstaller Compatibility
+## Cross-Platform Rendering
 
-**Verified:** According to PyInstaller documentation, "Most packages will work out of the box with PyInstaller. This is especially true for pure Python packages and for packages not requiring additional files."
+**Windows:**
+- [High-DPI scaling automatic](https://github.com/TomSchimansky/CustomTkinter/wiki/Scaling) in CustomTkinter
+- No blurry text on 125%/150% display scaling
+- Dark/light mode matches Windows 10/11 theme
 
-**tabulate status:**
-- Pure Python implementation (no C extensions)
-- No external data files
-- No dynamic imports
-- **Expected to work without PyInstaller hooks**
+**macOS:**
+- Python 3.10+ enables [dark title bars](https://github.com/TomSchimansky/CustomTkinter/discussions/311)
+- Retina display support built-in
+- System appearance mode integration (dark/light auto-detection)
 
-**Testing recommendation:** Build test executable with tabulate and verify table rendering before milestone completion.
+**Linux:**
+- Consistent appearance across Ubuntu/Fedora/Debian
+- No dependency on specific desktop environment (works in GNOME/KDE/XFCE)
+- [Theme colors adapt](https://customtkinter.tomschimansky.com/) to system or manual setting
 
-## Performance Considerations
+## Threading Architecture for GUI
 
-| Operation | Library | Impact |
-|-----------|---------|--------|
-| Profile preview (8-10 fields) | tabulate | <5ms on commodity hardware |
-| Diff generation (2 profile versions) | difflib | <1ms for typical profile size |
-| Import time | tabulate | ~10-20ms (negligible for CLI startup) |
-| Distribution size | tabulate | ~50KB (0.005% increase vs existing 50MB+ PyInstaller bundle) |
+**Pattern for long-running tasks:**
 
-**Conclusion:** Zero perceptible performance impact for user-facing operations.
+```python
+import threading
+import queue
+import customtkinter as ctk
+
+class JobRadarGUI(ctk.CTk):
+    def __init__(self):
+        super().__init__()
+        self.queue = queue.Queue()
+
+    def run_search(self):
+        # Start background thread
+        thread = threading.Thread(target=self.search_worker)
+        thread.daemon = True
+        thread.start()
+
+        # Check queue for updates
+        self.after(100, self.check_queue)
+
+    def search_worker(self):
+        # Run existing CLI search code
+        # Post updates: self.queue.put(("progress", 0.5))
+        pass
+
+    def check_queue(self):
+        try:
+            msg_type, data = self.queue.get_nowait()
+            if msg_type == "progress":
+                self.progress_bar.set(data)
+        except queue.Empty:
+            pass
+        self.after(100, self.check_queue)
+```
+
+**Rationale:**
+- [Never call GUI methods from worker threads](https://docs.pysimplegui.com/en/latest/documentation/module/multithreading/) directly (not thread-safe)
+- [Use queue for thread communication](https://www.nurmatova.com/subprocesses-and-multithreading.html)
+- [`.after()` method polls queue](https://www.pythontutorial.net/tkinter/tkinter-thread-progressbar/) from main thread
+- Prevents GUI freezing during web scraping
+
+## File Dialog Usage
+
+```python
+from tkinter import filedialog
+import customtkinter as ctk
+
+# PDF file selection
+pdf_path = filedialog.askopenfilename(
+    title="Select Resume",
+    filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")]
+)
+```
+
+**Rationale:**
+- [tkinter.filedialog uses native OS dialogs](https://docs.python.org/3/library/dialog.html)
+- Windows: Uses Win32 file picker
+- macOS: Uses Cocoa file picker
+- Linux: Uses GTK file picker
+- No CustomTkinter equivalent needed - native dialogs look better
+
+## Browser Integration
+
+```python
+import webbrowser
+import os
+
+# Open generated HTML report
+report_path = os.path.abspath("reports/job_results.html")
+webbrowser.open(f"file://{report_path}")
+```
+
+**Rationale:**
+- [webbrowser module is cross-platform](https://docs.python.org/3/library/webbrowser.html)
+- Opens default browser automatically
+- Handles file:// URLs correctly
+- No additional dependencies
+
+## Development Workflow
+
+1. **GUI development:** Test with `python launcher.py` (fast iteration)
+2. **Packaging test:** `pyinstaller launcher.spec` (verify bundle)
+3. **Distribution:** Copy onedir folder to target platform
+
+**No changes needed** to existing PyInstaller build process beyond:
+- Adding `--add-data` for CustomTkinter theme files
+- Using `--windowed` flag to hide console
+
+## Bundle Size Impact
+
+Based on [framework comparison research](https://charleswan111.medium.com/choosing-the-best-python-gui-library-comparing-tkinter-pyqt-and-wxpython-1c835746586a):
+
+| Framework | Typical Bundle Size Increase |
+|-----------|------------------------------|
+| CustomTkinter (tkinter-based) | +5-10 MB |
+| PyQt6/PySide6 | +80-120 MB |
+| wxPython | +40-60 MB |
+
+**Current CLI bundle size:** ~50-80MB (estimated with PyInstaller onedir)
+**With GUI launcher:** ~60-90MB total
+
+Minimal impact because [tkinter is included with Python](https://www.pythonguis.com/faq/which-python-gui-library/) - CustomTkinter only adds theme JSON files and Python code.
 
 ## Sources
 
-### HIGH Confidence (Official Documentation)
-- [Python difflib documentation](https://docs.python.org/3/library/difflib.html) — stdlib module capabilities verified
-- [tabulate PyPI](https://pypi.org/project/tabulate/) — version 0.9.0, pure Python, MIT license
-- [colorama PyPI](https://pypi.org/project/colorama/) — version 0.4.6, already in dependencies
-- [PyInstaller Supported Packages Wiki](https://github.com/pyinstaller/pyinstaller/wiki/Supported-Packages) — pure Python package compatibility
-- [Python argparse documentation](https://docs.python.org/3/library/argparse.html) — mutually exclusive groups, nargs='+' support
-
-### MEDIUM Confidence (Community Sources)
-- [Rich Python Library comparison](https://arjancodes.com/blog/rich-python-library-for-interactive-cli-tools/) — use cases where rich adds value
-- [tabulate vs prettytable comparison](https://amrinarosyd.medium.com/prettytable-vs-tabulate-which-should-you-use-e9054755f170) — feature/API comparison
-- [colorama vs rich discussion (pip issue #10423)](https://github.com/pypa/pip/issues/10423) — distribution size concerns with rich (4MB Pygments)
-- [10 Best Python CLI Libraries 2026](https://medium.com/@wilson79/10-best-python-cli-libraries-for-developers-picking-the-right-one-for-your-project-cefb0bd41df1) — ecosystem overview
-
-### LOW Confidence (Unverified)
-- None. All recommendations based on official documentation or verified community sources.
+- [CustomTkinter GitHub Repository](https://github.com/TomSchimansky/CustomTkinter) - Official source, packaging documentation
+- [CustomTkinter Official Documentation](https://customtkinter.tomschimansky.com/) - API reference, widget examples
+- [PyInstaller 6.18.0 Documentation](https://pyinstaller.org/en/stable/) - Latest packaging guidelines (Jan 2026)
+- [Python GUI Library Comparison 2026](https://www.pythonguis.com/faq/which-python-gui-library/) - Framework selection analysis
+- [PyQt6 vs PySide6 Licensing](https://www.pythonguis.com/faq/pyqt6-vs-pyside6/) - Commercial use constraints
+- [CustomTkinter PyInstaller Integration](https://customtkinter.tomschimansky.com/documentation/packaging/) - Bundling best practices
+- [Python Threading Best Practices](https://www.infoworld.com/article/2257425/python-threading-and-subprocesses-explained.html) - GUI threading patterns
+- [Tkinter File Dialogs](https://docs.python.org/3/library/dialog.html) - Python 3.14 official documentation
+- [Webbrowser Module](https://docs.python.org/3/library/webbrowser.html) - Cross-platform browser launching
+- [CustomTkinter DPI Scaling](https://github.com/TomSchimansky/CustomTkinter/wiki/Scaling) - High-resolution display support
 
 ---
-*Stack research for: Job Radar v1.5.0 Profile Management*
-*Researched: 2026-02-11*
-*Researcher: GSD Project Researcher*
+*Stack research for: Job Radar Desktop GUI Launcher*
+*Researched: 2026-02-12*
+*Confidence: HIGH - All recommendations verified with official documentation and 2026 sources*
