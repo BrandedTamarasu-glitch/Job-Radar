@@ -36,6 +36,16 @@ def get_data_dir() -> Path:
     return data_dir
 
 
+def get_backup_dir() -> Path:
+    """Get backup directory for profile backups. Creates it if missing.
+
+    Returns the 'backups' subdirectory inside the user data directory.
+    """
+    backup_dir = get_data_dir() / "backups"
+    backup_dir.mkdir(parents=True, exist_ok=True)
+    return backup_dir
+
+
 def get_log_file() -> Path:
     """Get error log path: ~/job-radar-error.log."""
     return Path.home() / 'job-radar-error.log'
