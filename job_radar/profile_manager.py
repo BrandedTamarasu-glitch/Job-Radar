@@ -133,10 +133,10 @@ def validate_profile(profile: dict) -> None:
         score = profile["min_score"]
         if not isinstance(score, (int, float)):
             raise InvalidTypeError("min_score", "number", type(score))
-        if not (1.0 <= float(score) <= 5.0):
+        if not (0.0 <= float(score) <= 5.0):
             raise ProfileValidationError(
                 f"Your min_score value of {score} is out of range "
-                "-- it must be between 1.0 and 5.0."
+                "-- it must be between 0.0 and 5.0."
             )
 
 
