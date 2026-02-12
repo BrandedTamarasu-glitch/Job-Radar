@@ -280,10 +280,10 @@ Plans:
   1. Running `job-radar --update-skills "python,react,typescript"` replaces the skills list and exits without running a search
   2. Running `job-radar --set-min-score 3.5` updates the minimum score threshold and exits without running a search
   3. Invalid CLI flag values (e.g., `--set-min-score abc` or `--set-min-score 7.0`) are rejected with a clear error message and non-zero exit code
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 27-01: TBD
+- [ ] 27-01-PLAN.md — Add --update-skills, --set-min-score, --set-titles flags with validators, handlers, and tests
 
 ## Progress
 
