@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-11)
 
 **Core value:** Accurate job-candidate scoring -- if the scoring is wrong, nothing else matters.
-**Current focus:** Phase 25 - Profile Preview
+**Current focus:** Phase 26 - Interactive Quick-Edit
 
 ## Current Position
 
 Milestone: v1.5.0 (Profile Management & Workflow Efficiency)
-Phase: 25 of 27 (Profile Preview)
-Plan: 2 of 2
-Status: Phase 25 Complete
-Last activity: 2026-02-12 -- Completed 25-02 (CLI Integration)
+Phase: 26 of 27 (Interactive Quick-Edit)
+Plan: 1 of 2
+Status: Executing
+Last activity: 2026-02-12 -- Completed 26-01 (Interactive Profile Editor)
 
-Progress: [██████████] 100%
+Progress: [█████-----] 50%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 52
-- Average duration: 187s
+- Total plans completed: 53
+- Average duration: 185s
 - Total execution time: Not tracked
 
 **By Milestone:**
@@ -60,6 +60,9 @@ Recent decisions affecting current work:
 - [25-01]: ASCII = signs for branded header (cross-platform consistency)
 - [25-02]: Reuse --no-wizard for both wizard suppression and profile preview suppression (one flag for quiet mode)
 - [25-02]: Use input() for edit prompt instead of questionary (simple y/N, no library needed)
+- [26-01]: Choice objects with value parameter for direct field key return (no string parsing)
+- [26-01]: Separate _list_add/_list_remove/_list_replace helpers for clarity
+- [26-01]: load_config(str(config_path)) called each iteration for fresh values after edits
 
 ### Pending Todos
 
@@ -72,7 +75,7 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Completed 25-02-PLAN.md (CLI Integration)
+Stopped at: Completed 26-01-PLAN.md (Interactive Profile Editor)
 Resume file: None
 
-**Next action:** Begin Phase 26 (Interactive Quick-Edit)
+**Next action:** Execute 26-02-PLAN.md (CLI Integration)
