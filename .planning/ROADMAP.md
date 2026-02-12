@@ -7,7 +7,7 @@
 - ✅ **v1.2.0 API Expansion & Resume Intelligence** - Phases 11-15 (shipped 2026-02-05)
 - ✅ **v1.3.0 Critical Friction & Accessibility** - Phases 16-18 (shipped 2026-02-11)
 - ✅ **v1.4.0 Visual Design & Polish** - Phases 19-23 (shipped 2026-02-11)
-- 🚧 **v1.5.0 Profile Management & Workflow Efficiency** - Phases 24-27 (in progress)
+- ✅ **v1.5.0 Profile Management & Workflow Efficiency** - Phases 24-27 (shipped 2026-02-12)
 
 ## Phases
 
@@ -216,14 +216,14 @@ Plans:
 
 </details>
 
-### v1.5.0 Profile Management & Workflow Efficiency (In Progress)
+### v1.5.0 Profile Management & Workflow Efficiency (Complete)
 
 **Milestone Goal:** Reduce friction in profile updates and improve daily workflow efficiency by centralizing profile I/O, enabling quick profile viewing, and supporting interactive and CLI-driven profile edits with data safety guarantees.
 
 - [x] **Phase 24: Profile Infrastructure** - Centralize profile I/O with atomic writes, backups, validation, and schema versioning
 - [x] **Phase 25: Profile Preview** - Users can view their current profile settings on startup and on demand
 - [x] **Phase 26: Interactive Quick-Edit** - Users can update individual profile fields interactively with diff preview and confirmation
-- [ ] **Phase 27: CLI Update Flags** - Users can update profile fields via CLI flags for scripted and rapid workflows
+- [x] **Phase 27: CLI Update Flags** - Users can update profile fields via CLI flags for scripted and rapid workflows
 
 #### Phase 24: Profile Infrastructure
 **Goal**: All profile read/write operations flow through a centralized module with atomic writes, automatic backups, shared validation, and schema versioning
@@ -283,7 +283,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 27-01-PLAN.md — Add --update-skills, --set-min-score, --set-titles flags with validators, handlers, and tests
+- [x] 27-01-PLAN.md — Add --update-skills, --set-min-score, --set-titles flags with validators, handlers, and tests
 
 ## Progress
 
@@ -318,7 +318,7 @@ Phases execute in numeric order: 24 -> 25 -> 26 -> 27
 | 24. Profile Infrastructure | v1.5.0 | 2/2 | Complete | 2026-02-12 |
 | 25. Profile Preview | v1.5.0 | 2/2 | Complete | 2026-02-12 |
 | 26. Interactive Quick-Edit | v1.5.0 | 2/2 | Complete | 2026-02-12 |
-| 27. CLI Update Flags | v1.5.0 | 0/TBD | Not started | - |
+| 27. CLI Update Flags | v1.5.0 | 1/1 | Complete | 2026-02-12 |
 
 ---
-*Last updated: 2026-02-12 after Phase 26 execution*
+*Last updated: 2026-02-12 after Phase 27 execution*
