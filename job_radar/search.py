@@ -106,15 +106,22 @@ def parse_args(config: dict | None = None):
         The wizard guides you through creating your profile and preferences.
 
         RETURNING? Run without flags to search with your saved profile.
+        Use --view-profile to review your settings before searching.
         Or use the flags below to customize your search:
     """)
 
     epilog = textwrap.dedent("""\
         Examples:
-          job-radar                          Launch wizard (first run) or search
-          job-radar --min-score 3.5          Search with higher quality threshold
-          job-radar --profile path/to.json   Use a specific profile file
-          job-radar --no-color               Disable colored output
+          job-radar                              Launch wizard (first run) or search
+          job-radar --view-profile               View current profile settings
+          job-radar --min-score 3.5              Search with higher quality threshold
+          job-radar --profile path/to.json       Use a specific profile file
+          job-radar --no-color                   Disable colored output
+
+        Profile Management:
+          --view-profile                       Show profile and offer to edit
+          --no-wizard                          Suppress wizard and profile preview
+          (coming soon: --update-skills, --set-min-score)
 
         Accessibility:
           Set NO_COLOR=1 to disable all terminal colors.
@@ -194,6 +201,11 @@ def parse_args(config: dict | None = None):
         help="Path to config file (default: auto-detect)",
     )
     profile_group.add_argument(
+        "--view-profile",
+        action="store_true",
+        help="Display your current profile settings and exit",
+    )
+    profile_group.add_argument(
         "--validate-profile",
         metavar="PATH",
         help="Validate a profile JSON and exit",
@@ -232,7 +244,7 @@ def parse_args(config: dict | None = None):
     dev_group.add_argument(
         "--no-wizard",
         action="store_true",
-        help="Skip setup wizard (for testing)",
+        help="Skip setup wizard and profile preview (quiet mode)",
     )
 
     if config:
@@ -440,6 +452,40 @@ def main():
             print(f"\n{C.RED}Profile invalid:{C.RESET} {e}")
             sys.exit(1)
 
+    if args.view_profile:
+        from .profile_display import display_profile
+        from pathlib import Path as _Path
+
+        # Resolve profile path (same logic as main flow)
+        vp_path_str = args.profile
+        if not vp_path_str:
+            from .paths import get_data_dir
+            vp_path_str = str(get_data_dir() / "profile.json")
+
+        vp_path = _Path(vp_path_str).expanduser()
+
+        # If no profile exists, launch wizard to create one (per user decision)
+        if not vp_path.exists():
+            print(f"\n{C.YELLOW}No profile found -- launching setup wizard...{C.RESET}\n")
+            from .wizard import run_setup_wizard
+            if not run_setup_wizard():
+                print("\nSetup cancelled.")
+                sys.exit(1)
+
+        # Load and display
+        profile = load_profile(str(vp_path))
+        display_profile(profile, config)
+
+        # Offer to edit (Phase 26 forward-looking, per user decision)
+        try:
+            edit = input("\nWant to edit? (y/N) ").strip().lower()
+            if edit == 'y':
+                print(f"\n{C.YELLOW}Interactive editing coming in a future update.{C.RESET}")
+        except (EOFError, KeyboardInterrupt):
+            pass
+
+        sys.exit(0)
+
     profile_path_str = args.profile
     if not profile_path_str:
         # No CLI flag - use default wizard profile location
@@ -452,6 +498,11 @@ def main():
     else:
         # Normal mode - use recovery (auto-wizard on corrupt/missing)
         profile = load_profile_with_recovery(profile_path_str)
+
+    # Profile preview on startup (unless suppressed by --no-wizard)
+    if not args.no_wizard:
+        from .profile_display import display_profile
+        display_profile(profile, config)
 
     name = profile["name"]
 
