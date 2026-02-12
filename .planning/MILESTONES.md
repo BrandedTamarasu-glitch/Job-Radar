@@ -1,5 +1,43 @@
 # Project Milestones: Job Radar
 
+## v1.4.0 Visual Design & Polish (Shipped: 2026-02-11)
+
+**Delivered:** Improve report scannability through visual hierarchy, responsive design, and quality-of-life polish features
+
+**Phases completed:** 19-23 (9 plans total)
+
+**Key accomplishments:**
+
+- Visual hierarchy with semantic color system (green/cyan/indigo for score tiers) and system font stacks (zero-overhead, instant rendering)
+- Hero job visual distinction for top matches (≥4.0) with multi-layer shadows, prominent "Top Match" badges, and elevated styling
+- Responsive design: desktop (11 columns) → tablet (7 core columns) → mobile (stacked cards with all data)
+- Mobile ARIA role restoration preserves table semantics for screen readers when using display:block transformations
+- Interactive status filtering (hide Applied/Rejected/Interviewing/Offer) with localStorage persistence
+- CSV export with UTF-8 BOM for Excel compatibility, RFC 4180 escaping, and formula injection protection
+- Print-optimized stylesheet preserves tier colors (print-color-adjust: exact), hides interactive chrome, prevents page breaks
+- Automated accessibility CI with Lighthouse (5 runs, ≥95% median score) and axe-core WCAG validation blocking merge on failures
+
+**Stats:**
+
+- 20 feature commits across 5 phases
+- ~1,200 lines of CSS/JS added to inline HTML report
+- 5 phases, 9 plans, ~18 tasks
+- 1 day (2026-02-11)
+
+**Git range:** `feat(19-01)` → `fix(csv-export)`
+
+**Requirements:** 9/9 satisfied (5 VIS + 4 POL requirements)
+
+**Quality metrics:**
+- Phase verification: 5/5 passed
+- Cross-phase integration: 23/23 connections verified
+- E2E flows: 3/3 complete (visual hierarchy, interactive features, accessibility)
+- Known issues: 0 (CSV NEW badge bug fixed before archival)
+
+**What's next:** New milestone planning or production deployment
+
+---
+
 ## v1.2.0 Enhanced Sources & Onboarding (Shipped: 2026-02-10)
 
 **Delivered:** Expand job source coverage and reduce onboarding friction through PDF resume import

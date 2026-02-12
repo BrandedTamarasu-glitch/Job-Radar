@@ -53,32 +53,18 @@ Accurate job-candidate scoring — if the scoring is wrong, nothing else matters
 - ✓ CLI screen reader documentation and --profile bypass — v1.3.0
 - ✓ NO_COLOR standard support and --no-color CLI flag — v1.3.0
 - ✓ Lighthouse accessibility score ≥95 — v1.3.0
+- ✓ Hero job visual hierarchy (≥4.0) with multi-layer shadows and prominent badges — v1.4.0
+- ✓ Semantic color system (green/cyan/indigo tiers) with system font stacks — v1.4.0
+- ✓ Responsive design: desktop (11 cols) → tablet (7 cols) → mobile (stacked cards) — v1.4.0
+- ✓ Mobile ARIA role restoration for screen reader table semantics — v1.4.0
+- ✓ Status filtering with localStorage persistence — v1.4.0
+- ✓ CSV export with UTF-8 BOM, RFC 4180 escaping, formula injection protection — v1.4.0
+- ✓ Print stylesheet with color preservation and page break control — v1.4.0
+- ✓ Automated accessibility CI (Lighthouse + axe-core) blocking merge on failures — v1.4.0
 
 ### Active
 
-#### Visual Design (v1.4.0)
-- VIS-01: Hero jobs (≥4.0) display with distinct visual hierarchy (borders, shadows, prominent badges)
-- VIS-02: Semantic color system uses green (excellent), cyan (good), indigo (acceptable), slate (lower priority)
-- VIS-03: Enhanced typography with Inter body font and JetBrains Mono for scores/numbers
-- VIS-04: Responsive table reduces from 10 columns to 6 core columns
-- VIS-05: Mobile view displays job cards instead of tables for <768px screens
-
-#### Polish (v1.4.0)
-- POL-01: Status filters allow hiding already-applied jobs
-- POL-02: Automated accessibility audit blocks releases on violations (Lighthouse + axe in CI)
-- POL-03: CSV export for external tracking tools
-- POL-04: Print-friendly stylesheet
-
-## Current Milestone: v1.4.0 Visual Design & Polish
-
-**Goal:** Improve report scannability through visual hierarchy, responsive design, and quality-of-life polish features.
-
-**Target features:**
-- Hero job visual distinction for top-scoring matches (≥4.0)
-- Semantic color coding by score tier
-- Enhanced typography (Inter + JetBrains Mono)
-- Responsive table and mobile card layout
-- Status filtering, CSV export, print stylesheet, accessibility CI
+_(No active milestone - ready for v1.5.0 planning)_
 
 ### Out of Scope
 
@@ -93,15 +79,16 @@ Accurate job-candidate scoring — if the scoring is wrong, nothing else matters
 
 ## Context
 
-### Current State (v1.3.0 shipped)
+### Current State (v1.4.0 shipped)
 
-- Shipped v1.3.0 with 11,634 LOC Python (source + tests)
+- Shipped v1.4.0 with 11,634 LOC Python (source + tests)
 - Tech stack: Python 3.10+, pytest, requests, BeautifulSoup, questionary, PyInstaller, pdfplumber, rapidfuzz, python-dotenv, pyrate-limiter
-- Test suite: ~300 tests (scoring, config, tracker, wizard, report, browser, UX, API, PDF, deduplication, accessibility)
+- Test suite: 77 tests (scoring, config, tracker, wizard, report, browser, UX, API, PDF, deduplication, accessibility, responsive, print)
 - Job sources: 6 API sources + 4 manual URLs (Wellfound, Indeed, LinkedIn, Glassdoor)
 - Standalone executables for Windows, macOS, and Linux
-- HTML reports: Bootstrap 5 with clipboard actions, status tracking, WCAG 2.1 AA compliance
-- User workflow: download executable → wizard setup (optional PDF import) → daily searches → HTML reports in browser → copy URLs → track application status
+- HTML reports: Bootstrap 5 with visual hierarchy, responsive layout, status filtering, CSV export, print stylesheet, WCAG 2.1 AA compliance
+- User workflow: download executable → wizard setup (optional PDF import) → daily searches → HTML reports in browser (desktop/tablet/mobile) → filter by status → copy URLs → export to CSV → print for offline review
+- Automated accessibility CI: Lighthouse (≥95%) and axe-core WCAG validation on every PR
 
 ### Development
 
@@ -144,4 +131,4 @@ Accurate job-candidate scoring — if the scoring is wrong, nothing else matters
 | --profile flag as screen reader bypass | Questionary has unknown screen reader support; bypass is safe | ✓ Good |
 
 ---
-*Last updated: 2026-02-11 after v1.4.0 milestone start*
+*Last updated: 2026-02-11 after v1.4.0 milestone completion*
