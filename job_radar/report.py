@@ -415,9 +415,46 @@ def _generate_html_report(
 
     /* Print-friendly styles */
     @media print {{
-      .no-print {{ display: none !important; }}
+      /* Hide all interactive/navigation chrome */
+      .no-print,
+      .copy-btn,
+      .copy-all-btn,
+      .dropdown,
+      .shortcut-hint,
+      .export-status-btn,
+      .btn-check + label,
+      .btn-check,
+      #clear-filters,
+      #export-csv-btn,
+      #filter-heading,
+      [role="region"][aria-labelledby="filter-heading"] {{
+        display: none !important;
+      }}
+
+      /* Override Bootstrap background stripping - preserve tier score colors */
+      .tier-strong,
+      .tier-rec,
+      .tier-review,
+      .tier-badge-strong,
+      .tier-badge-rec,
+      .tier-badge-review,
+      .badge {{
+        print-color-adjust: exact !important;
+        -webkit-print-color-adjust: exact !important;
+      }}
+
+      /* Prevent job entries from splitting across pages */
+      .card,
+      .hero-job,
+      tr {{
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }}
+
+      /* Clean up print layout */
       body {{ background: white !important; }}
-      .card {{ border: 1px solid #ddd !important; }}
+      .card {{ border: 1px solid #ddd !important; box-shadow: none !important; }}
+      .hero-job {{ box-shadow: none !important; }}
       .badge {{ border: 1px solid currentColor; }}
     }}
 
