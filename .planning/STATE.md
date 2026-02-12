@@ -11,16 +11,16 @@ See: .planning/PROJECT.md (updated 2026-02-11)
 
 Milestone: v1.5.0 (Profile Management & Workflow Efficiency)
 Phase: 25 of 27 (Profile Preview)
-Plan: 1 of 2
-Status: Executing Phase 25
-Last activity: 2026-02-12 -- Completed 25-01 (Profile Display Module)
+Plan: 2 of 2
+Status: Phase 25 Complete
+Last activity: 2026-02-12 -- Completed 25-02 (CLI Integration)
 
-Progress: [█████░░░░░] 50%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 51
+- Total plans completed: 52
 - Average duration: 187s
 - Total execution time: Not tracked
 
@@ -58,6 +58,8 @@ Recent decisions affecting current work:
 - [24-02]: Exception-based delegation in search.py (2 catch clauses replace 5 if-checks)
 - [25-01]: Section headers as rows within single tabulate table (continuous borders)
 - [25-01]: ASCII = signs for branded header (cross-platform consistency)
+- [25-02]: Reuse --no-wizard for both wizard suppression and profile preview suppression (one flag for quiet mode)
+- [25-02]: Use input() for edit prompt instead of questionary (simple y/N, no library needed)
 
 ### Pending Todos
 
@@ -70,7 +72,7 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Completed 25-01-PLAN.md (Profile Display Module)
+Stopped at: Completed 25-02-PLAN.md (CLI Integration)
 Resume file: None
 
-**Next action:** Execute 25-02-PLAN.md (Integration into search flow)
+**Next action:** Begin Phase 26 (Interactive Quick-Edit)
