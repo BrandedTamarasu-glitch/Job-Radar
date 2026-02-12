@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-02-12)
 
 **Core value:** Accurate job-candidate scoring -- if the scoring is wrong, nothing else matters.
-**Current focus:** Planning next milestone
+**Current focus:** Defining requirements for v2.0.0
 
 ## Current Position
 
-Milestone: v1.5.0 archived (2026-02-12)
-Phase: All 27 phases complete across 6 milestones
-Status: Between milestones
-Last activity: 2026-02-12 -- Archived v1.5.0 milestone
+Milestone: v2.0.0 Desktop GUI Launcher
+Phase: Not started (defining requirements)
+Status: Defining requirements
+Last activity: 2026-02-12 -- Milestone v2.0.0 started
 
 ## Performance Metrics
 
@@ -31,6 +31,7 @@ Last activity: 2026-02-12 -- Archived v1.5.0 milestone
 | v1.3.0 | 16-18 | 7 | Complete (2026-02-11) |
 | v1.4.0 | 19-23 | 9 | Complete (2026-02-11) |
 | v1.5.0 | 24-27 | 7 | Complete (2026-02-12) |
+| v2.0.0 | 28+ | — | In Progress |
 
 *Updated after each plan completion*
 
@@ -39,7 +40,6 @@ Last activity: 2026-02-12 -- Archived v1.5.0 milestone
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
-All v1.5.0 decisions archived in MILESTONES.md.
 
 ### Pending Todos
 
@@ -52,7 +52,7 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Archived v1.5.0 milestone, tagged v1.5.0
+Stopped at: Started v2.0.0 milestone, entering research phase
 Resume file: None
 
-**Next action:** `/gsd:new-milestone` to define next milestone
+**Next action:** Research → requirements → roadmap

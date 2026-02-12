@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A Python CLI that searches multiple job boards (Dice, HN Hiring, RemoteOK, We Work Remotely, Adzuna, Authentic Jobs), scores listings against a candidate profile, tracks new vs. seen jobs across runs, and generates ranked HTML + Markdown reports. Reports include one-click URL copying, application status tracking, and WCAG 2.1 Level AA accessibility compliance. Profile management supports preview on startup, interactive quick-edit, and CLI update flags for scripted workflows. Built for daily use during an active job search.
+A Python-based job search tool that searches multiple job boards (Dice, HN Hiring, RemoteOK, We Work Remotely, Adzuna, Authentic Jobs), scores listings against a candidate profile, tracks new vs. seen jobs across runs, and generates ranked HTML + Markdown reports. Available as both a desktop GUI application and a CLI for power users. Reports include one-click URL copying, application status tracking, and WCAG 2.1 Level AA accessibility compliance. Built for daily use during an active job search.
 
 ## Core Value
 
@@ -68,15 +68,24 @@ Accurate job-candidate scoring — if the scoring is wrong, nothing else matters
 
 ### Active
 
-(None — all requirements through v1.5.0 validated. Next milestone not yet defined.)
+## Current Milestone: v2.0.0 Desktop GUI Launcher
+
+**Goal:** Replace the terminal-first experience with a desktop GUI window so non-technical users never need to touch a command prompt.
+
+**Target features:**
+- Desktop window application with search controls (Run Search button, date range, min score, etc.)
+- GUI-based profile setup (form fields, PDF upload button) replacing terminal wizard for new users
+- Visual progress feedback during search
+- Opens existing HTML report in browser when search completes
+- CLI preserved alongside GUI for power users and scripting
 
 ### Out of Scope
 
 - LinkedIn/Indeed direct scraping — both sites aggressively block automation; unreliable long-term
 - Job data aggregator API (SerpAPI, JSearch) — deferred; revisit after core improvements ship
-- Web UI or email digest — CLI + report is the current workflow and works
+- Web UI or email digest — desktop app + report is the workflow; no server needed
 - Application tracking CLI commands — tracker.py has the functions but exposing them is deferred
-- Mobile app — desktop CLI tool
+- Mobile app — desktop tool
 - Cloud-based application tracking — Job Radar is privacy-focused and offline-first
 - AI-powered job matching — core value is transparent scoring algorithm
 - Real-time notifications — batch daily search workflow is intentional design
@@ -86,16 +95,17 @@ Accurate job-candidate scoring — if the scoring is wrong, nothing else matters
 
 ## Context
 
-### Current State (v1.5.0 shipped)
+### Current State (v2.0.0 in progress)
 
-- Shipped v1.5.0 with 16,449 LOC Python (source + tests)
+- v1.5.0 shipped with 16,449 LOC Python (source + tests)
 - Tech stack: Python 3.10+, pytest, requests, BeautifulSoup, questionary, PyInstaller, pdfplumber, rapidfuzz, python-dotenv, pyrate-limiter, tabulate
-- Test suite: 452 tests (scoring, config, tracker, wizard, report, browser, UX, API, PDF, deduplication, accessibility, responsive, print, profile manager, profile display, profile editor, CLI update flags)
+- Test suite: 452 tests across scoring, config, tracker, wizard, report, UX, API, PDF, dedup, accessibility, profile management
 - Job sources: 6 API sources + 4 manual URLs (Wellfound, Indeed, LinkedIn, Glassdoor)
-- Standalone executables for Windows, macOS, and Linux
-- HTML reports: Bootstrap 5 with visual hierarchy, responsive layout, status filtering, CSV export, print stylesheet, WCAG 2.1 AA compliance
-- Profile management: centralized I/O (atomic writes, backups, schema versioning), preview on startup, interactive quick-edit, CLI update flags
-- User workflow: download executable → wizard setup (optional PDF import) → daily searches → HTML reports in browser → filter/copy/export → update profile via CLI flags or interactive editor
+- Standalone executables for Windows, macOS, and Linux (currently terminal-based)
+- HTML reports: Bootstrap 5 with visual hierarchy, responsive layout, status filtering, CSV export, print, WCAG 2.1 AA
+- Profile management: centralized I/O (atomic writes, backups, schema versioning), preview, interactive editor, CLI flags
+- Current workflow: download executable → terminal wizard → daily searches → HTML reports in browser
+- Target workflow: download executable → GUI setup → click Run Search → HTML reports in browser
 - Automated accessibility CI: Lighthouse (≥95%) and axe-core WCAG validation on every PR
 
 ### Development
@@ -145,4 +155,4 @@ Accurate job-candidate scoring — if the scoring is wrong, nothing else matters
 | Mutually exclusive update flag group | Prevents ambiguous multi-update commands | ✓ Good |
 
 ---
-*Last updated: 2026-02-12 after v1.5.0 milestone*
+*Last updated: 2026-02-12 after v2.0.0 milestone start*
