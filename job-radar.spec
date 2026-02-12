@@ -16,6 +16,14 @@ added_files = [
     (str(project_root / 'profiles' / '_template.json'), 'profiles'),
 ]
 
+# Add CustomTkinter theme assets (if installed)
+try:
+    import customtkinter
+    ctk_path = Path(customtkinter.__file__).parent
+    added_files.append((str(ctk_path / 'assets'), 'customtkinter/assets'))
+except ImportError:
+    pass  # CustomTkinter not installed - skip bundling assets
+
 # Hidden imports: modules that PyInstaller's static analysis misses
 # because they are imported dynamically at runtime
 hidden_imports = [
@@ -50,6 +58,10 @@ hidden_imports = [
     'pdfminer.utils',
     'dateutil',
     'dateutil.parser',
+    # CustomTkinter GUI (Phase 28)
+    'customtkinter',
+    'customtkinter.windows',
+    'customtkinter.windows.widgets',
 ]
 
 a = Analysis(
@@ -62,7 +74,6 @@ a = Analysis(
     hooksconfig={},
     runtime_hooks=[],
     excludes=[
-        'tkinter',
         'matplotlib',
         'numpy',
         'scipy',
@@ -99,8 +110,28 @@ exe = EXE(
     icon='icon.png' if sys.platform == 'win32' else None,  # Windows uses .ico (converted by PyInstaller)
 )
 
+gui_exe = EXE(
+    pyz,
+    a.scripts,
+    [],
+    exclude_binaries=True,
+    name='job-radar-gui',
+    debug=False,
+    bootloader_ignore_signals=False,
+    strip=False,
+    upx=False,
+    console=False,             # No console window for GUI mode
+    disable_windowed_traceback=False,
+    argv_emulation=False,
+    target_arch=None,
+    codesign_identity=None,
+    entitlements_file=None,
+    icon='icon.png' if sys.platform == 'win32' else None,
+)
+
 coll = COLLECT(
     exe,
+    gui_exe,
     a.binaries,
     a.zipfiles,
     a.datas,

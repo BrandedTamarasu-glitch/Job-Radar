@@ -54,9 +54,8 @@ def _get_profile_name() -> str | None:
     return None
 
 
-def main():
-    _fix_ssl_for_frozen()
-
+def _run_cli():
+    """Run the CLI mode with banner, wizard prompts, and search."""
     try:
         # Extract profile name for banner
         profile_name = _get_profile_name()
@@ -138,6 +137,36 @@ def main():
             # Last resort if even error logging fails
             print(f"\nFatal error: {e}")
             sys.exit(1)
+
+
+def _run_gui():
+    """Launch the desktop GUI window."""
+    try:
+        from job_radar.gui.main_window import launch_gui
+        launch_gui()
+    except ImportError as e:
+        print(f"GUI dependencies not available: {e}")
+        print("Install with: pip install customtkinter")
+        print("Falling back to CLI mode...")
+        _run_cli()
+    except Exception as e:
+        try:
+            from job_radar.banner import log_error_and_exit
+            log_error_and_exit(f"GUI error: {e}", exception=e)
+        except Exception:
+            print(f"\nGUI error: {e}")
+            sys.exit(1)
+
+
+def main():
+    _fix_ssl_for_frozen()
+
+    # CLI mode: any arguments present (--help, --profile, etc.)
+    if len(sys.argv) > 1:
+        _run_cli()
+    else:
+        # GUI mode: no arguments (double-click or bare invocation)
+        _run_gui()
 
 
 if __name__ == '__main__':
