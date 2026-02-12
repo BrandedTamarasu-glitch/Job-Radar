@@ -235,11 +235,11 @@ Plans:
   3. Profile JSON includes a `schema_version` field set to 1, written on every save
   4. Invalid profile data (wrong types, out-of-range values, missing required fields) is rejected with a clear error message before any file is written
   5. All profile I/O in the codebase routes through `profile_manager.py` -- wizard, quick-edit, and CLI flags share the same load/save/validate functions
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 24-01: TBD
-- [ ] 24-02: TBD
+- [ ] 24-01-PLAN.md — Create profile_manager.py with atomic writes, backups, validation, and schema versioning
+- [ ] 24-02-PLAN.md — Wire wizard.py and search.py to use profile_manager, plus unit tests
 
 #### Phase 25: Profile Preview
 **Goal**: Users can see their current profile settings in a clear, formatted display both automatically on startup and via explicit command
@@ -313,10 +313,10 @@ Phases execute in numeric order: 24 -> 25 -> 26 -> 27
 | 21. Responsive Layout | v1.4.0 | 2/2 | Complete | 2026-02-11 |
 | 22. Interactive Features | v1.4.0 | 2/2 | Complete | 2026-02-11 |
 | 23. Print & CI Validation | v1.4.0 | 2/2 | Complete | 2026-02-11 |
-| 24. Profile Infrastructure | v1.5.0 | 0/TBD | Not started | - |
+| 24. Profile Infrastructure | v1.5.0 | 0/2 | Not started | - |
 | 25. Profile Preview | v1.5.0 | 0/TBD | Not started | - |
 | 26. Interactive Quick-Edit | v1.5.0 | 0/TBD | Not started | - |
 | 27. CLI Update Flags | v1.5.0 | 0/TBD | Not started | - |
 
 ---
-*Last updated: 2026-02-11 after v1.5.0 roadmap creation*
+*Last updated: 2026-02-12 after Phase 24 planning*
