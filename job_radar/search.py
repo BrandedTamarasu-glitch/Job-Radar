@@ -107,6 +107,7 @@ def parse_args(config: dict | None = None):
 
         RETURNING? Run without flags to search with your saved profile.
         Use --view-profile to review your settings before searching.
+        Use --edit-profile to update individual profile fields.
         Or use the flags below to customize your search:
     """)
 
@@ -120,6 +121,7 @@ def parse_args(config: dict | None = None):
 
         Profile Management:
           --view-profile                       Show profile and offer to edit
+          --edit-profile                       Edit profile fields interactively
           --no-wizard                          Suppress wizard and profile preview
           (coming soon: --update-skills, --set-min-score)
 
@@ -204,6 +206,11 @@ def parse_args(config: dict | None = None):
         "--view-profile",
         action="store_true",
         help="Display your current profile settings and exit",
+    )
+    profile_group.add_argument(
+        "--edit-profile",
+        action="store_true",
+        help="Edit profile fields interactively with diff preview",
     )
     profile_group.add_argument(
         "--validate-profile",
@@ -476,15 +483,89 @@ def main():
         profile = load_profile(str(vp_path))
         display_profile(profile, config)
 
-        # Offer to edit (Phase 26 forward-looking, per user decision)
+        # Offer to edit
         try:
             edit = input("\nWant to edit? (y/N) ").strip().lower()
             if edit == 'y':
-                print(f"\n{C.YELLOW}Interactive editing coming in a future update.{C.RESET}")
+                from .profile_editor import run_profile_editor
+                from pathlib import Path as _VPPath
+
+                # Resolve config path
+                config_path_str = args.config
+                if not config_path_str:
+                    from .paths import get_data_dir
+                    config_path_str = str(get_data_dir() / "config.json")
+                config_path = _VPPath(config_path_str).expanduser()
+
+                changed = run_profile_editor(vp_path, config_path)
+
+                if changed:
+                    import questionary
+                    from .wizard import custom_style
+                    try:
+                        run_search = questionary.confirm(
+                            "Profile updated. Run search now?",
+                            default=False,
+                            style=custom_style
+                        ).ask()
+                        if run_search:
+                            print(f"\n{C.GREEN}Run 'job-radar' to search with your updated profile.{C.RESET}")
+                            sys.exit(0)
+                    except (EOFError, KeyboardInterrupt):
+                        pass
         except (EOFError, KeyboardInterrupt):
             pass
 
         sys.exit(0)
+
+    if args.edit_profile:
+        from .profile_editor import run_profile_editor
+        from pathlib import Path as _EPPath
+
+        # Resolve profile path (same logic as main flow)
+        ep_path_str = args.profile
+        if not ep_path_str:
+            from .paths import get_data_dir
+            ep_path_str = str(get_data_dir() / "profile.json")
+
+        ep_path = _EPPath(ep_path_str).expanduser()
+
+        # If no profile exists, launch wizard first
+        if not ep_path.exists():
+            print(f"\n{C.YELLOW}No profile found -- launching setup wizard...{C.RESET}\n")
+            from .wizard import run_setup_wizard
+            if not run_setup_wizard():
+                print("\nSetup cancelled.")
+                sys.exit(1)
+
+        # Resolve config path
+        config_path_str = args.config
+        if not config_path_str:
+            from .paths import get_data_dir as _get_data_dir
+            config_path_str = str(_get_data_dir() / "config.json")
+        config_path = _EPPath(config_path_str).expanduser()
+
+        changed = run_profile_editor(ep_path, config_path)
+
+        # Per user decision: offer to run search after editing
+        if changed:
+            try:
+                import questionary
+                from .wizard import custom_style
+                run_search = questionary.confirm(
+                    "Profile updated. Run search now?",
+                    default=False,
+                    style=custom_style
+                ).ask()
+                if run_search:
+                    # Fall through to main search flow by NOT exiting
+                    pass
+                else:
+                    sys.exit(0)
+            except (EOFError, KeyboardInterrupt):
+                sys.exit(0)
+        else:
+            sys.exit(0)
 
     profile_path_str = args.profile
     if not profile_path_str:
