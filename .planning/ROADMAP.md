@@ -8,6 +8,7 @@
 - ✅ **v1.3.0 Critical Friction & Accessibility** - Phases 16-18 (shipped 2026-02-11)
 - ✅ **v1.4.0 Visual Design & Polish** - Phases 19-23 (shipped 2026-02-11)
 - ✅ **v1.5.0 Profile Management & Workflow Efficiency** - Phases 24-27 (shipped 2026-02-12)
+- 🚧 **v2.0.0 Desktop GUI Launcher** - Phases 28-30 (in progress)
 
 ## Phases
 
@@ -252,6 +253,81 @@ Plans:
 
 </details>
 
+### 🚧 v2.0.0 Desktop GUI Launcher (In Progress)
+
+**Milestone Goal:** Replace the terminal-first experience with a desktop GUI window so non-technical users never need to touch a command prompt
+
+#### Phase 28: GUI Foundation & Threading
+
+**Goal:** Establish non-blocking UI architecture with separate entry points for CLI and GUI
+
+**Depends on:** Phase 27 (v1.5.0 complete)
+
+**Requirements:** GUI-01, GUI-02, GUI-03, GUI-04
+
+**Success Criteria** (what must be TRUE):
+1. Double-clicking the executable opens a desktop window with CustomTkinter GUI (no terminal window)
+2. Running with CLI flags (e.g., `job-radar --min-score 3.5`) uses the existing CLI path without launching GUI
+3. GUI window remains responsive during simulated long-running operations (10+ second mock tasks)
+4. Progress updates from worker threads appear correctly in GUI without crashes or freezes
+5. Separate executables exist for CLI (with console) and GUI (without console) modes
+
+**Plans:** TBD
+
+Plans:
+- [ ] 28-01: TBD
+- [ ] 28-02: TBD
+
+#### Phase 29: Profile Setup & Search Controls
+
+**Goal:** Deliver complete GUI feature parity with CLI through forms, search configuration, and visual feedback
+
+**Depends on:** Phase 28
+
+**Requirements:** PROF-01, PROF-02, PROF-03, PROF-04, SRCH-01, SRCH-02, SRCH-03, SRCH-04, SRCH-05, PROG-01, PROG-02
+
+**Success Criteria** (what must be TRUE):
+1. User can create a new profile via GUI form fields without touching the terminal
+2. User can upload a PDF resume via file dialog that pre-fills profile fields using existing parser
+3. Profile form validates input and shows clear error messages for invalid fields before submission
+4. User can edit an existing profile through the same form (pre-filled with current values)
+5. User can click "Run Search" button to start a job search with configurable parameters
+6. User can set date range (from/to), minimum score, and "new only" mode through GUI controls
+7. Visual progress indicator displays during search execution showing current source being queried
+8. Error messages appear in GUI when search fails (network errors, source failures) with actionable text
+9. HTML report auto-opens in the default browser when search completes successfully
+10. All GUI operations integrate correctly with existing business logic modules (sources.py, scoring.py, report.py, profile_manager.py) without code duplication
+
+**Plans:** TBD
+
+Plans:
+- [ ] 29-01: TBD
+- [ ] 29-02: TBD
+- [ ] 29-03: TBD
+
+#### Phase 30: Packaging & Distribution
+
+**Goal:** Produce production-ready GUI executables for all platforms with proper code signing and CI/CD integration
+
+**Depends on:** Phase 29
+
+**Requirements:** PKG-01, PKG-02, PKG-03
+
+**Success Criteria** (what must be TRUE):
+1. PyInstaller builds produce a GUI executable for Windows, macOS, and Linux that launches without errors
+2. GUI executable is separate from CLI executable with both included in distribution packages
+3. CustomTkinter theme files (.json, .otf fonts) are bundled correctly and GUI displays proper styling in executables
+4. Executables work on clean machines without Python installed (verified on all three platforms)
+5. macOS .app bundle is code-signed with proper entitlements (com.apple.security.cs.allow-unsigned-executable-memory)
+6. GitHub Actions CI/CD workflow builds all platforms on tag triggers and publishes to releases
+7. GUI executable does not show console window on Windows when launched by double-click
+
+**Plans:** TBD
+
+Plans:
+- [ ] 30-01: TBD
+- [ ] 30-02: TBD
+
 ## Progress
 
 | Phase | Milestone | Plans | Status | Completed |
@@ -262,8 +338,11 @@ Plans:
 | 16-18 | v1.3.0 | 7/7 | Complete | 2026-02-11 |
 | 19-23 | v1.4.0 | 9/9 | Complete | 2026-02-11 |
 | 24-27 | v1.5.0 | 7/7 | Complete | 2026-02-12 |
+| 28 | v2.0.0 | 0/TBD | Not started | - |
+| 29 | v2.0.0 | 0/TBD | Not started | - |
+| 30 | v2.0.0 | 0/TBD | Not started | - |
 
-**Total: 27 phases, 49 plans, 6 milestones shipped**
+**Total: 27 completed phases (49 plans, 6 milestones shipped) + 3 planned phases for v2.0.0**
 
 ---
-*Last updated: 2026-02-12 after v1.5.0 milestone completion*
+*Last updated: 2026-02-12 after v2.0.0 roadmap creation*
