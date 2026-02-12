@@ -1764,7 +1764,7 @@ def test_html_report_filter_ui_controls(sample_profile, sample_scored_results, s
         output_dir=str(tmp_path),
     )
     html_path = result["html"]
-    with open(html_path) as f:
+    with open(html_path, encoding='utf-8') as f:
         html = f.read()
 
     # Verify filter UI controls exist
@@ -1790,7 +1790,7 @@ def test_html_report_filter_javascript(sample_profile, sample_scored_results, sa
         output_dir=str(tmp_path),
     )
     html_path = result["html"]
-    with open(html_path) as f:
+    with open(html_path, encoding='utf-8') as f:
         html = f.read()
 
     # Verify filter functions exist
@@ -1815,7 +1815,7 @@ def test_html_report_filter_aria_announcements(sample_profile, sample_scored_res
         output_dir=str(tmp_path),
     )
     html_path = result["html"]
-    with open(html_path) as f:
+    with open(html_path, encoding='utf-8') as f:
         html = f.read()
 
     # Verify ARIA announcement functions and patterns exist
@@ -1836,7 +1836,7 @@ def test_html_report_filter_persistence(sample_profile, sample_scored_results, s
         output_dir=str(tmp_path),
     )
     html_path = result["html"]
-    with open(html_path) as f:
+    with open(html_path, encoding='utf-8') as f:
         html = f.read()
 
     # Verify localStorage persistence patterns exist
@@ -1859,7 +1859,7 @@ def test_html_report_export_csv_button(sample_profile, sample_scored_results, sa
         output_dir=str(tmp_path),
     )
     html_path = result["html"]
-    with open(html_path) as f:
+    with open(html_path, encoding='utf-8') as f:
         html = f.read()
 
     # Verify Export CSV button exists
@@ -1886,7 +1886,7 @@ def test_html_report_csv_escape_function(sample_profile, sample_scored_results, 
         output_dir=str(tmp_path),
     )
     html_path = result["html"]
-    with open(html_path) as f:
+    with open(html_path, encoding='utf-8') as f:
         html = f.read()
 
     # Verify CSV escape function exists
@@ -1910,7 +1910,7 @@ def test_html_report_csv_formula_injection_protection(sample_profile, sample_sco
         output_dir=str(tmp_path),
     )
     html_path = result["html"]
-    with open(html_path) as f:
+    with open(html_path, encoding='utf-8') as f:
         html = f.read()
 
     # Verify formula injection protection patterns exist
@@ -1932,7 +1932,7 @@ def test_html_report_csv_export_respects_filter(sample_profile, sample_scored_re
         output_dir=str(tmp_path),
     )
     html_path = result["html"]
-    with open(html_path) as f:
+    with open(html_path, encoding='utf-8') as f:
         html = f.read()
 
     # Verify visibility detection patterns exist
@@ -1955,7 +1955,7 @@ def test_html_report_csv_download_filename(sample_profile, sample_scored_results
         output_dir=str(tmp_path),
     )
     html_path = result["html"]
-    with open(html_path) as f:
+    with open(html_path, encoding='utf-8') as f:
         html = f.read()
 
     # Verify download filename and MIME type patterns exist
