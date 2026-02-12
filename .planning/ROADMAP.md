@@ -251,10 +251,11 @@ Plans:
   3. Profile display uses a table layout with clear section headers that is readable in terminals of 80 columns or wider
   4. Running `job-radar --no-wizard` suppresses the automatic profile preview on startup
   5. Running `job-radar --help` documents all profile management commands and flags (--view-profile, --update-skills, --set-min-score, --no-wizard)
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 25-01: TBD
+- [ ] 25-01-PLAN.md — Create profile_display.py module with tabulate dependency and display_profile() function
+- [ ] 25-02-PLAN.md — Wire profile preview into search.py CLI flow, add --view-profile flag, and create tests
 
 #### Phase 26: Interactive Quick-Edit
 **Goal**: Users can update any single profile field through a guided interactive flow that shows changes before saving
