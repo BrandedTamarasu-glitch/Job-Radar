@@ -145,6 +145,8 @@ def main():
         scored_results=scored_results,
         manual_urls=manual_urls,
         sources_searched=sources_searched,
+        from_date="2026-02-06",
+        to_date="2026-02-08",
         output_dir=str(output_dir),
     )
 
