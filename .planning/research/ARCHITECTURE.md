@@ -1,957 +1,621 @@
-# Architecture Research: v1.4.0 Visual Design & Polish
+# Architecture Research: Profile Management Integration
 
-**Domain:** HTML report visual enhancements for Job Radar CLI
+**Domain:** CLI Profile Management (subsequent milestone)
 **Researched:** 2026-02-11
 **Confidence:** HIGH
 
-## Executive Summary
+## Current Architecture (Baseline)
 
-v1.4.0 adds visual design improvements to the existing HTML report generation system. All features integrate directly into `report.py` via CSS additions (hero jobs, semantic colors, typography, responsive layout, print styles) and inline JavaScript extensions (status filters, CSV export). Accessibility CI adds a new GitHub Actions workflow. The single-file HTML constraint is non-negotiable and drives all architectural decisions.
-
-**Key architectural insight:** The existing report.py string concatenation architecture with inline CSS/JS makes incremental enhancements straightforward. Font strategy uses system font stacks (zero bytes). Responsive tables use CSS-only column hiding (no Python logic changes). CSV export uses browser-side JavaScript (no Python CSV generation). Accessibility CI runs as separate workflow job.
-
-**Integration complexity:** LOW — All features are additive CSS/JS enhancements to existing HTML generation. No new Python modules, no data flow changes, no new dependencies.
-
-## Current Architecture (v1.3.0)
-
-### Report Generation System
+### System Overview
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    report.py (1367 lines)                    │
+│                    CLI Entry Point                           │
+│                  job_radar/__main__.py                       │
 ├─────────────────────────────────────────────────────────────┤
-│  generate_report() — Entry point                             │
-│    ├── _generate_markdown_report() → .md file               │
-│    └── _generate_html_report() → .html file                 │
-│         ├── HTML string concatenation                        │
-│         ├── Bootstrap 5.3 CSS (CDN links)                    │
-│         ├── Inline <style> block (~150 lines CSS)            │
-│         ├── Body structure (header, sections, footer)        │
-│         │   ├── _html_profile_summary()                      │
-│         │   ├── _html_recommended_cards()                    │
-│         │   ├── _html_results_table()                        │
-│         │   └── _html_manual_urls_section()                  │
-│         ├── Bootstrap JS bundle (CDN)                        │
-│         ├── Notyf toast library (CDN)                        │
-│         └── Inline <script> block (~500 lines JS)            │
-│             ├── Clipboard API with execCommand fallback      │
-│             ├── Application status tracking (localStorage)   │
-│             ├── Theme switcher (dark/light/auto)             │
-│             └── Keyboard shortcuts (Ctrl+K copy all)         │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐          │
+│  │  Banner     │  │   Wizard    │  │   Search    │          │
+│  │  Display    │  │   (first    │  │    Main     │          │
+│  │             │  │    run)     │  │             │          │
+│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘          │
+│         │                │                │                 │
+├─────────┴────────────────┴────────────────┴─────────────────┤
+│                    Argument Parsing                          │
+│                     (argparse)                               │
+├─────────────────────────────────────────────────────────────┤
+│                    Profile I/O Layer                         │
+│                   paths.py + wizard.py                       │
+├─────────────────────────────────────────────────────────────┤
+│                    Data Storage                              │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │  ~/.job-radar/                                       │    │
+│  │    ├── profile.json (flat JSON - user profile)      │    │
+│  │    └── config.json  (flat JSON - CLI defaults)      │    │
+│  └─────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────┘
-
-Data Flow:
-profile.json + scored_results[] + tracker_stats
-    → _generate_html_report()
-    → HTML string with embedded CSS/JS
-    → Write single .html file
-    → Opens in browser via file:// protocol
 ```
 
-### Key Constraints
+### Current Component Boundaries
 
-1. **Single-file HTML**: Must work with `file://` protocol (no separate CSS/JS/font files)
-2. **CDN links present**: Bootstrap, Notyf, Prism.js loaded from CDN (not actually inlined despite context note)
-3. **String concatenation**: HTML built via f-strings, not templating engine
-4. **Inline blocks**: Custom CSS in `<style>`, custom JS in `<script>` at end of file
-5. **Accessibility-first**: Existing code has `visually-hidden` classes, ARIA labels, semantic HTML
+| Component | Responsibility | File | Interfaces |
+|-----------|----------------|------|------------|
+| **Entry Point** | Bootstrap, wizard routing, error handling | `__main__.py` | Calls: banner, wizard, search.main() |
+| **Banner** | Display ASCII art with profile name | `banner.py` | Reads profile.json for name only |
+| **Wizard** | Interactive setup, profile creation/update | `wizard.py` | Writes: profile.json, config.json |
+| **Search** | Argument parsing, job search orchestration | `search.py` | Reads: profile.json, config.json |
+| **Path Resolution** | Platform-specific paths, frozen app detection | `paths.py` | Returns: data directory, resource paths |
 
-### Current CSS Organization (~150 lines)
+### Current Data Flow
 
-```css
-<style>
-  /* Print-friendly styles */
-  @media print { ... }
-
-  /* Dark mode adjustments */
-  [data-bs-theme="dark"] { ... }
-
-  /* Component-specific styles */
-  .score-badge { ... }
-  .copy-btn { ... }
-  .status-badge { ... }
-  .status-dropdown { ... }
-  .pending-dot { ... }
-
-  /* Focus indicators for keyboard navigation */
-  .job-item:focus-visible { ... }
-  a:focus-visible { ... }
-  .btn:focus-visible { ... }
-
-  /* Utility classes */
-  .visually-hidden { ... }
-</style>
+```
+Program Start
+    ↓
+[__main__.py]
+    ↓
+Extract profile name for banner (read-only peek)
+    ↓
+Display banner
+    ↓
+Check --no-wizard flag
+    ↓
+   NO → Route based on profile existence:
+         • First run: run_setup_wizard() → save profile.json, config.json
+         • Profile exists: questionary prompt:
+           - "Run search" → continue to search
+           - "Update profile" → run_setup_wizard()
+           - "Create new" → run_setup_wizard()
+    ↓
+   YES → Skip wizard (dev mode)
+    ↓
+[search.main()]
+    ↓
+Parse arguments with argparse
+    ↓
+Load profile.json via load_profile_with_recovery()
+    ↓
+Execute search with profile data
 ```
 
-### Current JavaScript Organization (~500 lines)
+### Current Profile Schema
 
-```javascript
-<script>
-  // 1. Library initialization
-  const notyf = new Notyf({ ... });
-
-  // 2. Clipboard utilities
-  async function copyToClipboard(text) { ... }
-  function copySingleUrl(btn) { ... }
-  function copyAllRecommendedUrls(btn) { ... }
-
-  // 3. Status tracking
-  function hydrateApplicationStatus() { ... }
-  function updateStatus(jobKey, newStatus, el) { ... }
-  function syncStatusWithBackend() { ... }
-
-  // 4. Accessibility helpers
-  function announceToScreenReader(msg) { ... }
-
-  // 5. Theme switcher
-  function initThemeSwitcher() { ... }
-
-  // 6. Keyboard shortcuts
-  document.addEventListener('keydown', function(e) { ... });
-
-  // 7. Bootstrap initialization
-  document.addEventListener('DOMContentLoaded', function() { ... });
-</script>
+**profile.json** (required fields):
+```json
+{
+  "name": "string",
+  "years_experience": "int",
+  "level": "string (derived: junior|mid|senior|principal)",
+  "target_titles": ["string"],
+  "core_skills": ["string"],
+  "location": "string (optional)",
+  "arrangement": ["string (optional)"],
+  "domain_expertise": ["string (optional)"],
+  "comp_floor": "int (optional)",
+  "dealbreakers": ["string (optional)"]
+}
 ```
 
-## v1.4.0 Architecture (Integration Points)
+**config.json** (search defaults):
+```json
+{
+  "min_score": "float (default: 2.8)",
+  "new_only": "bool (default: true)",
+  "profile_path": "string (path to profile.json)"
+}
+```
 
-### Modified Components
+## Integration Architecture for New Features
 
-| Component | Current State | Modification | Lines Changed (Est.) |
-|-----------|---------------|--------------|---------------------|
-| `report.py::_generate_html_report()` | Generates HTML structure | Add CSS variables, hero markup, responsive classes | +100 |
-| `<style>` block | ~150 lines | Add font stack, semantic colors, responsive table, print styles | +150 |
-| `<script>` block | ~500 lines | Add status filter logic, CSV export function | +100 |
-| `.github/workflows/release.yml` | Tests + builds | Add accessibility job with Lighthouse CI | +40 |
+### Feature 1: Profile Preview on Startup
 
-**Total estimated addition:** ~390 lines across 4 files
-**New files:** 0
-**Modified files:** 2 (report.py, .github/workflows/release.yml)
+**What:** Display profile summary before search execution.
 
-### Integration Pattern 1: Font Embedding Strategy
-
-**Decision: System Font Stack (zero bytes, maximum performance)**
-
-**Rationale:**
-- Base64 WOFF2 embedding: 30-50KB per font variant × multiple weights = 150-200KB+ added to each HTML file
-- Embedding blocks rendering, prevents parallel loading, breaks browser caching
-- Single-file constraint means fonts can't be cached separately
-- System fonts render instantly, feel native, respect user preferences
+**Integration Point:** `__main__.py` between banner display and wizard routing.
 
 **Implementation:**
+- Add new function: `display_profile_summary(profile_data: dict)` in new module `profile_manager.py`
+- Call after banner, before wizard prompt
+- Read profile.json once (already loaded for banner name extraction)
 
-```css
-/* Add to <style> block in _generate_html_report() */
-:root {
-  /* System font stacks — organized by typeface classification */
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-               "Helvetica Neue", Arial, sans-serif;
-  --font-serif: "Iowan Old Style", "Apple Garamond", Baskerville,
-                "Times New Roman", "Droid Serif", Times, serif;
-  --font-mono: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo,
-               Consolas, "DejaVu Sans Mono", monospace;
-}
-
-body {
-  font-family: var(--font-sans);
-  font-size: 16px;
-  line-height: 1.6;
-}
-
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-sans);
-  font-weight: 600;
-  line-height: 1.2;
-}
-
-code, pre {
-  font-family: var(--font-mono);
-}
+**Data Flow:**
+```
+Banner Display
+    ↓
+Load profile.json
+    ↓
+display_profile_summary(profile) → Pretty-print key fields
+    ↓
+Continue to wizard prompt or search
 ```
 
-**Build order:** Phase 1 (Typography foundation before hero jobs)
-**Modified function:** `_generate_html_report()` — add CSS to `<style>` block
-**Size impact:** 0 bytes (uses system fonts already on user's OS)
-**Sources:**
-- [Modern Font Stacks](https://modernfontstacks.com/) — Comprehensive system font CSS for modern OS (HIGH confidence)
-- [CSS-Tricks System Font Stack](https://css-tricks.com/snippets/css/system-font-stack/) — Industry standard patterns (HIGH confidence)
+**No Breaking Changes:** Preview is read-only, doesn't affect existing flow.
 
-### Integration Pattern 2: Semantic Color System
+---
 
-**Decision: CSS Custom Properties with Dark Mode Support**
+### Feature 2: Quick-Edit Mode
+
+**What:** Update specific profile fields interactively without full wizard.
+
+**Integration Point:** New questionary choice in `__main__.py` profile prompt + reuse wizard field prompts.
+
+**Architecture Decision: Extend wizard.py vs new module?**
+
+**Recommendation: Extend wizard.py** because:
+- Field validators already exist (NonEmptyValidator, CommaSeparatedValidator, etc.)
+- Field definitions already centralized in `questions` list
+- Atomic file write logic (`_write_json_atomic`) already implemented
+- Avoids code duplication
 
 **Implementation:**
+- Add function: `quick_edit_field(profile_path: Path, field_key: str) -> bool` in `wizard.py`
+- Reuse existing validators and prompts from `questions` list
+- Add new questionary choice in `__main__.py`: "Quick-edit a field"
 
-```css
-/* Add to <style> block after font definitions */
-:root {
-  /* Semantic color tokens */
-  --color-hero: #1a73e8;          /* High-priority jobs */
-  --color-hero-bg: #e8f0fe;
-  --color-success: #28a745;       /* Score >= 4.0 */
-  --color-warning: #ffc107;       /* Score 3.5-3.9 */
-  --color-info: #17a2b8;          /* New jobs */
-  --color-neutral: #6c757d;       /* Score < 3.5 */
-  --color-text-primary: #212529;
-  --color-text-secondary: #6c757d;
-  --color-border: #dee2e6;
-}
-
-[data-bs-theme="dark"] {
-  --color-hero: #8ab4f8;
-  --color-hero-bg: #1e3a5f;
-  --color-success: #34d058;
-  --color-warning: #ffdf5d;
-  --color-info: #58a6ff;
-  --color-neutral: #8b949e;
-  --color-text-primary: #e6edf3;
-  --color-text-secondary: #8b949e;
-  --color-border: #30363d;
-}
-
-/* Apply semantic colors to existing badges */
-.badge.bg-primary { background-color: var(--color-info) !important; }
-.badge.bg-success { background-color: var(--color-success) !important; }
-.badge.bg-warning { background-color: var(--color-warning) !important; }
-.badge.bg-secondary { background-color: var(--color-neutral) !important; }
+**Data Flow:**
+```
+Profile exists prompt
+    ↓
+User selects "Quick-edit a field"
+    ↓
+quick_edit_field() in wizard.py:
+    1. Load current profile.json
+    2. questionary.select() field to edit
+    3. Re-prompt with current value as default
+    4. Validate with existing validator
+    5. Show diff (old vs new)
+    6. Confirm save
+    7. Atomic write with _write_json_atomic()
 ```
 
-**Build order:** Phase 1 (Color foundation before hero jobs)
-**Modified function:** `_generate_html_report()` — add CSS to `<style>` block
-**Sources:**
-- [Designing semantic colors for your system](https://imperavi.com/blog/designing-semantic-colors-for-your-system/) — Semantic color patterns (MEDIUM confidence)
-- [Accessible Color Tokens for Enterprise Design Systems](https://www.aufaitux.com/blog/color-tokens-enterprise-design-systems-best-practices/) — WCAG-compliant color tokens (HIGH confidence)
+**Key Pattern:** Git-style "show diff before commit" prevents accidental overwrites.
 
-### Integration Pattern 3: Hero Jobs Visual Treatment
+---
 
-**Decision: CSS Class-Based Highlighting (No Python Logic Changes)**
+### Feature 3: CLI Update Flags
+
+**What:** Non-interactive profile updates via CLI flags (e.g., `--update-skills`, `--set-min-score`).
+
+**Integration Point:** `search.py` argument parser + early exit handlers.
+
+**Architecture Decision: Modify profile in search.py vs new module?**
+
+**Recommendation: New module `profile_manager.py`** because:
+- Keeps `search.py` focused on search orchestration
+- Profile modification is distinct from search execution
+- Enables reuse across wizard.py and search.py
 
 **Implementation:**
+- Add flags to argparse in `search.py`:
+  ```python
+  profile_group.add_argument("--update-skills", metavar="SKILLS", help="Update skills list (comma-separated)")
+  profile_group.add_argument("--set-min-score", type=float, help="Update min_score in config.json")
+  profile_group.add_argument("--add-dealbreaker", metavar="TEXT", help="Add dealbreaker to profile")
+  ```
+- Add early exit handler in `search.main()` before search execution:
+  ```python
+  if args.update_skills or args.set_min_score or args.add_dealbreaker:
+      from .profile_manager import update_profile_from_flags
+      update_profile_from_flags(args, profile_path_str)
+      sys.exit(0)
+  ```
 
+**Data Flow:**
+```
+search.main()
+    ↓
+Parse args with argparse
+    ↓
+Check for update flags (--update-skills, --set-min-score, etc.)
+    ↓
+   YES → Call update_profile_from_flags():
+         1. Load current profile.json/config.json
+         2. Apply changes
+         3. Validate with wizard validators
+         4. Show diff (old → new)
+         5. Confirm or --yes flag for non-interactive
+         6. Atomic write
+         7. Exit
+    ↓
+   NO → Continue to search execution
+```
+
+---
+
+### New Component: profile_manager.py
+
+**Responsibility:** Profile CRUD operations, diff display, validation reuse.
+
+**Functions:**
 ```python
-# In _html_recommended_cards() — modify existing card generation
-# Add hero class to top 3 jobs (score >= 4.0)
-hero_count = 0
-for i, r in enumerate(recommended, 1):
-    score_val = r["score"]["overall"]
-    is_hero = hero_count < 3 and score_val >= 4.0
-    hero_class = " hero-job" if is_hero else ""
-    if is_hero:
-        hero_count += 1
+def load_profile(path: Path) -> dict:
+    """Load and validate profile.json."""
 
-    # Existing card HTML with hero class added
-    cards.append(f"""
-    <div class="card mb-3{hero_class}" data-job-url="{html.escape(job.url)}" ...>
-      ...
-    </div>
-    """)
+def save_profile(path: Path, data: dict, show_diff: bool = True) -> bool:
+    """Save profile with optional diff preview and confirmation."""
+
+def display_profile_summary(profile: dict):
+    """Pretty-print profile for preview on startup."""
+
+def update_profile_from_flags(args: Namespace, profile_path: str):
+    """Apply CLI flag updates to profile/config with validation."""
+
+def diff_profile(old: dict, new: dict) -> str:
+    """Generate human-readable diff using difflib.unified_diff."""
+
+def validate_profile_field(key: str, value: Any) -> bool:
+    """Reuse wizard validators for individual fields."""
 ```
 
-```css
-/* Add to <style> block */
-.hero-job {
-  border-left: 4px solid var(--color-hero) !important;
-  background-color: var(--color-hero-bg);
-  box-shadow: 0 2px 8px rgba(26, 115, 232, 0.15);
-}
+**Why a new module?**
+- Centralizes profile I/O logic (currently scattered across wizard.py, search.py, __main__.py)
+- Enables reuse across wizard, CLI flags, and future features (e.g., profile export/import)
+- Maintains single responsibility: profile_manager = profile data, wizard = interactive flows
 
-.hero-job::before {
-  content: "⭐ Top Match";
-  display: inline-block;
-  background-color: var(--color-hero);
-  color: white;
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-  margin-bottom: 0.5rem;
-}
+---
 
-[data-bs-theme="dark"] .hero-job {
-  background-color: var(--color-hero-bg);
-  box-shadow: 0 2px 8px rgba(138, 180, 248, 0.2);
-}
+## Recommended Project Structure (Updated)
+
+```
+job_radar/
+├── __main__.py           # Entry point - routing only (no profile I/O)
+├── wizard.py             # Interactive flows (setup, quick-edit)
+├── search.py             # Search orchestration + argparse
+├── profile_manager.py    # NEW: Profile CRUD, validation, diff display
+├── banner.py             # ASCII art display
+├── paths.py              # Path resolution
+├── config.py             # Config loading (existing)
+└── ... (other modules)
 ```
 
-**Build order:** Phase 2 (After semantic colors)
-**Modified function:** `_html_recommended_cards()` — add conditional class
-**Lines changed:** ~15 in Python, ~30 in CSS
-**Sources:**
-- [Hero Section Design: Best Practices & Examples for 2026](https://www.perfectafternoon.com/2025/hero-section-design/) — Visual priority patterns (MEDIUM confidence)
+### Structure Rationale
 
-### Integration Pattern 4: Responsive Table → Mobile Cards
+- **profile_manager.py:** Centralized profile operations avoid duplication across wizard.py and search.py
+- **wizard.py remains interactive:** Keeps questionary flows separate from data operations
+- **search.py stays lean:** Argument parsing + orchestration, delegates profile ops to profile_manager
 
-**Decision: CSS-Only Transformation (No Python Column Selection)**
+---
 
-**Rationale:**
-- Python-side column selection would require duplicating HTML generation logic for mobile/desktop
-- CSS media queries can hide columns and reformat rows as cards with zero Python changes
-- Data attributes already present in table rows (from status tracking feature)
-- Pseudo-elements can inject column labels from data attributes
+## Architectural Patterns
 
-**Implementation:**
+### Pattern 1: Git-Style Diff Before Save
 
+**What:** Show old vs new values before writing profile changes, require confirmation.
+
+**When to use:** Any profile modification (quick-edit, CLI flags).
+
+**Trade-offs:**
+- PRO: Prevents accidental overwrites, user trust
+- PRO: Familiar pattern (git commit, terraform apply)
+- CON: Extra step (mitigated with --yes flag for automation)
+
+**Example:**
 ```python
-# In _html_results_table() — add data-label attributes to <td> elements
-# (Table cells already have semantic structure, just add labels)
-rows.append(f"""
-<tr {row_attrs}>
-  <th scope="row" data-label="#">{i}</th>
-  <td data-label="Score">{score_badge_accessible}...</td>
-  <td data-label="New">{new_badge_accessible}</td>
-  <td data-label="Status">{status_dropdown}</td>
-  <td data-label="Title"><strong>{html.escape(job.title)}</strong></td>
-  <td data-label="Company">{html.escape(job.company)}</td>
-  <td data-label="Salary">{salary}</td>
-  <td data-label="Type">{html.escape(emp_type)}</td>
-  <td data-label="Location">{html.escape(job.location)}</td>
-  <td data-label="Snippet">{html.escape(snippet)}</td>
-  <td data-label="Link">{link_html}</td>
-</tr>
-""")
+def save_profile(path: Path, data: dict, show_diff: bool = True) -> bool:
+    if show_diff and path.exists():
+        old_data = json.loads(path.read_text())
+        diff = diff_profile(old_data, data)
+        print("\nChanges to be saved:")
+        print(diff)
+        if not questionary.confirm("Save these changes?").ask():
+            return False
+    _write_json_atomic(path, data)
+    return True
 ```
 
-```css
-/* Add to <style> block */
-/* Desktop: Hide less important columns on medium screens */
-@media (max-width: 1200px) {
-  table th:nth-child(9),  /* Snippet */
-  table td:nth-child(9) {
-    display: none;
-  }
-}
+---
 
-@media (max-width: 992px) {
-  table th:nth-child(7),  /* Salary */
-  table td:nth-child(7),
-  table th:nth-child(8),  /* Type */
-  table td:nth-child(8) {
-    display: none;
-  }
-}
+### Pattern 2: Validator Reuse from Wizard
 
-/* Mobile: Convert to card layout */
-@media (max-width: 768px) {
-  /* Hide table header */
-  table thead {
-    position: absolute;
-    top: -9999px;
-    left: -9999px;
-  }
+**What:** Extract wizard validators into reusable functions for CLI flag validation.
 
-  /* Make each row a card */
-  table, tbody, tr, th, td {
-    display: block;
-  }
+**When to use:** CLI flags that update the same fields as wizard prompts.
 
-  table tr {
-    border: 1px solid var(--color-border);
-    border-radius: 0.375rem;
-    margin-bottom: 1rem;
-    padding: 1rem;
-    background: white;
-  }
+**Trade-offs:**
+- PRO: Single source of truth for validation rules
+- PRO: Consistent error messages across interactive and non-interactive modes
+- CON: Requires refactoring wizard.py to export validators
 
-  [data-bs-theme="dark"] table tr {
-    background: #212529;
-  }
-
-  table th,
-  table td {
-    border: none;
-    padding: 0.5rem 0;
-    position: relative;
-    padding-left: 40%;
-  }
-
-  /* Row number as badge */
-  table th[scope="row"] {
-    padding-left: 0;
-    margin-bottom: 0.5rem;
-  }
-
-  table th[scope="row"]::before {
-    content: "Job #";
-    font-weight: normal;
-    margin-right: 0.25rem;
-  }
-
-  /* Inject labels from data-label attributes */
-  table td::before {
-    content: attr(data-label) ": ";
-    position: absolute;
-    left: 0;
-    width: 35%;
-    font-weight: 600;
-    color: var(--color-text-secondary);
-  }
-
-  /* Hide empty cells */
-  table td:empty {
-    display: none;
-  }
-}
-```
-
-**Build order:** Phase 3 (After semantic colors)
-**Modified function:** `_html_results_table()` — add data-label attributes to existing <td> elements
-**Lines changed:** ~10 in Python (just adding attributes), ~80 in CSS
-**Sources:**
-- [CSS-Tricks Responsive Data Tables](https://css-tricks.com/responsive-data-tables/) — Card transformation technique (HIGH confidence)
-- [HTML Tables in Responsive Design: Do's and Don'ts (2026)](https://618media.com/en/blog/html-tables-in-responsive-design/) — Current best practices (HIGH confidence)
-
-### Integration Pattern 5: Status Filters
-
-**Decision: Client-Side JavaScript Filtering (No HTML Changes)**
-
-**Rationale:**
-- Status data already in DOM via data-status attributes (from existing status tracking feature)
-- Filter UI can be pure JavaScript DOM manipulation
-- No server-side filtering needed (all jobs already in HTML)
-- Leverages existing Bootstrap dropdown components
-
-**Implementation:**
-
+**Example:**
 ```python
-# In _generate_html_report() — add filter UI to header section (after status-announcer)
-filter_ui = """
-<div class="mb-3">
-  <label for="status-filter" class="form-label">Filter by status:</label>
-  <select id="status-filter" class="form-select" aria-label="Filter jobs by application status">
-    <option value="">All jobs</option>
-    <option value="applied">Applied</option>
-    <option value="interviewing">Interviewing</option>
-    <option value="rejected">Rejected</option>
-    <option value="offer">Offer</option>
-  </select>
-</div>
-"""
-# Insert after tracker stats, before recommended section
-```
-
-```javascript
-// Add to <script> block — after existing status tracking code
-function initStatusFilter() {
-  var filterSelect = document.getElementById('status-filter');
-  if (!filterSelect) return;
-
-  filterSelect.addEventListener('change', function() {
-    var filterValue = this.value;
-    var allRows = document.querySelectorAll('.job-item');
-    var visibleCount = 0;
-
-    allRows.forEach(function(row) {
-      var jobStatus = row.dataset.jobStatus || '';
-      var shouldShow = !filterValue || jobStatus === filterValue;
-
-      if (shouldShow) {
-        row.style.display = '';
-        visibleCount++;
-      } else {
-        row.style.display = 'none';
-      }
-    });
-
-    // Announce to screen readers
-    var msg = visibleCount + ' job' + (visibleCount !== 1 ? 's' : '') + ' shown';
-    announceToScreenReader(msg);
-  });
+# wizard.py - refactor
+VALIDATORS = {
+    'skills': CommaSeparatedValidator(min_items=1, field_name="skill"),
+    'min_score': ScoreValidator(),
 }
 
-// Call in DOMContentLoaded
-document.addEventListener('DOMContentLoaded', function() {
-  // ... existing initialization ...
-  initStatusFilter();
-});
+# profile_manager.py - reuse
+from .wizard import VALIDATORS
+
+def update_skills(profile: dict, skills_str: str) -> dict:
+    validator = VALIDATORS['skills']
+    # Apply validation...
+    profile['core_skills'] = [s.strip() for s in skills_str.split(',')]
+    return profile
 ```
 
-**Build order:** Phase 4 (After responsive table — reuses data attributes)
-**Modified function:** `_generate_html_report()` — add filter UI HTML, add JS function
-**Lines changed:** ~15 in Python (HTML), ~30 in JavaScript
-**Sources:**
-- Existing codebase pattern (status tracking already uses data attributes)
+---
 
-### Integration Pattern 6: CSV Export
+### Pattern 3: Early Exit Handlers for Update Flags
 
-**Decision: Browser-Side JavaScript Export (No Python CSV Module)**
+**What:** Check for update flags before search execution, exit after update.
 
-**Rationale:**
-- Data already in HTML table (no need to duplicate in Python-generated CSV)
-- Browser-side export has zero server/file overhead (no extra file to manage)
-- Works with file:// protocol (Blob + download link)
-- Job Radar reports typically have 20-100 results (not millions) — browser handles easily
-- Avoids Python csv module dependency and file management
+**When to use:** CLI flags that modify state but don't trigger search (e.g., `--update-skills`).
 
-**Implementation:**
+**Trade-offs:**
+- PRO: Clear separation: update OR search, not both
+- PRO: Avoids unexpected side effects (user expects update, not search)
+- CON: Can't combine update + search in one command (acceptable: profile updates are infrequent)
 
+**Example:**
 ```python
-# In _generate_html_report() — add export button near results table heading
-export_button = """
-<button onclick="exportTableToCSV()"
-        class="btn btn-outline-primary btn-sm no-print"
-        aria-label="Download job results as CSV file">
-  📊 Export to CSV
-</button>
-"""
-# Insert in _html_results_table() near heading
+def main():
+    args = parse_args()
+
+    # Early exit: API setup
+    if args.setup_apis:
+        setup_apis()
+        sys.exit(0)
+
+    # Early exit: Profile updates
+    if args.update_skills or args.set_min_score:
+        update_profile_from_flags(args, profile_path)
+        sys.exit(0)
+
+    # Continue to search...
 ```
 
-```javascript
-// Add to <script> block
-function exportTableToCSV() {
-  var table = document.querySelector('.table');
-  if (!table) {
-    notyf.error('No table found to export');
-    return;
-  }
+---
 
-  var rows = [];
+## Data Flow for New Features
 
-  // Header row
-  var headers = Array.from(table.querySelectorAll('thead th')).map(function(th) {
-    return th.textContent.trim();
-  });
-  rows.push(headers);
-
-  // Data rows (only visible rows if filter active)
-  var dataRows = table.querySelectorAll('tbody tr');
-  dataRows.forEach(function(tr) {
-    if (tr.style.display === 'none') return; // Skip filtered rows
-
-    var cells = Array.from(tr.querySelectorAll('th, td')).map(function(cell) {
-      // Extract text content, strip HTML
-      var text = cell.textContent.trim();
-      // Handle commas and quotes (CSV escaping)
-      if (text.includes(',') || text.includes('"') || text.includes('\n')) {
-        text = '"' + text.replace(/"/g, '""') + '"';
-      }
-      return text;
-    });
-    rows.push(cells);
-  });
-
-  // Generate CSV string
-  var csvContent = rows.map(function(row) {
-    return row.join(',');
-  }).join('\n');
-
-  // Create blob and download
-  var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  var link = document.createElement('a');
-  var url = URL.createObjectURL(blob);
-  link.setAttribute('href', url);
-  link.setAttribute('download', 'job-radar-results-' + new Date().toISOString().slice(0,10) + '.csv');
-  link.style.visibility = 'hidden';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-
-  notyf.success('CSV file downloaded');
-  announceToScreenReader('CSV export complete');
-}
-```
-
-**Build order:** Phase 5 (After status filters — can export filtered results)
-**Modified function:** `_generate_html_report()` — add button HTML, add JS function
-**Lines changed:** ~10 in Python (button), ~50 in JavaScript
-**Sources:**
-- [How to Export HTML Table to CSV Using Vanilla JavaScript](https://www.xjavascript.com/blog/export-html-table-to-csv-using-vanilla-javascript/) — Pure JS solution (HIGH confidence)
-- [GeeksforGeeks: How to export HTML table to CSV using JavaScript](https://www.geeksforgeeks.org/javascript/how-to-export-html-table-to-csv-using-javascript/) — CSV escaping patterns (MEDIUM confidence)
-
-### Integration Pattern 7: Print Stylesheet Enhancements
-
-**Decision: Extend Existing @media print Block**
-
-**Implementation:**
-
-```css
-/* Extend existing @media print block in <style> */
-@media print {
-  /* Existing styles */
-  .no-print { display: none !important; }
-  body { background: white !important; }
-  .card { border: 1px solid #ddd !important; }
-  .badge { border: 1px solid currentColor; }
-
-  /* NEW: Enhanced print styles */
-
-  /* Hide interactive elements */
-  button, .dropdown, .btn { display: none !important; }
-
-  /* Optimize typography */
-  body {
-    font-size: 11pt;
-    line-height: 1.4;
-    color: #000;
-  }
-
-  h1 { font-size: 18pt; }
-  h2 { font-size: 14pt; }
-  h3, h4 { font-size: 12pt; }
-
-  /* Hero jobs: preserve visual priority */
-  .hero-job {
-    border-left: 3pt solid #000 !important;
-    background: #f5f5f5 !important;
-    page-break-inside: avoid;
-  }
-
-  /* Table optimization */
-  table {
-    font-size: 9pt;
-    border-collapse: collapse;
-    width: 100%;
-  }
-
-  table th,
-  table td {
-    border: 1pt solid #ddd;
-    padding: 4pt;
-  }
-
-  /* Hide less important columns */
-  table th:nth-child(3),  /* New badge */
-  table td:nth-child(3),
-  table th:nth-child(4),  /* Status dropdown */
-  table td:nth-child(4),
-  table th:nth-child(10), /* Snippet */
-  table td:nth-child(10) {
-    display: none;
-  }
-
-  /* Page breaks */
-  .card, tr {
-    page-break-inside: avoid;
-  }
-
-  h2, h3, h4 {
-    page-break-after: avoid;
-  }
-
-  /* Links: show URLs */
-  a[href^="http"]::after {
-    content: " (" attr(href) ")";
-    font-size: 8pt;
-    color: #666;
-  }
-}
-```
-
-**Build order:** Phase 6 (Last — after all visual features)
-**Modified function:** `_generate_html_report()` — extend existing @media print block
-**Lines changed:** ~60 in CSS (within existing <style> block)
-**Sources:**
-- Existing codebase pattern (print styles already present)
-- CSS print best practices (standard web development knowledge)
-
-### Integration Pattern 8: Accessibility CI
-
-**Decision: Separate GitHub Actions Workflow Job**
-
-**Rationale:**
-- Lighthouse CI requires HTML files to audit (must run after HTML generation)
-- Can fail independently of main tests without blocking release
-- Uses static HTML file (generate one test report for audit)
-- Runs on every push, provides PR comments with scores
-
-**Implementation:**
-
-```yaml
-# Add to .github/workflows/release.yml — new job after test, before build
-
-  accessibility:
-    name: Accessibility Audit
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e .
-
-      - name: Generate test report
-        run: |
-          # Create test profile if doesn't exist
-          if [ ! -f profile.json ]; then
-            echo '{"name":"Test User","level":"Senior","years_experience":5,"target_titles":["Software Engineer"],"core_skills":["Python"],"location":"Remote","arrangement":["remote"],"target_market":"US"}' > profile.json
-          fi
-          # Run search to generate HTML report
-          python -m job_radar.search --sources dice --max-results 10 || true
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-
-      - name: Install Lighthouse CI
-        run: npm install -g @lhci/cli@0.15.x
-
-      - name: Run Lighthouse CI
-        run: |
-          # Find most recent HTML report
-          REPORT_FILE=$(ls -t results/*.html 2>/dev/null | head -n1)
-          if [ -z "$REPORT_FILE" ]; then
-            echo "No HTML report found, skipping audit"
-            exit 0
-          fi
-          # Create Lighthouse config
-          cat > lighthouserc.json <<EOF
-          {
-            "ci": {
-              "collect": {
-                "staticDistDir": "./results",
-                "url": ["file://$(pwd)/$REPORT_FILE"]
-              },
-              "assert": {
-                "preset": "lighthouse:recommended",
-                "assertions": {
-                  "categories:accessibility": ["error", {"minScore": 0.9}],
-                  "categories:best-practices": ["warn", {"minScore": 0.8}],
-                  "categories:seo": ["warn", {"minScore": 0.8}]
-                }
-              }
-            }
-          }
-          EOF
-          lhci autorun
-
-      - name: Upload Lighthouse results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: lighthouse-results
-          path: .lighthouseci/
-```
-
-**Build order:** Phase 7 (Final — validates all accessibility work)
-**Modified file:** `.github/workflows/release.yml`
-**Lines changed:** ~45 in YAML
-**Notes:**
-- Job marked as non-blocking (`continue-on-error` not set, but separate from build job)
-- Generates test report in CI environment
-- Lighthouse audits accessibility, best practices, SEO
-- Results uploaded as artifacts for inspection
-- Can add axe-core separately or rely on Lighthouse (includes axe)
-
-**Sources:**
-- [GitHub: GoogleChrome/lighthouse-ci](https://github.com/GoogleChrome/lighthouse-ci) — Official implementation guide (HIGH confidence)
-- [Setting Up Lighthouse CI From Scratch (with GitHub Actions Integration)](https://pradappandiyan.medium.com/setting-up-lighthouse-ci-from-scratch-with-github-actions-integration-1f7be5567e7f) — Practical example (MEDIUM confidence)
-
-## Data Flow Changes
-
-**No data flow changes.** All features are presentation-layer enhancements:
+### Request Flow: Profile Preview
 
 ```
-BEFORE v1.4.0:
-profile.json + scored_results[] → _generate_html_report() → HTML file
-
-AFTER v1.4.0:
-profile.json + scored_results[] → _generate_html_report() → HTML file
-                                   (with enhanced CSS/JS)
-```
-
-The Python data structures (`profile`, `scored_results`, `tracker_stats`) remain unchanged. Only the HTML/CSS/JS output changes.
-
-## Component Modification Summary
-
-### report.py Modifications
-
-| Section | Change Type | Est. Lines | Complexity |
-|---------|-------------|------------|------------|
-| `<style>` block | CSS additions | +150 | Low |
-| `_generate_html_report()` HTML structure | Add classes, data attributes, filter UI | +50 | Low |
-| `_html_recommended_cards()` | Add hero job logic | +15 | Low |
-| `_html_results_table()` | Add data-label attributes | +10 | Low |
-| `<script>` block | Add filter + CSV functions | +100 | Medium |
-| **TOTAL** | **Additive changes** | **~325** | **Low-Medium** |
-
-**No existing code removed.** All changes are additive enhancements.
-
-### GitHub Actions Modifications
-
-| File | Change Type | Est. Lines | Complexity |
-|------|-------------|------------|------------|
-| `.github/workflows/release.yml` | Add accessibility job | +45 | Low |
-
-## Build Order Recommendations
-
-Based on dependencies and logical progression:
-
-```
-Phase 1: Typography & Color Foundation
-├── System font stack CSS
-└── Semantic color variables
+Program Start
     ↓
-Phase 2: Hero Jobs
-├── Depends on: semantic colors
-└── Modify: _html_recommended_cards()
+[__main__.py] load profile for banner
     ↓
-Phase 3: Responsive Layout
-├── Depends on: semantic colors
-└── Modify: _html_results_table() + media queries
+display_banner(profile_name)
     ↓
-Phase 4: Status Filters
-├── Depends on: data attributes in responsive table
-└── Add: filter UI + JavaScript
+[NEW] display_profile_summary(profile)  ← Read-only, no state change
     ↓
-Phase 5: CSV Export
-├── Depends on: status filters (can export filtered view)
-└── Add: export button + JavaScript
-    ↓
-Phase 6: Print Stylesheet
-├── Depends on: all visual features (optimizes them for print)
-└── Extend: @media print block
-    ↓
-Phase 7: Accessibility CI
-├── Depends on: all features implemented
-└── Add: GitHub Actions job
+Continue to wizard prompt or search
 ```
 
-**Rationale:**
-- Phases 1-2: Foundation (fonts + colors) before features that use them
-- Phases 3-5: Interactive features in dependency order
-- Phase 6: Print optimizations after features are stable
-- Phase 7: Validation after implementation complete
+---
+
+### Request Flow: Quick-Edit
+
+```
+User selects "Quick-edit a field"
+    ↓
+[wizard.py] quick_edit_field(profile_path, field_key)
+    ↓
+Load profile.json → old_data
+    ↓
+Prompt with questionary (reuse validator)
+    ↓
+Apply change → new_data
+    ↓
+diff_profile(old_data, new_data) → display diff
+    ↓
+Confirm save
+    ↓
+   YES → _write_json_atomic(profile_path, new_data)
+    ↓
+   NO → Discard changes
+```
+
+---
+
+### Request Flow: CLI Update Flags
+
+```
+job-radar --update-skills "Python, Go, Rust"
+    ↓
+[search.py] parse_args() → args.update_skills = "Python, Go, Rust"
+    ↓
+Check args.update_skills is not None
+    ↓
+   YES → [profile_manager.py] update_profile_from_flags()
+         1. Load profile.json
+         2. Validate skills string with CommaSeparatedValidator
+         3. Apply change: profile['core_skills'] = ["Python", "Go", "Rust"]
+         4. Show diff
+         5. Confirm (or --yes flag)
+         6. Save with _write_json_atomic()
+         7. sys.exit(0)
+    ↓
+   NO → Continue to search
+```
+
+---
+
+## Integration Points Summary
+
+| Feature | Modifies | Entry Point | New Functions | Reuses |
+|---------|----------|-------------|---------------|--------|
+| **Profile Preview** | None (read-only) | `__main__.py` | `profile_manager.display_profile_summary()` | Existing profile load |
+| **Quick-Edit** | `profile.json` | `__main__.py` → `wizard.py` | `wizard.quick_edit_field()` | Validators, `_write_json_atomic()` |
+| **CLI Update Flags** | `profile.json`, `config.json` | `search.py` (early exit) | `profile_manager.update_profile_from_flags()`, `diff_profile()` | Validators from wizard |
+
+---
 
 ## Anti-Patterns to Avoid
 
-### Anti-Pattern 1: Separate CSS/JS Files
+### Anti-Pattern 1: Silent Profile Updates
 
-**What people do:** Extract CSS/JS to separate files, link with `<link>` and `<script src="">`
-**Why it's wrong:** Breaks single-file constraint and file:// protocol compatibility
-**Do this instead:** Inline all CSS in `<style>` block, all JS in `<script>` block
+**What people do:** Update profile.json without showing changes or confirmation.
 
-### Anti-Pattern 2: Base64 Font Embedding
+**Why it's wrong:** User loses trust, can't audit changes, accidental overwrites.
 
-**What people do:** Inline WOFF2 fonts as base64 data URIs
-**Why it's wrong:**
-- Adds 150-200KB+ per HTML file
-- Blocks rendering (large inline data)
-- Prevents browser caching
-- Worse repeat view performance
-**Do this instead:** Use system font stacks (zero bytes, instant rendering)
+**Do this instead:** Always show diff before save, require confirmation (or --yes flag for automation).
 
-### Anti-Pattern 3: Python-Side CSV Generation
+---
 
-**What people do:** Add CSV generation to `_generate_markdown_report()`, write separate .csv file
-**Why it's wrong:**
-- Duplicates data (already in HTML table)
-- Requires file management (cleanup, file listing)
-- User has two files instead of one self-contained HTML
-- More code to maintain (CSV formatting logic)
-**Do this instead:** Browser-side JavaScript CSV export from existing table
+### Anti-Pattern 2: Duplicate Validators
 
-### Anti-Pattern 4: Server-Side Status Filtering
+**What people do:** Copy-paste validation logic from wizard.py into profile_manager.py.
 
-**What people do:** Add `--filter-status` CLI argument, filter in Python before HTML generation
-**Why it's wrong:**
-- Requires re-running entire search to change filter
-- Can't see all statuses in one view
-- Complicates CLI UX
-**Do this instead:** Client-side JavaScript filtering (instant, no re-run)
+**Why it's wrong:** Rules drift apart, maintenance burden, inconsistent error messages.
 
-### Anti-Pattern 5: Separate Accessibility Tests
+**Do this instead:** Extract validators into shared constants/functions, import where needed.
 
-**What people do:** Add pytest-axe or pa11y to Python test suite
-**Why it's wrong:**
-- Can't test generated HTML (tests would need to generate reports first)
-- Python test suite doesn't have browser context
-- Lighthouse CI is industry standard, includes axe-core
-**Do this instead:** Lighthouse CI in GitHub Actions (full browser audit)
+---
 
-## Testing Strategy
+### Anti-Pattern 3: Mixing Update + Search in One Command
 
-### Manual Testing Checklist
+**What people do:** Allow `job-radar --update-skills "X,Y" --min-score 3.0` to update profile AND run search.
 
-For each feature:
+**Why it's wrong:** Unexpected side effects, unclear intent (is this an update or a search?), harder to test.
 
-```
-[ ] Desktop Chrome (light mode)
-[ ] Desktop Chrome (dark mode)
-[ ] Desktop Firefox
-[ ] Desktop Safari
-[ ] Mobile Chrome (responsive layout)
-[ ] Mobile Safari (responsive layout)
-[ ] Print preview (Chrome)
-[ ] file:// protocol (not http://localhost)
-[ ] Screen reader (macOS VoiceOver or Windows Narrator)
-[ ] Keyboard navigation (Tab, Enter, Space)
-```
+**Do this instead:** Update flags exit early (after update), search flags continue to search. Mutually exclusive.
 
-### Automated Testing
+---
 
-```
-Existing pytest suite:
-- No changes needed (HTML generation logic unchanged)
-- Consider adding snapshot tests for HTML structure
+### Anti-Pattern 4: Profile I/O Scattered Everywhere
 
-Accessibility CI:
-- Runs on every push
-- Lighthouse accessibility score >= 90
-- Flags regressions automatically
-```
+**What people do:** Load/save profile.json directly in `__main__.py`, `wizard.py`, `search.py` with inline logic.
 
-## Performance Considerations
+**Why it's wrong:** Inconsistent validation, error handling, diff display. Hard to add features (e.g., profile backup).
 
-| Feature | Performance Impact | Mitigation |
-|---------|-------------------|------------|
-| System fonts | **+0ms** (instant) | N/A — already on system |
-| CSS additions | **+5-10ms** (parse ~300 lines CSS) | Minify CSS in production (future) |
-| JavaScript additions | **+10-15ms** (parse ~100 lines JS) | Load order unchanged (end of body) |
-| Responsive media queries | **+0ms** (CSS-only) | Browser-native performance |
-| Status filter | **<1ms** per filter change | Pure DOM manipulation, no layout thrash |
-| CSV export | **10-50ms** for 100 rows | Only on user action, not page load |
-| **Total page load impact** | **~15-25ms** | Negligible for file:// protocol |
+**Do this instead:** Centralize in `profile_manager.py`, expose clean API (`load_profile()`, `save_profile()`).
 
-**File size impact:**
-- Current HTML: ~150KB (with CDN links, ~200KB if CSS/JS inlined)
-- After v1.4.0: +~10KB (CSS/JS additions)
-- **Total: ~160KB** (still well under 200KB threshold)
+---
 
-## Rollback Strategy
+## Backward Compatibility
 
-All features are CSS/JS additions with no breaking changes to data structures:
+### Existing Behavior Preserved
 
-```
-Rollback options:
-1. Remove CSS block additions → features disappear, base functionality intact
-2. Remove JS function additions → filters/export gone, core report works
-3. Git revert specific commits → granular rollback per phase
-4. Feature flags (future): Use CSS classes to toggle features
-```
+| Current Feature | Impact | Notes |
+|-----------------|--------|-------|
+| `--profile` flag | **None** | Still loads custom profile path |
+| `--no-wizard` flag | **None** | Skips wizard, skips preview |
+| Wizard on first run | **Enhanced** | Now shows preview after creation |
+| questionary prompt | **Extended** | Adds "Quick-edit a field" option |
+| `load_profile_with_recovery()` | **None** | Still auto-launches wizard on corrupt profile |
 
-**Safe rollback:** Any phase can be reverted independently without breaking earlier phases.
+### Breaking Changes: NONE
+
+All new features are additive:
+- Profile preview is automatic (can be disabled with `--no-wizard`)
+- Quick-edit is opt-in (new menu choice)
+- CLI update flags are new arguments (don't conflict with existing)
+
+---
+
+## Suggested Build Order
+
+### Phase 1: Foundation (profile_manager.py)
+
+**Why first:** Centralizes profile I/O, enables all other features.
+
+**Tasks:**
+1. Create `profile_manager.py`
+2. Move `load_profile()` from `search.py` to `profile_manager.py`
+3. Refactor `_write_json_atomic()` from `wizard.py` to `profile_manager.py`
+4. Add `diff_profile()` using Python's `difflib.unified_diff`
+5. Add `display_profile_summary()` for pretty-printing
+
+**Tests:**
+- Load profile from valid/invalid/missing paths
+- Diff detection (added fields, removed fields, changed values)
+- Pretty-print formatting (all field types)
+
+---
+
+### Phase 2: Profile Preview
+
+**Why second:** Simplest feature, validates profile_manager.py works.
+
+**Tasks:**
+1. Update `__main__.py` to call `display_profile_summary()` after banner
+2. Add `--no-preview` flag to disable (or reuse `--no-wizard`)
+3. Test with full profiles, minimal profiles, optional fields
+
+**Tests:**
+- Preview displays all fields correctly
+- Preview skips when `--no-wizard` is set
+- Preview handles missing optional fields gracefully
+
+---
+
+### Phase 3: Quick-Edit Mode
+
+**Why third:** Reuses wizard validators, tests diff display interactively.
+
+**Tasks:**
+1. Extract validators from `wizard.py` into shared constants
+2. Add `quick_edit_field()` function in `wizard.py`
+3. Add "Quick-edit a field" to questionary menu in `__main__.py`
+4. Integrate `diff_profile()` before save confirmation
+
+**Tests:**
+- Edit each field type (text, list, number, optional)
+- Diff display shows correct changes
+- Cancel without saving preserves original
+- Validation rejects invalid inputs
+
+---
+
+### Phase 4: CLI Update Flags
+
+**Why last:** Builds on all previous work (diff, validation, profile_manager).
+
+**Tasks:**
+1. Add argparse flags to `search.py`:
+   - `--update-skills`
+   - `--set-min-score`
+   - `--add-dealbreaker`
+   - `--yes` (skip confirmation)
+2. Add early exit handler in `search.main()`
+3. Implement `update_profile_from_flags()` in `profile_manager.py`
+4. Reuse validators from Phase 3
+
+**Tests:**
+- Each flag updates correct field
+- Diff shows before confirmation
+- `--yes` skips confirmation
+- Invalid values rejected with clear errors
+- Early exit prevents search execution
+
+---
+
+## Scaling Considerations
+
+| Scale | Architecture Adjustments |
+|-------|--------------------------|
+| 1-10 profiles | Current flat JSON is fine. Single profile per user is typical. |
+| 10-100 profiles | Consider profile name-based organization: `~/.job-radar/profiles/{name}.json`. Current design assumes one default profile + custom via `--profile`. |
+| 100+ profiles | Add profile listing/switching UI. Not expected for CLI tool (personal use). |
+
+### Scaling Priorities
+
+1. **First bottleneck:** Profile schema evolution (adding/removing fields breaks old profiles).
+   - **Fix:** Add schema version field, migration logic in `profile_manager.load_profile()`.
+
+2. **Second bottleneck:** Diff display for large profiles (e.g., 100+ skills).
+   - **Fix:** Use `difflib.context_diff` instead of `unified_diff`, or paginate output.
+
+---
 
 ## Sources
 
-### HIGH Confidence (Official Docs, Verified Tools)
+### Codebase Analysis (HIGH Confidence)
+- Analyzed existing architecture from:
+  - `/Users/coryebert/Documents/Job Hunt Python/Project Folder/Job-Radar/job_radar/__main__.py`
+  - `/Users/coryebert/Documents/Job Hunt Python/Project Folder/Job-Radar/job_radar/wizard.py`
+  - `/Users/coryebert/Documents/Job Hunt Python/Project Folder/Job-Radar/job_radar/search.py`
+  - `/Users/coryebert/Documents/Job Hunt Python/Project Folder/Job-Radar/job_radar/paths.py`
 
-- [Modern Font Stacks](https://modernfontstacks.com/) — System font CSS patterns
-- [CSS-Tricks System Font Stack](https://css-tricks.com/snippets/css/system-font-stack/) — Industry standard
-- [CSS-Tricks Responsive Data Tables](https://css-tricks.com/responsive-data-tables/) — Card transformation
-- [HTML Tables in Responsive Design (2026)](https://618media.com/en/blog/html-tables-in-responsive-design/) — Current patterns
-- [GitHub: GoogleChrome/lighthouse-ci](https://github.com/GoogleChrome/lighthouse-ci) — Official tool
-- [How to Export HTML Table to CSV Using Vanilla JavaScript](https://www.xjavascript.com/blog/export-html-table-to-csv-using-vanilla-javascript/) — Pure JS patterns
-
-### MEDIUM Confidence (WebSearch, Multiple Sources)
-
-- [Accessible Color Tokens for Enterprise Design Systems](https://www.aufaitux.com/blog/color-tokens-enterprise-design-systems-best-practices/) — Color patterns
-- [Designing semantic colors for your system](https://imperavi.com/blog/designing-semantic-colors-for-your-system/) — Semantic color rationale
-- [Hero Section Design: Best Practices & Examples for 2026](https://www.perfectafternoon.com/2025/hero-section-design/) — Visual priority
-- [Setting Up Lighthouse CI From Scratch](https://pradappandiyan.medium.com/setting-up-lighthouse-ci-from-scratch-with-github-actions-integration-1f7be5567e7f) — Practical example
-- [GeeksforGeeks: Export HTML table to CSV](https://www.geeksforgeeks.org/javascript/how-to-export-html-table-to-csv-using-javascript/) — CSV patterns
-
-### LOW Confidence (Unverified Claims)
-
-- None — all architectural decisions verified against official sources or existing codebase
+### CLI Patterns (MEDIUM Confidence)
+- [argparse — Parser for command-line options, arguments and subcommands](https://docs.python.org/3/library/argparse.html) — Official argparse documentation
+- [Build Command-Line Interfaces With Python's argparse – Real Python](https://realpython.com/command-line-interfaces-python-argparse/) — Comprehensive tutorial on argparse patterns
+- [Git - git-config Documentation](https://git-scm.com/docs/git-config) — Git config architecture patterns (get, set, unset commands)
+- [Creating a Git-Like Diff Viewer in Python Using Difflib](https://www.timsanteford.com/posts/creating-a-git-like-diff-viewer-in-python-using-difflib/) — Diff display implementation
+- [Comparing Sequences in Python with difflib](https://thelinuxcode.com/comparing-sequences-in-python-with-difflib-often-misread-as-dfflib-practical-patterns-for-2026/) — Modern difflib usage patterns
 
 ---
-*Architecture research for: Job Radar v1.4.0 Visual Design & Polish*
+
+*Architecture research for: Job Radar Profile Management Integration*
 *Researched: 2026-02-11*
+*Confidence: HIGH (codebase analysis) + MEDIUM (external patterns)*

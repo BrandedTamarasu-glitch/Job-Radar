@@ -1,307 +1,342 @@
-# Pitfalls Research: v1.4.0 Visual Design & Polish
+# Pitfalls Research: Profile Management Features
 
-**Domain:** Adding visual design improvements and responsive features to existing Bootstrap 5 HTML report generator
+**Domain:** CLI Profile Management (Update, Preview, Quick-Edit)
 **Researched:** 2026-02-11
 **Confidence:** HIGH
 
 ## Critical Pitfalls
 
-### Pitfall 1: Base64 Font Embedding Bloat & FOUT/FOIT
+### Pitfall 1: Partial Update File Corruption
 
 **What goes wrong:**
-Embedding Inter and JetBrains Mono as base64 in the inline CSS creates massive file size bloat (fonts are 7-30x larger than typical images) with an additional 33% overhead from base64 encoding itself. Without subsetting, Inter Regular + JetBrains Mono can easily add 200-400KB to an already 120KB Bootstrap CSS inline bundle, pushing total file size past Google's 2MB crawl limit for search or causing significant performance degradation. Additionally, base64 encoding puts fonts on the critical path, blocking CSS rendering and causing FOIT (Flash of Invisible Text) where text is invisible until fonts load.
+Profile JSON becomes corrupted (truncated, invalid JSON) when update operation is interrupted mid-write by crash, Ctrl+C, disk-full, or power loss. User loses entire profile, not just failed update.
 
 **Why it happens:**
-Developers assume "single-file HTML = everything must be base64" and embed full font files with all glyphs. The promise of "no FOUT because CSS and fonts arrive together" is misleading — it doesn't speed up font delivery, it just delays the entire CSS from parsing and executing.
+Direct file writes (`open(path, 'w') → json.dump()`) are not atomic. If Python process is killed between truncating file and completing write, profile.json contains partial content. JSON parser then fails on next read, making profile unrecoverable without backup.
+
+**Consequences:**
+- Total profile data loss (wizard re-run required)
+- Search breaks silently if profile read fails
+- User loses trust in CLI update features
+- No recovery path without backup
 
 **How to avoid:**
-1. **Subset fonts to English + basic Latin only** — reduces Inter from ~90KB TTF to ~28KB WOFF2 (70% reduction) using tools like glyphanger or pyftsubset
-2. **Convert to WOFF2** (not WOFF or TTF) — Brotli compression provides 30-50% additional reduction
-3. **Include only weights actually used** — Inter Regular (400) + Bold (700), JetBrains Mono Regular (400) for code
-4. **Add font-display: swap** to @font-face rules — shows fallback text immediately, swaps when custom font loads
-5. **Consider fallback-only for print** — print stylesheets can use system fonts (Georgia, Consolas) to avoid bloat
+Implement atomic write pattern:
+```python
+import os
+import json
+import tempfile
+
+def atomic_write_json(path, data):
+    """Write JSON atomically using temp + rename."""
+    dir_path = os.path.dirname(path)
+    with tempfile.NamedTemporaryFile(
+        mode='w',
+        dir=dir_path,
+        delete=False,
+        suffix='.tmp'
+    ) as tmp_file:
+        tmp_path = tmp_file.name
+        json.dump(data, tmp_file, indent=2)
+        tmp_file.flush()
+        os.fsync(tmp_file.fileno())  # Force to disk
+
+    # Atomic rename (same filesystem)
+    os.replace(tmp_path, path)  # os.replace is atomic on POSIX/Windows
+```
 
 **Warning signs:**
-- HTML file size exceeds 500KB
-- Lighthouse reports "Ensure text remains visible during webfont load" warning
-- Time to First Contentful Paint (FCP) > 2 seconds on 3G
-- Users report blank white page on slow connections
+- Profile corruption reports from users
+- "JSON decode error" in error logs
+- Empty or truncated profile.json files
+- No temp file usage in update code
 
 **Phase to address:**
-Phase 1 (Font System) — Must establish font subsetting and WOFF2 conversion in Python build process before implementing font changes. Should include fallback font stack testing.
+Phase 1 (Foundation) - Must be in place before ANY profile update features ship. Non-negotiable for data integrity.
+
+**Real-world examples:**
+- [Docker config.json corruption on crashes](https://github.com/moby/moby/discussions/48529)
+- [OpenCode storage corruption mid-write](https://github.com/anomalyco/opencode/issues/7733)
+- [GitLens removed git remotes silently](https://github.com/gitkraken/vscode-gitlens/issues/4851)
 
 ---
 
-### Pitfall 2: WCAG Contrast Regression with Custom Semantic Colors
+### Pitfall 2: Validation Inconsistency Between Wizard and CLI Flags
 
 **What goes wrong:**
-Replacing Bootstrap's default blue contextual classes (primary, success, warning, danger) with custom semantic colors for job scores breaks WCAG 2.1 Level AA compliance. Bootstrap's own documentation warns that their default palette "may lead to insufficient color contrast (below the recommended WCAG 2.2 text color contrast ratio of 4.5:1 and the WCAG 2.2 non-text color contrast ratio of 3:1)". Custom brand colors often fail even worse — a "nice looking" teal that works on white backgrounds fails contrast ratio on gray table cells, or a "professional" dark blue creates insufficient contrast with black text.
+Wizard validates profile fields strictly (type checking, range validation), but `--update-skills` or `--set-min-score` flags accept invalid values that corrupt profile. Example: `--set-min-score 99` succeeds even though scoring system uses 0.0-5.0 scale.
 
 **Why it happens:**
-Designers pick colors visually ("looks good to me") without testing contrast ratios, especially across all combinations (text on background, borders on backgrounds, disabled states). Bootstrap's built-in `color-contrast()` Sass function isn't available in runtime CSS customization, so developers manually override CSS variables without verification.
+Developers implement wizard validation once, then add CLI flags later without extracting/reusing validation logic. Each update path has separate validation (or none for CLI flags), leading to divergence.
+
+**Consequences:**
+- Invalid profile values break scoring engine
+- Wizard-created profiles work, CLI-updated profiles fail
+- Silent data corruption (no error, but scoring wrong)
+- User confusion ("worked yesterday, broken today")
 
 **How to avoid:**
-1. **Test ALL color combinations** with WebAIM Contrast Checker before implementation:
-   - Normal text: 4.5:1 minimum
-   - Large text (18pt+): 3:1 minimum
-   - UI components/borders: 3:1 minimum
-2. **Test with colorblind simulators** (Protanopia, Deuteranopia) — 8% of men have red-green colorblindness, so red/green for good/bad scores fails without additional visual indicators
-3. **Include non-color indicators** — icons (checkmark, warning triangle), patterns, or text labels alongside color coding
-4. **Document color values with contrast ratios** in code comments:
-   ```css
-   /* Success green: #22c55e on white = 3.4:1 (PASS AA Large) */
-   ```
-5. **Add Colour Contrast Analyser (CCA)** to CI/CD to automatically fail builds below WCAG AA thresholds
+1. Extract validation to shared schema module:
+```python
+# profile_schema.py
+from typing import Literal, List
+from pydantic import BaseModel, Field, validator
+
+class ProfileSchema(BaseModel):
+    name: str = Field(min_length=1)
+    level: Literal["entry", "mid", "senior", "lead"]
+    years_experience: int = Field(ge=0, le=50)
+    core_skills: List[str] = Field(min_items=1, max_items=20)
+    comp_floor: float | None = Field(ge=0)
+
+    @validator('core_skills')
+    def no_empty_skills(cls, v):
+        if any(not s.strip() for s in v):
+            raise ValueError("Skills cannot be empty strings")
+        return v
+```
+
+2. Use in wizard AND CLI flags:
+```python
+# Wizard
+profile = ProfileSchema(**wizard_answers)
+
+# CLI flag
+profile = ProfileSchema.parse_file(profile_path)
+profile.core_skills = args.update_skills.split(',')
+profile = ProfileSchema(**profile.dict())  # Re-validate
+```
 
 **Warning signs:**
-- Existing accessibility tests start failing after color changes
-- Light-colored warning badges have poor readability
-- Color-coded scores look identical in grayscale screenshots
-- Lighthouse accessibility score drops below 100
+- Scoring errors after CLI updates
+- Invalid values in profile.json
+- Different behavior wizard vs. CLI
+- No shared validation module
 
 **Phase to address:**
-Phase 1 (Semantic Colors) — Before implementing any color changes, establish WCAG testing protocol. Phase 3 (Accessibility CI) should catch regressions automatically.
+Phase 1 (Foundation) - Validation schema must exist BEFORE implementing CLI flags. Add CLI flags in Phase 2 only after validation is unified.
+
+**Real-world examples:**
+- [npm config validation conflicts](https://github.com/npm/cli/issues/8353) - strict validation caused friction with other tools
+- [Git config manual edits break](https://teamtreehouse.com/community/git-stopped-working-fatal-bad-config-line-1-in-file-usersusernamegitconfig)
 
 ---
 
-### Pitfall 3: Responsive Table Display Block Losing Table Semantics
+### Pitfall 3: No Confirmation for Destructive CLI Flag Updates
 
 **What goes wrong:**
-Converting Bootstrap tables to `display: block` or `display: flex` for mobile stacking completely removes native table semantics. Screen readers treat the table as a `<div>` soup, announcing cells as unrelated text chunks with no structural relationships. A table showing "Company | Position | Score" becomes "Company ABC Position Senior Developer Score 87 Company XYZ..." with no indication of column headers or row groupings. Even worse, if using `display: grid` or `display: flex` on Safari (pre-2024 versions), table semantics are completely dropped and assistive technology users lose all context.
+User runs `job-radar --update-skills "Python,JavaScript"` expecting to ADD skills, but flag REPLACES entire skills list. No confirmation prompt, no undo, original skills gone.
 
 **Why it happens:**
-Popular CSS patterns for responsive tables use `display: block` + floats to stack rows vertically, which works visually but destroys accessibility. Developers test with visual inspection only, not with screen readers.
+CLI flags are designed for non-interactive use (scripts, CI/CD), so confirmation prompts break automation. But users expect CLI flags to behave like interactive commands with safety guardrails.
+
+**Consequences:**
+- Accidental data loss (skills, certifications)
+- User frustration with "destructive" CLI
+- Support requests for recovery
+- Hesitation to use CLI flags
 
 **How to avoid:**
-1. **Never use `display: block/flex/grid` on `<table>` without ARIA restoration**
-2. **When changing display properties, add explicit ARIA roles**:
-   ```css
-   @media (max-width: 768px) {
-     table { display: block; }
-   }
-   ```
-   ```html
-   <table role="table">
-     <thead role="rowgroup">
-       <tr role="row">
-         <th role="columnheader">Company</th>
-   ```
-3. **Better approach: Keep table semantics, hide non-critical columns**:
-   - Use `visibility: hidden` on less important columns (not `display: none` on parent)
-   - Show only critical data (company name, score) on mobile
-   - Provide "View Details" expandable row or link to full data
-4. **Card layout pattern**: Convert to actual cards with `<dl>` (definition list) structure:
-   ```html
-   <div role="article" aria-label="Job posting">
-     <dl>
-       <dt>Company:</dt><dd>ABC Corp</dd>
-       <dt>Score:</dt><dd>87</dd>
-     </dl>
-   </div>
-   ```
-5. **Test with actual screen readers** (NVDA on Windows, VoiceOver on Mac/iOS) at mobile viewport widths
+1. **Default to append mode**, require explicit replacement:
+```bash
+# Safe (append)
+job-radar --add-skills "Docker,Kubernetes"
+
+# Explicit destructive (replace)
+job-radar --set-skills "Python,JavaScript" --confirm
+
+# Error without confirmation
+job-radar --set-skills "..."
+# Error: --set-skills is destructive. Add --confirm or use --add-skills
+```
+
+2. **Show before/after diff** when confirmation required:
+```python
+if args.set_skills and not args.confirm:
+    print("🚨 DESTRUCTIVE CHANGE:")
+    print(f"  Current: {', '.join(profile.core_skills)}")
+    print(f"  New:     {', '.join(new_skills)}")
+    print("\nAdd --confirm to proceed, or use --add-skills to append")
+    sys.exit(1)
+```
+
+3. **Dry-run mode** for preview:
+```bash
+job-radar --set-min-score 3.5 --dry-run
+# Would update min_score: 2.0 → 3.5
+```
 
 **Warning signs:**
-- Screen reader announces table content as plain text paragraph
-- NVDA/JAWS doesn't announce "Table with X rows" when entering table
-- axe DevTools reports "Elements must have their visible text as part of their accessible name"
-- Table navigation shortcuts (T to jump tables, Ctrl+Alt+arrows to navigate cells) don't work
+- User complaints about lost data
+- Support requests for "undo" or recovery
+- Hesitation to use CLI flags in docs/issues
+- No --dry-run or --confirm flags
 
 **Phase to address:**
-Phase 2 (Mobile Responsive) — Critical to address during initial mobile layout implementation. Should include screen reader testing as acceptance criteria.
+Phase 2 (CLI Flags) - Before implementing ANY destructive flags, decide on safety model (append vs. replace, confirmation, dry-run).
+
+**Real-world examples:**
+- [Gemini CLI safe mode confirmation](https://addyosmani.com/blog/gemini-cli/) - default requires approval
+- [Salesforce CLI validation without args](https://github.com/forcedotcom/cli/issues/2246) - no confirmation for destructive deploys
 
 ---
 
-### Pitfall 4: Bootstrap Print Stylesheet Stripping Backgrounds with !important
+### Pitfall 4: Profile Schema Evolution Without Migration Path
 
 **What goes wrong:**
-Bootstrap's built-in print stylesheet includes `background-color: transparent !important` and forces table cells to `background-color: white !important` globally, completely overriding custom score-based color coding. Attempting to add print rules like `.score-high { background-color: #d4edda !important; }` fails because Bootstrap's print reset has higher specificity or loads after custom CSS. Even if backgrounds do print, users' browsers default to "omit background graphics" in print settings, so color-coded cells print as white regardless of CSS. This destroys the visual hierarchy that was the entire point of the color system upgrade.
+v1.6.0 adds `preferred_languages` field to profile. Old profiles (v1.5.0) don't have this field. Code expects field to exist, crashes on profile load with `KeyError: 'preferred_languages'`.
 
 **Why it happens:**
-Developers add print styles but don't realize Bootstrap's print CSS is already in the inline bundle fighting them. Testing print preview with default browser settings (background graphics off) doesn't reveal the issue, but users printing with that setting see broken layouts.
+No version tracking in profile JSON. No migration system to upgrade old profiles. Code assumes current schema, fails when loading profiles created by older versions.
+
+**Consequences:**
+- App crashes on version upgrade
+- Users forced to re-run wizard (lose profile)
+- Breaking change in "minor" version
+- Backward compatibility broken
 
 **How to avoid:**
-1. **Override Bootstrap's print reset with higher specificity AFTER Bootstrap CSS**:
-   ```css
-   @media print {
-     /* Override Bootstrap's transparent backgrounds */
-     .table > tbody > tr > td.score-high,
-     .table > tbody > tr > th.score-high {
-       background-color: #d4edda !important;
-       -webkit-print-color-adjust: exact !important;
-       print-color-adjust: exact !important;
-     }
-   }
-   ```
-2. **Use `print-color-adjust: exact`** (and `-webkit-` prefix) to request browsers honor background colors — note this is a HINT, not a guarantee
-3. **Provide non-color fallback for prints**:
-   - Add borders/patterns to score ranges
-   - Include score numbers explicitly ("Score: 87/100")
-   - Add icons/symbols: ★★★★☆ for ratings
-4. **Test print preview with "background graphics: OFF"** (the default) — verify borders/text make visual hierarchy clear
-5. **Consider print-specific layout**: Simplified table with bold/italic instead of colors, or pre-computed summary section
+1. **Add schema version** to profile:
+```json
+{
+  "schema_version": 2,
+  "name": "...",
+  ...
+}
+```
+
+2. **Implement migration system**:
+```python
+CURRENT_SCHEMA = 2
+
+def migrate_profile(profile_data):
+    version = profile_data.get('schema_version', 1)
+
+    if version == 1:
+        # Add preferred_languages (default to languages)
+        profile_data['preferred_languages'] = profile_data.get('languages', ['English'])
+        profile_data['schema_version'] = 2
+
+    if version == 2:
+        # Future migration
+        pass
+
+    return profile_data
+
+def load_profile(path):
+    with open(path) as f:
+        data = json.load(f)
+
+    # Auto-migrate and save
+    data = migrate_profile(data)
+    if data['schema_version'] != CURRENT_SCHEMA:
+        atomic_write_json(path, data)  # Persist migration
+
+    return ProfileSchema(**data)
+```
+
+3. **Test migrations**:
+```python
+def test_migration_v1_to_v2():
+    v1_profile = {"name": "Test", "languages": ["Spanish"]}
+    migrated = migrate_profile(v1_profile)
+    assert migrated['schema_version'] == 2
+    assert migrated['preferred_languages'] == ["Spanish"]
+```
 
 **Warning signs:**
-- Print preview shows all-white table cells
-- Color-coded scores visible on screen disappear in print
-- PDF exports from browser show no background colors
-- User bug reports: "Printed report loses all formatting"
+- No `schema_version` field in profile
+- KeyError on profile load after updates
+- No migration tests
+- Breaking changes in minor versions
 
 **Phase to address:**
-Phase 2 (Print Stylesheet) — Address immediately when adding print support. Include print testing with backgrounds off in QA checklist.
+Phase 1 (Foundation) - Add schema versioning IMMEDIATELY, before v1.5.0 ships. Migrations can be added incrementally, but version field must exist from start.
+
+**Real-world examples:**
+- [JSON schema compatibility checker](https://github.com/json-schema-org/community/issues/984) - detecting breaking changes
+- [ORS config migration tool](https://github.com/GIScience/ors-config-migration) - JSON to YAML with schema changes
+- [Native image metadata upgrades](https://github.com/oracle/graal/issues/8534)
 
 ---
 
-### Pitfall 5: CSV Export Missing UTF-8 BOM Breaks Excel Special Characters
+### Pitfall 5: No Backup Before Profile Updates
 
 **What goes wrong:**
-JavaScript Blob-based CSV export creates files that display correctly in text editors but show corrupted characters in Microsoft Excel when job titles, companies, or descriptions contain non-ASCII characters (é, ñ, ™, curly quotes, em-dashes). A job title like "Développeur Senior—Full Stack" appears as "DÃ©veloppeur Seniorâ€"Full Stack" when opened directly in Excel. Additionally, commas in company names ("Acme, Inc.") or job titles break CSV column structure, shifting data into wrong columns.
+User runs `--update-skills` with typo. Realizes mistake immediately, but no undo. Previous profile state lost. Must manually reconstruct skills list from memory or re-run wizard.
 
 **Why it happens:**
-CSV exports specify UTF-8 encoding (`charset=utf-8`) but omit the BOM (Byte Order Mark) that Excel requires to detect UTF-8. Without BOM bytes `\xEF\xBB\xBF` at the file start, Excel assumes Windows-1252 encoding. Developers test with simple ASCII data or open CSVs in text editors (which handle UTF-8 correctly) rather than Excel.
+Backup considered "extra complexity" for initial implementation. Developers assume atomic writes prevent corruption, but atomic writes don't prevent USER ERRORS.
+
+**Consequences:**
+- No recovery from user mistakes
+- Anxiety about using CLI flags
+- Feature abandonment (users stick to wizard)
+- Support burden for recovery requests
 
 **How to avoid:**
-1. **Add UTF-8 BOM prefix** to CSV content before creating Blob:
-   ```javascript
-   const BOM = "\uFEFF";
-   const csvContent = BOM + csvData;
-   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-   ```
-2. **Escape special characters** properly:
-   - Wrap all fields in double quotes: `"Acme, Inc.","Senior Dev—FT","Score: 87"`
-   - Escape embedded quotes by doubling: `"Company ""Quoted"" Name"` → `Company "Quoted" Name`
-   - Preserve newlines in multi-line descriptions: `"Line 1\nLine 2"` works in Excel
-3. **Test in actual Excel** (not Google Sheets or LibreOffice) on Windows with non-ASCII data:
-   - Test company names: Citroën, Nestlé, SAP®
-   - Test special chars: em-dash (—), curly quotes (" "), trademark (™)
-   - Test commas in values
-4. **Provide UTF-8 BOM as default**, document how to import if user manually changes encoding
+1. **Automatic timestamped backups**:
+```python
+from datetime import datetime
+import shutil
+
+def backup_profile(profile_path):
+    """Create timestamped backup before update."""
+    if not os.path.exists(profile_path):
+        return None
+
+    backup_dir = os.path.join(os.path.dirname(profile_path), '.backups')
+    os.makedirs(backup_dir, exist_ok=True)
+
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    backup_path = os.path.join(backup_dir, f'profile_{timestamp}.json')
+
+    shutil.copy2(profile_path, backup_path)
+
+    # Cleanup: keep last 10 backups
+    backups = sorted(glob.glob(os.path.join(backup_dir, 'profile_*.json')))
+    for old_backup in backups[:-10]:
+        os.remove(old_backup)
+
+    return backup_path
+
+def update_profile(profile_path, updates):
+    backup_path = backup_profile(profile_path)
+    print(f"💾 Backup saved: {backup_path}")
+
+    # ... perform update with atomic write ...
+
+    return backup_path
+```
+
+2. **Easy restore command**:
+```bash
+job-radar --restore-profile
+# Lists recent backups with preview
+# User selects which to restore
+```
+
+3. **Post-update summary**:
+```
+✓ Profile updated successfully
+  Updated: core_skills
+  Backup: ~/.job-radar/.backups/profile_20260211_143052.json
+  Restore: job-radar --restore-profile
+```
 
 **Warning signs:**
-- Excel shows "DÃ©veloppeur" instead of "Développeur"
-- Commas in company names cause data to shift columns
-- Special characters like em-dashes (—) display as â€"
-- User bug reports: "CSV file is corrupted" (but only from Excel users)
+- No backup directory or mechanism
+- User complaints about irreversible changes
+- Support requests for manual recovery
+- Feature usage drops over time
 
 **Phase to address:**
-Phase 2 (CSV Export) — Must implement BOM and proper escaping from the start. Add test suite with non-ASCII sample data.
+Phase 2 (CLI Flags) - Implement before shipping CLI update flags. Backup is table-stakes for any destructive operation.
 
----
-
-### Pitfall 6: Lighthouse CI Flakiness from Dynamic Content & Timing Issues
-
-**What goes wrong:**
-Lighthouse accessibility scores fluctuate between runs (98, 100, 95, 100) in GitHub Actions CI despite identical code, causing builds to randomly fail. The HTML report loads application status from localStorage, updates counts dynamically with JavaScript, and applies filters — all of which execute at unpredictable times relative to Lighthouse's scan. Lighthouse may scan before JavaScript finishes, catching the page in an intermediate state with missing ARIA labels on filter buttons or dynamic count badges showing "0" (failing "button must have discernible text" rule). Multiple consecutive runs on the same code produce different accessibility scores, making the CI gate unreliable.
-
-**Why it happens:**
-Lighthouse's default configuration doesn't wait for JavaScript execution to complete before auditing. Dynamic content loading (localStorage reads), DOM manipulation (updating counts), and async operations create race conditions. Running Lighthouse once per commit amplifies variance — single runs are inherently flaky for performance/timing-dependent audits.
-
-**How to avoid:**
-1. **Configure multiple Lighthouse runs** (minimum 3-5) and use median score:
-   ```yaml
-   # .lighthouserc.json
-   {
-     "ci": {
-       "collect": {
-         "numberOfRuns": 5
-       },
-       "assert": {
-         "preset": "lighthouse:recommended",
-         "assertions": {
-           "categories:accessibility": ["error", {"minScore": 0.95}]
-         }
-       }
-     }
-   }
-   ```
-2. **Add explicit waits** for dynamic content in Lighthouse config:
-   ```javascript
-   // Wait for specific elements to appear
-   await page.waitForSelector('[data-status-count]', { visible: true });
-   await page.waitForFunction(() => {
-     const count = document.querySelector('[data-status-count]');
-     return count && count.textContent !== '0';
-   });
-   ```
-3. **Separate static vs. dynamic audits**:
-   - Static audits (HTML structure, contrast, ARIA) run on every commit
-   - Dynamic audits (interactive elements, localStorage state) run only on main/release branches
-4. **Use axe-core directly** for more reliable accessibility testing — axe has zero false positives philosophy and better handles dynamic content
-5. **Add data-* attributes** for test stability:
-   ```html
-   <button data-filter="applied" aria-label="Filter: Applied (5)">
-     Applied <span data-testid="applied-count">5</span>
-   </button>
-   ```
-6. **Review failed audits manually** — if Lighthouse catches an issue 1 out of 5 runs, it's likely a real race condition
-
-**Warning signs:**
-- Lighthouse accessibility scores vary by >3 points between identical runs
-- CI failures for "Elements must have discernible text" that pass locally
-- Intermittent failures on dynamic filter buttons or count badges
-- Lighthouse reports different number of accessibility issues on consecutive runs
-- GitHub Actions logs show timing differences in JavaScript execution
-
-**Phase to address:**
-Phase 3 (Accessibility CI) — Essential to configure multiple runs and waits from the start. Consider axe-core as primary tool with Lighthouse as secondary validation.
-
----
-
-### Pitfall 7: JavaScript Filter State Loss & Missing Accessibility Announcements
-
-**What goes wrong:**
-Implementing status filters (Applied, Interview, Rejected) with JavaScript filtering creates two critical issues: (1) Filter state is lost on page reload — users apply filters, reload the page (F5), and all jobs reappear without filter state persisted, and (2) Screen reader users have no indication that content changed after clicking a filter button. Sighted users see jobs disappear/reappear, but screen reader users hear "Filter: Applied, button" with no announcement that "Showing 5 of 47 jobs". Additionally, using URL fragments for state (`#filter=applied`) breaks accessibility because screen readers don't announce URL changes, and fragment-based routing isn't indexed by search engines.
-
-**Why it happens:**
-Developers implement filtering as in-memory JavaScript state without persistence or live region announcements. URL fragment routing seems like an easy solution for state persistence, but it's a client-side-only approach that assistive technology doesn't recognize. Testing with mouse clicks doesn't reveal the lack of screen reader announcements.
-
-**How to avoid:**
-1. **Persist filter state in localStorage** AND URL query params (not fragments):
-   ```javascript
-   // Good: Query params are crawlable and can be announced
-   const params = new URLSearchParams(window.location.search);
-   params.set('filter', 'applied');
-   window.history.replaceState({}, '', `?${params}`);
-   localStorage.setItem('jobFilter', 'applied');
-   ```
-2. **Add ARIA live region** for filter results announcements:
-   ```html
-   <div aria-live="polite" aria-atomic="true" class="sr-only" id="filter-status">
-     <!-- JavaScript updates this -->
-   </div>
-   ```
-   ```javascript
-   function applyFilter(status) {
-     const count = filterJobs(status);
-     const statusEl = document.getElementById('filter-status');
-     statusEl.textContent = `Showing ${count} ${status} jobs out of ${totalJobs} total`;
-   }
-   ```
-3. **Use aria-pressed** on filter toggle buttons to indicate active state:
-   ```html
-   <button aria-pressed="true" data-filter="applied">
-     Applied (5)
-   </button>
-   ```
-4. **Sync state on load**:
-   ```javascript
-   window.addEventListener('DOMContentLoaded', () => {
-     const params = new URLSearchParams(window.location.search);
-     const savedFilter = params.get('filter') || localStorage.getItem('jobFilter');
-     if (savedFilter) applyFilter(savedFilter);
-   });
-   ```
-5. **Test with screen reader** (NVDA/VoiceOver) — verify announcements after filter clicks
-
-**Warning signs:**
-- Filters reset to "All" on page reload despite user setting filter
-- Screen reader testing reveals no announcement after clicking filter button
-- URL shows `#filter=applied` instead of `?filter=applied`
-- Users report "Filters don't stay applied when I refresh"
-- axe DevTools warns "aria-live region not updated"
-
-**Phase to address:**
-Phase 2 (Status Filters) — Must implement localStorage + query param sync and ARIA live regions from the start. Include screen reader testing in acceptance criteria.
+**Real-world examples:**
+- [Git config backup best practices](https://labex.io/tutorials/git-how-to-fix-fatal-unable-to-read-config-file-error-in-git-417550) - "create regular backups"
+- [Network config backup automation](https://www.manageengine.com/network-configuration-manager/best-practices-for-backing-up-network-configurations.html)
+- [Fortinet config backup](https://docs.fortinet.com/document/fortigate/7.6.5/administration-guide/702257/configuration-backups-and-reset) - before firmware updates
 
 ---
 
@@ -311,26 +346,31 @@ Shortcuts that seem reasonable but create long-term problems.
 
 | Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
 |----------|-------------------|----------------|-----------------|
-| Embed full font files without subsetting | No build tooling needed, works immediately | +300KB file size, slow page loads, poor mobile UX | Never — subsetting is one-time 10min Python script |
-| Use Bootstrap default colors without testing | No design work, ships faster | WCAG AA failures, accessibility lawsuit risk, user complaints | Never on WCAG-compliant products |
-| `display: block` on tables without ARIA | Responsive layout works visually in 20 lines CSS | Screen reader users can't navigate data, ADA compliance fails | Never — ARIA restoration takes 5 minutes |
-| Skip UTF-8 BOM in CSV export | Works in Google Sheets and text editors | Excel users see corrupted data, support tickets, reputation damage | Never — BOM is 1 line of code (`const BOM = "\uFEFF"`) |
-| Single Lighthouse run in CI | Faster CI builds (30s vs. 2min) | Flaky tests, false positives/negatives, eroded trust in CI | Only for non-critical static sites; Never for accessibility compliance |
-| URL fragments instead of query params for filters | Easier JavaScript, no backend needed | Breaks accessibility, SEO, shareability; localStorage alone loses state on new device | Never — query params are equally easy |
-| Skip print testing with backgrounds OFF | Works in developer's print preview | Users print blank white tables, lose score context | Never — default browser setting, must test both modes |
-| Base64 embed fonts as TTF/WOFF instead of WOFF2 | Simpler conversion (no pyftsubset needed) | 3-5x larger file size (WOFF2 Brotli compression is crucial) | Never — WOFF2 support is 95%+ browsers since 2018 |
+| Skip atomic writes, use direct `open('w')` | 5 fewer lines of code | Profile corruption on crashes, user data loss, support burden | **Never** - atomic writes are non-negotiable |
+| Duplicate validation (wizard vs. CLI) | Faster initial implementation | Validation divergence, silent corruption, test explosion | **Never** - extract validation from day 1 |
+| No schema versioning | Simpler initial design | Breaking changes on every schema update, forced wizard re-runs | **Never** - add version field immediately |
+| Skip backups ("atomic writes are enough") | Less disk I/O, simpler code | No recovery from user errors, feature anxiety | **Never** for destructive operations |
+| CLI flags default to REPLACE instead of APPEND | Simpler flag parsing | User data loss, confusion, support requests | Only with `--confirm` flag requirement |
+| String-based skill parsing (`"Python,JS"`) instead of JSON | Easier CLI usage | Can't handle commas in skill names, quote escaping issues | Acceptable for MVP; migrate to JSON in later versions |
+| No dry-run mode | Fewer code paths to test | Users afraid to use CLI flags without preview | Only if confirmation prompts show diffs |
+
+---
 
 ## Integration Gotchas
 
-Common mistakes when connecting to external services or existing systems.
+Common mistakes when integrating profile updates with existing system.
 
 | Integration | Common Mistake | Correct Approach |
 |-------------|----------------|------------------|
-| Bootstrap 5 existing inline CSS | Appending new CSS causes Bootstrap print reset to override colors | Place custom print CSS AFTER Bootstrap in concatenation order, use higher specificity selectors |
-| localStorage for filter state | Storing state but not syncing URL, breaks shareable links | Store in BOTH localStorage (persistence) AND URL query params (shareability) |
-| WCAG 2.1 AA existing compliance | Assuming new color scheme maintains compliance without testing | Test every color combination with WebAIM Contrast Checker, add automated contrast checks to CI |
-| Existing score color coding (Bootstrap contextual classes) | Direct replacement breaks semantics (.bg-success → .score-high) | Keep Bootstrap classes for base styling, layer custom colors via CSS variables, maintain non-color indicators |
-| file:// protocol requirement | Assuming `fetch()` or external resource loading works | Everything must be inline — no external font files, no CDN links, no XHR; test by opening file:// directly |
+| **Wizard → CLI flag validation** | Wizard uses Questionary validation, CLI flags use argparse types. Different validation rules. | Extract to shared Pydantic schema. Both paths validate through schema. |
+| **Profile load in search.py** | Assumes profile.json always valid, crashes on corruption. | Try/except with helpful error: "Profile corrupted. Restore backup with --restore-profile or re-run wizard." |
+| **Preview display** | Dumps entire JSON to console, overwhelming and unreadable. | Format as human-readable table with sections (Personal Info, Skills, Preferences). |
+| **CLI flag parsing** | `--update-skills "Python, JavaScript"` splits on comma WITHOUT trimming whitespace → skills: `["Python", " JavaScript"]` | Strip whitespace: `[s.strip() for s in args.update_skills.split(',')]` |
+| **Backup cleanup** | Never delete old backups → fills disk over months. | Keep last 10-20 backups, delete older. Or size-based limit (e.g., 1 MB total). |
+| **Profile path resolution** | Hardcode `~/.job-radar/profile.json`, breaks on Windows if `~` not expanded. | Use `os.path.expanduser('~/.job-radar/profile.json')` |
+| **Schema migration timing** | Migrate on every profile read → unnecessary I/O. | Migrate once, persist updated profile. Track current schema version. |
+
+---
 
 ## Performance Traps
 
@@ -338,11 +378,12 @@ Patterns that work at small scale but fail as usage grows.
 
 | Trap | Symptoms | Prevention | When It Breaks |
 |------|----------|------------|----------------|
-| Base64 embedding all fonts without subsetting | HTML file 800KB+, 4s load on 3G, browser hangs on open | Subset to 50-100KB total, use WOFF2, consider system font fallbacks for print | >200KB embedded fonts (Inter + JetBrains full = 400KB+) |
-| Inline CSS exceeding browser parser limits | Browser refuses to render, white screen, "file too large" errors | Keep total inline CSS <500KB, minify, remove unused Bootstrap components | Total HTML >2MB (Google crawl limit), CSS >1MB (parser stress) |
-| JavaScript filtering 1000+ jobs in DOM | Filter button clicks lag 500ms+, UI freezes, poor mobile performance | Virtual scrolling, pagination, or limit visible results to 200 | >500 table rows with complex filtering |
-| Inline JavaScript for filters/export without minification | Page load slows, Time to Interactive increases | Minify JavaScript, defer non-critical scripts with `<!-- defer -->` comments | >50KB inline JavaScript unminified |
-| Multiple font weights embedded (100-900) | 100-200KB per font family, unused weights waste bandwidth | Only embed weights actually used (400 regular + 700 bold), remove 100/200/300/500/600/800/900 | >3 font weights per family |
+| Loading entire backup directory to list backups | CLI hangs when listing restore options | Use `os.scandir()` with `stat()`, don't read file contents | >100 backups (months of daily updates) |
+| Validating profile on every scorer instantiation | Scoring becomes slow, test suite timeout | Validate once at load, cache validated object | >1000 job listings per search |
+| Re-parsing JSON skills normalization on every match | CPU spike during scoring | Pre-normalize skills on profile load, cache normalized lookup | Already resolved in v1.0 (normalize at lookup) |
+| Keeping all schema versions in migration chain | Migration code grows forever, slow startup | Archive migrations: support N-1 and N-2 versions, force wizard for older | Schema version >10 |
+
+---
 
 ## Security Mistakes
 
@@ -350,11 +391,13 @@ Domain-specific security issues beyond general web security.
 
 | Mistake | Risk | Prevention |
 |---------|------|------------|
-| CSV export not escaping formulas (=, +, @, -) | CSV injection — Excel executes formulas, potential remote code execution if user opens CSV | Prefix values starting with `=+-@` with single quote: `'=SUM(A1:A10)` or tab character |
-| localStorage containing sensitive job application data | Data persists indefinitely, accessible to XSS, survives across sessions | Store only non-sensitive state (filter selections, sort order), never API keys or personal notes |
-| Missing Content-Security-Policy in inline HTML | XSS risk from user-generated content (job descriptions, company names) | Add CSP meta tag: `<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'">` |
-| Base64 encoded fonts from untrusted sources | Malicious font files can exploit rendering engine vulnerabilities | Only embed fonts from official sources (Google Fonts, JetBrains GitHub), verify checksums |
-| Print CSS exposing hidden data | Hidden columns (`display: none`) may print if print stylesheet isn't comprehensive | Explicitly set `display: none !important` on sensitive fields in print media query |
+| **Path traversal in `--restore-profile <path>`** | User provides `../../etc/passwd`, app tries to load it | Validate path is within `~/.job-radar/.backups/`, reject `..` segments |
+| **Arbitrary code execution via JSON** | Attacker modifies profile.json to inject code (e.g., `__import__` in deserializer) | Use `json.load()` NOT `pickle` or `eval()`. Never execute profile values. |
+| **No validation on restored backups** | User restores old backup with invalid schema, app crashes | Validate + migrate restored profiles before saving |
+| **World-readable profile.json** | Profile contains PII (name, location, email in highlights) | Set restrictive permissions: `os.chmod(profile_path, 0o600)` (owner read/write only) |
+| **Command injection via skill names** | Skill name `"; rm -rf /"` executed if passed to shell | Never pass profile values to shell commands. No `os.system()` or `subprocess.shell=True`. |
+
+---
 
 ## UX Pitfalls
 
@@ -362,29 +405,39 @@ Common user experience mistakes in this domain.
 
 | Pitfall | User Impact | Better Approach |
 |---------|-------------|-----------------|
-| Hero jobs visually distinct but not sortable | Users can't filter to "show only hero jobs" or sort by hero status | Add hero status as filterable/sortable column, include in CSV export |
-| Mobile hides columns without indication | Users don't know data exists, assume fields are missing | Show "View Details" link/button to expand full row data, or tooltip "Tap for more" |
-| Responsive breakpoint at 768px only | Layout breaks on iPad Pro (1024px) in portrait, large phones (≥768px) | Test at 375px, 768px, 1024px, 1280px, use fluid layouts with clamp() |
-| Color-only score indicators | Colorblind users can't distinguish scores, fails WCAG 1.4.1 | Combine color + icon (★ rating) + text label ("Excellent: 87/100") |
-| Print opens new tab instead of print dialog | Users confused, have to manually File → Print, extra step | Use `window.print()` JavaScript to trigger print dialog directly |
-| CSV filename generic "export.csv" | Users download multiple reports, can't distinguish them | Include date + filter state: `job-radar-applied-2026-02-11.csv` |
-| No loading indicator during filter | Appears broken if filtering >200 jobs takes 200ms | Add spinner or "Filtering..." text during processing, use debounce for search inputs |
-| Font changes break pre-existing user zoom | Users with 150% browser zoom get clipped text or broken layouts | Test at 100%, 150%, 200% zoom, use relative units (rem, em), avoid fixed heights |
+| **Profile preview dumps raw JSON** | Overwhelming, hard to read, looks broken | Format as sections with labels: `Personal Info`, `Skills` (with counts), `Preferences` |
+| **No indication which fields quick-edit can change** | User guesses, gets errors, gives up | `job-radar --help` shows: "Editable fields: skills, min_score, target_titles, location" |
+| **CLI flag updates with zero feedback** | "Did it work? Let me check the file..." | Print confirmation: "✓ Updated core_skills (5 skills)" |
+| **No diff shown before destructive change** | User confirms without knowing what's changing | Show before/after: `core_skills: ["Python", "JS"] → ["Go", "Rust"]` |
+| **Error messages reference internal field names** | "ValidationError: comp_floor must be >= 0" → user doesn't know what comp_floor is | "Error: Minimum salary must be a positive number (or leave blank)" |
+| **Quick-edit mode shows ALL fields** | Overwhelms user with 15 fields, most unchanged | Show only common fields (skills, location, min_score). Advanced flag for full edit. |
+| **Preview runs before EVERY search** | Adds 2-3 seconds to startup, annoying for daily use | Preview only on `--profile-preview` flag, or first run each day |
+| **Restore command doesn't show backup contents** | User picks wrong backup, restores old version | Show first few fields + timestamp: `20260211_1430: John Doe, Python/JS, 5 skills` |
+
+---
 
 ## "Looks Done But Isn't" Checklist
 
 Things that appear complete but are missing critical pieces.
 
-- [ ] **Font embedding:** Often missing subsetting — verify file size <150KB total for Inter + JetBrains Mono, check WOFF2 format, test FOUT with throttled network
-- [ ] **Semantic colors:** Often missing contrast verification — run WebAIM Contrast Checker on ALL combinations, test with Deuteranopia/Protanopia simulator, verify non-color indicators exist
-- [ ] **Responsive tables:** Often missing ARIA roles — test with NVDA/VoiceOver, verify table semantics preserved, check that hidden columns have `aria-hidden="true"`
-- [ ] **Print stylesheet:** Often missing background color preservation — test with "background graphics: OFF" in print settings, verify borders/text-based hierarchy exists
-- [ ] **CSV export:** Often missing UTF-8 BOM — open in Excel on Windows (not Mac, not Google Sheets), test with é, ñ, ™, —, verify commas in values don't break columns
-- [ ] **Accessibility CI:** Often missing multiple Lighthouse runs — verify 3-5 runs configured, check for explicit waits on dynamic content, confirm axe-core as primary tool
-- [ ] **Status filters:** Often missing ARIA live regions — test with screen reader, verify announcements on filter change, check localStorage + URL query param sync
-- [ ] **Mobile card layout:** Often missing semantic structure — verify `<dl>` or proper ARIA roles, test skip navigation, check expandable details work with keyboard
-- [ ] **Hero job visual hierarchy:** Often missing keyboard focus indicators — verify visible focus ring at 200% zoom, check color contrast on focus state ≥3:1
-- [ ] **Font rendering:** Often missing cross-platform testing — test on Windows (ClearType), macOS (retina), Linux, verify fallback stack works when custom fonts fail
+- [ ] **Profile update**: Atomic write implemented — verify `os.replace()` used (not `os.rename()` which fails cross-filesystem)
+- [ ] **Profile update**: Backup created — verify backup timestamp in output
+- [ ] **Profile update**: Old backups cleaned up — verify only N most recent kept
+- [ ] **Validation**: Same rules wizard and CLI — verify shared schema module used
+- [ ] **Validation**: Profile validated after restore — verify restore path calls schema validation
+- [ ] **CLI flags**: Confirmation for destructive changes — verify `--set-*` flags error without `--confirm`
+- [ ] **CLI flags**: Helpful error messages — verify field names translated to user language
+- [ ] **Preview**: Formatted output, not raw JSON — verify sections, labels, readable layout
+- [ ] **Preview**: Performance acceptable — verify preview takes <100ms
+- [ ] **Schema migration**: Version field in profile — verify all profiles have `schema_version`
+- [ ] **Schema migration**: Migration tests — verify test for each schema version upgrade
+- [ ] **Error handling**: Corrupted profile helpful error — verify suggests restore or wizard
+- [ ] **Error handling**: Invalid flag value helpful error — verify shows valid range/options
+- [ ] **Security**: File permissions set — verify profile.json is 0o600 (owner only)
+- [ ] **Security**: Backup permissions set — verify backup files are 0o600
+- [ ] **Security**: Path traversal prevented — verify restore path validated
+
+---
 
 ## Recovery Strategies
 
@@ -392,14 +445,15 @@ When pitfalls occur despite prevention, how to recover.
 
 | Pitfall | Recovery Cost | Recovery Steps |
 |---------|---------------|----------------|
-| Base64 fonts too large (>500KB) | LOW | 1. Generate font subset with pyftsubset/glyphanger 2. Convert to WOFF2 3. Test file size reduction 4. Re-inline into CSS |
-| WCAG contrast failures post-launch | MEDIUM | 1. Audit all color combinations with CCA 2. Adjust failing colors by +10% lightness/darkness 3. Add AAA-compliant borders as fallback 4. Re-run accessibility tests |
-| Table semantics lost on mobile | HIGH | 1. Add ARIA roles to ALL table elements 2. Consider card layout rewrite with `<dl>` 3. Add comprehensive screen reader testing 4. May require UX redesign |
-| Bootstrap print CSS stripping backgrounds | LOW | 1. Add print CSS overrides with `!important` after Bootstrap 2. Include `print-color-adjust: exact` 3. Add border-based visual hierarchy 4. Document print-with-backgrounds instructions |
-| CSV export breaks Excel | LOW | 1. Prepend UTF-8 BOM `\uFEFF` 2. Escape all values with quotes 3. Handle formula injection (prefix =, +, -, @) 4. Test with Excel on Windows |
-| Lighthouse CI too flaky | MEDIUM | 1. Configure 5 runs + median scoring 2. Add explicit waits for dynamic content 3. Switch to axe-core for reliability 4. Separate static vs. dynamic audit jobs |
-| Filter state lost on reload | MEDIUM | 1. Add URL query param sync 2. Implement localStorage fallback 3. Add ARIA live regions for announcements 4. Test reload scenarios |
-| Mobile layout breaks at unusual widths | MEDIUM | 1. Add intermediate breakpoints (375px, 1024px, 1280px) 2. Use `clamp()` for fluid typography 3. Test on real devices (iPhone SE, iPad Pro) 4. Use container queries if complex |
+| **Corrupted profile (no backup)** | HIGH | 1. Check `.backups/` for automatic backups<br>2. If none, attempt manual JSON repair with `jq` or text editor<br>3. Last resort: re-run wizard (`job-radar --wizard`) |
+| **Corrupted profile (with backup)** | LOW | 1. `job-radar --restore-profile`<br>2. Select most recent backup<br>3. Verify with `--profile-preview` |
+| **Invalid value from CLI flag** | LOW | 1. Validation should prevent this (fail fast)<br>2. If persisted: load profile, fix value, save with atomic write<br>3. Add test for this validation case |
+| **Lost skills from REPLACE instead of APPEND** | MEDIUM | 1. `job-radar --restore-profile`<br>2. Select backup before destructive change<br>3. Use `--add-skills` instead of `--set-skills` |
+| **Schema migration failed** | MEDIUM | 1. Check migration error message for version<br>2. Manual migration: load JSON, add missing fields, increment version<br>3. Report bug with profile structure (anonymized) |
+| **Backup directory full** | LOW | 1. Manual cleanup: `rm ~/.job-radar/.backups/profile_2026011*` (old month)<br>2. Or increase retention limit in code |
+| **Permissions error (can't write profile)** | LOW | 1. Check ownership: `ls -l ~/.job-radar/profile.json`<br>2. Fix: `chmod 600 ~/.job-radar/profile.json`<br>3. Check parent directory permissions |
+
+---
 
 ## Pitfall-to-Phase Mapping
 
@@ -407,72 +461,70 @@ How roadmap phases should address these pitfalls.
 
 | Pitfall | Prevention Phase | Verification |
 |---------|------------------|--------------|
-| Base64 font bloat & FOUT/FOIT | Phase 1: Font System | File size <150KB for fonts, Lighthouse FCP <2s, font-display: swap present |
-| WCAG contrast regression | Phase 1: Semantic Colors | WebAIM Contrast Checker all combinations ≥4.5:1 text / ≥3:1 UI, colorblind simulator testing |
-| Table semantics lost (display: block) | Phase 2: Mobile Responsive | NVDA announces "table with X rows", ARIA roles verified, axe-core clean scan |
-| Bootstrap print CSS override | Phase 2: Print Stylesheet | Print preview with backgrounds OFF shows borders/hierarchy, color-adjust: exact confirmed |
-| CSV UTF-8 BOM missing | Phase 2: CSV Export | Excel on Windows opens with é, ñ, — correct, commas in values don't break columns |
-| Lighthouse CI flakiness | Phase 3: Accessibility CI | 5 Lighthouse runs with <3 point variance, axe-core zero failures, wait conditions documented |
-| Filter state loss & no SR announcements | Phase 2: Status Filters | localStorage + URL param sync works, ARIA live region announces filter results, NVDA testing passes |
-| Hero job accessibility | Phase 1: Hero Visual Hierarchy | Focus indicators visible at 200% zoom, ARIA labels present, keyboard navigation works |
-| Responsive breakpoint gaps | Phase 2: Mobile Responsive | Test at 375px, 768px, 1024px, 1280px, no horizontal scroll, text readable at 150% zoom |
-| Font rendering cross-platform | Phase 1: Font System | Visual test Windows/Mac/Linux, fallback stack tested (Georgia, Consolas), FOUT acceptable |
-
-## Sources
-
-**Font Embedding & Performance:**
-- [Web Font Anti-pattern: Data URIs—zachleat.com](https://www.zachleat.com/web/web-font-data-uris/)
-- [Base64 Encoding & Performance, Part 1 – CSS Wizardry](https://csswizardry.com/2017/02/base64-encoding-and-performance/)
-- [Performance Anti-Patterns: Base64 Encoding](https://calendar.perfplanet.com/2018/performance-anti-patterns-base64-encoding/)
-- [Font Subsetting: How to Optimize Font File Size - Rovity](https://rovity.io/reduce-web-font-size/)
-- [Optimize web fonts | web.dev](https://web.dev/learn/performance/optimize-web-fonts)
-
-**WCAG Color Contrast:**
-- [Accessibility · Bootstrap v5.3](https://getbootstrap.com/docs/5.3/getting-started/accessibility/)
-- [WebAIM: Contrast Checker](https://webaim.org/resources/contrastchecker/)
-- [Colour Contrast Analyser (CCA) - Vispero](https://vispero.com/color-contrast-checker/)
-- [Color Contrast for Accessibility: WCAG Guide (2026)](https://www.webability.io/blog/color-contrast-for-accessibility)
-
-**Responsive Tables & Accessibility:**
-- [Accessible Front-End Patterns For Responsive Tables (Part 1) — Smashing Magazine](https://www.smashingmagazine.com/2022/12/accessible-front-end-patterns-responsive-tables-part1/)
-- [Tables, CSS Display Properties, and ARIA — Adrian Roselli](https://adrianroselli.com/2018/02/tables-css-display-properties-and-aria.html)
-- [Responsive tables - ADG](https://www.accessibility-developer-guide.com/examples/tables/responsive/)
-- [A Responsive Accessible Table — Adrian Roselli](https://adrianroselli.com/2017/11/a-responsive-accessible-table.html)
-
-**Print Stylesheets:**
-- [Print Styles Gone Wrong: Avoiding Pitfalls in Media Print CSS](https://blog.pixelfreestudio.com/print-styles-gone-wrong-avoiding-pitfalls-in-media-print-css/)
-- [Don't Rely on Background Colors Printing | CSS-Tricks](https://css-tricks.com/dont-rely-on-background-colors-printing/)
-- [Bootstrap striped table not printing to PDF | API2PDF](https://www.api2pdf.com/solved-bootstrap-striped-table-not-printing-to-pdf)
-- [Tables are not printing correctly · Issue #25453 · twbs/bootstrap](https://github.com/twbs/bootstrap/issues/25453)
-
-**CSV Export:**
-- [Quick Fix for UTF-8 CSV files in Microsoft Excel — Edmundo Fuentes' Blog](https://www.edmundofuentes.com/blog/2020/06/13/excel-utf8-csv-bom-string/)
-- [Opening CSV UTF-8 files correctly in Excel - Microsoft Support](https://support.microsoft.com/en-us/office/opening-csv-utf-8-files-correctly-in-excel-8a935af5-3416-4edd-ba7e-3dfd2bc4a032)
-- [JavaScript CSV Download – Excel + Umlaute - DevAndy](https://devandy.de/javascript-csv-download-excel-umlaute/)
-- [JavaScript CSV Export with Unicode Symbols | Shield UI](https://www.shieldui.com/javascript-unicode-csv-export)
-
-**Lighthouse CI & Accessibility Testing:**
-- [GitHub - GoogleChrome/lighthouse-ci](https://github.com/GoogleChrome/lighthouse-ci)
-- [Lighthouse meets GitHub Actions - LogRocket Blog](https://blog.logrocket.com/lighthouse-meets-github-actions-use-lighthouse-ci/)
-- [GitHub - dequelabs/axe-core](https://github.com/dequelabs/axe-core)
-- [Axe-core by Deque | open source accessibility engine](https://www.deque.com/axe/axe-core/)
-
-**State Management & Accessibility:**
-- [Why URL state matters: A guide to useSearchParams in React - LogRocket Blog](https://blog.logrocket.com/url-state-usesearchparams/)
-- [Chapter 5: Convey changes of state to screen-readers](https://accessible-vue.com/chapter/5/)
-- [When a screen reader needs to announce content - VA.gov Design System](https://design.va.gov/accessibility/when-a-screen-reader-needs-to-announce-content)
-
-**Performance & File Size:**
-- [Inlining literally everything for better performance | Go Make Things](https://gomakethings.com/inlining-literally-everything-for-better-performance/)
-- [Inline vs. external .js and .css — Mathias Bynens](https://mathiasbynens.be/notes/inline-vs-separate-file)
-- [HTML, CSS, and JavaScript in One File: A Complete 2026 Guide](https://copyprogramming.com/howto/how-to-put-html-css-and-js-in-one-single-file)
-
-**Font Rendering Cross-Platform:**
-- [Why fonts look better on macOS than on Windows | UX Collective](https://uxdesign.cc/why-fonts-look-better-on-macos-than-on-windows-51a2b7c57975)
-- [Font rendering philosophies of Windows & Mac OS X - DamienG](https://damieng.com/blog/2007/06/13/font-rendering-philosophies-of-windows-and-mac-os-x/)
-- [The sad state of font rendering on Linux | Infosec scribbles](https://pandasauce.org/post/linux-fonts/)
+| **Partial update corruption** | Phase 1: Foundation (atomic writes) | Test: kill process mid-write, profile still valid (old or new, never corrupted) |
+| **Validation inconsistency** | Phase 1: Foundation (schema) | Test: same invalid value rejected by wizard AND CLI flags with same error |
+| **No confirmation for destructive changes** | Phase 2: CLI Flags | Test: `--set-skills` without `--confirm` exits with error + diff |
+| **Schema evolution without migration** | Phase 1: Foundation (versioning) | Test: load v1 profile, migrates to v2, saves v2 |
+| **No backup before updates** | Phase 2: CLI Flags | Test: update creates backup, backup listed in `--restore-profile` |
+| **Preview dumps raw JSON** | Phase 3: Preview & Quick-Edit | Manual test: preview output is human-readable with sections |
+| **No diff before confirmation** | Phase 2: CLI Flags | Manual test: confirmation prompt shows before/after diff |
+| **Path traversal in restore** | Phase 2: CLI Flags | Test: `--restore-profile ../../../etc/passwd` rejected |
+| **World-readable profile** | Phase 1: Foundation | Test: new profile has 0o600 permissions on Unix |
+| **Command injection via skills** | N/A (not applicable) | Code review: no `subprocess` or `os.system` with profile values |
 
 ---
 
-*Pitfalls research for: v1.4.0 Visual Design & Polish*
+## Sources
+
+### File Corruption & Atomic Writes
+- [Storage resilience: atomic writes, safer temp cleanup](https://github.com/anomalyco/opencode/issues/7733) - OpenCode corruption prevention strategies
+- [Docker config.json rewrite on every run](https://github.com/moby/moby/discussions/48529) - Docker's atomic write approach
+- [Registry corruption after crash during atomic rename](https://github.com/openclaw/openclaw/issues/1469) - Real-world atomic write failure
+- [Better File Writing in Python: Embrace Atomic Updates](https://sahmanish20.medium.com/better-file-writing-in-python-embrace-atomic-updates-593843bfab4f) - Python atomic write patterns
+
+### Validation Consistency
+- [npm config validation warnings](https://github.com/npm/cli/issues/8353) - Strict validation friction with other tools
+- [Testing CLI the way people use it](https://www.smashingmagazine.com/2022/04/testing-cli-way-people-use-it/) - Independence and validation testing
+- [CLI flags force interactive mode discussion](https://github.com/serverless/serverless/discussions/11275) - Consistency between modes
+
+### Confirmation & Safety
+- [Gemini CLI safe mode confirmation](https://addyosmani.com/blog/gemini-cli/) - Default approval requirements
+- [CLI Tools with previews, dry runs](https://nickjanetakis.com/blog/cli-tools-that-support-previews-dry-runs-or-non-destructive-actions) - Safety patterns
+- [Salesforce CLI validation without args](https://github.com/forcedotcom/cli/issues/2246) - Destructive change confirmation
+
+### Schema Evolution & Migration
+- [JSON Schema Compatibility Checker](https://github.com/json-schema-org/community/issues/984) - Detecting breaking changes
+- [JSON Metadata Versioning, Backwards Compatibility](https://github.com/oracle/graal/issues/8534) - Native image metadata upgrades
+- [ORS config migration tool](https://github.com/GIScience/ors-config-migration) - JSON schema migration patterns
+- [Migrations.Json.Net](https://github.com/Weingartner/Migrations.Json.Net) - Framework for data migrations
+
+### Git Config Corruption Examples
+- [Git config corruption: fatal bad config line](https://github.com/orgs/community/discussions/22483)
+- [GitLens removed git remotes silently](https://github.com/gitkraken/vscode-gitlens/issues/4851)
+- [Super long branch names corrupt config](https://github.com/git/git-scm.com/issues/188)
+- [How to fix fatal unable to read config file](https://labex.io/tutorials/git-how-to-fix-fatal-unable-to-read-config-file-error-in-git-417550)
+
+### Backup Best Practices
+- [Configuration backups and reset](https://docs.fortinet.com/document/fortigate/7.6.5/administration-guide/702257/configuration-backups-and-reset)
+- [Best practices for backing up network configurations](https://www.manageengine.com/network-configuration-manager/best-practices-for-backing-up-network-configurations.html)
+- [Performing a configuration backup](https://docs.fortinet.com/document/fortigate/6.2.0/best-practices/262994/performing-a-configuration-backup)
+
+### Transaction Rollback & Error Handling
+- [How to Fix transaction aborted Errors in PostgreSQL](https://oneuptime.com/blog/post/2026-01-25-fix-transaction-aborted-postgresql/view) - Savepoint patterns
+- [Handling UnexpectedRollbackException in Spring](https://www.baeldung.com/spring-unexpected-rollback-exception)
+- [Transaction rollback performs partial rollback](https://github.com/sequelize/sequelize/issues/9105)
+
+### UX Patterns
+- [UX patterns for CLI tools](https://www.lucasfcosta.com/blog/ux-patterns-cli-tools) - CLI documentation and examples
+- [CLI UX best practices: progress displays](https://evilmartians.com/chronicles/cli-ux-best-practices-3-patterns-for-improving-progress-displays)
+- [20 profile page design examples with expert UX advice](https://www.eleken.co/blog-posts/profile-page-design) - Edit mode patterns
+
+### Validation Approaches
+- [How Zod Changed TypeScript Validation Forever](https://iamshadi.medium.com/how-zod-changed-typescript-validation-forever-the-power-of-runtime-and-compile-time-validation-531cd63799cf)
+- [AJV CLI: Command-line interface for Ajv JSON Validator](https://github.com/ajv-validator/ajv-cli)
+- [Standalone validation code with Ajv](https://ajv.js.org/standalone.html)
+
+---
+*Pitfalls research for: Job Radar v1.5.0 Profile Management*
 *Researched: 2026-02-11*
+*Confidence: HIGH - based on verified sources (GitHub issues, official docs, real-world examples)*
