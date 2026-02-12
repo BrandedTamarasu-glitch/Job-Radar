@@ -1963,3 +1963,85 @@ def test_html_report_csv_download_filename(sample_profile, sample_scored_results
     assert '.csv' in html, "CSV file extension missing"
     assert 'download' in html, "Download attribute missing"
     assert 'text/csv' in html, "CSV MIME type missing"
+
+
+# -- Phase 23: Print & CI Validation Tests ---------------------------------------
+
+def test_html_report_print_hides_interactive_elements(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Verify the print media query hides copy buttons, dropdowns, filter controls."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_content = Path(result["html"]).read_text()
+
+    # Verify print media query contains hide rules for interactive elements
+    assert '.copy-btn' in html_content, ".copy-btn selector missing from print CSS"
+    assert '.dropdown' in html_content, ".dropdown selector missing from print CSS"
+    assert '#export-csv-btn' in html_content, "#export-csv-btn selector missing from print CSS"
+    assert '#clear-filters' in html_content, "#clear-filters selector missing from print CSS"
+    assert '.shortcut-hint' in html_content, ".shortcut-hint selector missing from print CSS"
+
+    # Verify display: none !important pattern exists in print block
+    assert 'display: none !important' in html_content, "display: none !important missing from print CSS"
+
+
+def test_html_report_print_color_adjust(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Verify print-color-adjust preserves tier colors."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_content = Path(result["html"]).read_text()
+
+    # Verify both prefixed and unprefixed print-color-adjust properties exist
+    assert 'print-color-adjust: exact' in html_content, "print-color-adjust: exact missing from CSS"
+    assert '-webkit-print-color-adjust: exact' in html_content, "-webkit-print-color-adjust: exact missing from CSS"
+
+    # Verify tier classes are referenced in print color rules
+    assert '.tier-strong' in html_content, ".tier-strong class missing (should be in print rules)"
+
+
+def test_html_report_print_page_break_control(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Verify page break prevention rules exist."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_content = Path(result["html"]).read_text()
+
+    # Verify both modern and legacy page break properties
+    assert 'break-inside: avoid' in html_content, "break-inside: avoid missing from print CSS"
+    assert 'page-break-inside: avoid' in html_content, "page-break-inside: avoid missing from print CSS"
+
+
+def test_html_report_print_shadow_removal(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Verify shadows removed in print to avoid rendering artifacts."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_content = Path(result["html"]).read_text()
+
+    # Verify box-shadow: none exists in print stylesheet
+    assert 'box-shadow: none' in html_content, "box-shadow: none missing from print CSS"
