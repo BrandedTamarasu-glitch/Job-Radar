@@ -266,10 +266,11 @@ Plans:
   2. After entering a new value, the user sees a before/after diff showing exactly what will change
   3. The user must explicitly confirm the change before the profile is saved; declining discards the edit with no file modification
   4. Invalid input (e.g., non-numeric min_score, score outside 0.0-5.0) is rejected with a clear error and the user is re-prompted
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 26-01: TBD
+- [ ] 26-01-PLAN.md — Create profile_editor.py with field menu, type dispatching, list submenu, diff preview, and validator reuse
+- [ ] 26-02-PLAN.md — Wire editor into search.py CLI (--edit-profile flag, --view-profile integration), tests
 
 #### Phase 27: CLI Update Flags
 **Goal**: Users can update common profile fields directly from the command line without entering interactive mode
