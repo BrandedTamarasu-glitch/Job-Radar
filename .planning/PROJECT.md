@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A Python CLI that searches multiple job boards (Dice, HN Hiring, RemoteOK, We Work Remotely, Adzuna, Authentic Jobs), scores listings against a candidate profile, tracks new vs. seen jobs across runs, and generates ranked HTML + Markdown reports. Reports include one-click URL copying, application status tracking, and WCAG 2.1 Level AA accessibility compliance. Built for daily use during an active job search.
+A Python CLI that searches multiple job boards (Dice, HN Hiring, RemoteOK, We Work Remotely, Adzuna, Authentic Jobs), scores listings against a candidate profile, tracks new vs. seen jobs across runs, and generates ranked HTML + Markdown reports. Reports include one-click URL copying, application status tracking, and WCAG 2.1 Level AA accessibility compliance. Profile management supports preview on startup, interactive quick-edit, and CLI update flags for scripted workflows. Built for daily use during an active job search.
 
 ## Core Value
 
@@ -61,24 +61,14 @@ Accurate job-candidate scoring — if the scoring is wrong, nothing else matters
 - ✓ CSV export with UTF-8 BOM, RFC 4180 escaping, formula injection protection — v1.4.0
 - ✓ Print stylesheet with color preservation and page break control — v1.4.0
 - ✓ Automated accessibility CI (Lighthouse + axe-core) blocking merge on failures — v1.4.0
+- ✓ Centralized profile I/O with atomic writes, backups, validation, and schema versioning — v1.5.0
+- ✓ Profile preview on startup and via --view-profile command — v1.5.0
+- ✓ Interactive quick-edit with categorized field menu, diff preview, and confirmation — v1.5.0
+- ✓ CLI update flags (--update-skills, --set-min-score, --set-titles) with validation — v1.5.0
 
 ### Active
 
-#### Profile Management (v1.5.0)
-- PROF-01: User can preview current profile on search startup
-- PROF-02: User can quick-edit specific profile fields without full wizard re-run
-- PROF-03: User can update skills via CLI flag (--update-skills)
-- PROF-04: User can update min-score via CLI flag (--set-min-score)
-
-## Current Milestone: v1.5.0 Profile Management & Workflow Efficiency
-
-**Goal:** Reduce friction in profile updates and improve daily workflow efficiency
-
-**Target features:**
-- Profile preview on startup showing current settings
-- Quick-edit commands for common profile changes
-- CLI flags for updating skills and min-score without wizard
-- Streamlined profile update workflow
+(None — all requirements through v1.5.0 validated. Next milestone not yet defined.)
 
 ### Out of Scope
 
@@ -90,18 +80,22 @@ Accurate job-candidate scoring — if the scoring is wrong, nothing else matters
 - Cloud-based application tracking — Job Radar is privacy-focused and offline-first
 - AI-powered job matching — core value is transparent scoring algorithm
 - Real-time notifications — batch daily search workflow is intentional design
+- Multiple profiles support — context switching pattern unclear for job search use case
+- Profile export/import — no collaboration use case identified yet
+- Undo last change — complex; wait for actual user mistakes in the wild
 
 ## Context
 
-### Current State (v1.4.0 shipped)
+### Current State (v1.5.0 shipped)
 
-- Shipped v1.4.0 with 11,634 LOC Python (source + tests)
-- Tech stack: Python 3.10+, pytest, requests, BeautifulSoup, questionary, PyInstaller, pdfplumber, rapidfuzz, python-dotenv, pyrate-limiter
-- Test suite: 77 tests (scoring, config, tracker, wizard, report, browser, UX, API, PDF, deduplication, accessibility, responsive, print)
+- Shipped v1.5.0 with 16,449 LOC Python (source + tests)
+- Tech stack: Python 3.10+, pytest, requests, BeautifulSoup, questionary, PyInstaller, pdfplumber, rapidfuzz, python-dotenv, pyrate-limiter, tabulate
+- Test suite: 452 tests (scoring, config, tracker, wizard, report, browser, UX, API, PDF, deduplication, accessibility, responsive, print, profile manager, profile display, profile editor, CLI update flags)
 - Job sources: 6 API sources + 4 manual URLs (Wellfound, Indeed, LinkedIn, Glassdoor)
 - Standalone executables for Windows, macOS, and Linux
 - HTML reports: Bootstrap 5 with visual hierarchy, responsive layout, status filtering, CSV export, print stylesheet, WCAG 2.1 AA compliance
-- User workflow: download executable → wizard setup (optional PDF import) → daily searches → HTML reports in browser (desktop/tablet/mobile) → filter by status → copy URLs → export to CSV → print for offline review
+- Profile management: centralized I/O (atomic writes, backups, schema versioning), preview on startup, interactive quick-edit, CLI update flags
+- User workflow: download executable → wizard setup (optional PDF import) → daily searches → HTML reports in browser → filter/copy/export → update profile via CLI flags or interactive editor
 - Automated accessibility CI: Lighthouse (≥95%) and axe-core WCAG validation on every PR
 
 ### Development
@@ -143,6 +137,12 @@ Accurate job-candidate scoring — if the scoring is wrong, nothing else matters
 | ARIA live region with 1s timeout | Prevents screen reader announcement queue buildup | ✓ Good |
 | NO_COLOR as first check in _colors_supported() | no-color.org standard: env var takes precedence over all | ✓ Good |
 | --profile flag as screen reader bypass | Questionary has unknown screen reader support; bypass is safe | ✓ Good |
+| Atomic temp-file-plus-rename for profile writes | Prevents corruption on interrupted writes | ✓ Good |
+| Centralized profile_manager.py for all I/O | Single source of truth; wizard, editor, CLI flags all share | ✓ Good |
+| Schema versioning with auto-migration | Forward-compatible; v0 profiles auto-upgrade to v1 | ✓ Good |
+| Reuse wizard validators in profile editor | Zero duplication; single validation source of truth | ✓ Good |
+| argparse type validators for CLI flags | Parse-time validation with friendly error messages | ✓ Good |
+| Mutually exclusive update flag group | Prevents ambiguous multi-update commands | ✓ Good |
 
 ---
-*Last updated: 2026-02-11 after v1.5.0 milestone start*
+*Last updated: 2026-02-12 after v1.5.0 milestone*

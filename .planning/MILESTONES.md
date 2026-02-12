@@ -153,3 +153,39 @@
 
 ---
 
+
+## v1.5.0 Profile Management & Workflow Efficiency (Shipped: 2026-02-12)
+
+**Delivered:** Reduce friction in profile updates and improve daily workflow efficiency through centralized profile I/O, preview on startup, interactive editing, and CLI update flags
+
+**Phases completed:** 24-27 (7 plans total)
+
+**Key accomplishments:**
+
+- Centralized profile I/O through profile_manager.py with atomic writes (temp+fsync+rename), timestamped backups (10-file rotation), shared validation, and schema versioning (v0→v1 auto-migration)
+- Formatted profile preview on startup and via `--view-profile` with sectioned bordered tables (Identity, Skills, Preferences, Filters), field filtering, and NO_COLOR support
+- Interactive quick-edit via `--edit-profile` with categorized field menu, list add/remove/replace operations, before/after diff preview, and confirmation safety (default=No)
+- CLI update flags (`--update-skills`, `--set-min-score`, `--set-titles`) with argparse type validators, mutual exclusion, diff output, and early exit pattern
+- 101 new tests across 4 test files (452 total, zero regressions), covering validation, atomic writes, backups, display, editing, CLI flags, and integration
+
+**Stats:**
+
+- 14 feature commits across 4 phases
+- ~2,500 lines of Python added (4 modules + 4 test files)
+- 4 phases, 7 plans, ~14 tasks
+- 7 days (2026-02-06 → 2026-02-12)
+
+**Git range:** `feat(24-01)` → `test(27-01)`
+
+**Requirements:** 21/21 satisfied (8 SAFE + 5 VIEW + 5 EDIT-interactive + 3 EDIT-CLI)
+
+**Quality metrics:**
+- Phase verification: 4/4 passed (42/42 must-haves)
+- Cross-phase integration: 10/10 connections verified
+- E2E flows: 7/7 complete
+- Tech debt: 0 items
+
+**What's next:** New milestone planning
+
+---
+
