@@ -97,13 +97,21 @@ On subsequent launches, the search runs directly with your saved profile (no wiz
 
 ### Using Your Report
 
-The HTML report includes interactive features:
+The HTML report includes interactive features and visual hierarchy to help you scan results quickly:
 
+**Visual Hierarchy:**
+- **Hero Jobs (4.0+):** Top matches appear in an elevated section at the top with distinct styling and "Top Match" badges
+- **Color-coded tiers:** Green (4.0+), Cyan (3.5-3.9), Indigo (2.8-3.4) with colorblind-safe indicators
+- **Responsive design:** Adapts from desktop (11 columns) → tablet (7 columns) → mobile (stacked cards)
+
+**Interactive Features:**
 - **Copy URL** buttons on each job listing for quick clipboard access
 - **Copy All Recommended** button to batch-copy all high-scoring job URLs
 - **Keyboard shortcuts:** Press `C` to copy a focused job's URL, `A` to copy all recommended URLs
 - **Status tracking:** Mark jobs as Applied, Interviewing, Rejected, or Offer — status persists across sessions
-- **Export:** Download your application statuses as JSON for external tracking
+- **Filtering:** Hide jobs by status (Applied, Rejected, Interviewing, Offer) with filter state persistence
+- **CSV Export:** Download all visible job results as a spreadsheet (UTF-8, Excel-compatible)
+- **Print-optimized:** Press Cmd+P/Ctrl+P for clean offline output with preserved tier colors
 
 ### Optional: API Credentials
 
