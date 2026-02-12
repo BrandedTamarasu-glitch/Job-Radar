@@ -5,22 +5,22 @@
 See: .planning/PROJECT.md (updated 2026-02-11)
 
 **Core value:** Accurate job-candidate scoring -- if the scoring is wrong, nothing else matters.
-**Current focus:** Phase 26 - Interactive Quick-Edit
+**Current focus:** Phase 27 - CLI Update Flags
 
 ## Current Position
 
 Milestone: v1.5.0 (Profile Management & Workflow Efficiency)
-Phase: 26 of 27 (Interactive Quick-Edit)
-Plan: 2 of 2 (phase complete)
-Status: Phase Complete
-Last activity: 2026-02-12 -- Completed 26-02 (CLI Integration)
+Phase: 27 of 27 (CLI Update Flags)
+Plan: 1 of 1 (phase complete)
+Status: Milestone Complete
+Last activity: 2026-02-12 -- Completed 27-01 (CLI Update Flags)
 
 Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 54
+- Total plans completed: 55
 - Average duration: 185s
 - Total execution time: Not tracked
 
@@ -33,7 +33,7 @@ Progress: [██████████] 100%
 | v1.2.0 | 11-15 | Complete (2026-02-05) |
 | v1.3.0 | 16-18 | Complete (2026-02-11) |
 | v1.4.0 | 19-23 | Complete (2026-02-11) |
-| v1.5.0 | 24-27 | In progress |
+| v1.5.0 | 24-27 | Complete (2026-02-12) |
 
 **Recent Trend:**
 - v1.4.0: 5 phases, 9 plans, excellent velocity
@@ -66,6 +66,9 @@ Recent decisions affecting current work:
 - [26-02]: Lazy imports for profile_editor and questionary inside handler blocks (consistent with search.py patterns)
 - [26-02]: --view-profile edit path prints message instead of falling through to main flow (avoids complex refactoring)
 - [26-02]: --edit-profile handler before profile_path_str resolution so it can fall through to search
+- [27-01]: Handlers return on success, sys.exit(1) only on errors -- main() calls sys.exit(0) after handler
+- [27-01]: Update flags use argparse mutually exclusive group; cross-group exclusion with --view/edit-profile is manual check
+- [27-01]: Titles cannot be cleared with empty string (validation requires non-empty target_titles)
 
 ### Pending Todos
 
@@ -78,7 +81,7 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Completed 26-02-PLAN.md (CLI Integration) -- Phase 26 complete
+Stopped at: Completed 27-01-PLAN.md (CLI Update Flags) -- Phase 27 complete, v1.5.0 milestone complete
 Resume file: None
 
-**Next action:** Begin Phase 27 (CLI Edit Flags)
+**Next action:** v1.5.0 milestone complete. All 27 phases across 5 milestones delivered.
