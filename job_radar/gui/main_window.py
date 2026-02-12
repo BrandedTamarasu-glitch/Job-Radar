@@ -1,11 +1,15 @@
 """Main GUI window for Job Radar desktop application."""
 
+import queue
+import threading
+
 import customtkinter as ctk
 from pathlib import Path
 
 from job_radar import __version__
 from job_radar.paths import get_data_dir
 from job_radar.profile_manager import load_profile
+from job_radar.gui.worker_thread import create_mock_worker
 
 
 class MainWindow(ctk.CTk):
@@ -28,6 +32,11 @@ class MainWindow(ctk.CTk):
         self.grid_rowconfigure(1, weight=1)
         self.grid_columnconfigure(0, weight=1)
 
+        # Threading infrastructure
+        self._queue = queue.Queue()
+        self._worker = None
+        self._worker_thread = None
+
         # Create header
         self._create_header()
 
@@ -38,6 +47,9 @@ class MainWindow(ctk.CTk):
             self._show_welcome_screen()
         else:
             self._show_main_tabs()
+
+        # Start queue polling loop
+        self._check_queue()
 
     def _create_header(self):
         """Create header frame with app name and version."""
@@ -225,15 +237,28 @@ class MainWindow(ctk.CTk):
         value.grid(row=row, column=1, sticky="w", pady=5)
 
     def _build_search_tab(self, parent):
-        """Build Search tab with placeholder for Phase 29."""
-        # Container for centered content
-        container = ctk.CTkFrame(parent, fg_color="transparent")
-        container.pack(fill="both", expand=True, padx=10, pady=10)
-        container.grid_rowconfigure(0, weight=1)
-        container.grid_columnconfigure(0, weight=1)
+        """Build Search tab with threading integration."""
+        # Create content frame that will hold either idle or progress state
+        self._search_content = ctk.CTkFrame(parent, fg_color="transparent")
+        self._search_content.pack(fill="both", expand=True, padx=10, pady=10)
+        self._search_content.grid_rowconfigure(0, weight=1)
+        self._search_content.grid_columnconfigure(0, weight=1)
+
+        # Start with idle state
+        self._show_search_idle()
+
+    def _show_search_idle(self):
+        """Display idle state with Run Search button."""
+        # Clear current content
+        for widget in self._search_content.winfo_children():
+            widget.destroy()
+
+        # Clear worker references
+        self._worker = None
+        self._worker_thread = None
 
         # Content frame (centered)
-        content_frame = ctk.CTkFrame(container, fg_color="transparent")
+        content_frame = ctk.CTkFrame(self._search_content, fg_color="transparent")
         content_frame.grid(row=0, column=0)
 
         # Run Search button
@@ -242,7 +267,8 @@ class MainWindow(ctk.CTk):
             text="Run Search",
             height=40,
             width=200,
-            state="normal" if self._profile_exists else "disabled"
+            state="normal" if self._profile_exists else "disabled",
+            command=self._start_mock_search
         )
         self._search_button.pack(pady=(0, 10))
 
@@ -254,6 +280,154 @@ class MainWindow(ctk.CTk):
                 text_color="red"
             )
             warning_label.pack()
+
+    def _show_search_progress(self):
+        """Display progress state with progress bar and cancel button."""
+        # Clear current content
+        for widget in self._search_content.winfo_children():
+            widget.destroy()
+
+        # Content frame (centered)
+        content_frame = ctk.CTkFrame(self._search_content, fg_color="transparent")
+        content_frame.grid(row=0, column=0)
+
+        # Progress label
+        self._progress_label = ctk.CTkLabel(
+            content_frame,
+            text="Starting search...",
+            font=ctk.CTkFont(size=14)
+        )
+        self._progress_label.pack(pady=(0, 15))
+
+        # Progress bar
+        self._progress_bar = ctk.CTkProgressBar(
+            content_frame,
+            width=400
+        )
+        self._progress_bar.set(0)
+        self._progress_bar.pack(pady=(0, 10))
+
+        # Progress count
+        self._progress_count = ctk.CTkLabel(
+            content_frame,
+            text="Source 0 of 0",
+            font=ctk.CTkFont(size=12),
+            text_color="gray"
+        )
+        self._progress_count.pack(pady=(0, 20))
+
+        # Cancel button
+        cancel_btn = ctk.CTkButton(
+            content_frame,
+            text="Cancel",
+            height=35,
+            width=150,
+            command=self._cancel_search,
+            fg_color="red",
+            hover_color="darkred"
+        )
+        cancel_btn.pack()
+
+    def _check_queue(self):
+        """Process messages from worker thread queue (runs in main GUI thread)."""
+        try:
+            # Process all pending messages
+            while True:
+                try:
+                    msg = self._queue.get_nowait()
+                    msg_type = msg[0]
+
+                    if msg_type == "progress":
+                        _, source, current, total = msg
+                        self._update_progress(source, current, total)
+                    elif msg_type == "complete":
+                        _, total = msg
+                        self._on_search_complete(total)
+                    elif msg_type == "cancelled":
+                        self._on_search_cancelled()
+                    elif msg_type == "error":
+                        _, error_msg = msg
+                        self._show_error_dialog(error_msg)
+                        self._show_search_idle()
+
+                except queue.Empty:
+                    break
+
+        finally:
+            # Re-schedule next check
+            self.after(100, self._check_queue)
+
+    def _start_mock_search(self):
+        """Start mock search operation in worker thread."""
+        # Show progress state
+        self._show_search_progress()
+
+        # Create and start worker
+        self._worker, self._worker_thread = create_mock_worker(self._queue)
+        self._worker_thread.start()
+
+    def _cancel_search(self):
+        """Cancel the currently running search operation."""
+        if self._worker:
+            self._worker.cancel()
+
+    def _update_progress(self, source: str, current: int, total: int):
+        """Update progress display with current source information."""
+        self._progress_label.configure(text=f"Fetching {source}...")
+        self._progress_bar.set(current / total)
+        self._progress_count.configure(text=f"Source {current} of {total}")
+
+    def _on_search_complete(self, total: int):
+        """Handle search completion."""
+        self._progress_label.configure(text="Search complete!")
+        self._progress_bar.set(1.0)
+        self._progress_count.configure(text=f"Completed {total} sources")
+
+        # Reset to idle after 2 seconds
+        self.after(2000, self._show_search_idle)
+
+    def _on_search_cancelled(self):
+        """Handle search cancellation."""
+        self._progress_label.configure(text="Search cancelled")
+        self._progress_bar.set(0)
+
+        # Reset to idle after 1.5 seconds
+        self.after(1500, self._show_search_idle)
+
+    def _show_error_dialog(self, message: str):
+        """Show modal error dialog."""
+        # Create modal dialog
+        dialog = ctk.CTkToplevel(self)
+        dialog.title("Error")
+        dialog.geometry("400x200")
+
+        # Make modal
+        dialog.transient(self)
+        dialog.grab_set()
+
+        # Center dialog on parent
+        dialog.update_idletasks()
+        x = self.winfo_x() + (self.winfo_width() - dialog.winfo_width()) // 2
+        y = self.winfo_y() + (self.winfo_height() - dialog.winfo_height()) // 2
+        dialog.geometry(f"+{x}+{y}")
+
+        # Error message
+        error_label = ctk.CTkLabel(
+            dialog,
+            text=message,
+            wraplength=350,
+            font=ctk.CTkFont(size=13)
+        )
+        error_label.pack(pady=30, padx=20)
+
+        # OK button
+        ok_btn = ctk.CTkButton(
+            dialog,
+            text="OK",
+            width=100,
+            command=dialog.destroy
+        )
+        ok_btn.pack(pady=(0, 20))
 
 
 def launch_gui():
