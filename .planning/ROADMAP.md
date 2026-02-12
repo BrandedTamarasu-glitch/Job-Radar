@@ -221,7 +221,7 @@ Plans:
 **Milestone Goal:** Reduce friction in profile updates and improve daily workflow efficiency by centralizing profile I/O, enabling quick profile viewing, and supporting interactive and CLI-driven profile edits with data safety guarantees.
 
 - [x] **Phase 24: Profile Infrastructure** - Centralize profile I/O with atomic writes, backups, validation, and schema versioning
-- [ ] **Phase 25: Profile Preview** - Users can view their current profile settings on startup and on demand
+- [x] **Phase 25: Profile Preview** - Users can view their current profile settings on startup and on demand
 - [ ] **Phase 26: Interactive Quick-Edit** - Users can update individual profile fields interactively with diff preview and confirmation
 - [ ] **Phase 27: CLI Update Flags** - Users can update profile fields via CLI flags for scripted and rapid workflows
 
@@ -254,8 +254,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 25-01-PLAN.md — Create profile_display.py module with tabulate dependency and display_profile() function
-- [ ] 25-02-PLAN.md — Wire profile preview into search.py CLI flow, add --view-profile flag, and create tests
+- [x] 25-01-PLAN.md — Create profile_display.py module with tabulate dependency and display_profile() function
+- [x] 25-02-PLAN.md — Wire profile preview into search.py CLI flow, add --view-profile flag, and create tests
 
 #### Phase 26: Interactive Quick-Edit
 **Goal**: Users can update any single profile field through a guided interactive flow that shows changes before saving
@@ -315,9 +315,9 @@ Phases execute in numeric order: 24 -> 25 -> 26 -> 27
 | 22. Interactive Features | v1.4.0 | 2/2 | Complete | 2026-02-11 |
 | 23. Print & CI Validation | v1.4.0 | 2/2 | Complete | 2026-02-11 |
 | 24. Profile Infrastructure | v1.5.0 | 2/2 | Complete | 2026-02-12 |
-| 25. Profile Preview | v1.5.0 | 0/TBD | Not started | - |
+| 25. Profile Preview | v1.5.0 | 2/2 | Complete | 2026-02-12 |
 | 26. Interactive Quick-Edit | v1.5.0 | 0/TBD | Not started | - |
 | 27. CLI Update Flags | v1.5.0 | 0/TBD | Not started | - |
 
 ---
-*Last updated: 2026-02-12 after Phase 24 execution*
+*Last updated: 2026-02-12 after Phase 25 execution*
