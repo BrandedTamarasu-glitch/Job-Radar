@@ -70,33 +70,33 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| VIEW-01 | TBD | Pending |
-| VIEW-02 | TBD | Pending |
-| VIEW-03 | TBD | Pending |
-| VIEW-04 | TBD | Pending |
-| VIEW-05 | TBD | Pending |
-| EDIT-01 | TBD | Pending |
-| EDIT-02 | TBD | Pending |
-| EDIT-03 | TBD | Pending |
-| EDIT-04 | TBD | Pending |
-| EDIT-05 | TBD | Pending |
-| EDIT-06 | TBD | Pending |
-| EDIT-07 | TBD | Pending |
-| EDIT-08 | TBD | Pending |
-| SAFE-01 | TBD | Pending |
-| SAFE-02 | TBD | Pending |
-| SAFE-03 | TBD | Pending |
-| SAFE-04 | TBD | Pending |
-| SAFE-05 | TBD | Pending |
-| SAFE-06 | TBD | Pending |
-| SAFE-07 | TBD | Pending |
-| SAFE-08 | TBD | Pending |
+| SAFE-01 | Phase 24 | Pending |
+| SAFE-02 | Phase 24 | Pending |
+| SAFE-03 | Phase 24 | Pending |
+| SAFE-04 | Phase 24 | Pending |
+| SAFE-05 | Phase 24 | Pending |
+| SAFE-06 | Phase 24 | Pending |
+| SAFE-07 | Phase 24 | Pending |
+| SAFE-08 | Phase 24 | Pending |
+| VIEW-01 | Phase 25 | Pending |
+| VIEW-02 | Phase 25 | Pending |
+| VIEW-03 | Phase 25 | Pending |
+| VIEW-04 | Phase 25 | Pending |
+| VIEW-05 | Phase 25 | Pending |
+| EDIT-01 | Phase 26 | Pending |
+| EDIT-02 | Phase 26 | Pending |
+| EDIT-03 | Phase 26 | Pending |
+| EDIT-04 | Phase 26 | Pending |
+| EDIT-08 | Phase 26 | Pending |
+| EDIT-05 | Phase 27 | Pending |
+| EDIT-06 | Phase 27 | Pending |
+| EDIT-07 | Phase 27 | Pending |
 
 **Coverage:**
 - v1.5.0 requirements: 21 total
-- Mapped to phases: 0 (roadmap pending)
-- Unmapped: 21 ⚠️
+- Mapped to phases: 21/21
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-11*
-*Last updated: 2026-02-11 after initial definition*
+*Last updated: 2026-02-11 after roadmap creation (all requirements mapped)*
