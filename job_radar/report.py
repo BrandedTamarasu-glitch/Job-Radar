@@ -1698,9 +1698,9 @@ def _generate_html_report(
         var scoreMatch = scoreText.match(/(\d+\.\d+)/);
         data.push(scoreMatch ? scoreMatch[1] : scoreText);
 
-        // NEW badge (cell 2)
-        var newText = cells[2] ? cells[2].textContent.trim() : '';
-        data.push(newText === 'NEW' ? 'Yes' : 'No');
+        // NEW badge (cell 2) - check for badge element
+        var newBadge = cells[2] ? cells[2].querySelector('.badge.bg-primary') : null;
+        data.push(newBadge ? 'Yes' : 'No');
 
         // Status (cell 3) - get from badge, strip bullet
         var statusBadge = cells[3] ? cells[3].querySelector('.status-badge') : null;
