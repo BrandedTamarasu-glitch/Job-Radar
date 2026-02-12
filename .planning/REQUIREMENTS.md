@@ -1,0 +1,111 @@
+# Requirements: Job Radar
+
+**Defined:** 2026-02-12
+**Core Value:** Accurate job-candidate scoring -- if the scoring is wrong, nothing else matters.
+
+## v2.0.0 Requirements
+
+Requirements for desktop GUI launcher. Each maps to roadmap phases.
+
+### GUI Foundation
+
+- [ ] **GUI-01**: Double-clicking the executable opens a desktop window (not a terminal)
+- [ ] **GUI-02**: Running with CLI flags (e.g., `job-radar --min-score 3.5`) uses the existing CLI path
+- [ ] **GUI-03**: Search execution does not freeze the GUI window (non-blocking threading)
+- [ ] **GUI-04**: GUI updates (progress, errors) are thread-safe via main thread callbacks
+
+### Profile Setup
+
+- [ ] **PROF-01**: User can create a new profile via GUI form fields (name, skills, titles, experience, location, arrangement)
+- [ ] **PROF-02**: User can upload a PDF resume via file dialog to pre-fill profile fields
+- [ ] **PROF-03**: Profile form validates input and shows error messages for invalid fields
+- [ ] **PROF-04**: User can edit an existing profile through the same GUI form (pre-filled with current values)
+
+### Search Controls
+
+- [ ] **SRCH-01**: User can click a "Run Search" button to start a job search
+- [ ] **SRCH-02**: User can set date range (from/to) for job postings
+- [ ] **SRCH-03**: User can set minimum score threshold
+- [ ] **SRCH-04**: User can toggle "new only" mode
+- [ ] **SRCH-05**: HTML report auto-opens in the default browser when search completes
+
+### Progress & Feedback
+
+- [ ] **PROG-01**: User sees a visual progress indicator while search is running
+- [ ] **PROG-02**: User sees error messages when search fails (network errors, source failures)
+
+### Packaging
+
+- [ ] **PKG-01**: PyInstaller builds produce a GUI executable for Windows, macOS, and Linux
+- [ ] **PKG-02**: GUI executable is separate from CLI executable (both included in distribution)
+- [ ] **PKG-03**: CustomTkinter theme files are bundled correctly via --add-data
+
+## Future Requirements
+
+Deferred to future release. Tracked but not in current roadmap.
+
+### Search Controls (Differentiators)
+
+- **SRCH-06**: Date range presets (Last 24h, Last 48h, Last week)
+- **SRCH-07**: Quick re-run button for repeating last search
+
+### Profile Setup (Differentiators)
+
+- **PROF-05**: Visual sections grouping related fields (Identity, Skills, Preferences, Filters)
+- **PROF-06**: Pre-fill form from existing profile on subsequent launches
+
+### Progress & Feedback (Differentiators)
+
+- **PROG-03**: Per-source progress display (e.g., "Fetching Dice... 3/6 sources")
+- **PROG-04**: Completion summary showing results count before opening report
+
+### Packaging (Differentiators)
+
+- **PKG-04**: macOS code signing and notarization for Gatekeeper bypass
+- **PKG-05**: Linux AppImage or Flatpak distribution format
+
+## Out of Scope
+
+| Feature | Reason |
+|---------|--------|
+| Inline results display in GUI | HTML report already handles display, filtering, and interaction |
+| Real-time filtering in GUI | HTML report has status filtering, CSV export, and keyboard shortcuts |
+| Custom browser selection | OS default browser is sufficient |
+| Multi-profile switching | Context switching unclear for job search (deferred from v1.x) |
+| Settings/preferences panel | Config file + CLI flags handle this adequately |
+| System tray / background mode | Batch daily search workflow is intentional design |
+| Dark/light theme toggle | CustomTkinter follows system theme automatically |
+
+## Traceability
+
+Which phases cover which requirements. Updated during roadmap creation.
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| GUI-01 | — | Pending |
+| GUI-02 | — | Pending |
+| GUI-03 | — | Pending |
+| GUI-04 | — | Pending |
+| PROF-01 | — | Pending |
+| PROF-02 | — | Pending |
+| PROF-03 | — | Pending |
+| PROF-04 | — | Pending |
+| SRCH-01 | — | Pending |
+| SRCH-02 | — | Pending |
+| SRCH-03 | — | Pending |
+| SRCH-04 | — | Pending |
+| SRCH-05 | — | Pending |
+| PROG-01 | — | Pending |
+| PROG-02 | — | Pending |
+| PKG-01 | — | Pending |
+| PKG-02 | — | Pending |
+| PKG-03 | — | Pending |
+
+**Coverage:**
+- v2.0.0 requirements: 18 total
+- Mapped to phases: 0
+- Unmapped: 18
+
+---
+*Requirements defined: 2026-02-12*
+*Last updated: 2026-02-12 after initial definition*
