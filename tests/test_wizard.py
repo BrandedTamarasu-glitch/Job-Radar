@@ -15,8 +15,8 @@ from job_radar.wizard import (
     CompensationValidator,
     is_first_run,
     run_setup_wizard,
-    _write_json_atomic,
 )
+from job_radar.profile_manager import _write_json_atomic
 
 
 class MockDocument:

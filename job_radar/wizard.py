@@ -14,6 +14,10 @@ from pathlib import Path
 import questionary
 from questionary import Style, Validator, ValidationError
 
+from .profile_manager import save_profile
+# Config.json also uses atomic write but doesn't need backup/validation
+from .profile_manager import _write_json_atomic as _write_json
+
 
 # Custom validators
 class NonEmptyValidator(Validator):
@@ -140,49 +144,6 @@ custom_style = Style([
     ('answer', 'fg:green bold'),
     ('instruction', 'fg:ansigray'),
 ])
-
-
-def _write_json_atomic(path: Path, data: dict):
-    """Write JSON file atomically with temp file + rename to prevent corruption.
-
-    Parameters
-    ----------
-    path : Path
-        Target file path
-    data : dict
-        Data to write as JSON
-
-    Notes
-    -----
-    Uses temp file in same directory + atomic rename to prevent partial writes
-    on crash/interrupt. Ensures parent directory exists before writing.
-    """
-    # Ensure parent directory exists
-    path.parent.mkdir(parents=True, exist_ok=True)
-
-    # Create temp file in same directory (same filesystem for atomic rename)
-    fd, tmp_path = tempfile.mkstemp(
-        dir=path.parent,
-        prefix=path.name + ".",
-        suffix=".tmp"
-    )
-
-    try:
-        # Write JSON to temp file
-        with os.fdopen(fd, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
-            f.flush()
-            os.fsync(f.fileno())  # Ensure written to disk
-
-        # Atomic replace (works on Unix and Windows Python 3.3+)
-        Path(tmp_path).replace(path)
-    except:
-        # Clean up temp file on error
-        try:
-            os.unlink(tmp_path)
-        except:
-            pass
-        raise
 
 
 def is_first_run() -> bool:
@@ -792,8 +753,8 @@ def run_setup_wizard() -> bool:
     profile_path = data_dir / "profile.json"
     config_path = data_dir / "config.json"
 
-    _write_json_atomic(profile_path, profile_data)
-    _write_json_atomic(config_path, config_data)
+    save_profile(profile_data, profile_path)
+    _write_json(config_path, config_data)
 
     print(f"\n✅ Configuration saved to {data_dir}")
     print("You can now run job-radar to start searching!\n")

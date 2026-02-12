@@ -312,4 +312,4 @@ def test_validate_profile_invalid_exits_one(tmp_path, mocker, capsys):
     captured = capsys.readouterr()
     # Check both stdout and stderr for error message
     output = captured.out + captured.err
-    assert "missing required fields" in output.lower() or "Profile invalid" in output
+    assert "missing required field" in output.lower() or "Profile invalid" in output

@@ -23,6 +23,12 @@ from typing import Optional
 from . import __version__
 from .config import load_config
 from .deps import get_os_info
+from .profile_manager import (
+    load_profile as _pm_load_profile,
+    ProfileValidationError,
+    ProfileNotFoundError,
+    ProfileCorruptedError,
+)
 from .sources import fetch_all, generate_manual_urls, build_search_queries
 from .scoring import score_job
 from .report import generate_report
@@ -236,63 +242,21 @@ def parse_args(config: dict | None = None):
 
 def load_profile(path: str) -> dict:
     """Load and validate a candidate profile JSON file."""
-    if not os.path.exists(path):
+    from pathlib import Path as _Path
+    try:
+        return _pm_load_profile(_Path(path))
+    except ProfileNotFoundError:
         print(f"{C.RED}Error: Profile not found: {path}{C.RESET}")
         print(f"\n{C.YELLOW}Tip:{C.RESET} Create a profile from the template:")
         print(f"  cp profiles/_template.json profiles/your_name.json")
-        print(f"  # Edit the file with your details")
         print(f"  job-radar --profile profiles/your_name.json")
         sys.exit(1)
-
-    try:
-        with open(path, encoding="utf-8") as f:
-            profile = json.load(f)
-    except json.JSONDecodeError as e:
-        print(f"{C.RED}Error: Invalid JSON in profile: {e.msg} (line {e.lineno}){C.RESET}")
+    except ProfileCorruptedError as e:
+        print(f"{C.RED}Error: {e}{C.RESET}")
         sys.exit(1)
-
-    if not isinstance(profile, dict):
-        print(f"{C.RED}Error: Profile must be a JSON object, got {type(profile).__name__}{C.RESET}")
+    except ProfileValidationError as e:
+        print(f"{C.RED}Error: {e}{C.RESET}")
         sys.exit(1)
-
-    # Check required fields
-    required = ["name", "target_titles", "core_skills"]
-    missing = [f for f in required if f not in profile]
-    if missing:
-        print(f"{C.RED}Error: Profile missing required fields: {', '.join(missing)}{C.RESET}")
-        print(f"\n{C.YELLOW}Required fields:{C.RESET}")
-        print(f"  - name: Your full name")
-        print(f"  - target_titles: List of job titles to search (e.g., [\"Software Engineer\", \"Backend Developer\"])")
-        print(f"  - core_skills: List of your top 5-7 technologies (e.g., [\"Python\", \"Django\", \"PostgreSQL\"])")
-        sys.exit(1)
-
-    # Validate field types and values
-    if not isinstance(profile.get("target_titles"), list) or not profile["target_titles"]:
-        print(f"{C.RED}Error: 'target_titles' must be a non-empty list of strings{C.RESET}")
-        sys.exit(1)
-
-    if not isinstance(profile.get("core_skills"), list) or not profile["core_skills"]:
-        print(f"{C.RED}Error: 'core_skills' must be a non-empty list of strings{C.RESET}")
-        sys.exit(1)
-
-    # Warn about recommended fields
-    recommended = {
-        "level": "Seniority level (e.g., 'mid', 'senior')",
-        "years_experience": "Total years of professional experience",
-        "arrangement": "Work preferences (e.g., ['remote', 'hybrid'])",
-    }
-    warnings = []
-    for field, description in recommended.items():
-        if field not in profile:
-            warnings.append(f"  - {field}: {description}")
-
-    if warnings:
-        print(f"\n{C.YELLOW}Warning: Missing recommended fields:{C.RESET}")
-        for w in warnings:
-            print(w)
-        print(f"{C.DIM}These fields improve scoring accuracy. See WORKFLOW.md for details.{C.RESET}\n")
-
-    return profile
 
 
 def load_profile_with_recovery(path: str, _retry: int = 0) -> dict:
@@ -316,65 +280,31 @@ def load_profile_with_recovery(path: str, _retry: int = 0) -> dict:
     runs setup wizard, and retries. Max 2 retry attempts to prevent
     infinite loops. Uses local wizard import to avoid circular imports.
     """
-    from pathlib import Path
+    from pathlib import Path as _Path
 
-    # Max retry check
     if _retry > 1:
         print(f"\n{C.RED}Error: Profile setup failed after multiple attempts{C.RESET}")
         print(f"\n{C.YELLOW}Tip:{C.RESET} Use --profile flag to specify a valid profile:")
         print(f"  job-radar --profile profiles/your_name.json")
         sys.exit(1)
 
-    # Expand path (handle ~ in paths)
-    expanded_path = Path(path).expanduser()
-    path_str = str(expanded_path)
+    expanded_path = _Path(path).expanduser()
 
-    # Check 1: File missing
-    if not expanded_path.exists():
-        print(f"\n{C.YELLOW}Profile not found:{C.RESET} {path_str}")
+    try:
+        return _pm_load_profile(expanded_path)
+    except ProfileNotFoundError:
+        print(f"\n{C.YELLOW}Profile not found:{C.RESET} {expanded_path}")
         print("Running setup wizard to create profile...\n")
         from .wizard import run_setup_wizard
         if not run_setup_wizard():
             print("\nSetup cancelled.")
             sys.exit(1)
         return load_profile_with_recovery(path, _retry + 1)
-
-    # Check 2: JSON decode error (corrupt file)
-    try:
-        with open(expanded_path, encoding="utf-8") as f:
-            profile = json.load(f)
-    except json.JSONDecodeError as e:
-        backup_path = f"{path_str}.bak"
+    except (ProfileCorruptedError, ProfileValidationError) as e:
+        # Per user decision: warn and offer to re-run wizard on invalid profile
+        backup_path = f"{expanded_path}.bak"
         shutil.copy(expanded_path, backup_path)
-        print(f"\n{C.RED}Profile corrupted:{C.RESET} Invalid JSON at line {e.lineno}")
-        print(f"Backed up to: {backup_path}")
-        print("Running setup wizard to create new profile...\n")
-        from .wizard import run_setup_wizard
-        if not run_setup_wizard():
-            print("\nSetup cancelled.")
-            sys.exit(1)
-        return load_profile_with_recovery(path, _retry + 1)
-
-    # Check 3: Missing required fields
-    required = ["name", "target_titles", "core_skills"]
-    missing = [f for f in required if f not in profile]
-    if missing:
-        backup_path = f"{path_str}.bak"
-        shutil.copy(expanded_path, backup_path)
-        print(f"\n{C.RED}Profile incomplete:{C.RESET} Missing required fields: {', '.join(missing)}")
-        print(f"Backed up to: {backup_path}")
-        print("Running setup wizard to create complete profile...\n")
-        from .wizard import run_setup_wizard
-        if not run_setup_wizard():
-            print("\nSetup cancelled.")
-            sys.exit(1)
-        return load_profile_with_recovery(path, _retry + 1)
-
-    # Check 4: Invalid field types/values
-    if not isinstance(profile.get("target_titles"), list) or not profile["target_titles"]:
-        backup_path = f"{path_str}.bak"
-        shutil.copy(expanded_path, backup_path)
-        print(f"\n{C.RED}Profile invalid:{C.RESET} 'target_titles' must be a non-empty list")
+        print(f"\n{C.RED}Profile invalid:{C.RESET} {e}")
         print(f"Backed up to: {backup_path}")
         print("Running setup wizard to create valid profile...\n")
         from .wizard import run_setup_wizard
@@ -382,21 +312,6 @@ def load_profile_with_recovery(path: str, _retry: int = 0) -> dict:
             print("\nSetup cancelled.")
             sys.exit(1)
         return load_profile_with_recovery(path, _retry + 1)
-
-    if not isinstance(profile.get("core_skills"), list) or not profile["core_skills"]:
-        backup_path = f"{path_str}.bak"
-        shutil.copy(expanded_path, backup_path)
-        print(f"\n{C.RED}Profile invalid:{C.RESET} 'core_skills' must be a non-empty list")
-        print(f"Backed up to: {backup_path}")
-        print("Running setup wizard to create valid profile...\n")
-        from .wizard import run_setup_wizard
-        if not run_setup_wizard():
-            print("\nSetup cancelled.")
-            sys.exit(1)
-        return load_profile_with_recovery(path, _retry + 1)
-
-    # Profile valid - return it
-    return profile
 
 
 # ---------------------------------------------------------------------------
