@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-11)
 
 **Core value:** Accurate job-candidate scoring -- if the scoring is wrong, nothing else matters.
-**Current focus:** Phase 24 - Profile Infrastructure
+**Current focus:** Phase 25 - Profile Preview
 
 ## Current Position
 
 Milestone: v1.5.0 (Profile Management & Workflow Efficiency)
-Phase: 24 of 27 (Profile Infrastructure)
-Plan: 2 of 2 (Phase complete)
-Status: Phase 24 Complete
-Last activity: 2026-02-12 -- Completed 24-02 (Integration + tests)
+Phase: 25 of 27 (Profile Preview)
+Plan: 1 of 2
+Status: Executing Phase 25
+Last activity: 2026-02-12 -- Completed 25-01 (Profile Display Module)
 
-Progress: [██████████] 100%
+Progress: [█████░░░░░] 50%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 50
-- Average duration: 188s
+- Total plans completed: 51
+- Average duration: 187s
 - Total execution time: Not tracked
 
 **By Milestone:**
@@ -56,6 +56,8 @@ Recent decisions affecting current work:
 - [24-01]: Simple file copy for backups (not atomic -- corruption is recoverable)
 - [24-02]: Import _write_json_atomic from profile_manager for config.json writes (avoids duplication)
 - [24-02]: Exception-based delegation in search.py (2 catch clauses replace 5 if-checks)
+- [25-01]: Section headers as rows within single tabulate table (continuous borders)
+- [25-01]: ASCII = signs for branded header (cross-platform consistency)
 
 ### Pending Todos
 
@@ -68,7 +70,7 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Completed 24-02-PLAN.md (Integration + tests) -- Phase 24 complete
+Stopped at: Completed 25-01-PLAN.md (Profile Display Module)
 Resume file: None
 
-**Next action:** Plan Phase 25 (Profile Preview)
+**Next action:** Execute 25-02-PLAN.md (Integration into search flow)
