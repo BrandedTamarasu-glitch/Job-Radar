@@ -95,6 +95,71 @@ def _score_color(score: float) -> str:
 
 
 # ---------------------------------------------------------------------------
+# CLI type validators
+# ---------------------------------------------------------------------------
+
+
+def comma_separated_skills(value: str) -> list[str]:
+    """Parse and validate comma-separated skills list.
+
+    Empty string returns empty list (allows clearing).
+    Raises ArgumentTypeError for invalid input like ",,,".
+    """
+    if value == "":
+        return []  # Allow clearing with empty string
+
+    items = [s.strip() for s in value.split(",") if s.strip()]
+
+    if not items:
+        raise argparse.ArgumentTypeError(
+            'skills list cannot be empty (use "" to clear)'
+        )
+
+    return items
+
+
+def comma_separated_titles(value: str) -> list[str]:
+    """Parse and validate comma-separated titles list.
+
+    Does NOT allow empty string clearing (target_titles is required).
+    Raises ArgumentTypeError if list would be empty.
+    """
+    if value == "":
+        raise argparse.ArgumentTypeError(
+            "titles list cannot be empty (at least one title is required)"
+        )
+
+    items = [s.strip() for s in value.split(",") if s.strip()]
+
+    if not items:
+        raise argparse.ArgumentTypeError(
+            "titles list cannot be empty (at least one title is required)"
+        )
+
+    return items
+
+
+def valid_score_range(value: str) -> float:
+    """Validate min_score is a float in range 0.0-5.0.
+
+    Raises ArgumentTypeError with user-friendly message on failure.
+    """
+    try:
+        score = float(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError(
+            f"min_score must be a number, got '{value}'"
+        )
+
+    if not (0.0 <= score <= 5.0):
+        raise argparse.ArgumentTypeError(
+            f"min_score must be 0.0-5.0, got {score}"
+        )
+
+    return score
+
+
+# ---------------------------------------------------------------------------
 # CLI argument parsing
 # ---------------------------------------------------------------------------
 
@@ -123,7 +188,11 @@ def parse_args(config: dict | None = None):
           --view-profile                       Show profile and offer to edit
           --edit-profile                       Edit profile fields interactively
           --no-wizard                          Suppress wizard and profile preview
-          (coming soon: --update-skills, --set-min-score)
+
+        Quick Updates (exit without searching):
+          --update-skills "python,react,ts"    Replace skills list
+          --set-min-score 3.5                  Set minimum score (0.0-5.0)
+          --set-titles "Backend Dev,SRE"       Replace target titles
 
         Accessibility:
           Set NO_COLOR=1 to disable all terminal colors.
@@ -216,6 +285,27 @@ def parse_args(config: dict | None = None):
         "--validate-profile",
         metavar="PATH",
         help="Validate a profile JSON and exit",
+    )
+
+    # Update flags (mutually exclusive — one per command)
+    update_group = profile_group.add_mutually_exclusive_group()
+    update_group.add_argument(
+        "--update-skills",
+        type=comma_separated_skills,
+        metavar="SKILLS",
+        help='Replace skills list (comma-separated). Example: --update-skills "python,react,typescript"',
+    )
+    update_group.add_argument(
+        "--set-min-score",
+        type=valid_score_range,
+        metavar="SCORE",
+        help="Set minimum score threshold (0.0-5.0). Example: --set-min-score 3.5",
+    )
+    update_group.add_argument(
+        "--set-titles",
+        type=comma_separated_titles,
+        metavar="TITLES",
+        help='Replace target titles (comma-separated). Example: --set-titles "Backend Developer,SRE"',
     )
 
     # API Options
@@ -334,6 +424,125 @@ def load_profile_with_recovery(path: str, _retry: int = 0) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# CLI update handlers
+# ---------------------------------------------------------------------------
+
+
+def _resolve_profile_path(profile_arg: str | None):
+    """Resolve profile path from --profile flag or default location."""
+    from pathlib import Path as _Path
+
+    if profile_arg:
+        return _Path(profile_arg).expanduser()
+    else:
+        from .paths import get_data_dir
+        return get_data_dir() / "profile.json"
+
+
+def _resolve_config_path(config_arg: str | None):
+    """Resolve config path from --config flag or default location."""
+    from pathlib import Path as _Path
+
+    if config_arg:
+        return _Path(config_arg).expanduser()
+    else:
+        from .paths import get_data_dir
+        return get_data_dir() / "config.json"
+
+
+def handle_update_skills(skills: list[str], profile_arg: str | None):
+    """Update core_skills field in profile and exit."""
+    from .profile_manager import save_profile
+
+    profile_path = _resolve_profile_path(profile_arg)
+
+    if not profile_path.exists():
+        print(f"{C.RED}Error: No profile found.{C.RESET}")
+        print(f"\n{C.YELLOW}Tip:{C.RESET} Run 'job-radar' first to create one.")
+        sys.exit(1)
+
+    try:
+        profile = _pm_load_profile(profile_path)
+    except ProfileValidationError as e:
+        print(f"{C.RED}Error: {e.message}{C.RESET}")
+        sys.exit(1)
+
+    old_skills = profile.get("core_skills", [])
+    profile["core_skills"] = skills
+
+    try:
+        save_profile(profile, profile_path)
+    except ProfileValidationError as e:
+        print(f"{C.RED}Error: {e.message}{C.RESET}")
+        sys.exit(1)
+
+    old_display = ", ".join(old_skills) if old_skills else "(empty)"
+    new_display = ", ".join(skills) if skills else "(empty)"
+    print(f"\n{C.GREEN}Skills updated.{C.RESET}")
+    print(f"  Old: {old_display}")
+    print(f"  New: {C.BOLD}{new_display}{C.RESET}")
+    print()
+
+
+def handle_set_min_score(score: float, config_arg: str | None):
+    """Update min_score in config.json and exit."""
+    from .profile_manager import _write_json_atomic
+
+    config_path = _resolve_config_path(config_arg)
+
+    if config_path.exists():
+        with open(config_path, "r", encoding="utf-8") as f:
+            config_data = json.load(f)
+    else:
+        config_data = {}
+
+    old_score = config_data.get("min_score", 2.8)
+    config_data["min_score"] = score
+
+    _write_json_atomic(config_path, config_data)
+
+    print(f"\n{C.GREEN}Min score updated to {score:.1f}{C.RESET}")
+    print(f"  Old: {old_score:.1f}")
+    print(f"  New: {C.BOLD}{score:.1f}{C.RESET}")
+    print(f"\n{C.DIM}Jobs scoring below {score:.1f} will be hidden.{C.RESET}")
+    print()
+
+
+def handle_set_titles(titles: list[str], profile_arg: str | None):
+    """Update target_titles field in profile and exit."""
+    from .profile_manager import save_profile
+
+    profile_path = _resolve_profile_path(profile_arg)
+
+    if not profile_path.exists():
+        print(f"{C.RED}Error: No profile found.{C.RESET}")
+        print(f"\n{C.YELLOW}Tip:{C.RESET} Run 'job-radar' first to create one.")
+        sys.exit(1)
+
+    try:
+        profile = _pm_load_profile(profile_path)
+    except ProfileValidationError as e:
+        print(f"{C.RED}Error: {e.message}{C.RESET}")
+        sys.exit(1)
+
+    old_titles = profile.get("target_titles", [])
+    profile["target_titles"] = titles
+
+    try:
+        save_profile(profile, profile_path)
+    except ProfileValidationError as e:
+        print(f"{C.RED}Error: {e.message}{C.RESET}")
+        sys.exit(1)
+
+    old_display = ", ".join(old_titles) if old_titles else "(empty)"
+    new_display = ", ".join(titles) if titles else "(empty)"
+    print(f"\n{C.GREEN}Titles updated.{C.RESET}")
+    print(f"  Old: {old_display}")
+    print(f"  New: {C.BOLD}{new_display}{C.RESET}")
+    print()
+
+
+# ---------------------------------------------------------------------------
 # Date filtering
 # ---------------------------------------------------------------------------
 
@@ -431,6 +640,32 @@ def main():
         _Colors.RED = ""
         _Colors.CYAN = ""
         _Colors.DIM = ""
+
+    # Mutual exclusion: update flags cannot be used with --view-profile or --edit-profile
+    update_flags = [
+        args.update_skills is not None,
+        args.set_min_score is not None,
+        args.set_titles is not None,
+    ]
+    view_edit_flags = [args.view_profile, args.edit_profile]
+
+    if any(update_flags) and any(view_edit_flags):
+        print(f"{C.RED}Error: Update flags cannot be used with --view-profile or --edit-profile{C.RESET}")
+        print(f"\n{C.YELLOW}Tip:{C.RESET} Use update flags alone to modify profile, or use --edit-profile for interactive editing.")
+        sys.exit(1)
+
+    # Early exit handlers for update flags (no search)
+    if args.update_skills is not None:
+        handle_update_skills(args.update_skills, args.profile)
+        sys.exit(0)
+
+    if args.set_min_score is not None:
+        handle_set_min_score(args.set_min_score, args.config)
+        sys.exit(0)
+
+    if args.set_titles is not None:
+        handle_set_titles(args.set_titles, args.profile)
+        sys.exit(0)
 
     # Early exit handlers for API commands (no profile needed)
     if args.setup_apis:
