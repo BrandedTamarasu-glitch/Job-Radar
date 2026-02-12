@@ -256,8 +256,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 23-01-PLAN.md — Print CSS: hide interactive elements, preserve tier colors, page break control, and tests
-- [ ] 23-02-PLAN.md — Accessibility CI: Lighthouse (5 runs, >=95) + axe-core workflow, config, and report generator
+- [x] 23-01: Print CSS expansion with interactive element hiding, color preservation, and 4 tests
+- [x] 23-02: Accessibility CI workflow with Lighthouse (5 runs, >=95) + axe-core WCAG checks
 
 ## Progress
 
@@ -288,7 +288,7 @@ Phases execute in numeric order: 19 -> 20 -> 21 -> 22 -> 23
 | 20. Hero Jobs Visual Hierarchy | v1.4.0 | 1/1 | Complete | 2026-02-11 |
 | 21. Responsive Layout | v1.4.0 | 2/2 | Complete | 2026-02-11 |
 | 22. Interactive Features | v1.4.0 | 2/2 | Complete | 2026-02-11 |
-| 23. Print & CI Validation | v1.4.0 | 0/2 | Planned | - |
+| 23. Print & CI Validation | v1.4.0 | 2/2 | Complete | 2026-02-11 |
 
 ---
 *Last updated: 2026-02-11 after Phase 22 execution complete*

@@ -53,15 +53,15 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| VIS-01 | Phase 20 | Pending |
-| VIS-02 | Phase 19 | Pending |
-| VIS-03 | Phase 19 | Pending |
-| VIS-04 | Phase 21 | Pending |
-| VIS-05 | Phase 21 | Pending |
-| POL-01 | Phase 22 | Pending |
-| POL-02 | Phase 23 | Pending |
-| POL-03 | Phase 22 | Pending |
-| POL-04 | Phase 23 | Pending |
+| VIS-01 | Phase 20 | Complete |
+| VIS-02 | Phase 19 | Complete |
+| VIS-03 | Phase 19 | Complete |
+| VIS-04 | Phase 21 | Complete |
+| VIS-05 | Phase 21 | Complete |
+| POL-01 | Phase 22 | Complete |
+| POL-02 | Phase 23 | Complete |
+| POL-03 | Phase 22 | Complete |
+| POL-04 | Phase 23 | Complete |
 
 **Coverage:**
 - v1.4.0 requirements: 9 total
