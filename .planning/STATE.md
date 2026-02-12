@@ -9,11 +9,11 @@ See: .planning/PROJECT.md (updated 2026-02-11)
 
 ## Current Position
 
-Milestone: v1.4.0 COMPLETE
-Phase: — (awaiting next milestone)
+Milestone: v1.5.0 (Profile Management & Workflow Efficiency)
+Phase: Not started (defining requirements)
 Plan: —
-Status: Milestone archived, ready for v1.5.0 planning
-Last activity: 2026-02-11 — Completed v1.4.0 milestone (Visual Design & Polish)
+Status: Defining requirements
+Last activity: 2026-02-11 — Milestone v1.5.0 started
 
 ## Performance Metrics
 

@@ -64,7 +64,21 @@ Accurate job-candidate scoring — if the scoring is wrong, nothing else matters
 
 ### Active
 
-_(No active milestone - ready for v1.5.0 planning)_
+#### Profile Management (v1.5.0)
+- PROF-01: User can preview current profile on search startup
+- PROF-02: User can quick-edit specific profile fields without full wizard re-run
+- PROF-03: User can update skills via CLI flag (--update-skills)
+- PROF-04: User can update min-score via CLI flag (--set-min-score)
+
+## Current Milestone: v1.5.0 Profile Management & Workflow Efficiency
+
+**Goal:** Reduce friction in profile updates and improve daily workflow efficiency
+
+**Target features:**
+- Profile preview on startup showing current settings
+- Quick-edit commands for common profile changes
+- CLI flags for updating skills and min-score without wizard
+- Streamlined profile update workflow
 
 ### Out of Scope
 
@@ -131,4 +145,4 @@ _(No active milestone - ready for v1.5.0 planning)_
 | --profile flag as screen reader bypass | Questionary has unknown screen reader support; bypass is safe | ✓ Good |
 
 ---
-*Last updated: 2026-02-11 after v1.4.0 milestone completion*
+*Last updated: 2026-02-11 after v1.5.0 milestone start*
