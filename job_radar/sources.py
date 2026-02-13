@@ -1193,8 +1193,9 @@ def fetch_all(profile: dict, on_progress=None, on_source_progress=None) -> list[
         profile: Candidate profile dict.
         on_progress: Optional callback(completed, total, source_name) called
                      after each query finishes (backward compatibility).
-        on_source_progress: Optional callback(source_name, count, total, status)
+        on_source_progress: Optional callback(source_name, count, total, status, job_count)
                            called when a source starts ('started') or finishes ('complete').
+                           job_count is the number of deduplicated results from that source (0 for 'started').
     """
     queries = build_search_queries(profile)
 
@@ -1214,9 +1215,11 @@ def fetch_all(profile: dict, on_progress=None, on_source_progress=None) -> list[
     source_names = list(dict.fromkeys(q["source"] for q in queries))  # unique, ordered
     source_query_counts = {}
     source_completed = {}
+    source_job_counts = {}
     for q in queries:
         source_query_counts[q["source"]] = source_query_counts.get(q["source"], 0) + 1
         source_completed[q["source"]] = 0
+        source_job_counts[q["source"]] = 0
     sources_started = 0
     sources_done = 0
     total_sources = len(source_names)
@@ -1252,13 +1255,14 @@ def fetch_all(profile: dict, on_progress=None, on_source_progress=None) -> list[
                     sources_started += 1
                     if on_source_progress:
                         display_name = _SOURCE_DISPLAY_NAMES.get(source, source)
-                        on_source_progress(display_name, sources_started, total_sources, "started")
+                        on_source_progress(display_name, sources_started, total_sources, "started", 0)
                 futures[executor.submit(run_query, q)] = q
 
             # Process results as they complete — fire COMPLETE callback when source finishes
             for future in as_completed(futures):
                 q = futures[future]
                 completed += 1
+                source = q["source"]
                 try:
                     results = future.result()
                     for r in results:
@@ -1266,19 +1270,20 @@ def fetch_all(profile: dict, on_progress=None, on_source_progress=None) -> list[
                         if key not in seen:
                             seen.add(key)
                             phase_results.append(r)
+                            # Track per-source job count
+                            source_job_counts[source] += 1
                 except Exception as e:
                     log.error("Query failed (%s): %s", q, e)
                 if on_progress:
-                    on_progress(completed, total, q["source"])
+                    on_progress(completed, total, source)
 
                 # Source-level completion tracking
-                source = q["source"]
                 source_completed[source] += 1
                 if source_completed[source] == source_query_counts[source]:
                     sources_done += 1
                     if on_source_progress:
                         display_name = _SOURCE_DISPLAY_NAMES.get(source, source)
-                        on_source_progress(display_name, sources_done, total_sources, "complete")
+                        on_source_progress(display_name, sources_done, total_sources, "complete", source_job_counts.get(source, 0))
 
         return phase_results
 
