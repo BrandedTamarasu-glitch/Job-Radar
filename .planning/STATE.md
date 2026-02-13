@@ -1,6 +1,6 @@
 # Project State: Job Radar
 
-**Last Updated:** 2026-02-13T21:52:55Z
+**Last Updated:** 2026-02-13T22:01:33Z
 
 ## Project Reference
 
@@ -13,12 +13,12 @@
 ## Current Position
 
 **Phase:** 33 - Scoring Configuration Backend
-**Current Plan:** 2/3
-**Status:** In Progress
+**Current Plan:** 3/3
+**Status:** Complete
 
-**Progress:** [██████████] 99%
+**Progress:** [██████████] 100%
 
-**Next Action:** Execute Phase 33 Plan 03 (Scoring Engine Completion)
+**Next Action:** Begin Phase 34 (or next milestone phase as defined in ROADMAP.md)
 
 ## Performance Metrics
 
@@ -37,15 +37,16 @@
 | Phase 31 P02 | 213 | 1 tasks | 5 files |
 | Phase 32 P02 | 158 | 2 tasks | 2 files |
 | Phase 33 P02 | 408 | 2 tasks | 2 files |
+| Phase 33 P03 | 923 | 2 tasks | 2 files |
 
 ### Recent Plan Executions
 
 | Plan | Duration (sec) | Tasks | Files | Date |
 |------|---------------|-------|-------|------|
+| 33-03 | 923 | 2 | 2 | 2026-02-13 |
 | 33-02 | 408 | 2 | 2 | 2026-02-13 |
 | 33-01 | 165 | 2 | 2 | 2026-02-13 |
 | 32-04 | 426 | 2 | 3 | 2026-02-13 |
-| 32-03 | 330 | 2 | 6 | 2026-02-13 |
 
 ### Quality Indicators
 
@@ -96,6 +97,9 @@
 | Graceful fallback for corrupted scoring_weights | Reset to defaults with warning instead of crashing (availability over strict validation) | 2026-02-13 |
 | Triple-fallback for scoring weights | profile weights -> DEFAULT_SCORING_WEIGHTS -> hardcoded .get() defaults for defense-in-depth | 2026-02-13 |
 | Staffing preference is post-scoring adjustment | Applied AFTER weighted sum to avoid normalization issues (weights must sum to 1.0) | 2026-02-13 |
+| Wizard customize_weights defaults to False | Most users skip advanced customization - opt-in for advanced users only | 2026-02-13 |
+| Key-based wizard section headers | Stable UI when questions added/reordered (changed from index-based) | 2026-02-13 |
+| Wizard custom weights with retry loop | Collect all 6 weights, validate sum-to-1.0, offer retry on failure for good UX | 2026-02-13 |
 | Centralized staffing firm handling in score_job | Removed duplicate logic from _score_response_likelihood to prevent double-boost bug | 2026-02-13 |
 | Boost capped at 5.0, penalize floored at 1.0 | Preserves score scale integrity (1.0-5.0 range) | 2026-02-13 |
 
@@ -126,47 +130,51 @@ None.
 
 ### What Just Happened
 
-Completed Phase 33 Plan 02: Scoring Engine Configurable Weights Integration (PLAN 2 OF 3)
+Completed Phase 33 Plan 03: Wizard Integration for Scoring Configuration (PLAN 3 OF 3) - Phase 33 Complete
 
-**Executed:** Replaced hardcoded scoring weights with profile-based configurable weights and added staffing firm preference
+**Executed:** Updated setup wizard to configure scoring_weights and staffing_preference for new profiles
 
 **Key accomplishments:**
-- Task 1 (RED): Added 11 failing tests for configurable weights, staffing preference, score stability
-- 4 weight configuration tests (custom weights, fallback, score stability, math verification)
-- 6 staffing preference tests (boost, penalize, neutral, missing default, cap, floor)
-- 1 response likelihood test (verify old boost removed)
-- Task 2 (GREEN): Implemented configurable weights and staffing preference in scoring.py
-- Added DEFAULT_SCORING_WEIGHTS import from profile_manager
-- Replaced hardcoded weight values with profile.get('scoring_weights') with fallback
-- Added triple-fallback protection: profile -> DEFAULT -> individual .get() defaults
-- Implemented staffing_preference post-scoring adjustment (boost: +0.5, penalize: -1.0, neutral: 0)
-- Removed old hardcoded +4.5 staffing boost from _score_response_likelihood()
-- Updated existing test_score_response_likelihood to remove staffing firm case
-- All tests passing (11 new tests + 1 updated test, zero regressions)
+- Task 1: Added scoring weight and staffing preference questions to wizard
+- Imported DEFAULT_SCORING_WEIGHTS from profile_manager
+- Added staffing_preference select question with 3 descriptive choices (Neutral/Boost/Penalize)
+- Added customize_weights confirm question (defaults to False for most users)
+- Implemented _prompt_custom_weights helper with interactive validation and retry
+- Added select question type handling to wizard prompt loop
+- Switched section headers from index-based to key-based for stability
+- Added "Scoring Preferences" section between Profile Information and Search Preferences
+- Built profile_data with scoring_weights and staffing_preference v2 fields
+- Updated summary to display scoring configuration (Default vs Custom, staffing preference)
+- Added edit loop support for Scoring Weights and Staffing Firms
+- Task 2: Added 5 new tests for wizard v2 schema field output
+- test_wizard_profile_has_scoring_weights: verify DEFAULT_SCORING_WEIGHTS used
+- test_wizard_profile_has_staffing_preference_neutral/boost/penalize: verify all 3 choices
+- test_wizard_default_weights_used_when_not_customized: verify defaults
+- All 5 new tests passing, zero regressions
 
 **Commits:**
-- e6caeb6 - test(33-02): add failing tests for configurable weights and staffing preference
-- a489417 - feat(33-02): replace hardcoded weights with profile-based configurable scoring
+- 5992765 - feat(33-03): add scoring weights and staffing preference to setup wizard
+- d3ab652 - test(33-03): add tests for wizard v2 schema field output
 
-**Duration:** 408 seconds (6min 48s)
+**Duration:** 923 seconds (15min 23s)
 
 ### What's Next
 
-Phase 33 in progress - 1 plan remaining (plan 03: complete scoring engine testing and documentation)
+Phase 33 complete (3/3 plans done). Ready for next phase as defined in ROADMAP.md.
 
 ### Files Changed This Session
 
-- `/home/corye/Claude/Job-Radar/job_radar/scoring.py` - Added configurable weights, staffing preference, removed old boost (+23 lines, -4 lines)
-- `/home/corye/Claude/Job-Radar/tests/test_scoring.py` - Added 11 new tests, updated 1 existing test (+388 lines, -1 test case)
-- `/home/corye/Claude/Job-Radar/.planning/phases/33-scoring-configuration-backend/33-02-SUMMARY.md` - Created
-- `/home/corye/Claude/Job-Radar/.planning/STATE.md` - Updated position, decisions, metrics
+- `/home/corye/Claude/Job-Radar/job_radar/wizard.py` - Added scoring configuration questions and handlers (+220 lines)
+- `/home/corye/Claude/Job-Radar/tests/test_wizard.py` - Added 5 new v2 schema tests (+274 lines)
+- `/home/corye/Claude/Job-Radar/.planning/phases/33-scoring-configuration-backend/33-03-SUMMARY.md` - Created
+- `/home/corye/Claude/Job-Radar/.planning/STATE.md` - Updated position, decisions, metrics, marked phase complete
 
 ### Context for Next Session
 
-**If continuing:** Phase 33 Plan 02 complete - scoring engine now uses profile-based configurable weights and staffing preference. Next: Plan 03 (complete phase with final testing and documentation).
+**If continuing:** Phase 33 complete (all 3 plans done) - profile schema v2 with auto-migration, scoring engine using configurable weights, wizard integration complete. Ready for next phase.
 
-**If resuming later:** Read STATE.md for current position, check .planning/phases/33-scoring-configuration-backend/33-02-SUMMARY.md for scoring engine integration details.
+**If resuming later:** Read STATE.md for current position, check .planning/phases/33-scoring-configuration-backend/ for summaries. Terminal users can now configure scoring via wizard, scoring engine uses profile weights.
 
 ---
 *State initialized: 2026-02-13*
-*Phase 33 Plan 02 complete - scoring engine configurable weights ready, 1 plan remaining*
+*Phase 33 complete - scoring configuration backend ready (schema v2, scoring engine, wizard)*
