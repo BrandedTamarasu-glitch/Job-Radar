@@ -213,14 +213,14 @@ class MainWindow(ctk.CTk):
             self._success_message_label.destroy()
             self._success_message_label = None
 
-        # Create success message label
+        # Create success message label — use grid row 1 (row 0 is content)
         self._success_message_label = ctk.CTkLabel(
             self._search_content,
             text=message,
             text_color="green",
             font=ctk.CTkFont(size=13)
         )
-        self._success_message_label.pack(side="top", pady=(0, 10))
+        self._success_message_label.grid(row=1, column=0, pady=(0, 10))
 
         # Auto-hide after 3 seconds
         self.after(3000, self._hide_success_message)
