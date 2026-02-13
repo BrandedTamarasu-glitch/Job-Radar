@@ -253,7 +253,7 @@ Plans:
 
 </details>
 
-### 🚧 v2.0.0 Desktop GUI Launcher (In Progress)
+### v2.0.0 Desktop GUI Launcher (In Progress)
 
 **Milestone Goal:** Replace the terminal-first experience with a desktop GUI window so non-technical users never need to touch a command prompt
 
@@ -299,12 +299,12 @@ Plans:
 9. HTML report auto-opens in the default browser when search completes successfully
 10. All GUI operations integrate correctly with existing business logic modules (sources.py, scoring.py, report.py, profile_manager.py) without code duplication
 
-**Plans:** TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] 29-01: TBD
-- [ ] 29-02: TBD
-- [ ] 29-03: TBD
+- [ ] 29-01-PLAN.md — Tag chip widget + profile form with validation, PDF upload, and dirty tracking
+- [ ] 29-02-PLAN.md — Search controls widget + real search worker replacing mock
+- [ ] 29-03-PLAN.md — Main window integration + visual verification checkpoint
 
 #### Phase 30: Packaging & Distribution
 
@@ -340,10 +340,10 @@ Plans:
 | 19-23 | v1.4.0 | 9/9 | Complete | 2026-02-11 |
 | 24-27 | v1.5.0 | 7/7 | Complete | 2026-02-12 |
 | 28 | v2.0.0 | 3/3 | Complete | 2026-02-12 |
-| 29 | v2.0.0 | 0/TBD | Not started | - |
+| 29 | v2.0.0 | 0/3 | Planned | - |
 | 30 | v2.0.0 | 0/TBD | Not started | - |
 
-**Total: 27 completed phases (49 plans, 6 milestones shipped) + 3 planned phases for v2.0.0**
+**Total: 27 completed phases (52 plans, 6 milestones shipped) + 3 planned phases for v2.0.0**
 
 ---
-*Last updated: 2026-02-12 after v2.0.0 roadmap creation*
+*Last updated: 2026-02-13 after Phase 29 planning*
