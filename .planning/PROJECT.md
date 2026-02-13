@@ -81,7 +81,17 @@ Accurate job-candidate scoring — if the scoring is wrong, nothing else matters
 
 ### Active
 
-(No active milestone — next milestone TBD via `/gsd:new-milestone`)
+## Current Milestone: v2.1.0 Source Expansion & Polish
+
+**Goal:** Expand automated job source coverage, give users control over staffing firm scoring, and provide clean uninstall experiences across platforms
+
+**Target features:**
+- Job aggregator API integration (JSearch/SerpAPI) pulling from LinkedIn, Indeed, Glassdoor, and company career pages
+- Additional free job board integrations (ZipRecruiter, Jobicy, USAJobs, etc.)
+- Better staffing firm filtering with user-configurable scoring preference (boost/neutral/penalize)
+- GUI uninstall button that removes app + all config/data/cache
+- Platform-native packaging: macOS trashable app, Windows Add/Remove Programs installer
+- Tiered source approach: works great without API keys, optional freemium APIs for more volume
 
 ### Out of Scope
 
@@ -168,4 +178,4 @@ Accurate job-candidate scoring — if the scoring is wrong, nothing else matters
 | CI smoke tests CLI-only (headless) | GUI tests require display server, --version is safe | ✓ Good |
 
 ---
-*Last updated: 2026-02-13 after v2.0.0 milestone completion*
+*Last updated: 2026-02-13 after v2.1.0 milestone start*

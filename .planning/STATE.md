@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-02-13)
 
 **Core value:** Accurate job-candidate scoring — if the scoring is wrong, nothing else matters.
-**Current focus:** Planning next milestone
+**Current focus:** Defining requirements for v2.1.0
 
 ## Current Position
 
-Milestone: v2.0.0 Desktop GUI Launcher — SHIPPED
-Phase: All complete
-Status: Milestone archived, tagged
-Last activity: 2026-02-13 — v2.0.0 milestone completed
+Milestone: v2.1.0 Source Expansion & Polish
+Phase: Not started (defining requirements)
+Status: Defining requirements
+Last activity: 2026-02-13 — Milestone v2.1.0 started
 
 ## Performance Metrics
 
@@ -31,6 +31,7 @@ Last activity: 2026-02-13 — v2.0.0 milestone completed
 | v1.4.0 | 19-23 | 9 | Complete (2026-02-11) |
 | v1.5.0 | 24-27 | 7 | Complete (2026-02-12) |
 | v2.0.0 | 28-30 | 8 | Complete (2026-02-13) |
+| v2.1.0 | TBD | — | Defining requirements |
 
 ## Accumulated Context
 
@@ -49,11 +50,13 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-13
-Stopped at: v2.0.0 milestone completed and archived
+Stopped at: v2.1.0 milestone started, defining requirements
 Resume file: None
 
 **Next steps:**
-1. `/gsd:new-milestone` to start next milestone cycle
+1. Complete research and requirements definition
+2. Create roadmap
+3. `/gsd:plan-phase [N]` to start execution
 
 ---
-*Last updated: 2026-02-13 after v2.0.0 milestone completion*
+*Last updated: 2026-02-13 after v2.1.0 milestone start*
