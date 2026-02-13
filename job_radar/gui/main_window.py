@@ -161,12 +161,13 @@ class MainWindow(ctk.CTk):
         container.grid_columnconfigure(0, weight=1)
 
         # Create ProfileForm in create mode
-        ProfileForm(
+        form = ProfileForm(
             parent=container,
             on_save_callback=self._on_profile_created,
             on_cancel_callback=self._show_welcome_screen,
             existing_profile=None
         )
+        form.grid(row=0, column=0, sticky="nsew")
 
     def _on_profile_created(self, profile_data: dict):
         """Handle successful profile creation.
@@ -355,12 +356,13 @@ class MainWindow(ctk.CTk):
             widget.destroy()
 
         # Create ProfileForm in edit mode
-        ProfileForm(
+        form = ProfileForm(
             parent=profile_tab,
             on_save_callback=self._on_profile_updated,
             on_cancel_callback=lambda: self._build_profile_tab(self._tabview.tab("Profile")),
             existing_profile=profile
         )
+        form.pack(fill="both", expand=True)
 
     def _add_profile_field(self, parent, row, label_text, value_text):
         """Add a label-value pair to the profile grid.
