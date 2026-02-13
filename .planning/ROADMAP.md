@@ -300,6 +300,12 @@ Plans:
 
 **Requirements:** INFRA-01, INFRA-02, INFRA-03
 
+**Plans:** 2 plans
+
+Plans:
+- [ ] 31-01-PLAN.md — Add atexit cleanup and shared backend API rate limiters
+- [ ] 31-02-PLAN.md — Load rate limit configs from config.json
+
 **Success Criteria:**
 1. Rate limiter SQLite connections are cleaned up on app exit with atexit handler
 2. Sources sharing the same backend API use a single shared rate limiter instance
@@ -410,7 +416,7 @@ Plans:
 | 19-23 | v1.4.0 | 9/9 | Complete | 2026-02-11 |
 | 24-27 | v1.5.0 | 7/7 | Complete | 2026-02-12 |
 | 28-30 | v2.0.0 | 8/8 | Complete | 2026-02-13 |
-| 31 | v2.1.0 | 0/? | Pending | — |
+| 31 | v2.1.0 | 0/2 | Pending | — |
 | 32 | v2.1.0 | 0/? | Pending | — |
 | 33 | v2.1.0 | 0/? | Pending | — |
 | 34 | v2.1.0 | 0/? | Pending | — |
@@ -421,4 +427,4 @@ Plans:
 **Total: 30 completed phases + 7 planned phases (57 completed plans, 7 milestones: 7 shipped + 1 in progress)**
 
 ---
-*Last updated: 2026-02-13 after v2.1.0 roadmap creation*
+*Last updated: 2026-02-13 after Phase 31 planning*
