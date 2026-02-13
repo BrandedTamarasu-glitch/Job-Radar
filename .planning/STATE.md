@@ -10,17 +10,17 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 ## Current Position
 
 Milestone: v2.0.0 Desktop GUI Launcher
-Phase: 29 of 30 complete (Profile Setup & Search Controls ✓)
-Status: Phase 30 planned (2 plans, 2 waves)
-Last activity: 2026-02-13 — Completed Phase 29 (all 3 plans, human-verified)
+Phase: 30 in progress (Packaging & Distribution)
+Status: 1 of 2 plans complete
+Last activity: 2026-02-13 — Completed Phase 30 Plan 01 (macOS entitlements & CI smoke tests)
 
-Progress: [██████████████████████████████░] 97%
+Progress: [██████████████████████████████░] 98%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 57
-- Average duration: ~43 min
+- Total plans completed: 58
+- Average duration: ~42 min
 - Total execution time: ~39.5 hours
 
 **By Milestone:**
@@ -33,7 +33,7 @@ Progress: [███████████████████████
 | v1.3.0 | 16-18 | 7 | Complete (2026-02-11) |
 | v1.4.0 | 19-23 | 9 | Complete (2026-02-11) |
 | v1.5.0 | 24-27 | 7 | Complete (2026-02-12) |
-| v2.0.0 | 28-30 | 8/TBD | In progress |
+| v2.0.0 | 28-30 | 9/TBD | In progress |
 
 **Recent Trend:**
 - Last 5 plans: ~30-60 min range
@@ -43,6 +43,7 @@ Progress: [███████████████████████
 | Phase 29 P01 | 195 | 2 tasks | 2 files |
 | Phase 29 P02 | 2 | 2 tasks | 3 files |
 | Phase 29 P03 | 30 | 2 tasks | 4 files |
+| Phase 30 P01 | 1 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -68,6 +69,9 @@ Recent decisions affecting current work:
 - [Phase 29-03]: ProfileForm instances must be explicitly placed with grid/pack after creation
 - [Phase 29-03]: Linux mouse wheel scrolling requires explicit Button-4/Button-5 bindings
 - [Phase 29-03]: Report path resolved to absolute before URI conversion
+- [Phase 30-01]: Ad-hoc signing with entitlements is sufficient for GitHub releases (codesign_identity=None)
+- [Phase 30-01]: Smoke tests only verify CLI --version (headless-safe), skip GUI tests requiring display server
+- [Phase 30-01]: CustomTkinter asset verification runs on Linux only for CI visibility
 
 ### Pending Todos
 
@@ -80,12 +84,12 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-13
-Stopped at: Completed Phase 29 execution (all 3 plans, verified)
+Stopped at: Completed 30-01-PLAN.md
 Resume file: None
 
 **Next steps:**
-1. Execute Phase 30 (Packaging & Distribution)
+1. Execute Phase 30 Plan 02 (build verification)
 2. Audit and complete v2.0.0 milestone
 
 ---
-*Last updated: 2026-02-13 after Phase 29 completion*
+*Last updated: 2026-02-13 after Phase 30-01 completion*
