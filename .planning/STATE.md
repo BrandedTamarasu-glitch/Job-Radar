@@ -13,12 +13,12 @@
 ## Current Position
 
 **Phase:** 31 - Rate Limiter Infrastructure
-**Current Plan:** 2/2
-**Status:** In progress
+**Current Plan:** Complete (2/2)
+**Status:** Complete
 
-**Progress:** [██████████] 98%
+**Progress:** [██████████] 100%
 
-**Next Action:** Continue Phase 31 - Plan 31-02 (configuration-driven rate limits)
+**Next Action:** Plan Phase 32 (Job Aggregator APIs - JSearch integration)
 
 ## Performance Metrics
 
@@ -32,17 +32,19 @@
 | v1.3.0 Accessibility | 3 | 7 | 1 | 7.0 |
 
 **Average velocity:** ~5 plans/day (varies by complexity)
+| Phase 31 P02 | 213 | 1 tasks | 5 files |
 
 ### Recent Plan Executions
 
 | Plan | Duration (sec) | Tasks | Files | Date |
 |------|---------------|-------|-------|------|
+| 31-02 | 213 | 1 | 5 | 2026-02-13 |
 | 31-01 | 224 | 2 | 2 | 2026-02-13 |
 
 ### Quality Indicators
 
 **Test Coverage:**
-- 455 tests across 17 test files
+- 460 tests across 17 test files
 - All passing (v2.1.0 in progress)
 - Coverage areas: scoring, config, tracker, wizard, report, UX, API, PDF, dedup, accessibility, profile management, GUI, rate limiting
 
@@ -68,6 +70,8 @@
 | Defer Linux DEB/RPM packaging | .tar.gz acceptable for Linux users, focus macOS/Windows | 2026-02-13 |
 | Clear limiters before closing connections | pyrate-limiter background threads cause segfaults if connections closed while active | 2026-02-13 |
 | BACKEND_API_MAP fallback to source name | Backward compatibility - unmapped sources continue to work | 2026-02-13 |
+| Merge config overrides with defaults | Partial rate limit overrides for better UX - users only customize specific APIs | 2026-02-13 |
+| Validate and warn on invalid configs | Invalid rate limit configs show warnings and use defaults - graceful degradation | 2026-02-13 |
 
 ### Active Constraints
 
@@ -96,38 +100,43 @@ None.
 
 ### What Just Happened
 
-Completed Phase 31 Plan 01: Rate Limiter Infrastructure
+Completed Phase 31 Plan 02: Configuration-Driven Rate Limits (FINAL PLAN OF PHASE 31)
 
-**Executed:** Fixed SQLite connection leaks via atexit cleanup and established shared rate limiter architecture
+**Executed:** Dynamic rate limit configuration from config.json with validation and merge behavior
 
 **Key accomplishments:**
-- Task 1: Added atexit cleanup handler that clears limiters before closing connections (prevents segfaults)
-- Task 2: Implemented BACKEND_API_MAP for shared rate limiters across sources using same backend API
-- Added 3 new tests: cleanup, shared backend, fallback behavior
-- All 455 tests passing (no regressions)
+- Task 1: Added "rate_limits" to KNOWN_KEYS, implemented _load_rate_limits() with validation
+- Config overrides merge with hardcoded defaults (partial overrides supported)
+- Invalid configs show warnings and fall back to defaults (graceful degradation)
+- Added 4 new tests: rate_limits key recognition, config loading, validation, merge behavior
+- All 460 tests passing (no regressions)
 
 **Commits:**
-- 487a7b2 - feat(31-rate-limiter-infrastructure): add atexit cleanup handler for SQLite connections
-- 98cbee3 - feat(31-rate-limiter-infrastructure): implement shared rate limiters for backend APIs
+- e3351a1 - feat(31-rate-limiter-infrastructure): add configuration-driven rate limits
 
-**Duration:** 224 seconds (3.7 minutes)
+**Duration:** 213 seconds (3.6 minutes)
+
+**Phase 31 Complete:** Both plans executed successfully. Rate limiter infrastructure is now production-ready with atexit cleanup, shared backend limiters, and config-driven customization.
 
 ### What's Next
 
-Execute Phase 31 Plan 02: Configuration-driven rate limits
+Plan Phase 32: Job Aggregator APIs - JSearch integration (linkedin, indeed, glassdoor sources)
 
 ### Files Changed This Session
 
-- `/home/corye/Claude/Job-Radar/job_radar/rate_limits.py` - Added atexit cleanup, BACKEND_API_MAP, shared limiter logic
-- `/home/corye/Claude/Job-Radar/tests/test_rate_limits.py` - Added 3 new tests
-- `/home/corye/Claude/Job-Radar/.planning/phases/31-rate-limiter-infrastructure/31-01-SUMMARY.md` - Created
-- `/home/corye/Claude/Job-Radar/.planning/STATE.md` - Updated position and decisions
+- `/home/corye/Claude/Job-Radar/job_radar/config.py` - Added "rate_limits" to KNOWN_KEYS
+- `/home/corye/Claude/Job-Radar/job_radar/rate_limits.py` - Added config loading, validation, merge logic
+- `/home/corye/Claude/Job-Radar/tests/test_config.py` - Added rate_limits key test, updated size checks
+- `/home/corye/Claude/Job-Radar/tests/test_rate_limits.py` - Added 3 config loading tests
+- `/home/corye/Claude/Job-Radar/tests/test_browser.py` - Updated KNOWN_KEYS count expectation
+- `/home/corye/Claude/Job-Radar/.planning/phases/31-rate-limiter-infrastructure/31-02-SUMMARY.md` - Created
+- `/home/corye/Claude/Job-Radar/.planning/STATE.md` - Updated position, decisions, metrics
 
 ### Context for Next Session
 
-**If continuing:** Proceed to Phase 31 planning. Research suggests this is foundation work (atexit handlers, shared rate limiters, config-driven limits) with standard Python patterns.
+**If continuing:** Proceed to Phase 32 planning. Rate limiter infrastructure complete - atexit cleanup, shared backend limiters, and config-driven customization all working. JSearch integration can now leverage this foundation.
 
-**If resuming later:** Read STATE.md for current position, check ROADMAP.md Phase 31 success criteria, review research/SUMMARY.md Phase 1 implications.
+**If resuming later:** Read STATE.md for current position, check ROADMAP.md Phase 32 for JSearch integration details, review Phase 31 SUMMARY files for infrastructure capabilities.
 
 ---
 *State initialized: 2026-02-13*
