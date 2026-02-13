@@ -94,3 +94,28 @@ def test_independent_source_limits(tmp_path, monkeypatch):
     authentic_db = tmp_path / ".rate_limits" / "authentic_jobs.db"
     assert adzuna_db.exists()
     assert authentic_db.exists()
+
+
+def test_cleanup_closes_all_connections(tmp_path, monkeypatch):
+    """Test _cleanup_connections closes all SQLite connections and clears limiters."""
+    from job_radar import rate_limits
+
+    monkeypatch.chdir(tmp_path)
+
+    # Create multiple rate limiters (creates connections and limiters)
+    check_rate_limit("adzuna")
+    check_rate_limit("authentic_jobs")
+
+    # Verify connections and limiters exist
+    assert len(rate_limits._connections) == 2
+    assert len(rate_limits._limiters) == 2
+    assert "adzuna" in rate_limits._connections
+    assert "authentic_jobs" in rate_limits._connections
+
+    # Call cleanup
+    rate_limits._cleanup_connections()
+
+    # Verify both limiters and connections were cleared
+    # Limiters must be cleared first to stop background threads
+    assert len(rate_limits._limiters) == 0
+    assert len(rate_limits._connections) == 0

@@ -5,6 +5,7 @@ persistence across application restarts. Rate limits are configured per source
 with conservative defaults to avoid 429 errors.
 """
 
+import atexit
 import datetime
 import logging
 import os
@@ -37,6 +38,50 @@ RATE_LIMITS = {
 # Cache limiters to avoid re-creating objects
 _limiters: dict[str, Limiter] = {}
 _connections: dict[str, sqlite3.Connection] = {}
+
+
+def _cleanup_connections() -> None:
+    """Close all SQLite connections on application exit.
+
+    Registered with atexit to prevent "database is locked" errors on exit.
+    Handles cleanup failures gracefully to avoid crashing during shutdown.
+
+    CRITICAL: Must clear _limiters dict first to stop background threads
+    before closing connections. pyrate-limiter runs background leak() threads
+    that access the SQLite connections - closing connections while threads
+    are active causes segmentation faults.
+    """
+    if not _connections and not _limiters:
+        return
+
+    # Step 1: Clear limiters to stop background threads
+    # This prevents threads from accessing connections during cleanup
+    _limiters.clear()
+
+    # Step 2: Give threads time to finish their current operation
+    # Background threads check for limiter existence before operations
+    import time
+    if _connections:
+        time.sleep(0.1)  # 100ms should be sufficient for threads to exit
+
+    # Step 3: Close connections
+    closed_count = 0
+    for source, conn in list(_connections.items()):
+        try:
+            conn.close()
+            closed_count += 1
+        except Exception as e:
+            # Don't crash on cleanup failures - log and continue
+            log.debug(f"Error closing rate limiter connection for {source}: {e}")
+
+    if closed_count > 0:
+        log.debug(f"Closed {closed_count} rate limiter database connections")
+
+    _connections.clear()
+
+
+# Register cleanup handler to run on application exit
+atexit.register(_cleanup_connections)
 
 
 def get_rate_limiter(source: str) -> Limiter:
