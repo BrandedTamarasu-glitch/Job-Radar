@@ -36,5 +36,11 @@
   "highlights": [
     "Quantified accomplishment showing impact (e.g., 'Reduced API latency 40% by redesigning caching layer')",
     "Another achievement that demonstrates your strengths"
-  ]
+  ],
+
+  "_comment_federal": "Optional: Federal job filters for USAJobs (leave blank to skip)",
+  "gs_grade_min": null,
+  "gs_grade_max": null,
+  "preferred_agencies": [],
+  "security_clearance": null
 }
