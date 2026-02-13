@@ -274,3 +274,391 @@ def test_score_job_overall_range(job_factory, sample_profile):
     assert 1.0 <= result["overall"] <= 5.0
     assert "components" in result
     assert "recommendation" in result
+
+
+# ---------------------------------------------------------------------------
+# Configurable scoring weights (Phase 33-02)
+# ---------------------------------------------------------------------------
+
+def test_score_job_uses_profile_weights(job_factory):
+    """Test that score_job uses profile scoring_weights instead of hardcoded values."""
+    # Create a profile that heavily weights skill_match (0.60) and minimizes others
+    profile_custom_weights = {
+        "core_skills": ["Python", "FastAPI"],
+        "secondary_skills": [],
+        "target_titles": ["Backend Developer"],
+        "level": "mid",
+        "years_experience": 5,
+        "arrangement": ["remote"],
+        "location": "San Francisco",
+        "domain_expertise": [],
+        "scoring_weights": {
+            "skill_match": 0.60,
+            "title_relevance": 0.08,
+            "seniority": 0.08,
+            "location": 0.08,
+            "domain": 0.08,
+            "response_likelihood": 0.08,
+        }
+    }
+
+    # Same profile with default weights
+    profile_default_weights = {
+        "core_skills": ["Python", "FastAPI"],
+        "secondary_skills": [],
+        "target_titles": ["Backend Developer"],
+        "level": "mid",
+        "years_experience": 5,
+        "arrangement": ["remote"],
+        "location": "San Francisco",
+        "domain_expertise": [],
+        # No scoring_weights - will use defaults (skill_match=0.25)
+    }
+
+    # Job with perfect skill match (5.0) but poor title match (1.5)
+    job = job_factory(
+        title="Marketing Manager",  # Poor title match
+        description="Python and FastAPI expert needed",  # Perfect skill match
+        arrangement="remote"
+    )
+
+    result_custom = score_job(job, profile_custom_weights)
+    result_default = score_job(job, profile_default_weights)
+
+    # With custom weights (skill_match=0.60), overall score should be higher
+    # because skill_match has more weight despite poor title match
+    assert result_custom["overall"] > result_default["overall"], \
+        f"Custom weights (skill=0.60) should score higher than defaults (skill=0.25). " \
+        f"Custom: {result_custom['overall']}, Default: {result_default['overall']}"
+
+
+def test_score_job_default_weights_fallback(job_factory):
+    """Test that score_job falls back to DEFAULT_SCORING_WEIGHTS when profile has no scoring_weights."""
+    profile = {
+        "core_skills": ["Python"],
+        "target_titles": ["Developer"],
+        "level": "mid",
+        "years_experience": 5,
+        # No scoring_weights key - should fall back gracefully
+    }
+
+    job = job_factory(description="Python developer needed")
+    result = score_job(job, profile)
+
+    # Should return a valid score without crashing
+    assert "overall" in result
+    assert 1.0 <= result["overall"] <= 5.0
+    assert "components" in result
+
+
+def test_score_stability_default_weights(job_factory):
+    """Test that scores are identical when using explicit DEFAULT_SCORING_WEIGHTS vs no weights (fallback).
+
+    CRITICAL: This ensures score stability during migration - existing profiles without
+    scoring_weights should produce the same scores as before.
+    """
+    from job_radar.profile_manager import DEFAULT_SCORING_WEIGHTS
+
+    # Profile WITH explicit default weights
+    profile_explicit = {
+        "core_skills": ["Python", "Docker"],
+        "secondary_skills": ["Kubernetes"],
+        "target_titles": ["DevOps Engineer"],
+        "level": "senior",
+        "years_experience": 7,
+        "arrangement": ["remote"],
+        "location": "Austin",
+        "domain_expertise": ["fintech"],
+        "scoring_weights": DEFAULT_SCORING_WEIGHTS,
+    }
+
+    # Profile WITHOUT scoring_weights (uses fallback)
+    profile_fallback = {
+        "core_skills": ["Python", "Docker"],
+        "secondary_skills": ["Kubernetes"],
+        "target_titles": ["DevOps Engineer"],
+        "level": "senior",
+        "years_experience": 7,
+        "arrangement": ["remote"],
+        "location": "Austin",
+        "domain_expertise": ["fintech"],
+        # No scoring_weights - will use DEFAULT_SCORING_WEIGHTS fallback
+    }
+
+    # Score the same job with both profiles
+    job = job_factory(
+        title="Senior DevOps Engineer",
+        description="Python, Docker, Kubernetes required. Fintech experience preferred.",
+        arrangement="remote",
+        location="Remote"
+    )
+
+    result_explicit = score_job(job, profile_explicit)
+    result_fallback = score_job(job, profile_fallback)
+
+    # Overall scores MUST be identical (score stability)
+    assert result_explicit["overall"] == result_fallback["overall"], \
+        f"Scores must be identical for migration stability. " \
+        f"Explicit: {result_explicit['overall']}, Fallback: {result_fallback['overall']}"
+
+
+def test_score_job_custom_weights_math(job_factory):
+    """Test that weighted sum calculation is correct with custom weights."""
+    profile = {
+        "core_skills": ["Python"],
+        "target_titles": ["Developer"],
+        "level": "mid",
+        "years_experience": 5,
+        "arrangement": ["remote"],
+        "location": "Seattle",
+        "domain_expertise": ["healthcare"],
+        "scoring_weights": {
+            "skill_match": 0.50,
+            "title_relevance": 0.10,
+            "seniority": 0.10,
+            "location": 0.10,
+            "domain": 0.10,
+            "response_likelihood": 0.10,
+        }
+    }
+
+    # Create a simple job to get predictable component scores
+    job = job_factory(
+        title="Python Developer",  # Good title match
+        description="Python developer needed. Healthcare domain.",  # Skills + domain
+        arrangement="remote",
+        location="Remote",
+        company="TestCo"
+    )
+
+    result = score_job(job, profile)
+
+    # Manually calculate expected weighted sum
+    components = result["components"]
+    expected_overall = (
+        components["skill_match"]["score"] * 0.50
+        + components["title_relevance"]["score"] * 0.10
+        + components["seniority"]["score"] * 0.10
+        + components["location"]["score"] * 0.10
+        + components["domain"]["score"] * 0.10
+        + components["response"]["score"] * 0.10
+    )
+
+    # Round to match scoring.py rounding
+    expected_overall = round(expected_overall, 1)
+
+    assert result["overall"] == expected_overall, \
+        f"Weighted sum mismatch. Expected: {expected_overall}, Got: {result['overall']}"
+
+
+# ---------------------------------------------------------------------------
+# Staffing firm preference (Phase 33-02)
+# ---------------------------------------------------------------------------
+
+def test_staffing_boost_adds_half_point(job_factory):
+    """Test that staffing_preference='boost' adds +0.5 to staffing firm jobs."""
+    profile_boost = {
+        "core_skills": ["Python"],
+        "target_titles": ["Developer"],
+        "level": "mid",
+        "years_experience": 5,
+        "staffing_preference": "boost",
+    }
+
+    profile_neutral = {
+        "core_skills": ["Python"],
+        "target_titles": ["Developer"],
+        "level": "mid",
+        "years_experience": 5,
+        "staffing_preference": "neutral",
+    }
+
+    # Staffing firm job
+    job = job_factory(
+        company="Robert Half",
+        description="Python developer needed"
+    )
+
+    result_boost = score_job(job, profile_boost)
+    result_neutral = score_job(job, profile_neutral)
+
+    # Boost should be ~0.5 higher than neutral
+    diff = result_boost["overall"] - result_neutral["overall"]
+    assert 0.4 <= diff <= 0.6, \
+        f"Boost should add ~0.5 points. Got diff: {diff}"
+    assert "staffing_note" in result_boost["components"]
+
+
+def test_staffing_penalize_subtracts_one_point(job_factory):
+    """Test that staffing_preference='penalize' subtracts -1.0 from staffing firm jobs."""
+    profile_penalize = {
+        "core_skills": ["Python"],
+        "target_titles": ["Developer"],
+        "level": "mid",
+        "years_experience": 5,
+        "staffing_preference": "penalize",
+    }
+
+    profile_neutral = {
+        "core_skills": ["Python"],
+        "target_titles": ["Developer"],
+        "level": "mid",
+        "years_experience": 5,
+        "staffing_preference": "neutral",
+    }
+
+    # Staffing firm job
+    job = job_factory(
+        company="TekSystems",
+        description="Python developer needed"
+    )
+
+    result_penalize = score_job(job, profile_penalize)
+    result_neutral = score_job(job, profile_neutral)
+
+    # Penalize should be ~1.0 lower than neutral
+    diff = result_neutral["overall"] - result_penalize["overall"]
+    assert 0.9 <= diff <= 1.1, \
+        f"Penalize should subtract ~1.0 points. Got diff: {diff}"
+    assert "staffing_note" in result_penalize["components"]
+
+
+def test_staffing_neutral_no_adjustment(job_factory):
+    """Test that staffing_preference='neutral' applies no adjustment to staffing firm jobs."""
+    profile = {
+        "core_skills": ["Python"],
+        "target_titles": ["Developer"],
+        "level": "mid",
+        "years_experience": 5,
+        "staffing_preference": "neutral",
+    }
+
+    # Score a staffing firm job
+    job_staffing = job_factory(
+        company="Robert Half",
+        description="Python developer needed"
+    )
+
+    # Score a non-staffing job
+    job_direct = job_factory(
+        company="TechCorp",
+        description="Python developer needed"
+    )
+
+    result_staffing = score_job(job_staffing, profile)
+    result_direct = score_job(job_direct, profile)
+
+    # Both should have similar scores (no staffing adjustment)
+    # Allow small variance from other factors but should be close
+    assert abs(result_staffing["overall"] - result_direct["overall"]) <= 0.5
+    assert "staffing_note" not in result_staffing["components"]
+
+
+def test_staffing_preference_missing_defaults_neutral(job_factory):
+    """Test that missing staffing_preference defaults to neutral (no adjustment)."""
+    profile = {
+        "core_skills": ["Python"],
+        "target_titles": ["Developer"],
+        "level": "mid",
+        "years_experience": 5,
+        # No staffing_preference key - should default to neutral
+    }
+
+    job = job_factory(
+        company="Robert Half",
+        description="Python developer needed"
+    )
+
+    result = score_job(job, profile)
+
+    # Should score without crashing and no staffing adjustment
+    assert "overall" in result
+    assert 1.0 <= result["overall"] <= 5.0
+    assert "staffing_note" not in result["components"]
+
+
+def test_staffing_boost_capped_at_5(job_factory):
+    """Test that staffing boost does not push score above 5.0."""
+    profile = {
+        "core_skills": ["Python", "FastAPI", "Docker"],
+        "secondary_skills": ["Kubernetes", "PostgreSQL"],
+        "target_titles": ["Senior Python Developer"],
+        "level": "senior",
+        "years_experience": 8,
+        "arrangement": ["remote"],
+        "location": "San Francisco",
+        "domain_expertise": ["fintech"],
+        "staffing_preference": "boost",
+    }
+
+    # Perfect match job from staffing firm
+    job = job_factory(
+        title="Senior Python Developer",
+        description="Python, FastAPI, Docker, Kubernetes, PostgreSQL. Fintech domain. Remote.",
+        company="Robert Half",
+        arrangement="remote",
+        location="Remote",
+        source="Dice"
+    )
+
+    result = score_job(job, profile)
+
+    # Score should not exceed 5.0 even with boost
+    assert result["overall"] <= 5.0, \
+        f"Score should be capped at 5.0, got {result['overall']}"
+
+
+def test_staffing_penalize_floored_at_1(job_factory):
+    """Test that staffing penalize does not push score below 1.0."""
+    profile = {
+        "core_skills": ["Rust", "Haskell"],
+        "target_titles": ["Functional Programming Engineer"],
+        "level": "junior",
+        "years_experience": 1,
+        "arrangement": ["onsite"],
+        "location": "New York",
+        "domain_expertise": ["cryptocurrency"],
+        "staffing_preference": "penalize",
+    }
+
+    # Poor match job from staffing firm
+    job = job_factory(
+        title="Marketing Manager",
+        description="Marketing role, no tech skills required",
+        company="Robert Half",
+        arrangement="remote",
+        location="California",
+        source="LinkedIn"
+    )
+
+    result = score_job(job, profile)
+
+    # Score should not go below 1.0 even with penalize
+    assert result["overall"] >= 1.0, \
+        f"Score should be floored at 1.0, got {result['overall']}"
+
+
+# ---------------------------------------------------------------------------
+# Response likelihood without hardcoded staffing boost (Phase 33-02)
+# ---------------------------------------------------------------------------
+
+def test_response_likelihood_staffing_no_boost(job_factory):
+    """Test that _score_response_likelihood no longer boosts staffing firms.
+
+    The old hardcoded +4.5 boost has been removed from _score_response_likelihood().
+    Staffing firm handling now lives in score_job() via staffing_preference.
+    """
+    job = job_factory(
+        company="Robert Half",
+        description="Standard listing"
+    )
+
+    result = _score_response_likelihood(job)
+
+    # Should score 3.0 (base score), NOT 4.5 (old hardcoded boost removed)
+    assert result["score"] == 3.0, \
+        f"Staffing firms should score 3.0 base in _score_response_likelihood, got {result['score']}"
+
+    # Reason should NOT mention staffing firm
+    assert "staffing firm" not in result["reason"].lower(), \
+        f"_score_response_likelihood should not mention staffing firms. Got: {result['reason']}"
