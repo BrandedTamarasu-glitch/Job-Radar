@@ -3,6 +3,7 @@
 import logging
 import re
 
+from .profile_manager import DEFAULT_SCORING_WEIGHTS
 from .staffing_firms import is_staffing_firm
 
 log = logging.getLogger(__name__)
@@ -43,15 +44,29 @@ def score_job(job, profile: dict) -> dict:
     # 6. Response likelihood (20%)
     scores["response"] = _score_response_likelihood(job)
 
-    # Weighted total
+    # Get weights from profile with fallback to defaults (defense-in-depth)
+    weights = profile.get("scoring_weights", DEFAULT_SCORING_WEIGHTS)
+
+    # Weighted total using configurable weights
     overall = (
-        scores["skill_match"]["score"] * 0.25
-        + scores["title_relevance"]["score"] * 0.15
-        + scores["seniority"]["score"] * 0.15
-        + scores["location"]["score"] * 0.15
-        + scores["domain"]["score"] * 0.10
-        + scores["response"]["score"] * 0.20
+        scores["skill_match"]["score"] * weights.get("skill_match", 0.25)
+        + scores["title_relevance"]["score"] * weights.get("title_relevance", 0.15)
+        + scores["seniority"]["score"] * weights.get("seniority", 0.15)
+        + scores["location"]["score"] * weights.get("location", 0.15)
+        + scores["domain"]["score"] * weights.get("domain", 0.10)
+        + scores["response"]["score"] * weights.get("response_likelihood", 0.20)
     )
+
+    # Staffing firm preference (post-scoring adjustment, NOT a weight component)
+    staffing_pref = profile.get("staffing_preference", "neutral")
+    if is_staffing_firm(job.company):
+        if staffing_pref == "boost":
+            overall = min(5.0, overall + 0.5)
+            scores["staffing_note"] = "Staffing firm (boosted +0.5)"
+        elif staffing_pref == "penalize":
+            overall = max(1.0, overall - 1.0)
+            scores["staffing_note"] = "Staffing firm (penalized -1.0)"
+        # "neutral" = no adjustment, staffing firm treated same as direct employer
 
     # Compensation adjustment — penalize if below floor
     comp_penalty, comp_note = _check_comp_floor(job, profile)
@@ -496,11 +511,6 @@ def _score_response_likelihood(job) -> dict:
     """Score how likely the candidate is to get a response."""
     score = 3.0
     reasons = []
-
-    # Staffing firms: high response likelihood
-    if is_staffing_firm(job.company):
-        score = 4.5
-        reasons.append("Staffing firm (high placement incentive)")
 
     # Direct email apply
     if job.apply_info and ("mailto:" in job.apply_info or "@" in job.apply_info):

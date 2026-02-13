@@ -239,16 +239,18 @@ def test_score_domain(job_factory, description, domains, expected_min):
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("company,source,description,expected_min", [
-    ("Robert Half", "Dice", "standard listing", 4.0),  # staffing firm
     ("TestCo", "HN Hiring", "small team building", 3.0),  # HN source
     ("BigCorp", "Dice", "standard listing", 2.5),  # default
 ], ids=[
-    "staffing_firm",
     "hn_source",
     "default",
 ])
 def test_score_response_likelihood(job_factory, company, source, description, expected_min):
-    """Test response likelihood scoring (TEST-01)."""
+    """Test response likelihood scoring (TEST-01).
+
+    Note: Staffing firm boost was removed from _score_response_likelihood in Phase 33-02.
+    Staffing firm handling now lives in score_job() via configurable staffing_preference.
+    """
     job = job_factory(company=company, source=source, description=description)
     result = _score_response_likelihood(job)
     assert "score" in result
