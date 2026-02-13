@@ -1,5 +1,36 @@
 # Changelog
 
+## v2.0.0 — 2026-02-13
+
+### Desktop GUI
+- **GUI application** — Double-click the executable to launch a desktop window (CustomTkinter) — no terminal needed
+- **Dual-mode entry point** — Running with CLI flags (e.g., `job-radar --min-score 3.5`) uses the existing CLI path; bare invocation opens the GUI
+- **Thread-safe architecture** — Queue-based messaging (100ms polling) keeps GUI responsive during search; cooperative cancellation via threading.Event
+- **Modal error dialogs** — Search failures show actionable error messages in GUI with forced acknowledgment
+
+### GUI Profile Form
+- **Profile creation** — Full form with grouped sections (Identity, Skills & Titles, Preferences, Filters) — create a profile without touching the terminal
+- **PDF resume upload** — File dialog to select a PDF; pre-fills form fields using existing parser with success/error feedback
+- **Tag chip widget** — Reusable input for list fields (skills, titles) with Enter-to-add, X-to-remove, and duplicate prevention
+- **Inline validation** — Blur validation on entry fields, save-time validation on tag widgets, with red error labels below each field
+- **Dirty tracking** — Compares form snapshot against original values; shows discard confirmation dialog on cancel if changes exist
+- **Edit mode** — Same form pre-filled with current profile values for editing existing profiles
+
+### GUI Search Controls
+- **Run Search button** — Click to start a job search with configurable parameters
+- **Date range** — Opt-in date filtering (unchecked by default, matching CLI behavior)
+- **Min score threshold** — 0.0-5.0 entry with validation
+- **New-only toggle** — Switch to filter only unseen listings
+- **Per-source progress** — Visual progress bar with current source name and job count during search
+- **Open Report** — Completion view shows results count and button to open HTML report in default browser
+
+### Packaging
+- **Dual executables** — Separate CLI (with console) and GUI (without console) executables in distribution packages
+- **CustomTkinter bundling** — Theme JSON files and OTF fonts bundled via PyInstaller `--add-data`
+- **macOS entitlements** — `com.apple.security.cs.allow-unsigned-executable-memory` for Python JIT compilation
+- **CI smoke tests** — `--version` test on all 3 platforms after build; CustomTkinter asset verification step
+- **macOS archive fix** — `--symlinks` flag preserves symbolic links in macOS zip archives
+
 ## v1.5.0 — 2026-02-12
 
 ### Profile Infrastructure

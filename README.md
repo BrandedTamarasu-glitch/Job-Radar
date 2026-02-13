@@ -1,6 +1,6 @@
 # Job Radar
 
-A job search tool that searches multiple job boards, scores listings against your profile, and generates ranked reports. Features include multi-source search (6 API sources: Dice, HN Hiring, RemoteOK, We Work Remotely, Adzuna, Authentic Jobs + 4 manual URLs: Wellfound, Indeed, LinkedIn, Glassdoor), PDF resume import, fuzzy skill matching, cross-source deduplication, an interactive setup wizard, and dual-format HTML and Markdown reports with one-click URL copying, keyboard shortcuts, application status tracking, and WCAG 2.1 Level AA accessibility.
+A desktop job search tool that searches multiple job boards, scores listings against your profile, and generates ranked reports. Available as both a **desktop GUI application** (double-click to launch) and a **CLI** for power users and scripting. Features include multi-source search (6 API sources: Dice, HN Hiring, RemoteOK, We Work Remotely, Adzuna, Authentic Jobs + 4 manual URLs: Wellfound, Indeed, LinkedIn, Glassdoor), PDF resume import, fuzzy skill matching, cross-source deduplication, and dual-format HTML and Markdown reports with one-click URL copying, keyboard shortcuts, application status tracking, and WCAG 2.1 Level AA accessibility.
 
 ## Installation
 
@@ -23,14 +23,18 @@ Download the latest release for your platform from the [GitHub Releases page](ht
 >
 > These warnings do NOT mean the software is malicious. The source code is publicly available in this repository for inspection.
 
+Each release includes two executables:
+- **`job-radar-gui`** (or `job-radar-gui.exe`) — Desktop GUI application (recommended for most users)
+- **`job-radar`** (or `job-radar.exe`) — Command-line interface for power users and scripting
+
 ### Windows
 
 1. Download `job-radar-vX.X.X-windows.zip` from the Releases page
 2. Right-click the ZIP file and select "Extract All"
 3. Open the extracted `job-radar` folder
-4. Double-click `job-radar.exe`
+4. Double-click **`job-radar-gui.exe`** to launch the GUI application
 5. When Windows SmartScreen appears, click "More info" then "Run anyway"
-6. The setup wizard will guide you through creating your profile
+6. The GUI will guide you through creating your profile
 
 ### macOS
 
@@ -41,19 +45,17 @@ Download the latest release for your platform from the [GitHub Releases page](ht
    ```bash
    xattr -d com.apple.quarantine /Applications/JobRadar.app
    ```
-5. **Double-click `JobRadar.app`** to launch it
+5. **Double-click `JobRadar.app`** to launch the GUI
 
-The app will open a Terminal window and run the interactive setup wizard.
+**Alternative: Run CLI from Terminal**
 
-**Alternative: Run from Terminal directly**
-
-For advanced users or to create an alias:
+For advanced users or scripting:
 ```bash
-# Run directly
-/Applications/JobRadar.app/Contents/MacOS/job-radar-cli
+# Run CLI directly
+/Applications/JobRadar.app/Contents/MacOS/job-radar
 
 # Or create an alias
-echo 'alias job-radar="/Applications/JobRadar.app/Contents/MacOS/job-radar-cli"' >> ~/.zshrc
+echo 'alias job-radar="/Applications/JobRadar.app/Contents/MacOS/job-radar"' >> ~/.zshrc
 source ~/.zshrc
 ```
 
@@ -64,36 +66,43 @@ source ~/.zshrc
    ```bash
    tar -xzf job-radar-vX.X.X-linux.tar.gz
    ```
-3. Run the executable:
+3. Launch the GUI:
+   ```bash
+   ./job-radar/job-radar-gui
+   ```
+   Or use the CLI:
    ```bash
    ./job-radar/job-radar
    ```
-4. If you see "Permission denied", make the file executable:
+4. If you see "Permission denied", make the files executable:
    ```bash
-   chmod +x job-radar/job-radar
+   chmod +x job-radar/job-radar job-radar/job-radar-gui
    ```
-5. The setup wizard will guide you through creating your profile
 
 ## Quick Start
 
-On first launch, Job Radar runs an interactive setup wizard that guides you through creating your profile:
+### GUI (Recommended)
 
-1. **Launch the app** using the instructions above for your platform
-2. **Choose your setup method:**
+1. **Launch `job-radar-gui`** (double-click the executable)
+2. **Create your profile** on first launch:
    - **Upload PDF resume** (recommended) — automatically extracts name, skills, titles, and experience
-   - **Fill manually** — guided prompts for each field
-3. **Follow the wizard prompts** to enter or review:
-   - Your name
-   - Your core skills (technologies you know)
-   - Target job titles (roles you're searching for)
-   - Years of experience
-   - Preferred location (optional)
-   - Dealbreakers (requirements that disqualify a job)
-   - Search preferences (minimum score, new-only mode)
-4. **Search runs automatically** after the wizard completes
-5. **View your results** in the HTML report that opens in your browser
+   - **Fill manually** — form fields for name, skills, titles, experience, location, and preferences
+3. **Click "Run Search"** to start searching job boards
+4. **Watch progress** as each source is queried (with per-source job counts)
+5. **Click "Open Report"** to view ranked results in your browser
 
-On subsequent launches, the search runs directly with your saved profile (no wizard). A profile preview shows your current settings before the search begins.
+On subsequent launches, you'll go straight to the Search tab. Use the Profile tab to edit your settings anytime.
+
+### CLI
+
+The CLI is available for power users and scripting:
+
+1. **Run `job-radar`** from your terminal
+2. On first launch, the **interactive wizard** guides you through profile setup
+3. **Search runs automatically** after the wizard completes
+4. **View your results** in the HTML report that opens in your browser
+
+On subsequent launches, the search runs directly with your saved profile.
 
 ### Updating Your Profile
 
@@ -285,11 +294,14 @@ cd Job-Radar
 # Install in development mode
 pip install -e .
 
-# Run the tool
+# Run the GUI
 python -m job_radar
+
+# Run the CLI (pass any flag)
+python -m job_radar --help
 ```
 
-**Requirements:** Python 3.10+ (macOS, Linux, or Windows)
+**Requirements:** Python 3.10+ (macOS, Linux, or Windows). GUI requires `customtkinter` (included in dependencies).
 
 ### Running Tests
 

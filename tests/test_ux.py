@@ -181,7 +181,7 @@ class TestSourceProgress:
 
         progress_calls = []
 
-        def track_progress(source_name, count, total, status):
+        def track_progress(source_name, count, total, status, job_count=0):
             progress_calls.append({
                 "source": source_name,
                 "count": count,
@@ -222,7 +222,7 @@ class TestSourceProgress:
 
         progress_events = []
 
-        def track_progress(source_name, count, total, status):
+        def track_progress(source_name, count, total, status, job_count=0):
             progress_events.append((source_name, status))
 
         # Mock all fetchers
