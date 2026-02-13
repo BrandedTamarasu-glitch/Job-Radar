@@ -1,19 +1,33 @@
-"""Main GUI window for Job Radar desktop application."""
+"""Main GUI window for Job Radar desktop application.
+
+Integrates ProfileForm (create/edit), SearchControls (date/score/new-only),
+and SearchWorker (full search pipeline) into a tabbed interface. Manages
+navigation, progress display, and report opening.
+"""
 
 import queue
 import threading
+import webbrowser
+from pathlib import Path
 
 import customtkinter as ctk
-from pathlib import Path
 
 from job_radar import __version__
 from job_radar.paths import get_data_dir
 from job_radar.profile_manager import load_profile
-from job_radar.gui.worker_thread import create_mock_worker
+from job_radar.config import load_config
+from job_radar.gui.profile_form import ProfileForm
+from job_radar.gui.search_controls import SearchControls
+from job_radar.gui.worker_thread import create_search_worker
 
 
 class MainWindow(ctk.CTk):
-    """Main application window with system theme, header, tabs, and routing."""
+    """Main application window with system theme, header, tabs, and routing.
+
+    Routes to welcome screen on first launch (no profile), or tabbed interface
+    for users with existing profiles. Manages profile creation/editing flow,
+    search execution with progress display, and report opening.
+    """
 
     def __init__(self):
         super().__init__()
@@ -37,12 +51,16 @@ class MainWindow(ctk.CTk):
         self._worker = None
         self._worker_thread = None
 
+        # State tracking
+        self._profile_exists = self._has_profile()
+        self._report_path = None
+        self._tabview = None
+        self._success_message_label = None
+
         # Create header
         self._create_header()
 
         # Check if profile exists and route to appropriate view
-        self._profile_exists = self._has_profile()
-
         if not self._profile_exists:
             self._show_welcome_screen()
         else:
@@ -80,6 +98,10 @@ class MainWindow(ctk.CTk):
 
     def _show_welcome_screen(self):
         """Display welcome screen for first-time users."""
+        # Clear row 1 content
+        for widget in self.grid_slaves(row=1):
+            widget.destroy()
+
         # Container frame for centered content
         container = ctk.CTkFrame(self, fg_color="transparent")
         container.grid(row=1, column=0, sticky="nsew", padx=20, pady=(0, 20))
@@ -127,28 +149,120 @@ class MainWindow(ctk.CTk):
         get_started_btn.pack()
 
     def _on_get_started(self):
-        """Handle Get Started button click (stub for Phase 29)."""
-        print("Get Started clicked — profile form coming in Phase 29")
+        """Handle Get Started button click - show profile form in create mode."""
+        # Clear row 1 content
+        for widget in self.grid_slaves(row=1):
+            widget.destroy()
+
+        # Create container frame
+        container = ctk.CTkFrame(self, fg_color="transparent")
+        container.grid(row=1, column=0, sticky="nsew", padx=20, pady=(0, 20))
+        container.grid_rowconfigure(0, weight=1)
+        container.grid_columnconfigure(0, weight=1)
+
+        # Create ProfileForm in create mode
+        ProfileForm(
+            parent=container,
+            on_save_callback=self._on_profile_created,
+            on_cancel_callback=self._show_welcome_screen,
+            existing_profile=None
+        )
+
+    def _on_profile_created(self, profile_data: dict):
+        """Handle successful profile creation.
+
+        Parameters
+        ----------
+        profile_data : dict
+            Saved profile data
+        """
+        # Update state
+        self._profile_exists = True
+
+        # Show main tabs and navigate to Search tab with success message
+        self._show_main_tabs()
+        self._tabview.set("Search")
+        self._show_success_message("Profile created successfully!")
+
+    def _on_profile_updated(self, profile_data: dict):
+        """Handle successful profile update.
+
+        Parameters
+        ----------
+        profile_data : dict
+            Saved profile data
+        """
+        # Rebuild profile tab content with updated data
+        self._build_profile_tab(self._tabview.tab("Profile"))
+
+        # Navigate to Search tab with success message
+        self._tabview.set("Search")
+        self._show_success_message("Profile updated successfully!")
+
+    def _show_success_message(self, message: str):
+        """Display temporary success message on Search tab.
+
+        Parameters
+        ----------
+        message : str
+            Success message text
+        """
+        # Remove existing success message if present
+        if self._success_message_label:
+            self._success_message_label.destroy()
+            self._success_message_label = None
+
+        # Create success message label
+        self._success_message_label = ctk.CTkLabel(
+            self._search_content,
+            text=message,
+            text_color="green",
+            font=ctk.CTkFont(size=13)
+        )
+        self._success_message_label.pack(side="top", pady=(0, 10))
+
+        # Auto-hide after 3 seconds
+        self.after(3000, self._hide_success_message)
+
+    def _hide_success_message(self):
+        """Hide success message label."""
+        if self._success_message_label:
+            self._success_message_label.destroy()
+            self._success_message_label = None
 
     def _show_main_tabs(self):
         """Display tabbed interface for users with existing profiles."""
+        # Clear row 1 content
+        for widget in self.grid_slaves(row=1):
+            widget.destroy()
+
         # Create tabview
-        tabview = ctk.CTkTabview(self)
-        tabview.grid(row=1, column=0, sticky="nsew", padx=20, pady=(0, 20))
+        self._tabview = ctk.CTkTabview(self)
+        self._tabview.grid(row=1, column=0, sticky="nsew", padx=20, pady=(0, 20))
 
         # Add tabs
-        tabview.add("Profile")
-        tabview.add("Search")
+        self._tabview.add("Profile")
+        self._tabview.add("Search")
 
         # Set default to Profile tab
-        tabview.set("Profile")
+        self._tabview.set("Profile")
 
         # Build tab contents
-        self._build_profile_tab(tabview.tab("Profile"))
-        self._build_search_tab(tabview.tab("Search"))
+        self._build_profile_tab(self._tabview.tab("Profile"))
+        self._build_search_tab(self._tabview.tab("Search"))
 
     def _build_profile_tab(self, parent):
-        """Build Profile tab with profile summary display."""
+        """Build Profile tab with profile summary display and Edit button.
+
+        Parameters
+        ----------
+        parent
+            Parent tab widget
+        """
+        # Clear existing content
+        for widget in parent.winfo_children():
+            widget.destroy()
+
         # Create scrollable frame for profile content
         scroll_frame = ctk.CTkScrollableFrame(parent)
         scroll_frame.pack(fill="both", expand=True, padx=10, pady=10)
@@ -208,17 +322,60 @@ class MainWindow(ctk.CTk):
                 self._add_profile_field(scroll_frame, row, "Compensation Floor:", comp_formatted)
                 row += 1
 
+            # Edit Profile button at bottom
+            edit_btn = ctk.CTkButton(
+                scroll_frame,
+                text="Edit Profile",
+                height=40,
+                width=150,
+                command=lambda: self._on_edit_profile(profile)
+            )
+            edit_btn.grid(row=row, column=0, columnspan=2, pady=(20, 0))
+
         except Exception as e:
             # Error loading profile
             error_label = ctk.CTkLabel(
                 scroll_frame,
-                text="Could not load profile",
+                text=f"Could not load profile: {e}",
                 text_color="red"
             )
             error_label.pack(pady=20)
 
+    def _on_edit_profile(self, profile: dict):
+        """Handle Edit Profile button click.
+
+        Parameters
+        ----------
+        profile : dict
+            Current profile data
+        """
+        # Clear profile tab content
+        profile_tab = self._tabview.tab("Profile")
+        for widget in profile_tab.winfo_children():
+            widget.destroy()
+
+        # Create ProfileForm in edit mode
+        ProfileForm(
+            parent=profile_tab,
+            on_save_callback=self._on_profile_updated,
+            on_cancel_callback=lambda: self._build_profile_tab(self._tabview.tab("Profile")),
+            existing_profile=profile
+        )
+
     def _add_profile_field(self, parent, row, label_text, value_text):
-        """Add a label-value pair to the profile grid."""
+        """Add a label-value pair to the profile grid.
+
+        Parameters
+        ----------
+        parent
+            Parent widget
+        row : int
+            Grid row number
+        label_text : str
+            Label text
+        value_text : str
+            Value text
+        """
         # Label (bold, left-aligned)
         label = ctk.CTkLabel(
             parent,
@@ -237,7 +394,13 @@ class MainWindow(ctk.CTk):
         value.grid(row=row, column=1, sticky="w", pady=5)
 
     def _build_search_tab(self, parent):
-        """Build Search tab with threading integration."""
+        """Build Search tab with search controls and threading integration.
+
+        Parameters
+        ----------
+        parent
+            Parent tab widget
+        """
         # Create content frame that will hold either idle or progress state
         self._search_content = ctk.CTkFrame(parent, fg_color="transparent")
         self._search_content.pack(fill="both", expand=True, padx=10, pady=10)
@@ -248,7 +411,7 @@ class MainWindow(ctk.CTk):
         self._show_search_idle()
 
     def _show_search_idle(self):
-        """Display idle state with Run Search button."""
+        """Display idle state with search controls and Run Search button."""
         # Clear current content
         for widget in self._search_content.winfo_children():
             widget.destroy()
@@ -256,10 +419,15 @@ class MainWindow(ctk.CTk):
         # Clear worker references
         self._worker = None
         self._worker_thread = None
+        self._report_path = None
 
         # Content frame (centered)
         content_frame = ctk.CTkFrame(self._search_content, fg_color="transparent")
         content_frame.grid(row=0, column=0)
+
+        # Search controls widget
+        self._search_controls = SearchControls(content_frame)
+        self._search_controls.pack(pady=(0, 20))
 
         # Run Search button
         self._search_button = ctk.CTkButton(
@@ -268,7 +436,7 @@ class MainWindow(ctk.CTk):
             height=40,
             width=200,
             state="normal" if self._profile_exists else "disabled",
-            command=self._start_mock_search
+            command=self._start_real_search
         )
         self._search_button.pack(pady=(0, 10))
 
@@ -282,7 +450,7 @@ class MainWindow(ctk.CTk):
             warning_label.pack()
 
     def _show_search_progress(self):
-        """Display progress state with progress bar and cancel button."""
+        """Display progress state with progress bar, per-source job counts, and cancel button."""
         # Clear current content
         for widget in self._search_content.winfo_children():
             widget.destroy()
@@ -314,7 +482,16 @@ class MainWindow(ctk.CTk):
             font=ctk.CTkFont(size=12),
             text_color="gray"
         )
-        self._progress_count.pack(pady=(0, 20))
+        self._progress_count.pack(pady=(0, 15))
+
+        # Per-source job count display (scrollable textbox)
+        self._job_count_display = ctk.CTkTextbox(
+            content_frame,
+            width=400,
+            height=100,
+            state="disabled"
+        )
+        self._job_count_display.pack(pady=(0, 20))
 
         # Cancel button
         cancel_btn = ctk.CTkButton(
@@ -328,6 +505,53 @@ class MainWindow(ctk.CTk):
         )
         cancel_btn.pack()
 
+    def _show_search_complete(self, job_count: int):
+        """Display completion state with Open Report and New Search buttons.
+
+        Parameters
+        ----------
+        job_count : int
+            Total number of jobs found
+        """
+        # Clear current content
+        for widget in self._search_content.winfo_children():
+            widget.destroy()
+
+        # Content frame (centered)
+        content_frame = ctk.CTkFrame(self._search_content, fg_color="transparent")
+        content_frame.grid(row=0, column=0)
+
+        # Completion message
+        completion_label = ctk.CTkLabel(
+            content_frame,
+            text=f"Search complete! {job_count} jobs found",
+            font=ctk.CTkFont(size=16, weight="bold"),
+            text_color="green"
+        )
+        completion_label.pack(pady=(0, 30))
+
+        # Open Report button
+        open_report_btn = ctk.CTkButton(
+            content_frame,
+            text="Open Report",
+            height=40,
+            width=200,
+            command=self._open_report
+        )
+        open_report_btn.pack(pady=(0, 15))
+
+        # New Search button
+        new_search_btn = ctk.CTkButton(
+            content_frame,
+            text="New Search",
+            height=40,
+            width=200,
+            command=self._show_search_idle,
+            fg_color="transparent",
+            border_width=2
+        )
+        new_search_btn.pack()
+
     def _check_queue(self):
         """Process messages from worker thread queue (runs in main GUI thread)."""
         try:
@@ -337,18 +561,29 @@ class MainWindow(ctk.CTk):
                     msg = self._queue.get_nowait()
                     msg_type = msg[0]
 
-                    if msg_type == "progress":
-                        _, source, current, total = msg
-                        self._update_progress(source, current, total)
-                    elif msg_type == "complete":
-                        _, total = msg
-                        self._on_search_complete(total)
+                    if msg_type == "source_started":
+                        _, source_name, current, total = msg
+                        self._on_source_started(source_name, current, total)
+                    elif msg_type == "source_complete":
+                        _, source_name, current, total, job_count = msg
+                        self._on_source_complete(source_name, current, total, job_count)
+                    elif msg_type == "search_complete":
+                        _, job_count, report_path = msg
+                        self._on_search_complete(job_count, report_path)
                     elif msg_type == "cancelled":
                         self._on_search_cancelled()
                     elif msg_type == "error":
                         _, error_msg = msg
                         self._show_error_dialog(error_msg)
                         self._show_search_idle()
+                    # Backward compatibility with mock worker messages
+                    elif msg_type == "progress":
+                        _, source, current, total = msg
+                        self._update_progress(source, current, total)
+                    elif msg_type == "complete":
+                        _, total = msg
+                        self._update_progress("Complete", total, total)
+                        self.after(2000, self._show_search_idle)
 
                 except queue.Empty:
                     break
@@ -357,13 +592,34 @@ class MainWindow(ctk.CTk):
             # Re-schedule next check
             self.after(100, self._check_queue)
 
-    def _start_mock_search(self):
-        """Start mock search operation in worker thread."""
+    def _start_real_search(self):
+        """Start real search operation with full pipeline execution."""
+        # Validate search controls
+        is_valid, error_msg = self._search_controls.validate()
+        if not is_valid:
+            self._show_error_dialog(error_msg)
+            return
+
+        # Get search configuration
+        search_config = self._search_controls.get_config()
+
+        # Load profile
+        try:
+            profile_path = get_data_dir() / "profile.json"
+            profile = load_profile(profile_path)
+        except Exception as e:
+            self._show_error_dialog(f"Failed to load profile: {e}")
+            return
+
         # Show progress state
         self._show_search_progress()
 
-        # Create and start worker
-        self._worker, self._worker_thread = create_mock_worker(self._queue)
+        # Create and start real search worker
+        self._worker, self._worker_thread = create_search_worker(
+            self._queue,
+            profile,
+            search_config
+        )
         self._worker_thread.start()
 
     def _cancel_search(self):
@@ -371,31 +627,108 @@ class MainWindow(ctk.CTk):
         if self._worker:
             self._worker.cancel()
 
+    def _on_source_started(self, source_name: str, current: int, total: int):
+        """Handle source started message.
+
+        Parameters
+        ----------
+        source_name : str
+            Name of source being fetched
+        current : int
+            Current source number
+        total : int
+            Total number of sources
+        """
+        self._progress_label.configure(text=f"Fetching {source_name}...")
+        self._progress_bar.set(current / total)
+        self._progress_count.configure(text=f"Source {current} of {total}")
+
+    def _on_source_complete(self, source_name: str, current: int, total: int, job_count: int):
+        """Handle source complete message and display per-source job count.
+
+        Parameters
+        ----------
+        source_name : str
+            Name of completed source
+        current : int
+            Current source number
+        total : int
+            Total number of sources
+        job_count : int
+            Number of jobs found from this source
+        """
+        # Update progress bar
+        self._progress_bar.set(current / total)
+        self._progress_count.configure(text=f"Source {current} of {total}")
+
+        # Add job count to display
+        self._job_count_display.configure(state="normal")
+        self._job_count_display.insert("end", f"{source_name}: {job_count} jobs found\n")
+        self._job_count_display.configure(state="disabled")
+
     def _update_progress(self, source: str, current: int, total: int):
-        """Update progress display with current source information."""
+        """Update progress display (backward compatible with mock worker).
+
+        Parameters
+        ----------
+        source : str
+            Source name
+        current : int
+            Current source number
+        total : int
+            Total number of sources
+        """
         self._progress_label.configure(text=f"Fetching {source}...")
         self._progress_bar.set(current / total)
         self._progress_count.configure(text=f"Source {current} of {total}")
 
-    def _on_search_complete(self, total: int):
-        """Handle search completion."""
-        self._progress_label.configure(text="Search complete!")
-        self._progress_bar.set(1.0)
-        self._progress_count.configure(text=f"Completed {total} sources")
+    def _on_search_complete(self, job_count: int, report_path: str):
+        """Handle search completion.
 
-        # Reset to idle after 2 seconds
-        self.after(2000, self._show_search_idle)
+        Parameters
+        ----------
+        job_count : int
+            Total number of jobs found
+        report_path : str
+            Path to generated HTML report
+        """
+        self._report_path = report_path
+        self._show_search_complete(job_count)
 
     def _on_search_cancelled(self):
         """Handle search cancellation."""
-        self._progress_label.configure(text="Search cancelled")
-        self._progress_bar.set(0)
+        # Show cancelled message briefly, then return to idle
+        for widget in self._search_content.winfo_children():
+            widget.destroy()
+
+        content_frame = ctk.CTkFrame(self._search_content, fg_color="transparent")
+        content_frame.grid(row=0, column=0)
+
+        cancel_label = ctk.CTkLabel(
+            content_frame,
+            text="Search cancelled",
+            font=ctk.CTkFont(size=16),
+            text_color="orange"
+        )
+        cancel_label.pack()
 
         # Reset to idle after 1.5 seconds
         self.after(1500, self._show_search_idle)
 
+    def _open_report(self):
+        """Open HTML report in default browser."""
+        if self._report_path:
+            report_uri = Path(self._report_path).as_uri()
+            webbrowser.open(report_uri)
+
     def _show_error_dialog(self, message: str):
-        """Show modal error dialog."""
+        """Show modal error dialog.
+
+        Parameters
+        ----------
+        message : str
+            Error message to display
+        """
         # Create modal dialog
         dialog = ctk.CTkToplevel(self)
         dialog.title("Error")
