@@ -1,8 +1,8 @@
-# Feature Research: Desktop GUI Launcher
+# Feature Research: v2.1.0 Source Expansion & Polish
 
-**Domain:** Desktop GUI wrapper for CLI job search tool
-**Researched:** 2026-02-12
-**Confidence:** MEDIUM
+**Domain:** Job Search Aggregator - Desktop Application (v2.1.0 milestone)
+**Researched:** 2026-02-13
+**Confidence:** MEDIUM-HIGH
 
 ## Feature Landscape
 
@@ -12,16 +12,12 @@ Features users assume exist. Missing these = product feels incomplete.
 
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| Profile creation form | GUI users expect forms, not CLI wizards | LOW | Replace questionary prompts with labeled input fields |
-| File upload dialog for resume | Standard desktop pattern for file selection | LOW | Use native OS file picker (tkinter.filedialog.askopenfilename) |
-| Search configuration panel | Users expect to set parameters before running | LOW | Date pickers, numeric input, checkboxes for flags |
-| Run/Start button | Primary action must be obvious and single-click | LOW | Clear CTA, disabled state while running |
-| Progress feedback | Visual indication during long operations (6 sources queried) | MEDIUM | Determinate or indeterminate progress bar with status text |
-| Auto-open results in browser | CLI already does this, users expect same behavior | LOW | Use webbrowser.open() after search completes |
-| View current profile | See existing settings without editing | LOW | Read-only display or pre-filled form |
-| Edit profile without wizard | Update settings after initial creation | MEDIUM | Same form as creation, pre-populated with current values |
-| Input validation | Prevent invalid data before submission | MEDIUM | Client-side validation with helpful error messages |
-| Window state persistence | Remember size, position across sessions | MEDIUM | Save to config file on close, restore on open |
+| **Duplicate Detection** | Users hate seeing same job 5+ times from different aggregators; 50-80% of job postings are duplicates | MEDIUM-HIGH | Must handle exact matches (job_id, URL) AND fuzzy matches (similar title + company + location). Job boards that don't deduplicate get user complaints about "refresh spam" |
+| **Source Attribution** | Users need to know if job is from LinkedIn, Indeed, or obscure board they've never heard of | LOW | Display "via [source]" on each listing; aggregators like SerpAPI return this as "via" field |
+| **Rate Limit Handling** | Free API tiers have strict limits; app must gracefully handle 429 errors without crashing | MEDIUM | JSearch offers free tier but limits unclear; SerpAPI ~2.5s per request; USAJobs requires API key with documented rate limits. Cache results, show warnings |
+| **Expired Listing Filtering** | Aggregators suffer from "aggregator lag" - jobs filled weeks ago still appear | MEDIUM | Track posting date, allow user to filter by recency (24h, 7d, 30d). LinkUp found this is #1 complaint about aggregators |
+| **Uninstall without Residue** | Desktop apps leave cache/logs/config scattered across system; users expect clean removal | LOW-MEDIUM | Platform installers provide uninstall hooks. Self-uninstaller in GUI must delete ~/.config, cache dirs, logs. Leave user data ONLY if explicitly saved |
+| **Platform-Native Install UX** | Windows users expect .exe installer; Mac users expect .dmg with drag-to-Applications; Linux users tolerate .tar.gz | MEDIUM | PyInstaller onedir is just bundled files. Users expect: Windows=NSIS/Inno Setup wizard, Mac=signed .pkg or .dmg, not zip files |
 
 ### Differentiators (Competitive Advantage)
 
@@ -29,14 +25,11 @@ Features that set the product apart. Not required, but valuable.
 
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| Live CLI output display | Show real-time progress from underlying CLI | MEDIUM | ScrolledText widget with threading, captures stdout/stderr |
-| Quick re-run with last settings | One-click to repeat previous search | LOW | Remember last search params, "Run Again" button |
-| Date range presets | Common filters (Today, Last 7 Days, Last 30 Days) | LOW | Dropdown or button group for quick selection |
-| Validation preview | Show what will be searched before running | LOW | Summary panel: "Searching 6 sources from X to Y with score >= Z" |
-| Resume path indicator | Show currently uploaded resume filename | LOW | Label showing basename, change button to re-upload |
-| Search history | View past searches and their parameters | MEDIUM | Store search metadata, display in list/table |
-| Keyboard shortcuts | Power users expect Ctrl+Enter to run, Esc to cancel | LOW | Bind accelerators to primary actions |
-| Minimal UI mode | Hide advanced options by default, show on expand | MEDIUM | Collapsible sections or tabbed interface |
+| **User-Customizable Scoring Weights** | Power users want to prioritize location (remote) over seniority, or title_relevance over skill_match | MEDIUM | UI: 6 sliders (skill_match 25% → 0-50%), live preview of score changes on current results. Weighted scoring models are standard in 2026 product/risk tools; users expect customizable weights + visualization |
+| **Staffing Firm Penalty Dial** | Real user feedback: "want more direct company jobs." Current 4.5/5.0 boost is hardcoded; let users control -2.0 (penalty) to +2.0 (boost) | LOW-MEDIUM | Depends on customizable scoring weights. Could default to -0.5 (slight penalty) instead of +4.5 boost, with slider for user override |
+| **Cross-Source Smart Deduplication** | Instead of just showing 5 copies, pick "best" source (direct employer > LinkedIn > staffing firm > aggregator) | HIGH | Prioritization logic: Direct company URL > LinkedIn/Indeed > ZipRecruiter > staffing firms. Show "also posted on: [3 other sites]" collapsed detail |
+| **API Cost Transparency** | Show user "15 JSearch credits used today (85 remaining)" so they understand why results are slower/limited | LOW | Display quota usage in status bar. JSearch/SerpAPI have free tiers; users on free plan need visibility into limits |
+| **Local-First with Refresh** | Aggregators are slow (2.5s/request). Cache last 7 days of results, only hit APIs for new queries or explicit refresh | MEDIUM | Privacy-focused (fits existing "all local" ethos). Fast initial load from SQLite, background refresh for new postings |
 
 ### Anti-Features (Commonly Requested, Often Problematic)
 
@@ -44,424 +37,390 @@ Features that seem good but create problems.
 
 | Feature | Why Requested | Why Problematic | Alternative |
 |---------|---------------|-----------------|-------------|
-| Inline results display | "Why leave the app?" | Duplicates existing HTML report, high complexity, defeats purpose of launcher | Keep auto-open browser behavior, GUI is launcher not viewer |
-| Real-time job filtering UI | "Filter without re-running" | Requires parsing HTML output, couples GUI to report format | Use HTML report's built-in interactive filtering |
-| Custom browser selection | "I use Firefox not Chrome" | OS already handles default browser, unnecessary config | Use webbrowser.open() which respects OS default |
-| Advanced CLI flag exposure | "Power users want all flags" | GUI becomes cluttered, defeats simplicity | Keep CLI for power users, GUI for common workflows |
-| Profile templates/presets | "Job types: SWE, DevOps, etc." | Premature optimization, unclear patterns | Wait for user feedback, manual profile copy for now |
-| Minimize to system tray | "Keep running in background" | Search is one-shot operation, not daemon | Close after opening results, no background process |
-| Multi-profile switching | "Different searches for different roles" | High complexity, unclear demand for GUI users | Single profile, CLI supports --profile for advanced use |
+| **Real-Time Aggregator Polling** | "Keep results always fresh" | JSearch/SerpAPI: ~2.5s per request. Polling 5 sources every 10min = 720 API calls/day. Free tiers exhausted in hours; paid tiers = $$$ | Cache-first with manual refresh button. Show "last updated: 2h ago" with refresh icon. User pulls when needed |
+| **Aggregate ALL Sources Simultaneously** | "Show me everything" | JSearch returns 500 results max. If user has 6 automated sources active, that's 3000 jobs before deduplication. UI becomes unusable | Default to 2-3 sources per search. Let user enable more via checkboxes. Warn "this will take 30+ seconds" |
+| **Automatic App Updates** | "Just update me in background" | Desktop security: self-updating requires code signing + admin privileges on Windows/Mac. PyInstaller apps can't easily self-update without installer framework | Show "Update available: v2.2.0" notification with download link. Or: built-in updater that downloads new installer and launches it |
+| **Embed Web Browser for Applications** | "Let me apply without leaving app" | Each job board has different application flow (Indeed: modal, LinkedIn: redirect, company site: ATS iframe). Embedding Chromium = +100MB app size | Keep existing URL generator approach. User clicks "Apply" → opens default browser to application page |
+| **Scrape Salary Data from Aggregators** | "Tell me the pay range" | SerpAPI returns salary when available, but 70%+ of postings don't include it. Scraping is unreliable; users expect data that isn't there | Show salary when API provides it. Display "Salary: Not disclosed" for others. Don't scrape/guess |
 
 ## Feature Dependencies
 
 ```
-[Profile Creation Form]
-    ├──requires──> [Input Validation]
-    └──requires──> [File Upload Dialog] (optional resume)
+[Platform-Native Installers]
+    └──requires──> [Uninstall Button in GUI]
+                       └──requires──> [Uninstaller Script]
 
-[Search Configuration Panel]
-    ├──requires──> [Input Validation]
-    └──enhances──> [Validation Preview]
+[User-Customizable Scoring Weights]
+    └──enables──> [Staffing Firm Penalty Dial]
+    └──requires──> [Score Recalculation Engine]
+    └──enhances──> [Existing Scoring System]
 
-[Run Button]
-    ├──requires──> [Profile Creation Form] (must exist first)
-    ├──triggers──> [Progress Feedback]
-    └──triggers──> [Auto-open Browser]
+[Duplicate Detection]
+    └──requires──> [Job Unique Identifier Strategy]
+                       └──uses──> [job_id OR url OR fuzzy(title+company+location)]
+    └──enhances──> [All Aggregator APIs]
+    └──conflicts──> [Show All Results Mode] (if user wants to see duplicates for debugging)
 
-[Progress Feedback]
-    ├──requires──> [Run Button] (initiates process)
-    └──enhances──> [Live CLI Output Display]
+[Job Aggregator APIs]
+    └──requires──> [Rate Limit Handling]
+    └──requires──> [API Key Management UI]
+    └──requires──> [Duplicate Detection]
+    └──enhances──> [Existing 6 Automated Sources]
 
-[Live CLI Output Display]
-    ├──requires──> [Progress Feedback] (base requirement)
-    └──requires──> [Threading] (non-blocking UI)
+[Free Job Board APIs]
+    └──requires──> [Same as Aggregator APIs]
+    └──increases──> [Duplicate Detection Importance] (more sources = more dupes)
 
-[Edit Profile]
-    ├──requires──> [Profile Creation Form] (reuses same form)
-    ├──requires──> [View Current Profile] (load existing data)
-    └──conflicts──> [Multiple Profile Switching] (single profile model)
-
-[Window State Persistence]
-    └──no dependencies (independent feature)
-
-[Search History]
-    └──enhances──> [Quick Re-run] (populate from history)
-
-[Keyboard Shortcuts]
-    └──enhances──> [Run Button] (alternate trigger)
+[Local-First Caching]
+    └──requires──> [SQLite Schema Extension]
+    └──requires──> [Cache Expiry Logic]
+    └──reduces-need-for──> [Real-Time Polling]
 ```
 
 ### Dependency Notes
 
-- **Profile Creation must precede Search:** User must have profile before running search
-- **Threading required for Live Output:** UI must remain responsive during subprocess execution
-- **Form reuse for Edit:** Same form component serves creation and editing modes
-- **History enhances Re-run:** History provides source of previous searches to restore
-- **CLI output depends on Progress:** Base progress indicator must exist before adding live output
+- **Platform-Native Installers → Uninstall Button:** NSIS/Inno Setup/pkg installers register uninstall entries with OS. GUI uninstall button invokes this registered uninstaller OR runs custom cleanup script if OS uninstaller not available.
+- **Customizable Scoring → Staffing Firm Dial:** Staffing firm boost is currently hardcoded at +4.5 to response_likelihood. Making it user-adjustable requires exposing all scoring weights. Can't do one without the other.
+- **Duplicate Detection → Aggregator APIs:** Aggregators like JSearch pull from Google Jobs, LinkedIn, Indeed simultaneously. Without deduplication, user sees 10 copies of same Software Engineer role. MUST have before adding aggregators or user experience degrades.
+- **Caching → API Rate Limits:** Local-first caching reduces API calls by 80%+. User refreshes once/day instead of every search. Critical for free tier viability.
 
-## MVP Definition
+## MVP Definition for v2.1.0
 
-### Launch With (GUI v1 - This Milestone)
+### Launch With (v2.1.0)
 
-Minimum viable GUI launcher — what's needed for basic users to avoid CLI entirely.
+Minimum viable increment to existing app — what's needed to deliver milestone value.
 
-- [ ] **Profile creation form** — GUI replacement for questionary wizard (name, email, location, skills, titles, min_score)
-- [ ] **File upload dialog** — Native file picker for optional resume PDF
-- [ ] **Search configuration panel** — Date range (from/to), min score override, new-only checkbox
-- [ ] **Run search button** — Primary action, clear visual state (enabled/disabled/running)
-- [ ] **Progress indicator** — Indeterminate progress bar with "Searching 6 sources..." text
-- [ ] **Auto-open browser** — Launch HTML report when complete (existing behavior)
-- [ ] **Edit profile access** — Button/menu to modify existing profile
-- [ ] **Input validation** — Client-side checks for required fields, valid formats, range limits
-- [ ] **Basic window layout** — Organized sections, clear visual hierarchy
+- [x] **JSearch API Integration** — Aggregator that pulls Google Jobs + LinkedIn + Indeed. Gives "more LinkedIn postings" per user feedback. 500 results/query, free tier available.
+- [x] **Basic Duplicate Detection (Exact Match)** — Check job_id and URL before inserting. Prevents showing identical posting from 3 sources. Start with exact match; fuzzy matching is v2.2+.
+- [x] **Rate Limit Handling** — Catch 429 errors, show user-friendly "Daily limit reached for JSearch (resets tomorrow)" message instead of crash.
+- [x] **User-Customizable Scoring Weights** — 6 sliders for skill_match, response_likelihood, title_relevance, seniority, location, domain. Live score preview. Addresses "I care more about remote than seniority" feedback.
+- [x] **Staffing Firm Penalty Dial** — Slider for staffing firm score adjustment (-2.0 to +2.0). Default to -0.5 (slight penalty). Addresses "want more direct company jobs" feedback. Requires customizable weights.
+- [x] **GUI Uninstall Button** — Settings tab: "Uninstall Job Radar" button that runs cleanup script (delete cache, logs, config) then invokes OS uninstaller if available.
+- [x] **Platform-Native Installers** — Windows: NSIS .exe installer with wizard. macOS: signed .pkg or .dmg with Applications folder shortcut. Linux: keep .tar.gz (acceptable for Linux users).
 
-**Rationale:** These 9 features provide complete parity with CLI for basic workflows. User never needs terminal for standard job searches.
+### Add After Validation (v2.2+)
 
-### Add After Validation (v1.x)
+Features to add once core aggregator integration is working and users provide feedback.
 
-Features to add once core GUI functionality is working.
+- [ ] **SerpAPI Google Jobs** — Alternative to JSearch if free tier limits too restrictive. ~2.5s per request, cached searches free.
+- [ ] **ZipRecruiter API** — Free job board. Requires developer API key. Adds more US-based postings.
+- [ ] **USAJobs API** — Free federal jobs API. Requires API key (free via developer.usajobs.gov). Niche but valuable for users seeking government roles.
+- [ ] **Jobicy RSS Feed** — Free remote jobs feed. 100 results/query, no auth. Easy integration, low value-add (duplicates with RemoteOK/WWR).
+- [ ] **Fuzzy Duplicate Detection** — Detect near-duplicates: "Senior Software Engineer" vs "Sr. Software Eng" at same company/location. Use Levenshtein distance on (title + company + location). Catches 80% more duplicates than exact match.
+- [ ] **Smart Source Prioritization** — When duplicates detected, show "best" version: Direct employer site > LinkedIn > Indeed > staffing firm. Collapse others as "also posted on: [3 sites]."
+- [ ] **API Cost Dashboard** — Show quota usage: "JSearch: 45/100 daily searches used. Resets in 6h." Help users understand why some sources disabled.
+- [ ] **Local-First Caching** — Cache job results for 7 days in SQLite. Only hit APIs for new searches or explicit refresh. Reduces API calls by 80%+.
 
-- [ ] **Live CLI output display** — ScrolledText showing real-time progress from underlying CLI, trigger: users want visibility into what's happening
-- [ ] **Date range presets** — Quick buttons for common ranges (Today, Last 7 Days, Last 30 Days), trigger: repetitive date entry frustration
-- [ ] **Quick re-run button** — One-click repeat with last parameters, trigger: users run same search multiple times
-- [ ] **Validation preview** — Summary of search before running, trigger: users want confirmation of settings
-- [ ] **Resume path indicator** — Show current resume filename if uploaded, trigger: users forget if they uploaded resume
-- [ ] **Window state persistence** — Remember size/position, trigger: users annoyed by reset layout
-- [ ] **Keyboard shortcuts** — Ctrl+Enter to run, Esc to close dialogs, trigger: power users request efficiency
+### Future Consideration (v3+)
 
-### Future Consideration (v2+)
+Features to defer until product-market fit for aggregators is established.
 
-Features to defer until product-market fit is established.
-
-- [ ] **Search history** — View and restore past searches, defer: unclear if GUI users need history vs just re-running
-- [ ] **Minimal UI mode** — Collapsible advanced options, defer: wait to see if UI feels cluttered first
-- [ ] **Profile export/import** — Share profiles across machines, defer: wait for collaboration use case validation
-- [ ] **Custom theming** — Dark mode, color schemes, defer: nice-to-have, not core functionality
-- [ ] **Notification on completion** — OS notification when search finishes, defer: searches are fast (<1 min), unclear value
+- [ ] **Additional Aggregators (TheJobAPI, Adzuna Jobs)** — More sources = more duplicates = diminishing returns. Wait for user demand.
+- [ ] **Application Tracking** — Track which jobs user applied to. Requires schema changes + UI. Separate feature area from sourcing.
+- [ ] **Salary Data Collection** — JSearch/SerpAPI return salary when available. Low coverage (30% of postings). Wait for user complaints before prioritizing.
+- [ ] **Auto-Refresh Background Service** — Desktop daemon that refreshes results every 4h. Complex (OS service registration) + battery drain on laptops. User can manually refresh.
 
 ## Feature Prioritization Matrix
 
 | Feature | User Value | Implementation Cost | Priority |
 |---------|------------|---------------------|----------|
-| Profile creation form | HIGH | MEDIUM | P1 |
-| File upload dialog | HIGH | LOW | P1 |
-| Search config panel | HIGH | MEDIUM | P1 |
-| Run button | HIGH | LOW | P1 |
-| Progress indicator | HIGH | MEDIUM | P1 |
-| Auto-open browser | HIGH | LOW | P1 |
-| Edit profile access | HIGH | LOW | P1 |
-| Input validation | HIGH | MEDIUM | P1 |
-| Basic window layout | HIGH | MEDIUM | P1 |
-| Live CLI output | MEDIUM | MEDIUM | P2 |
-| Date range presets | MEDIUM | LOW | P2 |
-| Quick re-run | MEDIUM | LOW | P2 |
-| Validation preview | MEDIUM | LOW | P2 |
-| Resume path indicator | LOW | LOW | P2 |
-| Window state persistence | MEDIUM | MEDIUM | P2 |
-| Keyboard shortcuts | LOW | LOW | P2 |
-| Search history | LOW | MEDIUM | P3 |
-| Minimal UI mode | LOW | MEDIUM | P3 |
-| Profile export/import | LOW | MEDIUM | P3 |
-| Custom theming | LOW | MEDIUM | P3 |
-| Completion notifications | LOW | LOW | P3 |
+| JSearch API Integration | HIGH (more LinkedIn/Indeed) | MEDIUM (API client, data mapping) | P1 |
+| Basic Duplicate Detection (Exact) | HIGH (prevents 50% of dupes) | LOW (dict lookup by job_id/url) | P1 |
+| Rate Limit Handling | HIGH (prevents crashes) | LOW (try/catch + user message) | P1 |
+| User-Customizable Scoring Weights | HIGH (power user request) | MEDIUM (UI + recalc engine) | P1 |
+| Staffing Firm Penalty Dial | HIGH (user feedback: "more direct jobs") | LOW (depends on scoring weights) | P1 |
+| GUI Uninstall Button | MEDIUM (polish/professionalism) | LOW (cleanup script + button) | P1 |
+| Platform-Native Installers | HIGH (Windows/Mac UX expectation) | MEDIUM (NSIS/pkg setup + signing) | P1 |
+| SerpAPI Google Jobs | MEDIUM (alternative to JSearch) | MEDIUM (similar to JSearch) | P2 |
+| USAJobs API | MEDIUM (niche: gov jobs) | LOW (API client, good docs) | P2 |
+| ZipRecruiter API | MEDIUM (more US postings) | LOW (API client) | P2 |
+| Fuzzy Duplicate Detection | MEDIUM (catches 30% more dupes) | HIGH (NLP/similarity algorithms) | P2 |
+| Smart Source Prioritization | MEDIUM (reduces clutter) | MEDIUM (ranking logic) | P2 |
+| API Cost Dashboard | LOW (transparency nice-to-have) | LOW (display quota data) | P2 |
+| Local-First Caching | HIGH (speed + API savings) | MEDIUM (SQLite schema + expiry) | P2 |
+| Jobicy RSS Feed | LOW (duplicates existing sources) | LOW (RSS parsing) | P3 |
+| Additional Aggregators | LOW (diminishing returns) | MEDIUM | P3 |
+| Application Tracking | MEDIUM (different problem space) | HIGH (schema + UI) | P3 |
+| Salary Data Collection | LOW (30% coverage) | LOW (already in API responses) | P3 |
+| Auto-Refresh Background Service | LOW (battery drain, complexity) | HIGH (OS service registration) | P3 |
 
 **Priority key:**
-- P1: Must have for launch (core GUI functionality)
-- P2: Should have, add when possible (enhances UX)
-- P3: Nice to have, future consideration (unclear demand)
+- **P1: Must have for v2.1.0** — Core value delivery: aggregators, user control, professional packaging
+- **P2: Should have for v2.2** — Enhancements once P1 validated: more sources, better deduplication
+- **P3: Nice to have for v3+** — Future consideration after product-market fit
 
-## GUI Wrapper Pattern Analysis
+## Competitor Feature Analysis
 
-### How GUI Wrappers Typically Work
+| Feature | Indeed (Aggregator) | LinkedIn Job Search | ZipRecruiter | Our Approach (v2.1.0) |
+|---------|---------------------|---------------------|--------------|------------------------|
+| **Duplicate Detection** | Partial (same job_id) | None visible (shows all) | Good (company+title) | Exact match v2.1; fuzzy v2.2 |
+| **Source Attribution** | "via [source]" on each job | Direct + "via [source]" | Direct + syndicated | "via [source]" from API response |
+| **Scoring Customization** | None (black box) | None (relevance hidden) | None (match % opaque) | Full control: 6 weight sliders |
+| **Staffing Firm Handling** | Mixed (shows all) | Mixed (shows all) | Promotes staffing heavily | User-configurable penalty/boost |
+| **Installation** | Web-only | Web-only | Web-only | Desktop: NSIS (Win), .pkg (Mac) |
+| **Uninstall** | N/A (web) | N/A (web) | N/A (web) | GUI button + OS uninstaller |
+| **API Access** | $$ (enterprise only) | None (web scraping ToS violation) | $$ (not documented publicly) | Free tiers (JSearch, USAJobs) |
+| **Local/Privacy** | Cloud-based, ad-tracked | Cloud-based, LinkedIn profile linked | Cloud-based, email-gated | Fully local, no accounts |
 
-Based on research into CLI wrapper tools and desktop GUI patterns:
+### Key Differentiators vs Competitors
 
-**Architecture Pattern:**
-- GUI is separate layer, calls CLI as subprocess
-- Settings managed in config files, not hardcoded in GUI
-- Output captured via stdout/stderr streaming
-- Browser launch via OS default handler
+1. **Transparency:** Competitors use black-box scoring. We show exactly how scores are calculated AND let users adjust weights.
+2. **Control:** Users explicitly choose staffing firm preference (penalty/neutral/boost) instead of getting whatever algorithm decides.
+3. **Privacy:** Fully local desktop app. No accounts, no tracking, no "sign up to see more results."
+4. **Multi-Source:** Indeed/LinkedIn/ZipRecruiter are siloed. We aggregate across all of them + free boards + direct scrapers.
 
-**User Flow:**
-1. **First run:** Profile creation form (one-time setup)
-2. **Subsequent runs:** Search config → Run → Progress → Results in browser
-3. **Profile updates:** Edit form (same as creation, pre-filled)
+## Real-World User Expectations (2026)
 
-**Progress Feedback:**
-- Indeterminate progress (spinning/pulsing) when duration unknown
-- Determinate progress (0-100%) when endpoint measurable
-- Status text describing current operation
-- Best practice: Show what's happening ("Querying Indeed...") not just "Please wait"
+### Job Aggregators
 
-**File Upload:**
-- Native OS file picker dialog
-- Filter by file type (.pdf for resumes)
-- Display selected filename after upload
-- Validation: check file exists, readable, correct type
+**What users expect:**
+- Results from Google Jobs, LinkedIn, Indeed (JSearch ✅, SerpAPI ✅)
+- No duplicate listings (50-80% of aggregator results are dupes)
+- Source transparency ("via LinkedIn" on each result)
+- Fresh postings (filter out jobs older than 30 days)
+- Fast results (<5 seconds for 100 jobs)
 
-**Browser Launch:**
-- Use `webbrowser.open()` in Python (respects OS default)
-- Security: Validate file paths to prevent injection
-- Best practice: Confirm action with user if from external data
+**What frustrates users:**
+- "Same job posted 10 times" (top complaint per LinkUp research)
+- Expired listings still showing weeks later ("aggregator lag")
+- Staffing firms dominating results (user feedback: "want direct companies")
+- Fake/spam postings (Indeed specific, less common in aggregators)
 
-### Wizard vs Form Design
+### Customizable Scoring
 
-**Traditional Wizard (Multi-step):**
-- Used when process is unfamiliar or complex
-- Progress indicator showing steps
-- Back/Next navigation
-- Best for: Infrequent operations, learning curve
+**What users expect:**
+- Sliders or percentage inputs for each scoring factor
+- Live preview of how changes affect current results
+- Presets: "Prioritize Remote," "Prioritize Salary," "Prioritize Experience Match"
+- Defaults that work for 80% of users
 
-**Single Form (All-at-once):**
-- Used when fields are familiar or few
-- All inputs visible at once
-- Single Submit button
-- Best for: Frequent operations, power users
+**Pattern from 2026 tools:** Weighted scoring models are standard in product management, risk assessment, and applicant tracking systems. Users expect:
+1. Clear criteria labels (not "Factor A")
+2. Adjustable weights (sliders 0-100% or ratio inputs)
+3. Visual feedback (scores update immediately)
+4. Ability to reset to defaults
 
-**Recommendation for Job-Radar:**
-- **Profile creation (first run):** Single form with clear sections, not multi-step wizard
-  - Rationale: Only ~6-8 fields, users familiar with job applications, no complex branching
-  - Use visual grouping: "Personal Info" section, "Preferences" section
-  - Optional fields clearly marked
-- **Search config:** Simple panel, 3-4 controls max
-  - Date range, score override, new-only toggle
-  - Always visible, not hidden in wizard
+### Desktop Installers
 
-### State Persistence Patterns
+**What users expect:**
 
-**What to persist:**
-- Window size and position (UX continuity)
-- Last search parameters (quick re-run)
-- Profile location if non-default (rare)
+**Windows:**
+- Double-click .exe → wizard with Next/Install/Finish
+- Option to create desktop shortcut
+- Option to add to Start Menu
+- Registered in "Add/Remove Programs"
+- Signed installer (avoids SmartScreen warnings)
 
-**Where to store:**
-- Per-user config directory (e.g., `~/.job-radar/gui-settings.json`)
-- NOT in registry (cross-platform issues)
-- NOT in same file as profile (separation of concerns)
+**macOS:**
+- .dmg file that opens to show app icon + Applications folder
+- Drag app to Applications to install
+- OR .pkg installer for apps that need system-level access
+- Signed + notarized (avoids Gatekeeper "unidentified developer")
+- Uninstaller: drag app to Trash OR in-app uninstall button
 
-**When to save:**
-- On window close (size/position)
-- On successful search (parameters)
-- NOT continuously (performance, file wear)
+**Linux:**
+- .tar.gz or .deb/.rpm for distro-specific
+- AppImage for universal binary (single file, no install)
+- Uninstaller: rm -rf or package manager (apt remove)
 
-**Validation on load:**
-- Check values are in valid range (prevent crash)
-- Fall back to defaults if corrupted
-- Critical: Malformed settings shouldn't prevent startup
+**What frustrates users:**
+- .zip file with no instructions (PyInstaller onedir is this)
+- No uninstaller (leftover configs in ~/.config, cache in ~/.cache)
+- Unsigned binaries (OS warnings scare users away)
 
-## GUI Framework Feature Comparison
+### GUI Uninstall
 
-| Feature | Tkinter | PyQt5/6 | wxPython | PySimpleGUI |
-|---------|---------|---------|----------|-------------|
-| **File dialog** | filedialog.askopenfilename() | QFileDialog.getOpenFileName() | wx.FileDialog | sg.popup_get_file() |
-| **Progress bar** | ttk.Progressbar | QProgressBar | wx.Gauge | sg.ProgressBar |
-| **Forms** | Manual grid/pack layout | QFormLayout | wx.FlexGridSizer | Auto-layout columns |
-| **Threading** | threading.Thread | QThread | wx.CallAfter | Works with threading |
-| **Native look** | Basic (themed with ttk) | Full native | Full native | Themed |
-| **Browser launch** | webbrowser.open() | webbrowser.open() | webbrowser.open() | webbrowser.open() |
+**What users expect:**
+- Button in Settings or Help menu: "Uninstall Job Radar"
+- Confirmation dialog: "This will remove the app and delete cached data. User profiles will be preserved. Uninstall?"
+- Progress indicator during cleanup
+- Final dialog: "Job Radar has been uninstalled. Click OK to exit."
+- App closes itself after cleanup
 
-**Note:** All frameworks support the core features needed. Choice is based on other factors (dependencies, complexity, maintenance).
+**What must be deleted:**
+- Application binary (OS uninstaller handles this)
+- Cache directories (~/.cache/job-radar)
+- Logs (~/.local/share/job-radar/logs)
+- Temp files
 
-## Workflow Examples
+**What must be preserved (unless user chooses "Delete All Data"):**
+- User profiles (~/.config/job-radar/profiles.json)
+- Search history (if user opted in)
+- Custom scoring weights
 
-### Current CLI Workflow
+**Anti-pattern:** Apps that "uninstall" but leave 50MB of cache/logs scattered across system. Users discover this weeks later and feel betrayed.
 
-```bash
-# First run: Terminal wizard
-python job_radar.py
-# 10+ questions in terminal
+## Technical Feasibility Notes
 
-# Run search with flags
-python job_radar.py --from 2026-02-01 --to 2026-02-12 --min-score 75 --new-only
+### Job Aggregator APIs
 
-# Update profile: Manual JSON edit or re-run wizard
-nano ~/.job-radar/profile.json
-```
+**JSearch (RapidAPI):**
+- **Access:** Free tier available (no credit card for testing)
+- **Rate Limits:** Not publicly documented; likely 100-500 requests/month on free tier
+- **Data:** 30+ fields per job, 500 results max per query
+- **Sources:** Google Jobs, LinkedIn, Indeed, Glassdoor
+- **Cost:** Contact for custom pricing; free tier sufficient for testing
+- **Confidence:** HIGH (actively maintained, GitHub examples, 2026 references)
 
-### Proposed GUI Workflow
+**SerpAPI Google Jobs:**
+- **Access:** API key required (free tier available)
+- **Rate Limits:** 100 searches/month free; cached searches free
+- **Performance:** ~2.5s per request (or ~1.2s with Ludicrous speed)
+- **Data:** title, company, location, via, description, highlights, apply_options
+- **Pagination:** next_page_token for up to 10 results/page
+- **Cost:** $50/month for 5000 searches
+- **Confidence:** HIGH (official docs, active 2026)
 
-```
-# First run: GUI form
-[Launch Job-Radar GUI]
-┌─────────────────────────────────────┐
-│ Create Your Job Search Profile     │
-├─────────────────────────────────────┤
-│ Name:        [Jane Doe            ] │
-│ Email:       [jane@example.com    ] │
-│ Location:    [San Francisco, CA   ] │
-│                                     │
-│ Skills:      [Python, Django, React]│
-│              (comma-separated)      │
-│                                     │
-│ Job Titles:  [Software Engineer,   ]│
-│              [Senior Developer     ]│
-│                                     │
-│ Min Score:   [75] (0-100)          │
-│                                     │
-│ Resume (opt): [Choose File]         │
-│               resume.pdf            │
-│                                     │
-│          [Create Profile]           │
-└─────────────────────────────────────┘
+**USAJobs:**
+- **Access:** Free API key via developer.usajobs.gov
+- **Rate Limits:** Documented in guides (need to visit /guides/rate-limiting)
+- **Data:** Federal job postings only (niche use case)
+- **Auth:** Requires Authorization header with API key
+- **Confidence:** HIGH (official government API, comprehensive docs)
 
-# Subsequent runs: Search panel
-┌─────────────────────────────────────┐
-│ Job Search Configuration            │
-├─────────────────────────────────────┤
-│ Date Range:                         │
-│   From: [2026-02-01] To: [2026-02-12]│
-│   Presets: [Today][Last 7d][Last 30d]│
-│                                     │
-│ Min Score: [75] (default: 75)       │
-│                                     │
-│ [✓] New listings only               │
-│ [✓] Skip cache                      │
-│                                     │
-│          [Run Search]               │
-│      [Edit Profile]                 │
-└─────────────────────────────────────┘
+**ZipRecruiter:**
+- **Access:** API exists but not publicly documented
+- **Free Tier:** Unclear; may require partner agreement
+- **Confidence:** LOW (no official public API docs found)
 
-# During search: Progress
-┌─────────────────────────────────────┐
-│ Searching Job Boards...             │
-├─────────────────────────────────────┤
-│ [=====>                    ] 25%    │
-│ Querying LinkedIn...                │
-│                                     │
-│ Sources: Indeed ✓, LinkedIn ⏳      │
-│          Dice ⏳, GitHub ⏳         │
-│          RemoteOK ⏳, Otta ⏳       │
-│                                     │
-│          [Cancel]                   │
-└─────────────────────────────────────┘
+**Jobicy:**
+- **Access:** Free RSS feed/API (100 results/query, no auth)
+- **Rate Limits:** "Don't poll excessively; a few times/day is sufficient"
+- **Data:** Remote jobs only
+- **Filters:** count, geo, industry, tag
+- **Restrictions:** Don't redistribute to external job platforms (Google Jobs, LinkedIn, etc.)
+- **Confidence:** MEDIUM (official GitHub repo, 2026 docs, but restrictive ToS)
 
-# After search: Auto-open browser
-[Browser opens with HTML report]
-[GUI shows success message]
-┌─────────────────────────────────────┐
-│ Search Complete!                    │
-├─────────────────────────────────────┤
-│ Found 47 jobs matching your profile │
-│ Report opened in browser            │
-│                                     │
-│     [Run Again] [Edit Profile]      │
-│              [Close]                │
-└─────────────────────────────────────┘
-```
+### Duplicate Detection
 
-### Edit Profile Workflow
+**Exact Match (Easy):**
+- Check `job_id` (if provided by API) OR `url` (application link)
+- Python: `seen_ids = set()` → O(1) lookup
+- Catches: Same job from JSearch and Adzuna (both pull from Google Jobs)
 
-```
-# Click "Edit Profile" button
-[Reuses creation form, pre-filled with current values]
-┌─────────────────────────────────────┐
-│ Edit Your Job Search Profile       │
-├─────────────────────────────────────┤
-│ Name:        [Jane Doe            ] │
-│ Email:       [jane@example.com    ] │
-│ Location:    [San Francisco, CA   ] │
-│                                     │
-│ Skills:      [Python, Django, React,]│
-│              [FastAPI             ] │ ← Modified
-│                                     │
-│ Job Titles:  [Software Engineer,   ]│
-│              [Senior Developer     ]│
-│                                     │
-│ Min Score:   [80]                  │ ← Modified
-│                                     │
-│ Resume:      [resume.pdf          ] │
-│              [Change File]          │
-│                                     │
-│     [Save Changes] [Cancel]         │
-└─────────────────────────────────────┘
-```
+**Fuzzy Match (Hard):**
+- Normalize: lowercase, strip whitespace, remove punctuation
+- Compare: `(title, company, location)` tuple
+- Levenshtein distance < 3 = probable duplicate
+- Python: `fuzzywuzzy` or `RapidFuzz` library
+- Catches: "Senior Software Engineer" vs "Sr. Software Eng" at "Google" vs "Google Inc."
 
-## Desktop GUI Job Search Tools Comparison
+**Complexity:** Exact match is LOW (already have URL deduplication logic for scrapers). Fuzzy match is MEDIUM-HIGH (requires NLP library, tuning threshold, handling edge cases).
 
-| Feature | Our Approach | Typical Job Apps | Rationale |
-|---------|-------------|------------------|-----------|
-| **Results display** | Browser (external) | In-app list/grid | We're a launcher, not full app; HTML report already rich |
-| **Search config** | Simple panel (dates, score) | Complex filters (salary, remote, etc.) | Filtering done in HTML report, not pre-search |
-| **Profile management** | Single profile, edit form | Multiple profiles, switching | Simplicity; CLI handles multi-profile for power users |
-| **Progress feedback** | Progress bar + status text | Spinning loader | 6 sources = measurable progress (0%, 17%, 33%...) |
-| **Resume upload** | Optional, file picker | Often required, paste or upload | We extract from PDF, not required for search |
-| **Application tracking** | N/A | Built-in feature | Out of scope; we aggregate, not track applications |
-| **Saved searches** | Quick re-run with last params | Named saved searches | Simpler; most users have one search pattern |
+**Recommendation:** Ship exact match in v2.1.0. Add fuzzy in v2.2 after gathering user feedback on duplicate rate.
 
-**Key Insight:** Commercial job search apps are full-featured platforms (search, apply, track, network). Job-Radar GUI is a launcher — it configures and runs the CLI tool, then hands off to the browser. This scoping prevents feature bloat and maintains the tool's core value: aggregation and scoring.
+### Customizable Scoring Weights
 
-## UX Principles for Minimal Launchers
+**UI Implementation (CustomTkinter):**
+- 6 `CTkSlider` widgets (0.0 to 1.0 range)
+- 6 `CTkLabel` widgets showing current percentage (e.g., "25%")
+- "Reset to Defaults" button
+- "Apply" button → recalculate scores for all current results
+- Live preview: update one job's score as user drags slider (performance test needed)
 
-Based on minimalist GUI design research:
+**Backend Changes:**
+- Current: weights hardcoded in scoring function
+- New: weights stored in `config.json` or user profile
+- Scoring function accepts `weights` dict parameter
+- Batch recalculation: iterate through all jobs, recalc score, re-sort
 
-**Simplicity:**
-- Show only essential controls
-- Hide advanced options (or defer to CLI)
-- Use whitespace, don't cram UI
+**Complexity:** MEDIUM. UI is straightforward (sliders exist in CustomTkinter). Backend requires refactoring scoring function to accept weights as parameters instead of hardcoded constants.
 
-**Clarity:**
-- Clear labels, no jargon
-- Visual hierarchy (primary action prominent)
-- Helpful validation messages
+**Dependency:** Staffing firm penalty dial requires this. Can't make staffing boost customizable without exposing all other weights (inconsistent UX).
 
-**Efficiency:**
-- Minimize clicks to primary action (Run Search)
-- Remember last settings for quick re-run
-- Keyboard shortcuts for power users
+### Platform-Native Installers
 
-**Feedback:**
-- Always show what's happening (progress text)
-- Confirm destructive actions (profile overwrite)
-- Success/error states clearly visible
+**Windows (NSIS):**
+- Tool: NSIS (free, scriptable) or Inno Setup (free, GUI-based)
+- Input: PyInstaller onedir output
+- Output: `Job-Radar-Setup-v2.1.0.exe`
+- Features: Wizard, desktop shortcut, Start Menu entry, uninstaller registry entry
+- Signing: Requires code signing certificate ($100/year for EV cert to avoid SmartScreen)
+- Complexity: MEDIUM (NSIS script learning curve, certificate procurement)
 
-**Consistency:**
-- Follow OS conventions (file dialogs, buttons)
-- Consistent terminology (Profile, Search, Run)
-- Predictable behavior (buttons do what they say)
+**macOS (.pkg):**
+- Tool: `pkgbuild` (built into macOS) + `productbuild` for signed installer
+- Input: PyInstaller onedir output
+- Output: `Job-Radar-v2.1.0.pkg` or `.dmg` with drag-to-Applications
+- Features: Installs to /Applications, uninstaller via drag-to-Trash or in-app button
+- Signing: Requires Apple Developer ID ($99/year)
+- Notarization: Required for Gatekeeper (automated via `xcrun notarytool`)
+- Complexity: MEDIUM (signing + notarization setup, PKG file structure)
+
+**Linux:**
+- Keep current: .tar.gz (acceptable for Linux users)
+- Optional: AppImage (single-file executable, no install required)
+- Complexity: LOW (no change) or LOW-MEDIUM (AppImage via `appimagetool`)
+
+**Critical Note:** PyInstaller creates onedir bundles (folder with executable + dependencies). This is NOT an installer. Users expect:
+- Windows: One .exe to download and run
+- macOS: One .dmg or .pkg to download and open
+- Linux: One .tar.gz or .AppImage to download (current state OK)
+
+Without platform-native installers, app feels "hobbyist." With them, app feels "professional."
+
+### GUI Uninstall Button
+
+**Implementation:**
+1. Add button to Settings tab: "Uninstall Job Radar"
+2. Confirm dialog: "This will remove Job Radar and cached data. Continue?"
+3. Run cleanup script:
+   - Windows: `uninstall.bat` (delete cache, logs, invoke `uninstall.exe` from NSIS)
+   - macOS: `uninstall.sh` (delete cache, logs, delete app from /Applications)
+   - Linux: `uninstall.sh` (delete cache, logs, binary)
+4. Exit app
+
+**What to Delete:**
+- Application binary and dependencies (OS uninstaller handles on Windows/Mac)
+- `~/.cache/job-radar/` (or `%APPDATA%\Local\Job-Radar\Cache` on Windows)
+- `~/.local/share/job-radar/logs/`
+- `~/.config/job-radar/*.log`
+
+**What to Preserve:**
+- `~/.config/job-radar/profiles.json` (user data)
+- `~/.config/job-radar/config.json` (settings, API keys)
+- UNLESS user checks "Delete all data including profiles"
+
+**Complexity:** LOW. Shell script + button + dialog. Most complex part is handling OS-specific cleanup on Windows (delete registry entries).
 
 ## Sources
 
-**Official Documentation (HIGH confidence):**
-- [Python Tkinter Dialogs Documentation](https://docs.python.org/3/library/dialog.html) - Native file dialogs, standard GUI components
-- [Microsoft: Progress Controls Guidelines](https://learn.microsoft.com/en-us/windows/apps/design/controls/progress-controls) - Determinate vs indeterminate progress patterns
-- [Command Line Interface Guidelines](https://clig.dev/) - Best practices for CLI design that inform wrapper behavior
+**Job Aggregator APIs:**
+- [JSearch API — OpenWeb Ninja](https://www.openwebninja.com/api/jsearch) (MEDIUM confidence)
+- [SerpAPI Google Jobs API](https://serpapi.com/google-jobs-api) (HIGH confidence)
+- [USAJobs Developer Portal](https://developer.usajobs.gov/) (HIGH confidence)
+- [Jobicy Remote Jobs API/RSS](https://jobicy.com/jobs-rss-feed) (MEDIUM confidence)
+- [Jobicy GitHub Repository](https://github.com/Jobicy/remote-jobs-api) (MEDIUM confidence)
+- [Best Job Posting APIs 2026](https://theirstack.com/en/blog/best-job-posting-apis) (MEDIUM confidence)
 
-**GUI Wrapper Tools & Patterns (MEDIUM confidence):**
-- [GUIwrapper - Cross-platform GUI wrapper](https://github.com/frodal/GUIwrapper) - Common patterns for CLI wrappers
-- [UGUI: Universal GUI for CLI Applications](https://ugui.io/) - Approaches to wrapping CLI tools
-- [Persistent Settings in Desktop Applications](https://info.erdosmiller.com/blog/persistent-settings-in-desktop-applications) - Configuration persistence patterns
+**Duplicate Detection:**
+- [Job Board Duplicate Problem](https://www.linkup.com/insights/blog/job-board-data-pollution-duplicate-jobs-part-2) (HIGH confidence - 15x increase in duplicates from programmatic ads)
+- [How to Detect Non-Exact Duplicates](https://www.textkernel.com/learn-support/blog/online-job-postings-have-many-duplicates-but-how-can-you-detect-them-if-they-are-not-exact-copies-of-each-other/) (HIGH confidence - technical approach)
+- [Duplicate Job Listings on LinkedIn](https://medium.com/@mp5718/how-many-companies-post-duplicate-jobs-on-linkedin-ee620dfe4133) (MEDIUM confidence)
+- [Job Aggregator Deduplication Best Practices](https://www.goproxy.com/blog/web-scraping-job-postings/) (MEDIUM confidence)
 
-**UX Design Patterns (MEDIUM confidence):**
-- [NN/G: Wizards Design Recommendations](https://www.nngroup.com/articles/wizards/) - When to use wizards vs forms
-- [Wizard UI Pattern Best Practices](https://lollypop.design/blog/2026/january/wizard-ui-design/) - Step structure, progress indicators (2026)
-- [IxDF: UI Form Design 2026](https://www.interaction-design.org/literature/article/ui-form-design) - Modern form design best practices
-- [Minimalist UI Design Principles](https://www.stan.vision/journal/minimalist-ui-design-how-less-is-more-in-web-design) - Simplicity, whitespace, clarity
+**User Expectations:**
+- [Job Board User Complaints](https://www.whatjobs.com/news/joblookup-review-2026-legit-job-board-or-just-another-aggregator/) (MEDIUM confidence - 2026 user reviews)
+- [Staffing Agency vs Direct Employer Preferences](https://talentbridge.com/direct-hire-vs-contract-staffing-whats-really-working-for-smart-businesses-in-2026/) (HIGH confidence - job seekers prefer direct hire)
+- [Fuzzy Matching Best Practices](https://dataladder.com/fuzzy-matching-101/) (HIGH confidence)
 
-**Job Aggregator Features (MEDIUM confidence):**
-- [Best Job Board Aggregators Guide](https://www.chiefjobs.com/the-best-job-board-aggregators-in-the-us-a-comprehensive-guide/) - Common features in job aggregation tools (2026)
-- [Top Job Search Apps 2026](https://www.eztrackr.app/blog/best-job-search-apps) - Feature comparison of leading apps
+**Customizable Scoring:**
+- [Weighted Scoring Models 2026](https://productschool.com/blog/product-fundamentals/weighted-scoring-model) (HIGH confidence)
+- [Weighted Scoring in Applications](https://www.6sigma.us/six-sigma-in-focus/weighted-scoring-prioritization/) (MEDIUM confidence)
+- [Best AI Job Search Tools 2026](https://aijourn.com/the-best-ai-job-search-tools-in-2026/) (MEDIUM confidence)
 
-**Implementation Patterns (MEDIUM confidence):**
-- [Run Process with Realtime Output to Tkinter](https://www.tutorialspoint.com/run-process-with-realtime-output-to-a-tkinter-gui) - Threading + subprocess for live output
-- [PyQt External Programs with QProcess](https://www.pythonguis.com/tutorials/qprocess-external-programs/) - Streams and progress bars
-- [Python File Upload Dialog Patterns](https://pythonguides.com/upload-a-file-in-python-tkinter/) - Tkinter file selection implementation
+**Desktop Installers:**
+- [NSIS vs Inno Setup Comparison](https://www.advancedinstaller.com/choosing-the-right-windows-packaging-tool-as-developer.html) (HIGH confidence)
+- [macOS PKG Packaging](https://apptimized.com/en/news/application-packaging-and-deploying-for-macos-in-simple-words/) (MEDIUM confidence)
+- [PyInstaller Cross-Platform Deployment](https://github.com/orgs/pyinstaller/discussions/9026) (HIGH confidence - official repo)
 
-**Anti-Patterns & Pitfalls (MEDIUM-LOW confidence):**
-- [User Interface Anti-Patterns](https://ui-patterns.com/blog/User-Interface-AntiPatterns) - Bloated UI, hide-and-hover pitfalls
-- [UX Anti-Patterns of User Experience Design](https://www.ics.com/blog/anti-patterns-user-experience-design) - Common mistakes in desktop UX
-- [Software Bloat - Wikipedia](https://en.wikipedia.org/wiki/Software_bloat) - Feature creep and bloat characteristics
-- [UX Patterns for CLI Tools](https://lucasfcosta.com/2022/06/01/ux-patterns-cli-tools.html) - What to avoid when wrapping CLI tools
-
-**Confidence Notes:**
-- HIGH: Official Python/Microsoft documentation on GUI components and patterns
-- MEDIUM: Recent (2026) articles on UX design, job aggregator features, established GUI wrapper projects
-- MEDIUM-LOW: General anti-pattern articles (not GUI-specific), older sources
-
-**Areas requiring phase-specific research:**
-- Specific GUI framework choice (Tkinter vs PyQt vs wxPython) — needs architecture decision
-- Threading implementation details — needs technical spike
-- Cross-platform testing considerations — needs deployment planning
+**Uninstaller:**
+- [Mac App Uninstall Best Practices](https://support.apple.com/en-us/102610) (HIGH confidence - official Apple docs)
+- [Windows Uninstall Programs](https://support.microsoft.com/en-us/windows/uninstall-or-remove-apps-and-programs-in-windows-4b55f974-2cc6-2d2b-d092-5905080eaf98) (HIGH confidence - official Microsoft docs)
+- [Best Mac Uninstallers 2026](https://macpaw.com/reviews/best-uninstallers-for-mac) (MEDIUM confidence)
 
 ---
-*Feature research for: Desktop GUI Launcher (Job-Radar milestone)*
-*Researched: 2026-02-12*
+
+*Feature research for: Job Radar v2.1.0 - Source Expansion & Polish*
+*Researched: 2026-02-13*
+*Next: Use this to inform milestone phase breakdown and task prioritization*

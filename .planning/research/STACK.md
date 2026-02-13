@@ -1,267 +1,229 @@
 # Stack Research
 
-**Domain:** Python Desktop GUI Launcher for CLI Application
-**Researched:** 2026-02-12
+**Domain:** Job aggregation desktop application - v2.1.0 source expansion
+**Researched:** 2026-02-13
 **Confidence:** HIGH
 
-## Recommended Stack
+## Recommended Stack Additions
 
-### Core GUI Framework
-
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|-----------------|
-| CustomTkinter | 5.2.2 | Modern GUI framework | Built on tkinter with modern flat design, dark/light themes, high-DPI support. Works seamlessly with PyInstaller. Zero licensing concerns. Minimal bundle size increase. [CustomTkinter is the easiest modern GUI option](https://www.pythonguis.com/faq/which-python-gui-library/) with consistent cross-platform appearance. |
-| tkinter | Built-in | Base GUI toolkit | Included with Python 3.10+. No installation needed. Native file dialogs, proven cross-platform stability. [CustomTkinter extends tkinter](https://github.com/TomSchimansky/CustomTkinter) while maintaining compatibility. |
-
-### Packaging & Distribution
+### Job Aggregator APIs
 
 | Technology | Version | Purpose | Why Recommended |
 |------------|---------|---------|-----------------|
-| PyInstaller | 6.18.0 | Bundler for executables | [Latest version (Jan 2026)](https://pyinstaller.org/en/stable/) with Python 3.8-3.14 support. Works [out-of-the-box with CustomTkinter](https://customtkinter.tomschimansky.com/documentation/packaging/) using onedir mode. You already use this successfully for CLI distribution. |
+| `serpapi` | 0.1.5+ | Google Jobs access via SerpAPI | Official Python SDK for SerpAPI with dedicated Google Jobs engine support. Returns structured JSON with 40+ data points per job. Integrates with existing `requests` + `python-dotenv` pattern for API keys. |
+| `requests` (existing) | Current | JSearch API integration | RapidAPI-hosted JSearch requires standard HTTP headers (`X-RapidAPI-Key`, `X-RapidAPI-Host`). No dedicated SDK needed - existing `requests` library handles this with custom headers. |
 
-### Supporting Libraries
+**Implementation notes:**
+- **SerpAPI**: Use `client.search({'engine': 'google_jobs', 'q': query})` pattern. Fits existing API abstraction in `job_radar/sources.py`.
+- **JSearch**: Direct `requests.get()` with RapidAPI headers. Available on RapidAPI with generous free tier for testing.
+
+### Free Job Board APIs
 
 | Library | Version | Purpose | When to Use |
 |---------|---------|---------|-------------|
-| threading | Built-in | Background task execution | Run job searches without freezing GUI. [Use for I/O-bound operations](https://www.infoworld.com/article/2257425/python-threading-and-subprocesses-explained.html) like web scraping. |
-| webbrowser | Built-in | Launch HTML reports | [Open generated reports](https://docs.python.org/3/library/webbrowser.html) in default browser. Already generating HTML, just need to open it. |
-| queue | Built-in | Thread-safe communication | Pass progress updates from worker threads to GUI thread for progress bar updates. |
+| `requests` (existing) | Current | All three job boards | USAJobs, Jobicy, and ZipRecruiter are HTTP REST APIs. Existing `requests` + `BeautifulSoup4` stack covers all needs. |
+| Standard library `urllib.parse` | Built-in | Query parameter encoding | For USAJobs search filters and Jobicy tag parameters. |
+
+**API-specific requirements:**
+- **USAJobs**: Requires `Authorization-Key` header + email in `User-Agent`. Free API key from developer.usajobs.gov. Rate limits documented but not strict for reasonable use.
+- **Jobicy**: Public RSS/JSON API at `jobicy.com/api/v2/remote-jobs`. No auth required. Limit checks to 1/hour to avoid access restrictions. Supports `count`, `geo`, `industry`, `tag` query params.
+- **ZipRecruiter**: No official public API confirmed. Third-party scraping services exist (ScrapingBee, Apify) but require paid subscriptions. **Recommendation: Defer ZipRecruiter or use manual URL source pattern like Indeed/LinkedIn.**
+
+### User-Configurable Scoring
+
+| Technology | Version | Purpose | Why Recommended |
+|------------|---------|---------|-----------------|
+| Standard library `json` | Built-in | Config schema extension | Existing `config.py` uses `json.load()`. Extend schema with `scoring_weights` key for 6-component weights. No new dependencies. |
+| Existing profile schema | v4+ | Store user preferences | Add `scoring_weights: {skill_match: 0.25, ...}` to profile JSON. Falls back to hardcoded defaults in `scoring.py` if not present. |
+
+**Implementation notes:**
+- Scoring weights currently hardcoded in `scoring.py:47-54` (0.25, 0.15, 0.15, 0.15, 0.10, 0.20).
+- Extend profile schema with optional `scoring_weights` object.
+- Update `score_job()` to accept weights parameter with defaults.
+- GUI: Add scoring preferences panel in profile editor using existing CustomTkinter widgets.
+
+### GUI Uninstall Functionality
+
+| Technology | Version | Purpose | Why Recommended |
+|------------|---------|---------|-----------------|
+| Standard library `subprocess` | Built-in | Platform-native uninstall | Cross-platform solution. Calls platform-specific tools without new dependencies. |
+| Standard library `platform` | Built-in | OS detection | Determines which uninstall method to use (Windows/macOS/Linux). |
+| Standard library `shutil` | Built-in | Directory removal | For cleaning user data directories after uninstall. |
+
+**Platform-specific approaches:**
+- **Windows**: `subprocess.run(['powershell', 'Get-AppxPackage', ...])` for Windows Store apps, or registry-based uninstaller lookup for traditional apps. Self-contained apps: delete program directory.
+- **macOS**: Self-contained .app bundles - delete `/Applications/JobRadar.app` + user data in `~/Library/Application Support/JobRadar`.
+- **Linux**: PyInstaller onedir - delete installation directory + `~/.local/share/job-radar` data directory.
+
+**Critical consideration**: GUI uninstall button removes the app that runs it. Must launch external cleanup script that waits for app exit before deletion. Use `subprocess.Popen()` to spawn detached cleanup process.
+
+### Platform-Native Packaging
+
+| Technology | Version | Purpose | Why Recommended |
+|------------|---------|---------|-----------------|
+| `dmgbuild` | 1.6.7+ | macOS DMG creation | Official, actively maintained (Jan 2026 release). Requires Python 3.10+. Creates professional disk images without deprecated APIs. macOS-only (wrapper around macOS tools). |
+| `pynsist` | 2.8+ | Windows NSIS installer | Creates NSIS installers that bundle Python runtime. Python 3.5+ support confirmed. Better alternative to manual PyInstaller + NSIS combination. |
+
+**Why NOT cx_Freeze for MSI:**
+- cx_Freeze supports MSI generation, but project already uses PyInstaller successfully.
+- PyInstaller + pynsist workflow is simpler: PyInstaller builds executable, pynsist wraps in NSIS installer.
+- cx_Freeze would require rewriting build process and re-testing packaging on all platforms.
+- Startup time differences (1.8s vs 2.1s) are negligible for desktop app with GUI launch.
+
+**Existing PyInstaller integration:**
+- Already configured: `job-radar.spec`, CustomTkinter asset bundling, macOS .app bundle creation.
+- Keep PyInstaller as build step; add installer packaging as post-build step.
 
 ## Installation
 
 ```bash
-# GUI framework (only new dependency)
-pip install customtkinter==5.2.2
+# Job aggregator APIs
+pip install serpapi>=0.1.5
 
-# Packaging (already have this)
-pip install pyinstaller==6.18.0
+# Platform-native packaging (dev dependencies)
+pip install dmgbuild>=1.6.7  # macOS only
+pip install pynsist>=2.8     # Windows installer creation
 
-# All other libraries are Python built-ins
+# Note: No new runtime dependencies for job boards, scoring config, or uninstall.
+# All use existing requests + standard library.
 ```
-
-## PyInstaller Integration
-
-### CustomTkinter Data Files
-
-CustomTkinter requires explicit data inclusion in PyInstaller:
-
-```bash
-pyinstaller --name="JobRadar" \
-    --onedir \
-    --windowed \
-    --add-data "venv/lib/python3.10/site-packages/customtkinter:customtkinter" \
-    launcher.py
-```
-
-**Rationale:** [PyInstaller doesn't automatically include .json theme files](https://github.com/TomSchimansky/CustomTkinter/discussions/939) from CustomTkinter library. Must use `--add-data` flag.
-
-### Platform-Specific Flags
-
-**Windows:**
-```bash
---windowed  # No console window
---icon=icon.ico
-```
-
-**macOS:**
-```bash
---windowed  # .app bundle without terminal
---icon=icon.icns
---osx-bundle-identifier=com.jobradar.launcher
-```
-
-**Linux:**
-```bash
---windowed  # No terminal on launch
-```
-
-### Build Mode
-
-**Use onedir mode** (already doing this):
-- [Easier debugging](https://pyinstaller.org/en/stable/operating-mode.html) - see exactly what files are included
-- CustomTkinter [works best with onedir](https://github.com/TomSchimansky/CustomTkinter/discussions/423)
-- Can update executable without redistributing entire bundle
-- [Recommended for GUI applications](https://pyinstaller.org/en/stable/usage.html)
 
 ## Alternatives Considered
 
 | Recommended | Alternative | When to Use Alternative |
 |-------------|-------------|-------------------------|
-| CustomTkinter | PyQt6/PySide6 | If you need advanced widgets (charts, complex tables, rich text editor). [PyQt6 requires commercial license](https://www.pythonguis.com/faq/pyqt6-vs-pyside6/) for proprietary apps. [PySide6 is LGPL-free](https://doc.qt.io/qtforpython-6/commercial/index.html) but adds 80-120MB to bundle vs tkinter's ~5MB. Overkill for form-based launcher. |
-| CustomTkinter | wxPython | If you need truly native widgets. [wxPython has platform quirks](https://charleswan111.medium.com/choosing-the-best-python-gui-library-comparing-tkinter-pyqt-and-wxpython-1c835746586a) and doesn't abstract cross-platform differences as well. Smaller community than tkinter. |
-| CustomTkinter | Plain tkinter | If you want absolute minimal dependencies (zero new installs). But [tkinter looks dated](https://www.pythonguis.com/faq/which-python-gui-library/) without significant custom styling work. CustomTkinter provides modern appearance with minimal effort. |
-| CustomTkinter | Kivy/BeeWare | If targeting mobile or need touch-first UI. Not suitable for traditional desktop applications. |
+| `serpapi` for Google Jobs | Direct scraping of Google Jobs HTML | Never - violates Google ToS and fragile to DOM changes. API is reliable and legal. |
+| `requests` for JSearch | RapidAPI SDK (if exists) | If RapidAPI releases official Python SDK, migrate for convenience. Currently `requests` is adequate. |
+| `requests` for USAJobs | `usajobs` PyPI package (v0.1.0) | Exists but last updated years ago, limited functionality. Direct API calls more maintainable. |
+| Profile JSON for scoring config | Separate config file | If scoring preferences needed independently of profiles. Current approach keeps profile self-contained. |
+| `pynsist` for Windows | Manual PyInstaller + NSIS | If custom installer branding/logic needed beyond pynsist capabilities. pynsist handles 95% of use cases. |
+| `dmgbuild` for macOS | `create-dmg` shell script | If Python dependency is problematic for build environment. `create-dmg` requires only macOS, no Python. |
 
 ## What NOT to Use
 
 | Avoid | Why | Use Instead |
 |-------|-----|-------------|
-| PySimpleGUI | [Changed to proprietary license](https://www.pythonguis.com/faq/which-python-gui-library/) requiring commercial purchase (2022). Previously free versions deprecated. Community abandoned it. | CustomTkinter (similar simplicity, MIT license) |
-| customtkinter-pyinstaller | [Modified fork for onefile mode](https://pypi.org/project/customtkinter-pyinstaller/). Hasn't been updated in 12+ months. Onedir mode works fine with official CustomTkinter. | Official CustomTkinter + onedir mode |
-| Tkinter Boostrap/ttkbootstrap | Alternative modern tkinter wrapper. Less mature than CustomTkinter, smaller community, fewer examples for PyInstaller packaging. | CustomTkinter (better documentation, proven PyInstaller integration) |
-| Electron/Tauri with Python | Massive bundle sizes (150-300MB minimum). Separate web stack to learn. Python would run as subprocess, adding complexity. | CustomTkinter (5-15MB total increase, pure Python) |
+| `cx_Freeze` | Requires rewriting entire build pipeline. PyInstaller already validated with 452 tests. Marginal startup time improvements don't justify migration risk. | Keep `PyInstaller` + add `pynsist`/`dmgbuild` post-build |
+| ZipRecruiter official API | No confirmed public API. Third-party scrapers require paid subscriptions ($50+/mo). Cost-benefit doesn't justify for single source. | Manual URL source (existing pattern) or defer to future milestone |
+| Custom uninstall registry manipulation | Brittle, Windows-only, risk of registry corruption. Modern Windows uses PowerShell cmdlets for clean uninstall. | `subprocess` + platform-specific standard tools |
+| Embedding scoring weights in GUI config.json | Violates single-source-of-truth principle. Scoring is profile-specific, not app-wide. Different profiles may have different priorities. | Profile JSON schema extension |
+| RapidAPI SDK/wrapper libraries | Adds dependency for minimal benefit. RapidAPI uses standard HTTP headers that `requests` handles natively. SDK would abstract away header control. | Direct `requests.get()` with custom headers |
 
-## Stack Patterns by Use Case
+## Stack Patterns by Variant
 
-**For simple launcher UI (your use case):**
-- CustomTkinter + threading + built-in file dialogs
-- Total new dependencies: 1 (customtkinter)
-- Bundle size increase: ~5-10MB
-- Development time: Minimal (familiar Python, simple API)
+**If using paid API tiers (SerpAPI/JSearch beyond free limits):**
+- Add `pyrate-limiter` configs for each API's rate limits (already in dependencies)
+- Store API keys in `python-dotenv` .env file (existing pattern from `api_config.py`)
+- Implement cost tracking for paid queries (log to JSON, warn at threshold)
 
-**If you needed database browser in GUI:**
-- Add SQLite browser widget from CustomTkinter examples
-- Still no additional dependencies (sqlite3 is built-in)
+**If targeting enterprise deployment:**
+- Add Windows MSI via WiX Toolset (not pynsist) for Group Policy installation
+- macOS: Use `productbuild` for signed .pkg installers instead of DMG
+- Because: Enterprise IT requires signed installers with silent install flags
 
-**If you needed real-time data visualization:**
-- Reconsider stack - would need PyQt6/PySide6 with QtCharts
-- Or keep CustomTkinter for UI, generate charts in HTML reports
+**If offline packaging required:**
+- Use `pip download` to vendor all dependencies in repo
+- Modify `pynsist` config to use local wheels instead of PyPI
+- Because: Air-gapped networks cannot access PyPI during installation
 
 ## Version Compatibility
 
 | Package | Compatible With | Notes |
 |---------|-----------------|-------|
-| customtkinter 5.2.2 | Python 3.7-3.14 | [Requires Python >=3.7](https://pypi.org/project/customtkinter/). Python 3.10+ gets [dark window headers on macOS](https://github.com/TomSchimansky/CustomTkinter/discussions/311) (Tcl/Tk 8.6.9+). |
-| PyInstaller 6.18.0 | Python 3.8-3.14 | [Avoid Python 3.10.0 specifically](https://github.com/pyinstaller/pyinstaller/issues/5693) (has bug). Use 3.10.1+ instead. |
-| CustomTkinter | PyInstaller 6.x | [Well-documented integration](https://customtkinter.tomschimansky.com/documentation/packaging/). Requires `--add-data` flag for theme files. |
+| `serpapi@0.1.5` | Python 3.7+ | Tested with existing `requests` library, no conflicts |
+| `dmgbuild@1.6.7` | Python 3.10-3.15 | Matches project's `requires-python = ">=3.10"` |
+| `pynsist@2.8` | Python 3.5+ | Supports Python 3.10 (project minimum) but note Python 3.10 EOL is Oct 2026 |
+| `PyInstaller@6.18.0` | Python 3.8-3.14 | Current project uses PyInstaller with Python 3.10+ |
 
-## Cross-Platform Rendering
+**Critical compatibility note**: Python 3.10 reaches end-of-life October 2026. Project should plan migration to Python 3.11+ by Q4 2026 before security patch support ends.
 
-**Windows:**
-- [High-DPI scaling automatic](https://github.com/TomSchimansky/CustomTkinter/wiki/Scaling) in CustomTkinter
-- No blurry text on 125%/150% display scaling
-- Dark/light mode matches Windows 10/11 theme
+## Integration Points
 
-**macOS:**
-- Python 3.10+ enables [dark title bars](https://github.com/TomSchimansky/CustomTkinter/discussions/311)
-- Retina display support built-in
-- System appearance mode integration (dark/light auto-detection)
+### Existing Architecture Alignment
 
-**Linux:**
-- Consistent appearance across Ubuntu/Fedora/Debian
-- No dependency on specific desktop environment (works in GNOME/KDE/XFCE)
-- [Theme colors adapt](https://customtkinter.tomschimansky.com/) to system or manual setting
-
-## Threading Architecture for GUI
-
-**Pattern for long-running tasks:**
-
+**API Sources Pattern** (`job_radar/sources.py`):
 ```python
-import threading
-import queue
-import customtkinter as ctk
-
-class JobRadarGUI(ctk.CTk):
-    def __init__(self):
-        super().__init__()
-        self.queue = queue.Queue()
-
-    def run_search(self):
-        # Start background thread
-        thread = threading.Thread(target=self.search_worker)
-        thread.daemon = True
-        thread.start()
-
-        # Check queue for updates
-        self.after(100, self.check_queue)
-
-    def search_worker(self):
-        # Run existing CLI search code
-        # Post updates: self.queue.put(("progress", 0.5))
-        pass
-
-    def check_queue(self):
-        try:
-            msg_type, data = self.queue.get_nowait()
-            if msg_type == "progress":
-                self.progress_bar.set(data)
-        except queue.Empty:
-            pass
-        self.after(100, self.check_queue)
+# Current: Dice, HN Hiring, RemoteOK, etc.
+# Add: SerpAPI Google Jobs, JSearch, USAJobs, Jobicy
+# Each returns List[JobResult] - no interface changes needed
 ```
 
-**Rationale:**
-- [Never call GUI methods from worker threads](https://docs.pysimplegui.com/en/latest/documentation/module/multithreading/) directly (not thread-safe)
-- [Use queue for thread communication](https://www.nurmatova.com/subprocesses-and-multithreading.html)
-- [`.after()` method polls queue](https://www.pythontutorial.net/tkinter/tkinter-thread-progressbar/) from main thread
-- Prevents GUI freezing during web scraping
-
-## File Dialog Usage
-
+**Rate Limiting** (`job_radar/rate_limits.py`):
 ```python
-from tkinter import filedialog
-import customtkinter as ctk
-
-# PDF file selection
-pdf_path = filedialog.askopenfilename(
-    title="Select Resume",
-    filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")]
-)
+# Already uses pyrate-limiter
+# Add limits for new APIs:
+# - SerpAPI: 50 requests/month (free tier)
+# - JSearch: Check RapidAPI plan limits
+# - USAJobs: Documented in developer portal
+# - Jobicy: Max 1 request/hour (recommended)
 ```
 
-**Rationale:**
-- [tkinter.filedialog uses native OS dialogs](https://docs.python.org/3/library/dialog.html)
-- Windows: Uses Win32 file picker
-- macOS: Uses Cocoa file picker
-- Linux: Uses GTK file picker
-- No CustomTkinter equivalent needed - native dialogs look better
-
-## Browser Integration
-
+**API Key Management** (`job_radar/api_config.py`, `job_radar/api_setup.py`):
 ```python
-import webbrowser
-import os
-
-# Open generated HTML report
-report_path = os.path.abspath("reports/job_results.html")
-webbrowser.open(f"file://{report_path}")
+# Existing: Supports optional API sources with setup wizard
+# Add: SERPAPI_KEY, RAPIDAPI_KEY, USAJOBS_API_KEY, USAJOBS_EMAIL
+# .env pattern already established
 ```
 
-**Rationale:**
-- [webbrowser module is cross-platform](https://docs.python.org/3/library/webbrowser.html)
-- Opens default browser automatically
-- Handles file:// URLs correctly
-- No additional dependencies
+**Scoring Engine** (`job_radar/scoring.py`):
+```python
+# Current: Hardcoded weights at line 47-54
+# Change: Accept optional weights dict parameter
+# Fallback: Default weights if profile.scoring_weights not present
+# Maintains backward compatibility with existing profiles
+```
 
-## Development Workflow
+**Profile Schema** (`job_radar/profile_manager.py`):
+```python
+# Current: v4 schema with dealbreakers, preferences, skills
+# Add: Optional scoring_weights object
+# Example: {"scoring_weights": {"skill_match": 0.30, "response": 0.15, ...}}
+# Validator: Sum of weights must equal 1.0
+```
 
-1. **GUI development:** Test with `python launcher.py` (fast iteration)
-2. **Packaging test:** `pyinstaller launcher.spec` (verify bundle)
-3. **Distribution:** Copy onedir folder to target platform
+**GUI Architecture** (`job_radar/gui/main_window.py`):
+```python
+# Add: Uninstall button in Settings/Help menu
+# Behavior: Calls platform-specific cleanup script
+# macOS: Instruct user to drag .app to Trash + confirm data deletion
+# Windows: Launch PowerShell uninstaller or delete program dir
+# Linux: Remove install dir + data dir with sudo prompt
+```
 
-**No changes needed** to existing PyInstaller build process beyond:
-- Adding `--add-data` for CustomTkinter theme files
-- Using `--windowed` flag to hide console
-
-## Bundle Size Impact
-
-Based on [framework comparison research](https://charleswan111.medium.com/choosing-the-best-python-gui-library-comparing-tkinter-pyqt-and-wxpython-1c835746586a):
-
-| Framework | Typical Bundle Size Increase |
-|-----------|------------------------------|
-| CustomTkinter (tkinter-based) | +5-10 MB |
-| PyQt6/PySide6 | +80-120 MB |
-| wxPython | +40-60 MB |
-
-**Current CLI bundle size:** ~50-80MB (estimated with PyInstaller onedir)
-**With GUI launcher:** ~60-90MB total
-
-Minimal impact because [tkinter is included with Python](https://www.pythonguis.com/faq/which-python-gui-library/) - CustomTkinter only adds theme JSON files and Python code.
+**Packaging Workflow** (`.github/workflows/release.yml`):
+```yaml
+# Current: PyInstaller → tar.gz/zip archives
+# macOS addition: PyInstaller → dmgbuild → .dmg file
+# Windows addition: PyInstaller → pynsist → .exe installer
+# Linux: Keep tar.gz (standard for Linux distribution)
+```
 
 ## Sources
 
-- [CustomTkinter GitHub Repository](https://github.com/TomSchimansky/CustomTkinter) - Official source, packaging documentation
-- [CustomTkinter Official Documentation](https://customtkinter.tomschimansky.com/) - API reference, widget examples
-- [PyInstaller 6.18.0 Documentation](https://pyinstaller.org/en/stable/) - Latest packaging guidelines (Jan 2026)
-- [Python GUI Library Comparison 2026](https://www.pythonguis.com/faq/which-python-gui-library/) - Framework selection analysis
-- [PyQt6 vs PySide6 Licensing](https://www.pythonguis.com/faq/pyqt6-vs-pyside6/) - Commercial use constraints
-- [CustomTkinter PyInstaller Integration](https://customtkinter.tomschimansky.com/documentation/packaging/) - Bundling best practices
-- [Python Threading Best Practices](https://www.infoworld.com/article/2257425/python-threading-and-subprocesses-explained.html) - GUI threading patterns
-- [Tkinter File Dialogs](https://docs.python.org/3/library/dialog.html) - Python 3.14 official documentation
-- [Webbrowser Module](https://docs.python.org/3/library/webbrowser.html) - Cross-platform browser launching
-- [CustomTkinter DPI Scaling](https://github.com/TomSchimansky/CustomTkinter/wiki/Scaling) - High-resolution display support
+### Job Aggregator APIs
+- [SerpAPI Python SDK - PyPI](https://pypi.org/project/serpapi/) — Official package, version info, Google Jobs engine docs
+- [JSearch API on RapidAPI](https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch) — API capabilities, free tier availability
+- [RapidAPI Python Integration](https://docs.rapidapi.com/docs/additional-request-headers) — Header requirements for requests library
+
+### Free Job Boards
+- [USAJobs Developer Portal](https://developer.usajobs.gov/) — Official API docs, authentication requirements
+- [Jobicy Remote Jobs API](https://github.com/Jobicy/remote-jobs-api) — Public API documentation, usage guidelines
+- [ZipRecruiter APIs on RapidAPI](https://rapidapi.com/collection/ziprecruiter-api) — Third-party options (no confirmed official API)
+
+### Platform-Native Packaging
+- [dmgbuild PyPI](https://pypi.org/project/dmgbuild/) — Version 1.6.7, Python 3.10+ requirement, macOS-only
+- [pynsist PyPI and docs](https://pynsist.readthedocs.io/) — Version 2.8, Python 3.5+ support
+- [PyInstaller vs cx_Freeze 2026 comparison](https://ahmedsyntax.com/2026-comparison-pyinstaller-vs-cx-freeze-vs-nui/) — Performance benchmarks, feature comparison
+- [cx_Freeze MSI creation guide](https://www.alexandrumarin.com/create-a-python-executable-and-msi-installer-using-cx_freeze/) — Alternative approach (not recommended for this project)
+
+### Uninstall Functionality
+- [Python cross-platform uninstall guide](https://thelinuxcode.com/how-to-uninstall-software-using-python-windows-macos-linux/) — Subprocess patterns, platform detection
+
+### Package Versions
+- [Python 3.10 EOL schedule](https://devguide.python.org/versions/) — October 2026 end-of-life
+- [PyInstaller 6.18.0](https://pypi.org/project/pyinstaller/) — Released January 2026, Python 3.8-3.14 support
 
 ---
-*Stack research for: Job Radar Desktop GUI Launcher*
-*Researched: 2026-02-12*
-*Confidence: HIGH - All recommendations verified with official documentation and 2026 sources*
+*Stack research for: Job Radar v2.1.0 source expansion*
+*Researched: 2026-02-13*
+*Confidence: HIGH for packaging tools (official docs verified), MEDIUM for JSearch/ZipRecruiter (WebSearch only), HIGH for USAJobs/Jobicy (official docs verified)*

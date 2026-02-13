@@ -1,572 +1,389 @@
 # Pitfalls Research
 
-**Domain:** Adding Desktop GUI to Existing Python CLI Application
-**Researched:** 2026-02-12
+**Domain:** Adding job aggregator APIs, configurable scoring, GUI uninstall, and platform-native installers to existing Python desktop app
+**Researched:** 2026-02-13
 **Confidence:** HIGH
 
 ## Critical Pitfalls
 
-### Pitfall 1: UI Thread Blocking During Long Operations
+### Pitfall 1: Scoring Weight Migration Without Schema Version Bump
 
 **What goes wrong:**
-The GUI completely freezes when existing CLI job search operations run, making the application appear crashed. Users cannot interact with the window, see progress updates, or cancel operations. This is particularly critical for Job Radar's job fetching operations that use ThreadPoolExecutor.
+Users who upgrade from v2.0 to v2.1 suddenly see all their job results re-scored with different weights. Old reports become incomparable to new ones. Worse, if a user configured custom weights but the schema didn't increment, old profiles lack the new weights structure, causing KeyError crashes when scoring.py expects `profile["scoring_weights"]["skill_match"]` but finds only hardcoded floats.
 
 **Why it happens:**
-Tkinter applications are single-threaded by default. All GUI updates and event handling occur in the main thread. When you directly call long-running CLI functions (job searching, PDF parsing) from the GUI event handlers, the main thread becomes blocked processing the task and cannot respond to user interactions or update the progress bar.
+Developers think "it's just adding optional fields" and don't bump `CURRENT_SCHEMA_VERSION` from 1 to 2. The existing auto-migration code (profile_manager.py:267-271) only handles v0→v1. Adding configurable weights is a **breaking schema change** because scoring.py changes from reading hardcoded values (0.25, 0.15, etc.) to reading `profile.get("scoring_weights", {}).get("skill_match", 0.25)`. Without migration, old profiles missing this structure break.
 
 **How to avoid:**
-1. **Never directly modify Tkinter widgets from worker threads** - Use `root.after()` to schedule GUI updates in the main thread
-2. **Use queue-based communication** - Worker threads put results in `queue.Queue`, main thread polls with `root.after(100, check_queue)`
-3. **Integrate existing ThreadPoolExecutor carefully** - Submit tasks to executor, use callbacks with `future.add_done_callback()` that schedule GUI updates via `root.after(0, update_function)`
-4. **Example pattern:**
+1. Bump `CURRENT_SCHEMA_VERSION = 2` in profile_manager.py
+2. Add v1→v2 migration in `load_profile()`:
    ```python
-   def on_search_clicked():
-       self.executor.submit(search_jobs).add_done_callback(
-           lambda future: root.after(0, self.display_results, future.result())
-       )
+   if schema_version == 1:
+       # Add default scoring weights if missing
+       profile.setdefault("scoring_weights", {
+           "skill_match": 0.25,
+           "title_relevance": 0.15,
+           "seniority": 0.15,
+           "location": 0.15,
+           "domain": 0.10,
+           "response_likelihood": 0.20,
+       })
+       profile["schema_version"] = 2
+       save_profile(profile, profile_path)  # Auto-migrate and save
    ```
+3. Update _template.json to include `scoring_weights` for new users
+4. Add test: `test_load_v1_profile_auto_migrates_to_v2()` mirroring test_profile_manager.py:226
 
 **Warning signs:**
-- GUI becomes unresponsive during operations
-- Progress bar doesn't update
-- Window shows "Not Responding" in task manager
-- Users report application appears to hang
+- Tests pass but GUI crashes on "Search" with `KeyError: 'scoring_weights'`
+- Old profiles load fine but scoring.py fails with AttributeError
+- Reports generated before/after upgrade show different scores for identical jobs
 
 **Phase to address:**
-Phase 1 (GUI Foundation) - Establish thread-safe GUI update patterns from the start. Test with actual job search operations to verify responsiveness.
+Phase 1 (Configurable Scoring Architecture) — migration MUST ship atomically with the feature
 
 ---
 
-### Pitfall 2: PyInstaller Missing Hidden Imports for GUI Framework
+### Pitfall 2: Rate Limiter State Corruption Across New API Sources
 
 **What goes wrong:**
-The bundled executable launches but crashes immediately with ImportError or displays blank window because PyInstaller didn't detect and bundle required GUI framework data files (.json, .otf fonts for CustomTkinter) or dynamic imports.
+Adding 4 new job aggregator APIs means 4 new SQLite databases in `.rate_limits/`. If two sources share an API backend (e.g., "JobAPI" and "JobAPI Premium" both hit `api.jobapi.com`), they create separate rate limit databases (`jobapi.db` and `jobapi_premium.db`) but hit the same rate limit pool. User burns through quota twice as fast, gets 429s, and both sources fail silently because `check_rate_limit()` returns False but doesn't explain WHY.
+
+Worse: SQLite connections in `_connections` dict (rate_limits.py:39) aren't closed on exit. Adding 4 sources means 10 total SQLite connections staying open. On Windows, this causes "database is locked" errors if user tries to manually inspect `.rate_limits/*.db` while app runs.
 
 **Why it happens:**
-PyInstaller uses static analysis to detect imports. GUI frameworks often use dynamic imports (`__import__()`, `importlib.import_module()`) or include non-.py assets (JSON configs, fonts, themes) that PyInstaller doesn't automatically detect. Job Radar already has hidden import complexity with pdfplumber and questionary - adding a GUI framework multiplies this risk.
+Current rate_limits.py was designed for 2 API sources (Adzuna, Authentic Jobs). Scaling to 6+ sources surfaces architectural flaws:
+- No connection pooling or cleanup
+- No shared rate limiter for sources using same backend API
+- `RATE_LIMITS` dict (rate_limits.py:27) hardcodes source names, making dynamic aggregator addition brittle
 
 **How to avoid:**
-1. **Use --onedir mode for GUI frameworks** - Cannot use --onefile with CustomTkinter because it includes .json and .otf files that cannot be packed into single executable
-2. **Add explicit hidden imports in spec file:**
+1. **Connection cleanup**: Add `atexit` handler to close all SQLite connections:
    ```python
-   hiddenimports=[
-       'customtkinter',  # or tkinter.ttk for themed widgets
-       'PIL._tkinter_finder',  # if using images
-   ]
+   import atexit
+
+   def _cleanup_connections():
+       for conn in _connections.values():
+           conn.close()
+
+   atexit.register(_cleanup_connections)
    ```
-3. **Include data files with --add-data:**
+2. **Shared rate limiters**: Map sources to API backends in api_config.py:
    ```python
-   datas=[
-       ('path/to/customtkinter', 'customtkinter'),  # entire directory
-   ]
+   API_BACKEND_MAP = {
+       "jobapi": ["jobapi", "jobapi_premium"],  # Share rate limiter
+       "careerjet": ["careerjet"],
+   }
    ```
-4. **Test with --debug=imports flag** - Build with debug, run executable, examine output for missing imports
-5. **Verify on clean machine** - Test bundled executable on machine without Python installed
+   Modify `get_rate_limiter(source)` to use backend key instead of source name
+3. **Dynamic rate limit configs**: Move `RATE_LIMITS` to .env or config.json so new sources don't require code changes
+4. **Better error messages**: When rate limited, log the backend API and ALL sources affected
 
 **Warning signs:**
-- Executable builds successfully but crashes on launch
-- "ModuleNotFoundError" in bundled app but works in development
-- GUI window appears but has no styling/theme
-- Fonts missing or widgets display incorrectly
+- `.rate_limits/` directory grows to 10+ databases
+- "Database is locked" errors in logs
+- User reports "some APIs randomly stop working"
+- 429 errors appearing despite conservative rate limits
 
 **Phase to address:**
-Phase 2 (GUI Implementation) - Configure PyInstaller spec file with GUI framework requirements before building first prototype. Document in build scripts (build.sh, build.bat).
+Phase 2 (API Source Infrastructure) — BEFORE adding actual API integrations in Phase 3
 
 ---
 
-### Pitfall 3: Cross-Platform File Path Handling in Bundled Executable
+### Pitfall 3: macOS Code Signing Breaks PyInstaller Executables
 
 **What goes wrong:**
-File dialogs, browser launching with local files, and resource loading (icons, images) fail on bundled executable or work on one platform but break on others. Critical for Job Radar's browser launch functionality and any GUI icons/assets.
+Adding DMG installer requires code signing for Gatekeeper. Developers sign `JobRadar.app` with `codesign --deep -s "Developer ID" JobRadar.app`, but macOS refuses to open it: "JobRadar is damaged and can't be opened." Running `codesign --verify --verbose JobRadar.app` shows "bundle format unrecognized."
+
+Root cause: PyInstaller appends Python bytecode to the end of the executable, breaking Mach-O format. The `--deep` flag signs all binaries in one pass, but LINKEDIT segment must be last. PyInstaller expects a magic number at EOF. Signing breaks this.
+
+On Windows, NSIS installer built with default settings triggers Windows Defender SmartScreen: "Windows protected your PC" because .exe isn't signed. Signing requires $400/year code signing certificate + hardware token.
 
 **Why it happens:**
-PyInstaller extracts bundled files to temporary directory (`sys._MEIPASS`) at runtime. Hardcoded relative paths like `"./icons/app.png"` fail because working directory != bundle location. Additionally, `webbrowser.open()` with `file://` URLs doesn't work reliably across platforms - macOS uses `open`, Linux uses `xdg-open`, Windows uses `os.startfile()`, and all have different behaviors with file URLs.
+Current job-radar.spec sets `codesign_identity=None` and `entitlements_file='entitlements.plist'` (line 108) but doesn't actually sign. Adding DMG/MSI installers exposes this gap. Per PyInstaller docs and GitHub issues (#7937, #2198), signing PyInstaller apps requires:
+- Sign each binary separately, inside-out (dependencies first, main executable last)
+- Use BUNDLE build type, not COLLECT (job-radar.spec uses BUNDLE for macOS already, good)
+- Apply hardened runtime entitlements
+- Notarize with `notarytool` (not deprecated `altool`)
 
 **How to avoid:**
-1. **Use resource_path helper function:**
-   ```python
-   def resource_path(relative_path):
-       """Get absolute path to resource, works for dev and PyInstaller."""
-       if hasattr(sys, '_MEIPASS'):
-           return os.path.join(sys._MEIPASS, relative_path)
-       return os.path.join(os.path.abspath('.'), relative_path)
-
-   icon = resource_path('resources/icon.png')
-   ```
-2. **For browser launching, use platform-specific approach:**
-   ```python
-   import platform
-   if platform.system() == 'Darwin':  # macOS
-       subprocess.run(['open', file_path])
-   elif platform.system() == 'Windows':
-       os.startfile(file_path)
-   else:  # Linux
-       subprocess.run(['xdg-open', file_path])
-   ```
-3. **Always use absolute paths with file:// URLs:** Use `os.path.realpath()` not relative paths
-4. **Add resources to spec file datas section:**
-   ```python
-   datas=[
-       ('resources', 'resources'),  # source:dest
-   ]
-   ```
-
-**Warning signs:**
-- FileNotFoundError for icons/images in bundled executable
-- Browser doesn't open or opens wrong file
-- Works in development but fails in .exe/.app bundle
-- Different behavior on Windows vs macOS vs Linux
-
-**Phase to address:**
-Phase 2 (GUI Implementation) - Establish resource path patterns when adding first GUI assets. Test browser launch functionality on all target platforms early.
-
----
-
-### Pitfall 4: macOS Code Signing and Notarization Failures
-
-**What goes wrong:**
-macOS Gatekeeper blocks unsigned .app bundle with "App is damaged and can't be opened" or users must right-click > Open to bypass security warnings. Hardened Runtime causes crashes with "killed: 9" when importing NumPy or other scientific libraries. App bundle structure violations fail notarization.
-
-**Why it happens:**
-macOS requires code signing for distribution. Unsigned apps get quarantine attribute and Gatekeeper warnings. Hardened Runtime (required for notarization) restricts memory operations that PyInstaller and libraries like NumPy/pdfplumber rely on. Incorrect bundle structure (e.g., putting .pkg files in Contents/Helpers instead of Contents/Resources) causes signing validation failures.
-
-**How to avoid:**
-1. **Enable unsigned executable memory entitlement for Python apps:**
-   ```xml
-   <!-- entitlements.plist -->
-   <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
-   <true/>
-   ```
-2. **Sign with timestamp and hardened runtime:**
+1. **macOS signing script** (post-build step in CI):
    ```bash
-   codesign --deep --force --options runtime --timestamp \
-     --entitlements entitlements.plist \
-     --sign "Developer ID Application: Your Name" \
-     dist/YourApp.app
+   # Sign all .dylib and .so files first
+   find dist/JobRadar.app -name "*.dylib" -o -name "*.so" | xargs -I {} codesign -s "Developer ID" --options runtime --entitlements entitlements.plist {}
+
+   # Sign main executables
+   codesign -s "Developer ID" --options runtime --entitlements entitlements.plist dist/JobRadar.app/Contents/MacOS/job-radar-cli
+   codesign -s "Developer ID" --options runtime --entitlements entitlements.plist dist/JobRadar.app/Contents/MacOS/job-radar
+
+   # Sign app bundle (not --deep!)
+   codesign -s "Developer ID" --options runtime --entitlements entitlements.plist dist/JobRadar.app
+
+   # Verify
+   codesign --verify --verbose dist/JobRadar.app
    ```
-3. **Notarize before distribution:**
+2. **Notarization**: Submit to Apple for scanning:
    ```bash
-   # Zip, submit, wait for approval
-   xcrun notarytool submit YourApp.zip --wait
-   # Staple ticket to bundle
-   xcrun stapler staple YourApp.app
+   xcrun notarytool submit job-radar.dmg --keychain-profile "notarization" --wait
+   xcrun stapler staple dist/JobRadar.app
    ```
-4. **Place all data files in Contents/Resources** - NOT Contents/Helpers (code only)
-5. **Test unsigned flow first** - Use `xattr -dr com.apple.quarantine YourApp.app` to remove quarantine for testing
-6. **Budget for $99/year Apple Developer account** - Required for signing certificates
+3. **Windows**: Document that unsigned installer shows SmartScreen warning. Add "How to bypass" instructions for users. Enterprise signing ($400/year) deferred to future milestone.
+4. **Test on CLEAN machine**: CI builds succeed but real users have Gatekeeper. GitHub Actions can't test this fully.
 
 **Warning signs:**
-- "App is damaged" message on macOS
-- App crashes with "killed: 9" immediately after launch
-- Notarization submission rejected
-- Different behavior between signed and unsigned builds
-- Works on your Mac but not on users' Macs
+- "codesign --verify" fails with "bundle format unrecognized"
+- Users report "App is damaged" on macOS 10.15+
+- Windows installer triggers SmartScreen on every download
+- Entitlements file exists but isn't applied (`codesign -d --entitlements - JobRadar.app` shows none)
 
 **Phase to address:**
-Phase 3 (Packaging & Distribution) - Set up code signing workflow after GUI is stable. Start with unsigned testing, then add signing, finally notarization. Document in build scripts.
+Phase 5 (Platform Installers) — signing MUST be tested on real hardware, not just CI
 
 ---
 
-### Pitfall 5: Dual CLI/GUI Entry Point Conflicts
+### Pitfall 4: GUI Uninstall Deletes Running App Files (Windows)
 
 **What goes wrong:**
-Both CLI and GUI entry points try to parse command-line arguments, causing conflicts. GUI launches with unwanted console window on Windows or CLI breaks when GUI dependencies are imported. Build scripts produce only one executable instead of both.
+User clicks "Uninstall" button in GUI → confirmation dialog → app runs `shutil.rmtree()` on its own install directory → Windows locks error: "The process cannot access the file because it is being used by another process." On macOS, `rm -rf JobRadar.app` succeeds but app keeps running from memory, completing the uninstall but leaving zombie process.
+
+Worse case: Uninstall succeeds in deleting `~/.local/share/JobRadar/` (all user data, reports, tracker) but FAILS to delete app itself. User thinks uninstall completed, but binary remains. Partial state.
 
 **Why it happens:**
-Single entry point means shared initialization code. On Windows, `console_scripts` attach to console (shows terminal), `gui_scripts` don't (no terminal). PyInstaller spec files typically define one entry point. Importing GUI frameworks in CLI code adds unnecessary dependencies and startup time.
+GUI uninstall runs IN THE SAME PROCESS that needs to be deleted. On Windows, you can't delete a running .exe. On macOS, you can delete the .app bundle but the process stays in memory. The current codebase uses CustomTkinter (job_radar/gui/main_window.py) but has no uninstall feature yet — developers won't discover this until testing Phase 6.
 
 **How to avoid:**
-1. **Separate entry point modules:**
-   ```
-   job_radar/
-     __main__.py       # CLI entry point
-     gui_main.py       # GUI entry point
-     cli/              # CLI-specific code
-     gui/              # GUI-specific code
-     core/             # Shared business logic
-   ```
-2. **Configure separate scripts in pyproject.toml:**
-   ```toml
-   [project.scripts]
-   job-radar = "job_radar.__main__:main"  # CLI
+1. **Two-stage uninstall**:
+   - Stage 1 (running app): Delete user data (`~/.local/share/JobRadar/`, `~/.job-radar/`), create uninstall script, schedule script to run after exit
+   - Stage 2 (external script): Wait for process to exit, delete app bundle, delete self
 
-   [project.gui-scripts]
-   job-radar-gui = "job_radar.gui_main:main"  # GUI (no console on Windows)
-   ```
-3. **PyInstaller spec file with multiple executables:**
    ```python
-   # Create separate Analysis objects
-   cli_a = Analysis(['job_radar/__main__.py'], ...)
-   gui_a = Analysis(['job_radar/gui_main.py'], ...)
+   # In GUI uninstall handler
+   def uninstall_and_exit():
+       # Delete user data
+       shutil.rmtree(get_data_dir())
+       shutil.rmtree(Path.home() / ".job-radar")
 
-   # Separate EXE objects
-   cli_exe = EXE(PYZ(cli_a.pure), cli_a.scripts, name='job-radar', console=True)
-   gui_exe = EXE(PYZ(gui_a.pure), gui_a.scripts, name='job-radar-gui', console=False)
+       # Create platform-specific cleanup script
+       if sys.platform == "darwin":
+           script = Path("/tmp/job-radar-cleanup.sh")
+           script.write_text(f"""#!/bin/bash
+   sleep 2
+   rm -rf {sys.executable.parent.parent.parent}  # JobRadar.app
+   rm -f /tmp/job-radar-cleanup.sh
+   """)
+           os.chmod(script, 0o755)
+           subprocess.Popen(["/bin/bash", str(script)])
+       elif sys.platform == "win32":
+           script = Path(tempfile.gettempdir()) / "job-radar-cleanup.bat"
+           exe_path = Path(sys.executable).parent.parent  # onedir root
+           script.write_text(f"""timeout /t 2
+   rmdir /s /q "{exe_path}"
+   del "%~f0"
+   """)
+           subprocess.Popen([str(script)], creationflags=subprocess.CREATE_NO_WINDOW)
 
-   # Single COLLECT with both
-   COLLECT(cli_exe, gui_exe, ...)
+       # Exit immediately
+       sys.exit(0)
    ```
-4. **Lazy import GUI dependencies** - Only import tkinter/customtkinter in gui_main.py, not in shared core
-5. **Conditional argument parsing:**
-   ```python
-   # CLI entry
-   if __name__ == '__main__':
-       args = parse_cli_args()
-       run_cli(args)
 
-   # GUI entry - no argparse
-   if __name__ == '__main__':
-       launch_gui()
-   ```
+2. **Detect running app before uninstall**: Check if another Job Radar process is running (find PIDs, compare to current), warn user to close it first
+
+3. **Uninstall confirmation shows EXACTLY what will be deleted**:
+   - App binary: /Applications/JobRadar.app
+   - User data: ~/Library/Application Support/JobRadar (X MB)
+   - Profiles: ~/.job-radar/
+   - Reports: ~/job-radar-output/
+
+4. **Backup before uninstall**: Auto-create `.job-radar-backup.zip` on Desktop before deletion (escape hatch)
 
 **Warning signs:**
-- Console window appears when launching GUI on Windows
-- GUI crashes on CLI arguments like `--help`
-- Only one executable produced by build script
-- CLI becomes slower after adding GUI dependencies
-- Import errors when running CLI without GUI dependencies installed
+- Windows uninstall fails with "file in use" error
+- User data deleted but app still launchable
+- Uninstall completes but old reports remain in `~/job-radar-output/`
+- macOS app bundle deleted but process still visible in Activity Monitor
 
 **Phase to address:**
-Phase 2 (GUI Implementation) - Design separation immediately when creating gui_main.py. Update build scripts to produce both executables.
+Phase 6 (GUI Uninstall Feature) — requires cross-platform testing on real installs, not dev mode
 
 ---
 
-### Pitfall 6: GUI Testing Strategy Gaps
+### Pitfall 5: GitHub Actions Matrix Explodes CI Time with Multiple Installers
 
 **What goes wrong:**
-Existing 452 pytest tests all use mocking and don't cover GUI code. GUI tests fail in CI/CD because no display available. Manual testing doesn't catch cross-platform visual differences. Regression testing becomes manual and incomplete.
+Current .github/workflows/release.yml builds 3 platforms (Linux, Windows, macOS) serially in ~15 minutes. Adding DMG (macOS), MSI (Windows), DEB (Linux), AppImage (Linux) means:
+- macOS job now runs: PyInstaller build → sign binaries → create DMG → sign DMG → notarize → wait 5-10min for Apple → staple
+- Windows job now runs: PyInstaller build → create MSI → create NSIS installer → sign both (if cert available)
+
+Total CI time balloons to 45+ minutes. GitHub Actions free tier = 2000 min/month. Current 15min × 2 releases/month = 30min. New 45min × 2 = 90min. Still fine, BUT... if signing fails, entire matrix re-runs. One bad notarization = 45min wasted.
+
+Worse: macOS runners are 10× more expensive than Linux (GitHub pricing). Building DMG on macOS-latest burns through quota fast.
 
 **Why it happens:**
-GUI testing requires different strategies than CLI testing. Tkinter expects display (headless CI fails). Heavy mocking of GUI widgets tests nothing useful. Visual layout differences across platforms aren't caught by unit tests. Team's existing pytest expertise focuses on I/O mocking, not GUI interaction patterns.
+Current release.yml uses simple matrix strategy (lines 14-52). Each OS builds once. Adding multiple installer formats per OS without refactoring makes jobs sequential. Notarization is SLOW (Apple's servers, not GitHub's) and can't be parallelized.
+
+Per web research, "distributing platform-specific builds across multiple runners using a matrix strategy can drastically reduce build durations." But Job Radar already uses matrix — the issue is DEPTH (multiple artifacts per platform) not WIDTH (multiple platforms).
 
 **How to avoid:**
-1. **Three-tier testing strategy:**
-   - **Unit tests (80%):** Test GUI-independent logic (validators, formatters, business rules) with existing pytest/mock approach
-   - **Integration tests (15%):** Test GUI event handlers with minimal widget mocking using pytest with xvfb
-   - **Manual tests (5%):** Platform-specific visual verification checklist
+1. **Separate signing from building**:
+   - Build job: PyInstaller only, upload unsigned artifacts
+   - Sign job (macOS only): Download artifact, sign, notarize, upload signed DMG
+   - This allows build failures to fail fast without burning notarization quota
 
-2. **Headless CI setup for GitHub Actions:**
+2. **Conditional installer types**:
+   - DMG: Required (macOS default)
+   - MSI: Optional (defer to future milestone, ship ZIP only for v2.1)
+   - DEB/AppImage: Optional (defer, ship .tar.gz only)
+   - Document: "Installing from ZIP is supported, native installers coming in v2.2"
+
+3. **Cache notarization credentials**:
    ```yaml
-   - name: Install xvfb for GUI tests
-     run: sudo apt-get install -y xvfb libxkbcommon-x11-0
-
-   - name: Run GUI tests headless
-     run: xvfb-run python -m pytest tests/gui/
-     env:
-       DISPLAY: :99
-   ```
-   Or use `pytest-xvfb` plugin which handles setup automatically
-
-3. **Use GabrielBB/xvfb-action for simpler setup:**
-   ```yaml
-   - uses: GabrielBB/xvfb-action@v1
+   - name: Restore notarization cache
+     uses: actions/cache@v4
      with:
-       run: pytest tests/gui/
+       path: ~/Library/MobileDevice/Provisioning Profiles
+       key: ${{ runner.os }}-notarization-${{ hashFiles('entitlements.plist') }}
    ```
 
-4. **Minimal GUI mocking approach:**
-   ```python
-   # Good: Test logic extracted from GUI
-   def test_validate_search_params():
-       assert validate_query("Python Developer") == True
-       assert validate_query("") == False
+4. **Smoke test BEFORE signing**:
+   Current smoke test (release.yml:75-94) runs AFTER build but could catch PyInstaller issues before wasting 10min on notarization
 
-   # Acceptable: Test handler behavior
-   def test_search_button_handler(mocker):
-       mock_search = mocker.patch('job_radar.core.search_jobs')
-       handler = SearchHandler()
-       handler.on_search_clicked("Python")
-       mock_search.assert_called_once_with("Python")
-
-   # Avoid: Deep widget hierarchy mocking (brittle, low value)
-   ```
-
-5. **Cross-platform visual testing checklist (manual):**
-   - [ ] Font rendering (Windows vs macOS vs Linux)
-   - [ ] High DPI scaling (4K, Retina displays)
-   - [ ] Window sizing on different screen resolutions
-   - [ ] Dark mode appearance (if supported)
-   - [ ] Dialog button order (OK/Cancel varies by platform)
-
-6. **Add smoke test for GUI importability:**
-   ```python
-   def test_gui_imports():
-       """Ensure GUI module can be imported without display."""
-       import sys
-       sys.modules['tkinter'] = MagicMock()  # Mock before import
-       from job_radar import gui_main  # Should not crash
+5. **Local testing script**:
+   ```bash
+   # scripts/test-installers.sh
+   # Builds all formats locally to catch issues pre-commit
+   pyinstaller job-radar.spec --clean
+   cd dist && zip -r job-radar-test.zip JobRadar.app
    ```
 
 **Warning signs:**
-- GUI code has 0% test coverage
-- Tests pass in CI but GUI broken in release
-- Regressions caught only by users
-- "Works on my machine" syndrome
-- Team avoids touching GUI code due to fear of breaking
+- Release workflow takes >30 minutes
+- Notarization step times out (10min default GitHub timeout)
+- "macOS runner minutes depleted" email from GitHub
+- Release fails at signing step, whole matrix re-runs from scratch
 
 **Phase to address:**
-Phase 2 (GUI Implementation) - Extract testable logic from start. Set up xvfb in CI before first GUI PR. Phase 3 (Packaging) - Add cross-platform visual testing checklist to release process.
-
----
-
-### Pitfall 7: High DPI and Multi-Monitor Rendering Issues
-
-**What goes wrong:**
-GUI looks blurry on Windows with 150%+ scaling. Text cut off on 4K monitors. App opens on wrong monitor or off-screen on multi-monitor setups. Layout breaks on macOS Retina displays. Job Radar's progress bar and form layout become unusable.
-
-**Why it happens:**
-Windows requires DPI awareness flag or apps default to bitmap scaling (blurry). Tkinter has inconsistent DPI handling across platforms. CustomTkinter auto-handles DPI on Windows but requires manual configuration for custom scaling. Window geometry restoration saves screen coordinates that become invalid when monitor setup changes. macOS handles Retina automatically, but Windows and Linux don't.
-
-**How to avoid:**
-1. **CustomTkinter handles DPI automatically on Windows and macOS:**
-   - Windows: Sets `windll.shcore.SetProcessDpiAwareness(2)` automatically
-   - macOS: Tk handles Retina scaling automatically
-   - Both platforms detect scaling factor and scale widgets
-
-2. **For manual control (if needed):**
-   ```python
-   import customtkinter as ctk
-
-   # Set widget scaling (affects dimensions and text)
-   ctk.set_widget_scaling(1.0)  # 1.0 = 100%, 1.5 = 150%
-
-   # Set window scaling (affects geometry)
-   ctk.set_window_scaling(1.0)
-   ```
-
-3. **Don't disable DPI awareness** - Causes blurriness on Windows >100% scaling
-
-4. **Window positioning with multi-monitor safety:**
-   ```python
-   def safe_window_geometry(self, saved_geometry):
-       """Restore geometry with bounds checking."""
-       try:
-           # Parse saved geometry: "800x600+100+50"
-           self.geometry(saved_geometry)
-
-           # Check if window is visible on any screen
-           self.update_idletasks()
-           x = self.winfo_x()
-           y = self.winfo_y()
-           screen_width = self.winfo_screenwidth()
-           screen_height = self.winfo_screenheight()
-
-           # If off-screen, center instead
-           if x < 0 or y < 0 or x > screen_width or y > screen_height:
-               self.center_window()
-       except:
-           self.center_window()  # Fallback to centered
-
-   def center_window(self):
-       """Center window on screen."""
-       self.update_idletasks()
-       width = self.winfo_width()
-       height = self.winfo_height()
-       screen_width = self.winfo_screenwidth()
-       screen_height = self.winfo_screenheight()
-       x = (screen_width - width) // 2
-       y = (screen_height - height) // 2
-       self.geometry(f"{width}x{height}+{x}+{y}")
-   ```
-
-5. **Test on different scaling factors:**
-   - Windows: 100%, 125%, 150%, 200%
-   - macOS: Retina (2x) and non-Retina
-   - Linux: Various desktop environments (GNOME, KDE)
-
-6. **Use relative widget sizing, not absolute pixels:**
-   ```python
-   # Good: Relative to parent
-   frame.pack(fill='both', expand=True)
-
-   # Avoid: Hard-coded pixels
-   frame.place(x=100, y=50, width=800, height=600)
-   ```
-
-**Warning signs:**
-- Blurry text on Windows high-DPI displays
-- Widgets cut off or overlapping on 4K monitors
-- Window opens off-screen after monitor change
-- Different layout on developer's monitor vs user's monitor
-- Text too small on macOS Retina displays
-
-**Phase to address:**
-Phase 2 (GUI Implementation) - Use CustomTkinter (includes DPI handling), test on high-DPI display early. Phase 3 (Packaging) - Add multi-monitor and DPI testing to cross-platform checklist.
+Phase 5 (Platform Installers) — optimize workflow BEFORE adding all formats, not after
 
 ---
 
 ## Technical Debt Patterns
 
-Shortcuts that seem reasonable but create long-term problems.
-
 | Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
 |----------|-------------------|----------------|-----------------|
-| Blocking GUI calls to CLI functions | Fast to implement, reuses existing code | Frozen UI, poor UX, difficult to refactor | Never - always use threading from start |
-| Hardcoded file paths instead of resource_path() | Works in development | Breaks in bundled executable | Never - set pattern in first prototype |
-| Single entry point for CLI and GUI | One build script, simpler structure | Console window on GUI, slow CLI startup, harder to maintain | Never for this project - different execution contexts |
-| Skipping xvfb CI setup "until GUI is complete" | Faster initial CI runs | No GUI test coverage, regressions slip through | Only if team commits to adding before Phase 2 merge |
-| Using Tkinter instead of CustomTkinter | Built-in, no dependencies | Dated appearance, manual DPI handling, more platform-specific code | Small internal tools, but not user-facing apps in 2026 |
-| Mocking entire GUI for tests | High test coverage number | Tests don't catch real issues, false confidence | Only for extracted business logic, not widget interactions |
-| Manual code signing workflow | No upfront setup cost | Inconsistent releases, manual errors, unsigned builds slip out | Early prototypes only - automate before Phase 3 |
+| Skip schema version bump for "optional" scoring weights | No migration code needed, ships faster | KeyError crashes for old profiles, incomparable reports, data corruption | Never — scoring weights ARE breaking change |
+| Use `--deep` for macOS code signing | One command signs everything | App won't open on user machines, "damaged" error | Never — official PyInstaller docs say don't use --deep |
+| Hardcode new API rate limits in Python code | No config migration needed | Every new source requires code deploy, can't adjust limits without release | Early prototyping only, not production |
+| Store scoring weights in config.json instead of profile.json | Easier to edit, no schema migration | Breaks multi-profile workflows, user can't have different weights per profile | Only if single-profile assumption is acceptable (unlikely for job search) |
+| Ship unsigned Windows installer | Saves $400/year certificate cost | Users see SmartScreen warning, enterprise firewalls block | Acceptable for v2.1 if documented, mandatory for v3.0 |
+| Delete user data synchronously in GUI thread | Simple implementation, less code | GUI freezes during `rmtree()` on large directories, appears hung | Never — deleting 1GB of reports takes 10+ seconds |
 
 ## Integration Gotchas
 
-Common mistakes when connecting to external services.
-
 | Integration | Common Mistake | Correct Approach |
 |-------------|----------------|------------------|
-| PyInstaller + GUI framework | Using --onefile with CustomTkinter | Use --onedir, explicitly add data files with --add-data |
-| PyInstaller + existing ThreadPoolExecutor | Assuming executor works identically in bundle | Test threading in bundled executable - some platforms need initialization changes |
-| Browser launching from GUI | Using webbrowser.open() for local files | Platform-specific commands (open/xdg-open/startfile) with absolute paths |
-| System file dialogs | Using tkinter.filedialog without parent window | Always pass parent: `filedialog.askopenfilename(parent=root)` |
-| macOS .app bundle + data files | Putting resources in Contents/Helpers | Use Contents/Resources for data, Helpers for code only |
-| GUI progress updates from threads | Directly updating tkinter widgets from worker thread | Use root.after(0, callback) to schedule updates in main thread |
-| Window geometry persistence | Saving geometry without validation | Check bounds, handle multi-monitor changes, center if off-screen |
+| Job aggregator APIs | Treating each API as independent source, creating separate rate limiters | Map multiple sources to shared backend API, pool rate limits |
+| PyInstaller + new dependencies | Adding `requests` variant library (httpx, aiohttp) without hidden import | Add to `hidden_imports` in job-radar.spec, test frozen build |
+| SQLite rate limiters | Opening connection per API call, not closing | Cache connections in module-level dict, close with atexit |
+| Platform-specific installers | Building DMG/MSI in same job as PyInstaller | Separate build job from signing/packaging job for faster failures |
+| Schema migration | Loading old profile, modifying in-place, not saving | Auto-save after migration so next load is fast (current code does this, KEEP IT) |
+| GUI uninstall | Deleting app directory from within running app | Two-stage: delete data + schedule cleanup script, then exit |
 
 ## Performance Traps
 
-Patterns that work at small scale but fail as usage grows.
-
 | Trap | Symptoms | Prevention | When It Breaks |
 |------|----------|------------|----------------|
-| Updating GUI on every job fetch result | Progress bar thrashes, GUI sluggish | Batch updates: queue results, update GUI every 100ms with root.after() | >50 concurrent job fetches |
-| Loading all job results into GUI at once | Slow rendering, memory spike | Implement pagination or virtual scrolling | >500 job results |
-| Blocking GUI thread for PDF parsing | UI freeze during resume operations | Already have ThreadPoolExecutor - ensure GUI uses it properly | Any PDF parsing >100ms |
-| Creating new ThreadPoolExecutor per GUI action | Thread explosion, resource exhaustion | Reuse existing application-wide executor | Not a scale issue - architectural |
-| Polling queue too frequently | CPU usage spike | Use root.after(100, check_queue) not while True with sleep | Heavy GUI usage |
-| Synchronous browser launches | GUI blocks waiting for browser | Use subprocess.Popen (async) not subprocess.run (blocking) | Not scale - UX issue |
+| Opening 10 SQLite connections for rate limiters without closing | "Database is locked" errors, high file descriptor count | Connection pooling + atexit cleanup | >6 simultaneous API sources |
+| Synchronous DELETE of large user data directory in GUI thread | GUI freezes for 10-30 seconds during uninstall | Background thread with progress dialog OR fast exit + cleanup script | User has >1GB of cached reports |
+| Notarization blocking GitHub Actions workflow | Release workflow times out at 10 minutes | Submit to Apple, poll asynchronously, fail fast if rejected | Every macOS release (Apple's servers, not our code) |
+| Recomputing all scores after weight change without cache invalidation | Changing skill_match weight from 0.25→0.30 doesn't update old reports | Bump schema version, mark old reports as "scored with v1 weights" | Reports with 100+ jobs |
+| Loading all API credentials from .env on every search | Redundant file I/O, slow startup | Load once at module import, cache in memory (current code does this, KEEP IT) | Not a trap with current implementation |
 
 ## Security Mistakes
 
-Domain-specific security issues beyond general web security.
-
 | Mistake | Risk | Prevention |
 |---------|------|------------|
-| Unsigned macOS distribution | Users bypass Gatekeeper, malware impersonation risk | Code sign and notarize all macOS releases |
-| Storing credentials in GUI config files | Plaintext passwords in user directories | Use system keyring (keyring library), never plaintext |
-| Allowing arbitrary file paths in file dialogs | Path traversal if processing user-selected files | Validate extensions, use pathlib to resolve safely |
-| Including debug info in production builds | Exposes code structure, API keys in error messages | Strip debug symbols, use --strip in PyInstaller for production |
-| Bundling .env or config files with secrets | API keys distributed to all users | Use environment variables, exclude sensitive files from bundle |
+| Storing API keys in profile.json instead of .env | Keys committed to git, exposed in reports | Keep existing .env pattern, never serialize keys to user-visible files |
+| Uninstall script doesn't verify paths before deletion | Malicious profile could set data_dir to "/", deletes entire system | Whitelist allowed deletion paths, require paths contain "JobRadar" or ".job-radar" |
+| Downloading installer scripts from CDN without hash verification | MITM attack injects malicious code | Pin installer dependencies, use subresource integrity (SRI) if fetching from web |
+| macOS uninstall script with sudo without user prompt | Privilege escalation vulnerability | Never require sudo for uninstall, app data is user-owned |
+| Exposing internal API keys in error messages | User screenshots leak credentials | Redact API keys in logs: `ADZUNA_APP_ID=abc***xyz` |
 
 ## UX Pitfalls
 
-Common user experience mistakes in this domain.
-
 | Pitfall | User Impact | Better Approach |
 |---------|-------------|-----------------|
-| No visual feedback during long searches | Users think app crashed, force quit | Always show progress bar with cancel button |
-| Console window alongside GUI on Windows | Looks unprofessional, confusing for users | Use gui_scripts entry point, set console=False in PyInstaller |
-| Generic error messages "Search failed" | Users can't self-help, support burden | Show actionable errors: "No internet connection - check network settings" |
-| Window opens in random position | Inconsistent experience, may open off-screen | Center on first launch, restore saved position with bounds checking |
-| No keyboard shortcuts | Power users forced to use mouse | Add Cmd+N/Ctrl+N for new search, Enter to submit, Esc to cancel |
-| Blocking during browser launch | Unnecessary wait, feels sluggish | Use async subprocess.Popen, don't wait for browser |
-| Platform-inconsistent dialogs | Feels "wrong" on each platform | Use native file dialogs (tkinter.filedialog uses native) |
-| No dark mode support | Jarring on systems with dark theme | CustomTkinter supports dark/light modes with set_appearance_mode() |
+| No feedback when configurable scoring weight validation fails | User sets skill_match=2.0, weights sum to >1.0, app silently clamps or crashes | Real-time validation in CustomTkinter form: show error tooltip, disable Save button |
+| Uninstall button deletes data immediately without confirmation | Accidental click destroys 6 months of job tracking | Two-step confirmation: "This will delete X profiles, Y reports. Type DELETE to confirm." |
+| Old reports show different scores than current for same job | User confused why "Python Developer @ Acme" was 4.2 last week, now 3.8 | Display scoring weights version in report header: "Scored with v1 weights (skill:0.25)" |
+| API rate limit errors show technical "429 Too Many Requests" | User doesn't know if it's temporary or permanent | User-friendly: "JobAPI is rate limiting requests. Retrying at 2:35pm. Try fewer sources or wait." |
+| macOS installer warns "damaged app" if unsigned | User thinks download is corrupted, deletes and re-downloads | Pre-release instructions: "Right-click → Open" to bypass Gatekeeper, or sign properly |
+| GUI uninstall doesn't offer backup option | Users uninstall to "start fresh", lose valuable data | "Uninstalling? Export your data first" with one-click backup to Desktop |
 
 ## "Looks Done But Isn't" Checklist
 
-Things that appear complete but are missing critical pieces.
-
-- [ ] **GUI Tests:** Often missing headless CI setup - verify xvfb configured and tests run in GitHub Actions
-- [ ] **Resource paths:** Often missing sys._MEIPASS handling - verify icons/images load in bundled executable, not just development
-- [ ] **Cross-platform browser launch:** Often missing platform detection - verify file opening works on Windows, macOS, and Linux
-- [ ] **Thread-safe GUI updates:** Often missing root.after() wrapper - verify no direct widget updates from threads
-- [ ] **macOS code signing:** Often missing entitlements.plist - verify hardened runtime allows unsigned executable memory
-- [ ] **PyInstaller hidden imports:** Often missing GUI framework data files - verify themed widgets render correctly in bundle
-- [ ] **Dual entry points:** Often missing console=False flag - verify no console window with GUI on Windows
-- [ ] **High DPI support:** Often missing DPI awareness - verify crisp rendering on 4K/Retina displays at various scaling factors
-- [ ] **Multi-monitor handling:** Often missing bounds checking - verify window appears on-screen when monitor setup changes
-- [ ] **Error handling in GUI:** Often missing user-friendly messages - verify errors show actionable guidance, not stack traces
-- [ ] **Progress cancelation:** Often missing cancel implementation - verify long operations can be stopped mid-execution
-- [ ] **Window state persistence:** Often missing geometry validation - verify saved position/size loads safely
+- [ ] **Configurable scoring weights:** Often missing validation that weights sum to 1.0 — verify edge cases like all zeros, negative numbers, weights > 1.0
+- [ ] **API source integration:** Often missing rate limit exhaustion handling — verify behavior when 429 persists for hours (should skip source gracefully)
+- [ ] **Schema migration:** Often missing backward compatibility test — verify v1 profile loads in v2 code, auto-migrates, and saves successfully
+- [ ] **macOS code signing:** Often missing notarization step — verify `spctl --assess --verbose JobRadar.app` passes on clean macOS 13+ machine
+- [ ] **GUI uninstall:** Often missing check for running processes — verify uninstall detects and warns about other Job Radar instances
+- [ ] **Platform installers:** Often missing smoke test on REAL installs — verify DMG/MSI install on clean VM, app launches, search works, uninstall completes
+- [ ] **Multi-platform CI:** Often missing failure isolation — verify single platform failure doesn't block other platforms from releasing
+- [ ] **Rate limiter cleanup:** Often missing connection closure — verify `.rate_limits/*.db` files aren't locked after app exit
 
 ## Recovery Strategies
 
-When pitfalls occur despite prevention, how to recover.
-
 | Pitfall | Recovery Cost | Recovery Steps |
 |---------|---------------|----------------|
-| Frozen UI from blocking calls | MEDIUM | 1. Extract blocking code to function 2. Wrap in executor.submit() 3. Add GUI update via root.after() in callback 4. Test responsiveness |
-| Missing PyInstaller imports | LOW | 1. Run with --debug=imports 2. Add missing modules to hiddenimports in spec 3. Rebuild and test 4. Document in build scripts |
-| Broken resource paths in bundle | LOW | 1. Implement resource_path() helper 2. Replace all relative paths 3. Add resources to spec datas 4. Test bundled executable |
-| macOS Gatekeeper rejection | HIGH | 1. Obtain Apple Developer certificate ($99) 2. Create entitlements.plist 3. Sign with --options runtime 4. Notarize with xcrun notarytool 5. Staple ticket |
-| Dual entry point conflicts | MEDIUM | 1. Separate into gui_main.py and __main__.py 2. Update spec file with multiple Analysis/EXE 3. Reconfigure build scripts 4. Test both executables |
-| No GUI test coverage | MEDIUM | 1. Install pytest-xvfb or setup GabrielBB/xvfb-action 2. Extract testable logic from handlers 3. Write integration tests for critical paths 4. Add to CI |
-| High DPI rendering broken | LOW-MEDIUM | 1. Switch to CustomTkinter (handles automatically) or 2. Add DPI awareness manually 3. Test on high-DPI display 4. Adjust scaling if needed |
-| Off-screen window positioning | LOW | 1. Add geometry validation function 2. Implement center_window() fallback 3. Call on geometry restoration 4. Test with monitor disconnection |
+| Released v2.1 without schema version bump, users get KeyError | HIGH — requires hotfix release | 1. Hotfix: Bump schema to v2, add migration. 2. Add fallback: `profile.get("scoring_weights", DEFAULT_WEIGHTS)` in scoring.py. 3. Docs: "v2.1.0 users, re-run setup wizard to fix crashes." |
+| macOS app signed with `--deep`, users can't open it | HIGH — requires re-release | 1. Pull release from GitHub. 2. Re-sign correctly (inside-out, no --deep). 3. Re-notarize. 4. Re-release as v2.1.1 with "Fixed macOS installation" notes. |
+| SQLite rate limiter connections not closed, database locked | LOW — restart fixes it | 1. Add atexit handler in patch release. 2. Docs: "If you see 'database is locked', restart Job Radar." |
+| GUI uninstall deleted data but failed to delete app | MEDIUM — manual cleanup required | 1. User Instructions: "Delete app manually from /Applications or Program Files." 2. Next release: Add two-stage uninstall. |
+| GitHub Actions times out during notarization | LOW — re-run workflow | 1. Cancel workflow. 2. Re-trigger. 3. If persists, skip notarization for this release (ship ZIP only). 4. Fix: Separate signing into dedicated job. |
+| User sets scoring weights that sum to 0.8, all scores skewed low | LOW — user can re-adjust | 1. Detect in validation, show warning. 2. Offer "Normalize weights to sum to 1.0?" button. 3. Save normalized version. |
 
 ## Pitfall-to-Phase Mapping
 
-How roadmap phases should address these pitfalls.
-
 | Pitfall | Prevention Phase | Verification |
 |---------|------------------|--------------|
-| UI thread blocking | Phase 1: GUI Foundation | Create test GUI with mock long operation, verify progress bar updates smoothly |
-| PyInstaller hidden imports | Phase 2: GUI Implementation | Build executable after adding GUI framework, test on clean machine |
-| Cross-platform file paths | Phase 2: GUI Implementation | Implement resource_path(), test bundled executable loads icons on all platforms |
-| macOS code signing | Phase 3: Packaging & Distribution | Sign and notarize build, verify no Gatekeeper warnings on fresh macOS |
-| Dual entry point conflicts | Phase 2: GUI Implementation | Build both executables, verify CLI has no GUI import overhead, GUI has no console |
-| GUI testing gaps | Phase 2: GUI Implementation | Set up xvfb in CI before merging first GUI PR, verify tests run headless |
-| High DPI rendering | Phase 2: GUI Implementation | Test on 4K monitor and Retina display, verify crisp text and layout |
-| Browser launch failures | Phase 2: GUI Implementation | Test file opening on Windows, macOS, Linux with local and HTTP URLs |
-| Window positioning issues | Phase 2: GUI Implementation | Test geometry save/restore, verify centering on first launch, off-screen detection |
-| Thread-unsafe GUI updates | Phase 1: GUI Foundation | Code review for direct widget updates from threads, enforce root.after() pattern |
+| Scoring weight migration without schema bump | Phase 1: Configurable Scoring Architecture | Test: Load v1 profile, verify auto-migration to v2, compare scores |
+| Rate limiter state corruption across new sources | Phase 2: API Source Infrastructure | Test: Add 6 sources, check `.rate_limits/` has <6 databases, no locked errors |
+| macOS code signing breaks executables | Phase 5: Platform Installers | Test: `codesign --verify JobRadar.app` + `spctl --assess` on clean macOS |
+| GUI uninstall deletes running app files | Phase 6: GUI Uninstall Feature | Test: Click uninstall, verify data deleted + app exits + binary removed |
+| GitHub Actions matrix explodes CI time | Phase 5: Platform Installers | Test: Measure workflow duration pre/post installer additions, optimize if >30min |
 
 ## Sources
 
-**PyInstaller and GUI Framework Packaging:**
-- [Packaging with PyInstaller - CustomTkinter Discussion #939](https://github.com/TomSchimansky/CustomTkinter/discussions/939)
-- [PyInstaller GUI packaging issues - GitHub Topics](https://github.com/topics/pyinstaller-gui)
-- [PyInstaller on macOS frustration - Python GUIs](https://www.pythonguis.com/faq/pyinstaller-on-macos-frustration/)
-- [2026 Showdown: PyInstaller vs. cx_Freeze vs. Nuitka](https://ahmedsyntax.com/2026-comparison-pyinstaller-vs-cx-freeze-vs-nui/)
-- [Understanding PyInstaller Hooks - Official Documentation](https://pyinstaller.org/en/stable/hooks.html)
-- [When Things Go Wrong - PyInstaller Documentation](https://pyinstaller.org/en/stable/when-things-go-wrong.html)
+### macOS Code Signing & Notarization
+- [OS X Code Signing Pyinstaller.md · GitHub](https://gist.github.com/txoof/0636835d3cc65245c6288b2374799c43)
+- [Recipe OSX Code Signing · pyinstaller/pyinstaller Wiki](https://github.com/pyinstaller/pyinstaller/wiki/Recipe-OSX-Code-Signing)
+- [Pyinstaller exe fails when signed following apple notarization process · Issue #7937](https://github.com/pyinstaller/pyinstaller/issues/7937)
 
-**Threading and GUI Responsiveness:**
-- [Use PyQt's QThread to Prevent Freezing GUIs - Real Python](https://realpython.com/python-pyqt-qthread/)
-- [Tkinter and Threading: Building Responsive Python GUI Applications - Medium](https://medium.com/tomtalkspython/tkinter-and-threading-building-responsive-python-gui-applications-02eed0e9b0a7)
-- [Tkinter and Threading: Preventing Freezing GUIs - Pythoneo](https://pythoneo.com/tkinter-and-threading/)
-- [Overcoming GUI Freezes in PyQt - Medium](https://foongminwong.medium.com/overcoming-gui-freezes-in-pyqt-from-threading-multiprocessing-to-zeromq-qprocess-9cac8101077e)
-- [Using Tkinter With ThreadPoolExecutor Class - Python Forum](https://python-forum.io/thread-38963.html)
+### API Rate Limiting
+- [API Rate Limit Exceeded: Complete Guide to Fix 429 Errors](https://dataprixa.com/api-rate-limit-exceeded/)
+- [Rate Limiting Without the Rage: A 2026 Guide | Zuplo Learning Center](https://zuplo.com/learning-center/rate-limiting-without-the-rage-a-2026-guide)
 
-**macOS Code Signing and Notarization:**
-- [Signing and notarizing a Python macOS UI application](https://haim.dev/posts/2020-08-08-python-macos-app/)
-- [Code Signing a GUI python App for notarization on macOS - Apple Developer Forums](https://developer.apple.com/forums/thread/680719)
-- [How to pass Gatekeeper checking - Apple Developer Forums](https://developer.apple.com/forums/thread/713051)
-- [Gatekeeper and runtime protection in macOS - Apple Support](https://support.apple.com/guide/security/gatekeeper-and-runtime-protection-sec5599b66df/web)
-- [Automatic Code-signing and Notarization for macOS apps using GitHub Actions](https://federicoterzi.com/blog/automatic-code-signing-and-notarization-for-macos-apps-using-github-actions/)
+### NSIS Windows Installers
+- [pynsist · PyPI](https://pypi.org/project/pynsist/)
+- [NSIS vs Python Experience | ISD](https://isd-soft.com/tech_blog/nsis-vs-python-experience/)
 
-**PyInstaller Configuration:**
-- [PyInstaller doesn't respect LSUIElement=1 in OS X - Issue #1917](https://github.com/pyinstaller/pyinstaller/issues/1917)
-- [Using PyInstaller - Official Documentation](https://pyinstaller.org/en/stable/usage.html)
-- [Using Spec Files - PyInstaller Documentation](https://pyinstaller.org/en/stable/spec-files.html)
-- [Multiple entrypoint executables - PyInstaller Discussion #6634](https://github.com/orgs/pyinstaller/discussions/6634)
-- [Run-time Information - PyInstaller Documentation](https://pyinstaller.org/en/stable/runtime-information.html)
+### Configuration Migration
+- [What's the best way to do backwards compatibility for existing configs? · Issue #479](https://github.com/omni-us/jsonargparse/issues/479)
+- [GitHub - dreverri/evolve: JSON based schema migration tool](https://github.com/dreverri/evolve)
 
-**GUI Testing:**
-- [5 Effective Methods for Functional Testing a Python Tkinter Application](https://blog.finxter.com/5-effective-methods-for-functional-testing-a-python-tkinter-application/)
-- [How to do automated test of non-web GUI applications - GitHub Gist](https://gist.github.com/howardrotterdam/63c06754d9f7e1b1fa2c390be6319a44)
-- [How to run headless unit tests for GUIs on GitHub actions](https://arbitrary-but-fixed.net/2022/01/21/headless-gui-github-actions.html)
-- [GabrielBB/xvfb-action - GitHub Marketplace](https://github.com/marketplace/actions/gabrielbb-xvfb-action)
-- [pytest-qt Troubleshooting - Official Documentation](https://pytest-qt.readthedocs.io/en/latest/troubleshooting.html)
+### GitHub Actions Multi-Platform Builds
+- [GitHub Actions: Complete CI/CD Guide for Developers](https://dasroot.net/posts/2026/01/github-actions-complete-ci-cd-guide/)
+- [Cross-platform release builds with Github Actions - Electric UI](https://electricui.com/blog/github-actions)
 
-**Cross-Platform Considerations:**
-- [Which Python GUI library should you use in 2026? - Python GUIs](https://www.pythonguis.com/faq/which-python-gui-library/)
-- [Writing cross-platform Tkinter - O'Reilly](https://www.oreilly.com/library/view/python-gui-programming/9781788835886/8b49ca9b-cf6c-4d22-bf9d-284543d3b298.xhtml)
-- [Support for file:// urls in webbrowser.open - Python.org Discussions](https://discuss.python.org/t/support-for-file-urls-in-webbrowser-open/81612)
-- [How to Make Python Automatically Open Chrome Instead of Edge: 2026 Best Practices](https://copyprogramming.com/howto/python-webbrowser-open-to-open-chrome-browser)
+### PyInstaller Hidden Imports
+- [When Things Go Wrong — PyInstaller 6.18.0 documentation](https://pyinstaller.org/en/stable/when-things-go-wrong.html)
+- [how to include multiple hidden imports in pyinstaller inside spec file · Issue #4588](https://github.com/pyinstaller/pyinstaller/issues/4588)
 
-**High DPI and Scaling:**
-- [Scaling - CustomTkinter Wiki](https://github.com/TomSchimansky/CustomTkinter/wiki/Scaling)
-- [DPI scaling - CustomTkinter Issue #46](https://github.com/TomSchimansky/CustomTkinter/issues/46)
-- [How to improve Tkinter window resolution - CodersLegacy](https://coderslegacy.com/python/problem-solving/improve-tkinter-resolution/)
-- [Python Tkinter: Getting Window Rectangle, Multi-Monitor Display & 2026 Best Practices](https://copyprogramming.com/howto/how-to-open-tkinter-gui-on-second-monitor-display-windows)
+### Desktop App Uninstallation
+- [How to Uninstall Software Using Python (Windows, macOS, Linux) – TheLinuxCode](https://thelinuxcode.com/how-to-uninstall-software-using-python-windows-macos-linux/)
 
-**Entry Points and Packaging:**
-- [Entry points specification - Python Packaging User Guide](https://packaging.python.org/specifications/entry-points/)
-- [How to structure a python project with multiple entry points](https://blog.claude.nl/posts/how-to-structure-a-python-project-with-multiple-entry-points/)
-- [Entry Points - setuptools Documentation](https://setuptools.pypa.io/en/latest/userguide/entry_point.html)
+### Python Configuration Patterns
+- [Python Constants in 2026: Practical Patterns – TheLinuxCode](https://thelinuxcode.com/python-constants-in-2026-practical-patterns-immutability-and-realworld-usage/)
 
 ---
-*Pitfalls research for: Adding Desktop GUI to Existing Python CLI Application (Job Radar)*
-*Researched: 2026-02-12*
+*Pitfalls research for: Job Radar v2.1.0 Source Expansion & Polish*
+*Researched: 2026-02-13*
