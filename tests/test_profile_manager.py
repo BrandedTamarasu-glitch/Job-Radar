@@ -20,6 +20,7 @@ from job_radar.profile_manager import (
     ProfileCorruptedError,
     CURRENT_SCHEMA_VERSION,
     MAX_BACKUPS,
+    DEFAULT_SCORING_WEIGHTS,
 )
 
 
@@ -313,3 +314,197 @@ def test_round_trip_preserves_unknown_fields(valid_profile, profile_path, mock_b
 
     assert loaded["custom_field"] == "user extension"
     assert loaded["nested_data"] == {"a": 1, "b": [2, 3]}
+
+
+# ---------------------------------------------------------------------------
+# 7. v1->v2 migration tests
+# ---------------------------------------------------------------------------
+
+
+def test_load_v1_migrates_to_v2(valid_profile, profile_path, mock_backup_dir):
+    """Loading a v1 profile auto-migrates to v2 with scoring_weights and staffing_preference."""
+    # Write a v1 profile (schema_version: 1, no scoring_weights or staffing_preference)
+    valid_profile["schema_version"] = 1
+    profile_path.write_text(json.dumps(valid_profile), encoding="utf-8")
+
+    loaded = load_profile(profile_path)
+
+    # Assert migration occurred
+    assert loaded["schema_version"] == 2
+    assert loaded["scoring_weights"] == DEFAULT_SCORING_WEIGHTS
+    assert loaded["staffing_preference"] == "neutral"
+
+    # Verify file on disk was updated
+    on_disk = json.loads(profile_path.read_text(encoding="utf-8"))
+    assert on_disk["schema_version"] == 2
+
+
+def test_v1_migration_creates_backup(valid_profile, profile_path, mock_backup_dir):
+    """v1->v2 migration creates a backup file in the backup directory."""
+    valid_profile["schema_version"] = 1
+    profile_path.write_text(json.dumps(valid_profile), encoding="utf-8")
+
+    load_profile(profile_path)
+
+    backups = list(mock_backup_dir.glob("profile_*.json"))
+    assert len(backups) >= 1
+
+
+def test_v1_migration_preserves_existing_data(profile_path, mock_backup_dir):
+    """v1->v2 migration preserves all existing fields alongside new ones."""
+    # Create v1 profile with ALL possible fields populated
+    v1_profile = {
+        "schema_version": 1,
+        "name": "Test User",
+        "target_titles": ["Software Engineer"],
+        "core_skills": ["Python", "PostgreSQL"],
+        "years_experience": 7,
+        "level": "senior",
+        "location": "Remote",
+        "arrangement": ["remote", "hybrid"],
+        "domain_expertise": ["fintech"],
+        "comp_floor": 120000,
+        "dealbreakers": ["relocation required"],
+        "min_score": 3.0,
+        "custom_field": "custom value",
+    }
+    profile_path.write_text(json.dumps(v1_profile), encoding="utf-8")
+
+    loaded = load_profile(profile_path)
+
+    # Assert all original fields preserved
+    assert loaded["name"] == "Test User"
+    assert loaded["target_titles"] == ["Software Engineer"]
+    assert loaded["core_skills"] == ["Python", "PostgreSQL"]
+    assert loaded["years_experience"] == 7
+    assert loaded["level"] == "senior"
+    assert loaded["location"] == "Remote"
+    assert loaded["arrangement"] == ["remote", "hybrid"]
+    assert loaded["domain_expertise"] == ["fintech"]
+    assert loaded["comp_floor"] == 120000
+    assert loaded["dealbreakers"] == ["relocation required"]
+    assert loaded["min_score"] == 3.0
+    assert loaded["custom_field"] == "custom value"
+
+    # And new fields added
+    assert loaded["schema_version"] == 2
+    assert loaded["scoring_weights"] == DEFAULT_SCORING_WEIGHTS
+    assert loaded["staffing_preference"] == "neutral"
+
+
+def test_v0_migrates_directly_to_v2(valid_profile, profile_path, mock_backup_dir):
+    """v0 profile (no schema_version) migrates directly to v2, not v1."""
+    # Write v0 profile (no schema_version key)
+    profile_path.write_text(json.dumps(valid_profile), encoding="utf-8")
+
+    loaded = load_profile(profile_path)
+
+    assert loaded["schema_version"] == 2
+    assert loaded["scoring_weights"] == DEFAULT_SCORING_WEIGHTS
+    assert loaded["staffing_preference"] == "neutral"
+
+
+def test_load_v2_no_migration(valid_profile, profile_path, mock_backup_dir):
+    """Loading a v2 profile does not trigger re-save (no unnecessary migration)."""
+    # Create v2 profile
+    valid_profile["schema_version"] = 2
+    valid_profile["scoring_weights"] = dict(DEFAULT_SCORING_WEIGHTS)
+    valid_profile["staffing_preference"] = "neutral"
+    profile_path.write_text(json.dumps(valid_profile), encoding="utf-8")
+
+    # Mock save_profile to ensure it's NOT called
+    with patch("job_radar.profile_manager.save_profile") as mock_save:
+        loaded = load_profile(profile_path)
+
+        # Should not call save_profile for v2 profiles
+        mock_save.assert_not_called()
+
+    assert loaded["schema_version"] == 2
+
+
+# ---------------------------------------------------------------------------
+# 8. scoring_weights validation
+# ---------------------------------------------------------------------------
+
+
+def test_validate_scoring_weights_valid(valid_profile):
+    """Profile with valid scoring_weights dict passes validation."""
+    valid_profile["scoring_weights"] = {
+        "skill_match": 0.25,
+        "title_relevance": 0.15,
+        "seniority": 0.15,
+        "location": 0.15,
+        "domain": 0.10,
+        "response_likelihood": 0.20,
+    }
+    validate_profile(valid_profile)  # should not raise
+
+
+def test_validate_scoring_weights_missing_component(valid_profile):
+    """Profile with missing scoring_weights component raises error."""
+    valid_profile["scoring_weights"] = {
+        "skill_match": 0.30,
+        "title_relevance": 0.20,
+        "seniority": 0.20,
+        "location": 0.20,
+        # Missing "domain"
+        "response_likelihood": 0.10,
+    }
+    with pytest.raises(ProfileValidationError, match="domain"):
+        validate_profile(valid_profile)
+
+
+def test_validate_scoring_weights_below_minimum(valid_profile):
+    """Profile with scoring_weights below 0.05 minimum raises error."""
+    valid_profile["scoring_weights"] = {
+        "skill_match": 0.25,
+        "title_relevance": 0.15,
+        "seniority": 0.15,
+        "location": 0.15,
+        "domain": 0.02,  # Below 0.05 minimum
+        "response_likelihood": 0.28,
+    }
+    with pytest.raises(ProfileValidationError, match="0.05"):
+        validate_profile(valid_profile)
+
+
+def test_validate_scoring_weights_bad_sum(valid_profile):
+    """Profile with scoring_weights not summing to 1.0 raises error."""
+    valid_profile["scoring_weights"] = {
+        "skill_match": 0.20,
+        "title_relevance": 0.10,
+        "seniority": 0.10,
+        "location": 0.10,
+        "domain": 0.10,
+        "response_likelihood": 0.20,
+    }  # Sums to 0.80, not 1.0
+    with pytest.raises(ProfileValidationError, match="1.0"):
+        validate_profile(valid_profile)
+
+
+def test_validate_staffing_preference_valid(valid_profile):
+    """Profile with valid staffing_preference values passes validation."""
+    for preference in ["boost", "neutral", "penalize"]:
+        valid_profile["staffing_preference"] = preference
+        validate_profile(valid_profile)  # should not raise
+
+
+def test_validate_staffing_preference_invalid(valid_profile):
+    """Profile with invalid staffing_preference raises error."""
+    valid_profile["staffing_preference"] = "extreme"
+    with pytest.raises(ProfileValidationError, match="staffing_preference"):
+        validate_profile(valid_profile)
+
+
+def test_graceful_fallback_corrupted_weights(valid_profile, profile_path, mock_backup_dir):
+    """Corrupted scoring_weights (wrong type) gets reset to defaults with warning."""
+    valid_profile["schema_version"] = 2
+    valid_profile["scoring_weights"] = "not a dict"  # Corrupted
+    valid_profile["staffing_preference"] = "neutral"
+    profile_path.write_text(json.dumps(valid_profile), encoding="utf-8")
+
+    # Should load successfully with fallback to defaults
+    loaded = load_profile(profile_path)
+
+    assert loaded["scoring_weights"] == DEFAULT_SCORING_WEIGHTS
+    assert loaded["schema_version"] == 2
