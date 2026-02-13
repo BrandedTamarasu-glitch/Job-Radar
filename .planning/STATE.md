@@ -44,6 +44,8 @@ Progress: [███████████████████████
 | Phase 28 P01 | 15 | 2 tasks | 5 files |
 | Phase 28 P02 | 3 | 2 tasks | 2 files |
 | Phase 28 P03 | 5 | 1 task | 0 files |
+| Phase 29 P02 | 2 | 2 tasks | 3 files |
+| Phase 29 P01 | 195 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -60,6 +62,9 @@ Recent decisions affecting current work:
 - [Phase 28-02]: Queue polling every 100ms balances responsiveness and CPU usage
 - [Phase 28-02]: Cooperative cancellation via Event-based checks - never force-kill threads
 - [Phase 28-02]: Modal error dialogs force acknowledgment before continuing
+- [Phase 29-02]: Date filter is opt-in (unchecked by default) to match CLI default behavior
+- [Phase 29-02]: Lazy imports in SearchWorker.run() to avoid circular dependencies
+- [Phase 29-02]: Per-source job counts tracked and passed as 5th callback parameter
 
 ### Pending Todos
 
