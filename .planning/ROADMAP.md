@@ -9,6 +9,7 @@
 - ✅ **v1.4.0 Visual Design & Polish** - Phases 19-23 (shipped 2026-02-11)
 - ✅ **v1.5.0 Profile Management & Workflow Efficiency** - Phases 24-27 (shipped 2026-02-12)
 - ✅ **v2.0.0 Desktop GUI Launcher** - Phases 28-30 (shipped 2026-02-13)
+- 🚀 **v2.1.0 Source Expansion & Polish** - Phases 31-37 (in progress)
 
 ## Phases
 
@@ -284,6 +285,120 @@ Plans:
 
 </details>
 
+---
+
+## v2.1.0 Source Expansion & Polish
+
+**Goal:** Expand automated job source coverage, give users control over staffing firm scoring, and provide clean uninstall experiences across platforms
+
+**Phases:** 31-37 (7 phases)
+
+### Phase 31: Rate Limiter Infrastructure
+**Goal:** Fix rate limiter connection leaks and establish shared backend API management before adding new sources
+
+**Dependencies:** None (foundation work)
+
+**Requirements:** INFRA-01, INFRA-02, INFRA-03
+
+**Success Criteria:**
+1. Rate limiter SQLite connections are cleaned up on app exit with atexit handler
+2. Sources sharing the same backend API use a single shared rate limiter instance
+3. Rate limit configurations are loaded from config.json instead of hardcoded values
+4. Application exits without "database is locked" errors after running searches
+
+---
+
+### Phase 32: Job Aggregator APIs (JSearch, USAJobs)
+**Goal:** Users can receive job listings from major aggregator APIs covering LinkedIn, Indeed, Glassdoor, and federal jobs
+
+**Dependencies:** Phase 31 (requires rate limiter infrastructure)
+
+**Requirements:** SRC-01, SRC-02, SRC-05, SRC-06, SRC-08
+
+**Success Criteria:**
+1. Users can run searches that return results from JSearch API (LinkedIn, Indeed, Glassdoor aggregation)
+2. Users can run searches that return results from USAJobs API for federal government jobs
+3. Each job listing displays its original source attribution (e.g., "via LinkedIn", "via USAJobs")
+4. Duplicate jobs are automatically removed based on exact URL/job ID matching
+5. Users can configure API keys for new sources via CLI setup wizard
+
+---
+
+### Phase 33: Scoring Configuration Backend
+**Goal:** Profile schema supports user-customizable scoring weights with backward-compatible migration
+
+**Dependencies:** None (backend change independent of sources)
+
+**Requirements:** SCORE-03
+
+**Success Criteria:**
+1. Existing v1 profiles automatically migrate to v2 schema on first load without data loss
+2. New profiles include scoring_weights object with default values in profile template
+3. Scoring engine accepts optional weights parameter and uses profile weights when provided
+4. Old profiles without scoring_weights fall back to hardcoded defaults (zero errors)
+
+---
+
+### Phase 34: GUI Scoring Configuration
+**Goal:** Users can customize scoring weights and staffing firm preference through GUI controls
+
+**Dependencies:** Phase 33 (requires v2 schema backend)
+
+**Requirements:** SCORE-01, SCORE-02, SCORE-04, SCORE-05
+
+**Success Criteria:**
+1. Users can adjust 6 scoring component weights via GUI sliders with real-time validation
+2. Users can set staffing firm preference to boost (+4.5), neutral (0), or penalize (-2) via dropdown
+3. Users can see a live score preview showing how weight changes affect current results
+4. Users can reset all scoring weights to defaults with one-click "Reset" button
+5. Invalid weight configurations (e.g., sum != 1.0) display validation errors before save
+
+---
+
+### Phase 35: Additional API Sources (SerpAPI, Jobicy)
+**Goal:** Expand source coverage with alternative aggregator and remote-focused job boards
+
+**Dependencies:** Phase 31 (requires rate limiter infrastructure), Phase 32 (validates aggregator pattern)
+
+**Requirements:** SRC-03, SRC-04, SRC-07
+
+**Success Criteria:**
+1. Users can receive job results from SerpAPI Google Jobs as alternative to JSearch
+2. Users can receive job results from Jobicy remote-focused listings
+3. GUI displays API quota usage for rate-limited sources (e.g., "15/100 daily searches used")
+
+---
+
+### Phase 36: GUI Uninstall Feature
+**Goal:** Users can cleanly uninstall Job Radar with all config, cache, and data removed
+
+**Dependencies:** None (self-contained feature)
+
+**Requirements:** PKG-01, PKG-02, PKG-03, PKG-06
+
+**Success Criteria:**
+1. Users can click "Uninstall" button in GUI Settings tab to remove all app data
+2. Uninstall shows confirmation dialog listing exact paths that will be deleted before proceeding
+3. Users can create a backup ZIP of profile and config before uninstalling
+4. Uninstall works while app is running using two-stage cleanup (delete data now, schedule binary deletion after exit)
+
+---
+
+### Phase 37: Platform-Native Installers
+**Goal:** Deliver professional installer experiences for macOS and Windows users
+
+**Dependencies:** Phases 31-36 complete (all features ready for packaging)
+
+**Requirements:** PKG-04, PKG-05
+
+**Success Criteria:**
+1. macOS users receive a DMG installer with drag-to-Applications folder workflow
+2. Windows users receive an NSIS .exe installer with setup wizard and Add/Remove Programs integration
+3. macOS installer is properly code-signed to avoid Gatekeeper "damaged app" warnings
+4. Windows installer creates Start Menu shortcuts and desktop icon (optional)
+
+---
+
 ## Progress
 
 | Phase | Milestone | Plans | Status | Completed |
@@ -295,8 +410,15 @@ Plans:
 | 19-23 | v1.4.0 | 9/9 | Complete | 2026-02-11 |
 | 24-27 | v1.5.0 | 7/7 | Complete | 2026-02-12 |
 | 28-30 | v2.0.0 | 8/8 | Complete | 2026-02-13 |
+| 31 | v2.1.0 | 0/? | Pending | — |
+| 32 | v2.1.0 | 0/? | Pending | — |
+| 33 | v2.1.0 | 0/? | Pending | — |
+| 34 | v2.1.0 | 0/? | Pending | — |
+| 35 | v2.1.0 | 0/? | Pending | — |
+| 36 | v2.1.0 | 0/? | Pending | — |
+| 37 | v2.1.0 | 0/? | Pending | — |
 
-**Total: 30 completed phases (57 plans, 7 milestones shipped)**
+**Total: 30 completed phases + 7 planned phases (57 completed plans, 7 milestones: 7 shipped + 1 in progress)**
 
 ---
-*Last updated: 2026-02-13 after v2.0.0 milestone completion*
+*Last updated: 2026-02-13 after v2.1.0 roadmap creation*
