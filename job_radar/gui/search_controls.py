@@ -204,8 +204,11 @@ class SearchControls(ctk.CTkFrame):
             from_date = None
             to_date = None
 
-        # Min score: always present (validated)
-        min_score = float(self._min_score.get().strip())
+        # Min score: always present (validated), fallback to 2.8
+        try:
+            min_score = float(self._min_score.get().strip())
+        except (ValueError, TypeError):
+            min_score = 2.8
 
         # New only: boolean
         new_only = self._new_only.get() == 1
