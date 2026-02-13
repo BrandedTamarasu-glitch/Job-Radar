@@ -15,8 +15,17 @@ log = logging.getLogger(__name__)
 # Constants
 # ---------------------------------------------------------------------------
 
-CURRENT_SCHEMA_VERSION = 1
+CURRENT_SCHEMA_VERSION = 2
 MAX_BACKUPS = 10
+
+DEFAULT_SCORING_WEIGHTS = {
+    "skill_match": 0.25,
+    "title_relevance": 0.15,
+    "seniority": 0.15,
+    "location": 0.15,
+    "domain": 0.10,
+    "response_likelihood": 0.20,
+}
 
 
 # ---------------------------------------------------------------------------
@@ -137,6 +146,55 @@ def validate_profile(profile: dict) -> None:
             raise ProfileValidationError(
                 f"Your min_score value of {score} is out of range "
                 "-- it must be between 0.0 and 5.0."
+            )
+
+    # Validate scoring_weights if present
+    if "scoring_weights" in profile:
+        weights = profile["scoring_weights"]
+        if not isinstance(weights, dict):
+            raise InvalidTypeError("scoring_weights", "dict", type(weights))
+
+        # Required components
+        required_components = {
+            "skill_match",
+            "title_relevance",
+            "seniority",
+            "location",
+            "domain",
+            "response_likelihood",
+        }
+        missing = required_components - set(weights.keys())
+        if missing:
+            raise ProfileValidationError(
+                f"scoring_weights is missing required component(s): {', '.join(sorted(missing))}"
+            )
+
+        # Each weight must be >= 0.05 and <= 1.0
+        for component, weight in weights.items():
+            if not isinstance(weight, (int, float)):
+                raise ProfileValidationError(
+                    f"scoring_weights['{component}'] must be a number, got {type(weight).__name__}"
+                )
+            if not (0.05 <= weight <= 1.0):
+                raise ProfileValidationError(
+                    f"scoring_weights['{component}'] value of {weight} is out of range "
+                    "-- each weight must be between 0.05 and 1.0"
+                )
+
+        # Weights must sum to 1.0 (with float tolerance)
+        total = sum(weights.values())
+        if not (0.99 <= total <= 1.01):
+            raise ProfileValidationError(
+                f"scoring_weights must sum to 1.0, got {total:.3f}"
+            )
+
+    # Validate staffing_preference if present
+    if "staffing_preference" in profile:
+        pref = profile["staffing_preference"]
+        valid_prefs = {"boost", "neutral", "penalize"}
+        if pref not in valid_prefs:
+            raise ProfileValidationError(
+                f"staffing_preference must be one of {valid_prefs}, got '{pref}'"
             )
 
 
@@ -266,11 +324,30 @@ def load_profile(profile_path: Path) -> dict:
     # Schema migration
     schema_version = profile.get("schema_version", 0)
 
-    if schema_version == 0:
-        # Pre-v1.5.0 profile -- add schema_version and auto-save
+    if schema_version < 2:
+        # Create explicit v1 backup before migration
+        _create_backup(profile_path)
+
+        # Add scoring weights with defaults matching current hardcoded behavior
+        if "scoring_weights" not in profile:
+            profile["scoring_weights"] = dict(DEFAULT_SCORING_WEIGHTS)
+
+        # Add staffing preference -- NEW default is neutral (changed from old +4.5 boost)
+        if "staffing_preference" not in profile:
+            profile["staffing_preference"] = "neutral"
+
         profile["schema_version"] = CURRENT_SCHEMA_VERSION
+        log.debug("Migrated profile from v%d to v%d", schema_version, CURRENT_SCHEMA_VERSION)
         save_profile(profile, profile_path)
     # schema_version > CURRENT_SCHEMA_VERSION: ignore silently (best-effort)
+
+    # Graceful fallback for corrupted scoring_weights (per user decision)
+    if "scoring_weights" in profile and not isinstance(profile["scoring_weights"], dict):
+        log.warning(
+            "Profile has corrupted scoring_weights (type=%s), resetting to defaults",
+            type(profile["scoring_weights"]).__name__,
+        )
+        profile["scoring_weights"] = dict(DEFAULT_SCORING_WEIGHTS)
 
     validate_profile(profile)
     return profile
