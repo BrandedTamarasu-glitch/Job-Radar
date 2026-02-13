@@ -591,6 +591,11 @@ _SOURCE_DISPLAY_NAMES = {
     "weworkremotely": "We Work Remotely",
     "adzuna": "Adzuna",
     "authentic_jobs": "Authentic Jobs",
+    "linkedin": "LinkedIn",
+    "indeed": "Indeed",
+    "glassdoor": "Glassdoor",
+    "jsearch_other": "JSearch (Other)",
+    "usajobs": "USAJobs (Federal)",
 }
 
 
@@ -940,6 +945,326 @@ def map_authenticjobs_to_job_result(item: dict) -> JobResult | None:
         source="authentic_jobs",
         employment_type=emp_type,
         parse_confidence="high",
+    )
+
+
+# ---------------------------------------------------------------------------
+# JSearch API fetcher (LinkedIn, Indeed, Glassdoor aggregator)
+# ---------------------------------------------------------------------------
+
+# Known JSearch publishers that we treat as separate sources
+JSEARCH_KNOWN_SOURCES = {"LinkedIn", "Indeed", "Glassdoor"}
+
+
+def fetch_jsearch(query: str, location: str = "", verbose: bool = False) -> list[JobResult]:
+    """Fetch job listings from JSearch API (aggregates LinkedIn, Indeed, Glassdoor)."""
+    results = []
+
+    # Check credentials
+    api_key = get_api_key("JSEARCH_API_KEY", "JSearch")
+    if not api_key:
+        return results
+
+    # Check rate limit (uses "jsearch" backend shared across linkedin/indeed/glassdoor)
+    if not check_rate_limit("jsearch", verbose=verbose):
+        return results
+
+    # Build API URL
+    headers = {
+        **HEADERS,
+        "X-RapidAPI-Key": api_key,
+        "X-RapidAPI-Host": "jsearch.p.rapidapi.com"
+    }
+    params = {
+        "query": query,
+        "page": "1",
+        "num_pages": "1",
+        "date_posted": "week",
+    }
+    if location:
+        params["location"] = location
+
+    url = "https://jsearch.p.rapidapi.com/search?" + urllib.parse.urlencode(params)
+
+    # Fetch with retry
+    try:
+        body = fetch_with_retry(url, headers=headers, use_cache=True)
+        if body is None:
+            log.debug("[JSearch] Fetch failed for '%s'", query)
+            return results
+
+        data = _json.loads(body)
+        items = data.get("data", [])
+
+        for item in items:
+            job = map_jsearch_to_job_result(item)
+            if job:
+                results.append(job)
+
+    except _json.JSONDecodeError as e:
+        log.debug("[JSearch] JSON parse error: %s", e)
+    except Exception as e:
+        # Check for HTTPError-like exceptions
+        error_str = str(e).lower()
+        if "401" in error_str or "403" in error_str or "unauthorized" in error_str:
+            log.error("[JSearch] Authentication failed - run 'job-radar --setup-apis' to reconfigure")
+        else:
+            log.debug("[JSearch] Request failed: %s", e)
+
+    log.info("[JSearch] Found %d results for '%s'", len(results), query)
+    return results
+
+
+def map_jsearch_to_job_result(item: dict) -> JobResult | None:
+    """Map JSearch API response item to JobResult.
+
+    Uses job_publisher field for source attribution (LinkedIn, Indeed, Glassdoor).
+    Unknown publishers are mapped to "jsearch_other".
+    """
+    # Extract and validate required fields
+    title = item.get("job_title", "").strip()
+    company = item.get("employer_name", "").strip()
+    url = item.get("job_apply_link", "").strip()
+
+    if not title or not company or not url:
+        log.debug("[JSearch] Skipping job with missing required fields: title=%s, company=%s, url=%s",
+                 bool(title), bool(company), bool(url))
+        return None
+
+    # Source attribution: use original publisher, not "JSearch"
+    publisher = item.get("job_publisher", "")
+    if publisher in JSEARCH_KNOWN_SOURCES:
+        source = publisher.lower()  # "LinkedIn" -> "linkedin"
+    else:
+        source = "jsearch_other"
+        if publisher:
+            log.debug("[JSearch] Unknown publisher '%s' mapped to jsearch_other", publisher)
+
+    # Location normalization
+    is_remote = item.get("job_is_remote", False)
+    if is_remote:
+        location = "Remote"
+    else:
+        city = item.get("job_city", "")
+        state = item.get("job_state", "")
+        if city and state:
+            location = f"{city}, {state}"
+        else:
+            location = item.get("job_country", "Unknown")
+
+    # Salary fields
+    salary_min = item.get("job_min_salary")
+    salary_max = item.get("job_max_salary")
+
+    # Format salary string
+    if salary_min and salary_max:
+        salary = f"${salary_min:,.0f} - ${salary_max:,.0f}"
+    elif salary_min:
+        salary = f"${salary_min:,.0f}+"
+    else:
+        salary = "Not specified"
+
+    # Description cleaning
+    description_raw = item.get("job_description", "")
+    description = strip_html_and_normalize(description_raw)
+    if len(description) > 500:
+        description = description[:497] + "..."
+
+    # Date posted (extract YYYY-MM-DD)
+    date_posted = item.get("job_posted_at_datetime_utc", "")
+    if len(date_posted) >= 10:
+        date_posted = date_posted[:10]
+
+    # Arrangement detection
+    arrangement = _parse_arrangement(f"{title} {description} {location}")
+
+    # Employment type
+    emp_type = item.get("job_employment_type", "")
+
+    return JobResult(
+        title=_clean_field(title, _MAX_TITLE),
+        company=_clean_field(company, _MAX_COMPANY),
+        location=_clean_field(location, _MAX_LOCATION),
+        arrangement=arrangement,
+        salary=salary,
+        date_posted=date_posted,
+        description=description,
+        url=url,
+        source=source,
+        employment_type=emp_type,
+        parse_confidence="high",
+        salary_min=salary_min,
+        salary_max=salary_max,
+        salary_currency="USD" if salary_min or salary_max else None,
+    )
+
+
+# ---------------------------------------------------------------------------
+# USAJobs API fetcher (Federal government jobs)
+# ---------------------------------------------------------------------------
+
+def fetch_usajobs(query: str, location: str = "", profile: dict = None, verbose: bool = False) -> list[JobResult]:
+    """Fetch job listings from USAJobs federal government API."""
+    results = []
+
+    # Check credentials (both API key and email required)
+    api_key = get_api_key("USAJOBS_API_KEY", "USAJobs")
+    email = get_api_key("USAJOBS_EMAIL", "USAJobs")
+    if not api_key or not email:
+        return results
+
+    # Check rate limit
+    if not check_rate_limit("usajobs", verbose=verbose):
+        return results
+
+    # Build request with required headers
+    headers = {
+        "Host": "data.usajobs.gov",
+        "User-Agent": email,  # REQUIRED: must contain email from API registration
+        "Authorization-Key": api_key
+    }
+
+    params = {
+        "Keyword": query,
+        "ResultsPerPage": "50",
+    }
+
+    # Location filter
+    if location:
+        params["LocationName"] = location
+
+    # Optional federal filters from profile
+    if profile:
+        gs_min = profile.get("gs_grade_min")
+        gs_max = profile.get("gs_grade_max")
+        if gs_min:
+            params["PayGradeLow"] = f"{gs_min:02d}"  # Format as 2-digit string
+        if gs_max:
+            params["PayGradeHigh"] = f"{gs_max:02d}"
+
+        agencies = profile.get("preferred_agencies", [])
+        if agencies:
+            # Semicolon-delimited agency codes
+            params["Organization"] = ";".join(agencies)
+
+        # Security clearance not available as API parameter (per research)
+
+    url = "https://data.usajobs.gov/api/search?" + urllib.parse.urlencode(params)
+
+    # Fetch with retry
+    try:
+        body = fetch_with_retry(url, headers=headers, use_cache=True)
+        if body is None:
+            log.debug("[USAJobs] Fetch failed for '%s'", query)
+            return results
+
+        data = _json.loads(body)
+        # USAJobs uses nested structure
+        search_result = data.get("SearchResult", {})
+        items = search_result.get("SearchResultItems", [])
+
+        for item in items:
+            job = map_usajobs_to_job_result(item)
+            if job:
+                results.append(job)
+
+    except _json.JSONDecodeError as e:
+        log.debug("[USAJobs] JSON parse error: %s", e)
+    except Exception as e:
+        # Check for HTTPError-like exceptions
+        error_str = str(e).lower()
+        if "401" in error_str or "403" in error_str or "unauthorized" in error_str:
+            log.error("[USAJobs] Authentication failed - run 'job-radar --setup-apis' to reconfigure")
+        else:
+            log.debug("[USAJobs] Request failed: %s", e)
+
+    log.info("[USAJobs] Found %d results for '%s'", len(results), query)
+    return results
+
+
+def map_usajobs_to_job_result(item: dict) -> JobResult | None:
+    """Map USAJobs API response item to JobResult.
+
+    Handles nested MatchedObjectDescriptor structure.
+    """
+    # USAJobs uses nested MatchedObjectDescriptor
+    descriptor = item.get("MatchedObjectDescriptor", {})
+
+    # Extract and validate required fields
+    title = descriptor.get("PositionTitle", "").strip()
+    company = descriptor.get("OrganizationName", "").strip()
+    url = descriptor.get("PositionURI", "").strip()
+
+    if not title or not company or not url:
+        log.debug("[USAJobs] Skipping job with missing required fields: title=%s, company=%s, url=%s",
+                 bool(title), bool(company), bool(url))
+        return None
+
+    # Location normalization
+    location = descriptor.get("PositionLocationDisplay", "")
+    if not location:
+        # Fallback to first item in PositionLocation array
+        locations = descriptor.get("PositionLocation", [])
+        if locations and isinstance(locations, list):
+            loc_obj = locations[0]
+            city = loc_obj.get("LocationName", "")
+            state = loc_obj.get("CountrySubDivisionCode", "")
+            location = f"{city}, {state}" if city and state else (city or "Unknown")
+
+    # Salary fields (PositionRemuneration array)
+    salary = "Not specified"
+    salary_min = None
+    salary_max = None
+    remuneration = descriptor.get("PositionRemuneration", [])
+    if remuneration and isinstance(remuneration, list):
+        rem = remuneration[0]
+        min_range = rem.get("MinimumRange")
+        max_range = rem.get("MaximumRange")
+        if min_range and max_range:
+            try:
+                salary_min = float(min_range)
+                salary_max = float(max_range)
+                salary = f"${salary_min:,.0f} - ${salary_max:,.0f}"
+            except (ValueError, TypeError):
+                pass
+
+    # Description cleaning
+    user_area = descriptor.get("UserArea", {})
+    details = user_area.get("Details", {}) if isinstance(user_area, dict) else {}
+    description_raw = details.get("JobSummary", "") if isinstance(details, dict) else ""
+    description = strip_html_and_normalize(description_raw)
+    if len(description) > 500:
+        description = description[:497] + "..."
+
+    # Date posted (extract YYYY-MM-DD)
+    date_posted = descriptor.get("PublicationStartDate", "")
+    if len(date_posted) >= 10:
+        date_posted = date_posted[:10]
+
+    # Arrangement detection
+    arrangement = _parse_arrangement(f"{title} {description}")
+
+    # Employment type (PositionSchedule array)
+    emp_type = ""
+    schedules = descriptor.get("PositionSchedule", [])
+    if schedules and isinstance(schedules, list) and len(schedules) > 0:
+        emp_type = schedules[0].get("Name", "")
+
+    return JobResult(
+        title=_clean_field(title, _MAX_TITLE),
+        company=_clean_field(company, _MAX_COMPANY),
+        location=_clean_field(location, _MAX_LOCATION),
+        arrangement=arrangement,
+        salary=salary,
+        date_posted=date_posted,
+        description=description,
+        url=url,
+        source="usajobs",
+        employment_type=emp_type,
+        parse_confidence="high",
+        salary_min=salary_min,
+        salary_max=salary_max,
+        salary_currency="USD" if salary_min or salary_max else None,
     )
 
 
