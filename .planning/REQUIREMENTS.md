@@ -81,11 +81,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INFRA-01 | Phase 31 | Complete |
 | INFRA-02 | Phase 31 | Complete |
 | INFRA-03 | Phase 31 | Complete |
-| SRC-01 | Phase 32 | Pending |
-| SRC-02 | Phase 32 | Pending |
-| SRC-05 | Phase 32 | Pending |
-| SRC-06 | Phase 32 | Pending |
-| SRC-08 | Phase 32 | Pending |
+| SRC-01 | Phase 32 | Complete |
+| SRC-02 | Phase 32 | Complete |
+| SRC-05 | Phase 32 | Complete |
+| SRC-06 | Phase 32 | Complete |
+| SRC-08 | Phase 32 | Complete |
 | SCORE-03 | Phase 33 | Pending |
 | SCORE-01 | Phase 34 | Pending |
 | SCORE-02 | Phase 34 | Pending |
