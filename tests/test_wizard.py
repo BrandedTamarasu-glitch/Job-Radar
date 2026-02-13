@@ -175,8 +175,8 @@ def test_wizard_happy_path_all_fields(tmp_path, mocker):
 
     mock_text.side_effect = text_side_effect
 
-    # Confirm prompts: new_only (True)
-    confirm_answers = [True]
+    # Confirm prompts: customize_weights (False), new_only (True)
+    confirm_answers = [False, True]
 
     def confirm_side_effect(*args, **kwargs):
         mock = Mock()
@@ -185,10 +185,15 @@ def test_wizard_happy_path_all_fields(tmp_path, mocker):
 
     mock_confirm.side_effect = confirm_side_effect
 
-    # Select prompt: "Save this configuration"
+    # Select prompts: staffing_preference, then "Save this configuration"
+    select_answers = [
+        "Neutral (treat same as direct employers)",  # staffing_preference
+        "Save this configuration",
+    ]
+
     def select_side_effect(*args, **kwargs):
         mock = Mock()
-        mock.ask.return_value = "Save this configuration"
+        mock.ask.return_value = select_answers.pop(0) if select_answers else None
         return mock
 
     mock_select.side_effect = select_side_effect
@@ -217,6 +222,7 @@ def test_wizard_happy_path_all_fields(tmp_path, mocker):
     assert profile_data["domain_expertise"] == ["fintech", "saas"]
     assert profile_data["comp_floor"] == 150000
     assert profile_data["dealbreakers"] == ["relocation required", "on-site only"]
+    assert profile_data["staffing_preference"] == "neutral"
 
     # Verify config.json content
     config_data = json.loads(config_path.read_text())
@@ -255,7 +261,7 @@ def test_wizard_optional_fields_skipped(tmp_path, mocker):
 
     mock_text.side_effect = text_side_effect
 
-    confirm_answers = [True]  # new_only
+    confirm_answers = [False, True]  # customize_weights (False), new_only (True)
 
     def confirm_side_effect(*args, **kwargs):
         mock = Mock()
@@ -264,9 +270,14 @@ def test_wizard_optional_fields_skipped(tmp_path, mocker):
 
     mock_confirm.side_effect = confirm_side_effect
 
+    select_answers = [
+        "Neutral (treat same as direct employers)",  # staffing_preference
+        "Save this configuration",
+    ]
+
     def select_side_effect(*args, **kwargs):
         mock = Mock()
-        mock.ask.return_value = "Save this configuration"
+        mock.ask.return_value = select_answers.pop(0)
         return mock
 
     mock_select.side_effect = select_side_effect
@@ -323,7 +334,7 @@ def test_wizard_cancel_at_confirmation(tmp_path, mocker):
 
     mock_text.side_effect = text_side_effect
 
-    confirm_answers = [True]  # new_only
+    confirm_answers = [False, True]  # customize_weights (False), new_only (True)
 
     def confirm_side_effect(*args, **kwargs):
         mock = Mock()
@@ -332,10 +343,15 @@ def test_wizard_cancel_at_confirmation(tmp_path, mocker):
 
     mock_confirm.side_effect = confirm_side_effect
 
-    # Select "Cancel setup" instead of saving
+    # Select prompts: staffing_preference, then "Cancel setup"
+    select_answers = [
+        "Neutral (treat same as direct employers)",  # staffing_preference
+        "Cancel setup",
+    ]
+
     def select_side_effect(*args, **kwargs):
         mock = Mock()
-        mock.ask.return_value = "Cancel setup"
+        mock.ask.return_value = select_answers.pop(0) if select_answers else "Cancel setup"
         return mock
 
     mock_select.side_effect = select_side_effect
@@ -415,7 +431,7 @@ def test_wizard_edit_field_flow(tmp_path, mocker):
 
     mock_text.side_effect = text_side_effect
 
-    confirm_answers = [True]  # new_only
+    confirm_answers = [False, True]  # customize_weights (False), new_only (True)
 
     def confirm_side_effect(*args, **kwargs):
         mock = Mock()
@@ -424,8 +440,9 @@ def test_wizard_edit_field_flow(tmp_path, mocker):
 
     mock_confirm.side_effect = confirm_side_effect
 
-    # Select sequence: "Edit a field" -> field selection -> "Save"
+    # Select sequence: staffing_preference -> "Edit a field" -> field selection -> "Save"
     select_answers = [
+        "Neutral (treat same as direct employers)",  # staffing_preference
         "Edit a field",
         "Name (Original Name)",  # Select name field
         "Save this configuration",
@@ -481,7 +498,7 @@ def test_wizard_back_navigation(tmp_path, mocker):
 
     mock_text.side_effect = text_side_effect
 
-    confirm_answers = [True]  # new_only
+    confirm_answers = [False, True]  # customize_weights (False), new_only (True)
 
     def confirm_side_effect(*args, **kwargs):
         mock = Mock()
@@ -490,9 +507,14 @@ def test_wizard_back_navigation(tmp_path, mocker):
 
     mock_confirm.side_effect = confirm_side_effect
 
+    select_answers = [
+        "Neutral (treat same as direct employers)",  # staffing_preference
+        "Save this configuration",
+    ]
+
     def select_side_effect(*args, **kwargs):
         mock = Mock()
-        mock.ask.return_value = "Save this configuration"
+        mock.ask.return_value = select_answers.pop(0) if select_answers else "Save this configuration"
         return mock
 
     mock_select.side_effect = select_side_effect
@@ -540,7 +562,7 @@ def test_wizard_back_at_first_question(tmp_path, mocker):
 
     mock_text.side_effect = text_side_effect
 
-    confirm_answers = [True]  # new_only
+    confirm_answers = [False, True]  # customize_weights (False), new_only (True)
 
     def confirm_side_effect(*args, **kwargs):
         mock = Mock()
@@ -549,9 +571,14 @@ def test_wizard_back_at_first_question(tmp_path, mocker):
 
     mock_confirm.side_effect = confirm_side_effect
 
+    select_answers = [
+        "Neutral (treat same as direct employers)",  # staffing_preference
+        "Save this configuration",
+    ]
+
     def select_side_effect(*args, **kwargs):
         mock = Mock()
-        mock.ask.return_value = "Save this configuration"
+        mock.ask.return_value = select_answers.pop(0) if select_answers else "Save this configuration"
         return mock
 
     mock_select.side_effect = select_side_effect
@@ -599,7 +626,7 @@ def test_wizard_no_default_values_on_profile_fields(tmp_path, mocker):
 
     mock_text.side_effect = text_side_effect
 
-    confirm_answers = [True]  # new_only
+    confirm_answers = [False, True]  # customize_weights (False), new_only (True)
 
     def confirm_side_effect(*args, **kwargs):
         mock = Mock()
@@ -608,9 +635,14 @@ def test_wizard_no_default_values_on_profile_fields(tmp_path, mocker):
 
     mock_confirm.side_effect = confirm_side_effect
 
+    select_answers = [
+        "Neutral (treat same as direct employers)",  # staffing_preference
+        "Save this configuration",
+    ]
+
     def select_side_effect(*args, **kwargs):
         mock = Mock()
-        mock.ask.return_value = "Save this configuration"
+        mock.ask.return_value = select_answers.pop(0) if select_answers else "Save this configuration"
         return mock
 
     mock_select.side_effect = select_side_effect
