@@ -174,6 +174,6 @@ def test_config_recognizes_auto_open_browser():
 
 
 def test_config_known_keys_count():
-    """Test that KNOWN_KEYS has exactly 5 keys as expected."""
-    # min_score, new_only, output, profile_path, auto_open_browser
-    assert len(KNOWN_KEYS) == 5
+    """Test that KNOWN_KEYS has exactly 6 keys as expected."""
+    # min_score, new_only, output, profile_path, auto_open_browser, rate_limits
+    assert len(KNOWN_KEYS) == 6

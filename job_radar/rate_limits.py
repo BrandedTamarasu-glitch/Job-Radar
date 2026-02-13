@@ -3,6 +3,19 @@
 Provides per-source rate limiters using pyrate-limiter with SQLiteBucket for
 persistence across application restarts. Rate limits are configured per source
 with conservative defaults to avoid 429 errors.
+
+Rate limits can be customized via config.json:
+
+    {
+      "rate_limits": {
+        "adzuna": [{"limit": 200, "interval": 60}],
+        "jsearch": [{"limit": 100, "interval": 60}, {"limit": 500, "interval": 3600}]
+      }
+    }
+
+Where "limit" is the number of requests and "interval" is the time period in seconds.
+Config overrides are merged with hardcoded defaults. Invalid configs show warnings
+and fall back to defaults.
 """
 
 import atexit
@@ -21,19 +34,73 @@ from pyrate_limiter import (
     SQLiteQueries,
 )
 
+from .config import load_config
+
 log = logging.getLogger(__name__)
 
 
+def _load_rate_limits() -> dict:
+    """Load rate limits from config file with fallback to defaults.
+
+    Config format in config.json:
+    {
+      "rate_limits": {
+        "adzuna": [{"limit": 200, "interval": 60}],
+        "jsearch": [{"limit": 100, "interval": 60}, {"limit": 500, "interval": 3600}]
+      }
+    }
+
+    Returns dict mapping backend API names to Rate objects.
+    """
+    # Hardcoded defaults (conservative)
+    defaults = {
+        "adzuna": [Rate(100, Duration.MINUTE), Rate(1000, Duration.HOUR)],
+        "authentic_jobs": [Rate(60, Duration.MINUTE)],
+    }
+
+    # Load config file
+    config = load_config()
+    config_limits = config.get("rate_limits", {})
+
+    if not isinstance(config_limits, dict):
+        log.warning("Config rate_limits must be a dict, got %s - using defaults", type(config_limits).__name__)
+        return defaults
+
+    # Merge config overrides with defaults
+    result = defaults.copy()
+    for backend_api, rate_configs in config_limits.items():
+        if not isinstance(rate_configs, list):
+            log.warning("Config rate_limits[%s] must be a list, got %s - skipping", backend_api, type(rate_configs).__name__)
+            continue
+
+        rates = []
+        for rate_config in rate_configs:
+            if not isinstance(rate_config, dict):
+                log.warning("Config rate_limits[%s] entry must be a dict - skipping", backend_api)
+                continue
+
+            limit = rate_config.get("limit")
+            interval = rate_config.get("interval")
+
+            if not isinstance(limit, int) or limit <= 0:
+                log.warning("Config rate_limits[%s] limit must be positive int - skipping", backend_api)
+                continue
+
+            if not isinstance(interval, (int, float)) or interval <= 0:
+                log.warning("Config rate_limits[%s] interval must be positive number - skipping", backend_api)
+                continue
+
+            rates.append(Rate(limit, interval))
+
+        if rates:
+            result[backend_api] = rates
+            log.debug("Loaded custom rate limits for %s: %d rate(s)", backend_api, len(rates))
+
+    return result
+
+
 # Rate limit configurations per source (conservative defaults)
-RATE_LIMITS = {
-    "adzuna": [
-        Rate(100, Duration.MINUTE),
-        Rate(1000, Duration.HOUR),
-    ],
-    "authentic_jobs": [
-        Rate(60, Duration.MINUTE),
-    ],
-}
+RATE_LIMITS = _load_rate_limits()
 
 # Map sources to backend APIs - sources sharing the same backend API share rate limiters
 # This is critical for future JSearch integration where multiple sources (linkedin, indeed,

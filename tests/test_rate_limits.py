@@ -190,3 +190,104 @@ def test_backend_map_fallback(tmp_path, monkeypatch):
     # Should create database file using source name
     db_path = tmp_path / ".rate_limits" / f"{unmapped_source}.db"
     assert db_path.exists()
+
+
+def test_rate_limits_loaded_from_config(tmp_path, monkeypatch):
+    """Test rate limits are loaded from config.json when present."""
+    import json
+    from job_radar import rate_limits
+
+    monkeypatch.chdir(tmp_path)
+
+    # Create config file with custom rate limits
+    config_dir = tmp_path / ".job-radar"
+    config_dir.mkdir(exist_ok=True)
+    config_file = config_dir / "config.json"
+    config_file.write_text(json.dumps({
+        "rate_limits": {
+            "adzuna": [{"limit": 200, "interval": 60}],
+            "custom_api": [{"limit": 50, "interval": 30}]
+        }
+    }))
+
+    # Mock the config path to use tmp_path
+    monkeypatch.setenv("HOME", str(tmp_path))
+
+    # Reload rate_limits module to pick up new config
+    import importlib
+    importlib.reload(rate_limits)
+
+    # Verify custom limits were loaded
+    assert "adzuna" in rate_limits.RATE_LIMITS
+    assert len(rate_limits.RATE_LIMITS["adzuna"]) == 1  # Custom has 1 rate, not default's 2
+    assert rate_limits.RATE_LIMITS["adzuna"][0].limit == 200
+
+    assert "custom_api" in rate_limits.RATE_LIMITS
+    assert len(rate_limits.RATE_LIMITS["custom_api"]) == 1
+    assert rate_limits.RATE_LIMITS["custom_api"][0].limit == 50
+    assert rate_limits.RATE_LIMITS["custom_api"][0].interval == 30
+
+
+def test_rate_limits_invalid_config_uses_defaults(tmp_path, monkeypatch, caplog):
+    """Test invalid rate limit configs show warnings and use defaults."""
+    import json
+    from job_radar import rate_limits
+    import logging
+
+    monkeypatch.chdir(tmp_path)
+    caplog.set_level(logging.WARNING)
+
+    # Create config file with invalid rate limits
+    config_dir = tmp_path / ".job-radar"
+    config_dir.mkdir(exist_ok=True)
+    config_file = config_dir / "config.json"
+    config_file.write_text(json.dumps({
+        "rate_limits": "not_a_dict"  # Invalid: should be dict
+    }))
+
+    # Mock the config path
+    monkeypatch.setenv("HOME", str(tmp_path))
+
+    # Reload rate_limits module
+    import importlib
+    importlib.reload(rate_limits)
+
+    # Should fall back to defaults
+    assert "adzuna" in rate_limits.RATE_LIMITS
+    assert len(rate_limits.RATE_LIMITS["adzuna"]) == 2  # Default has 2 rates
+
+    # Should log warning
+    assert "must be a dict" in caplog.text
+
+
+def test_rate_limits_config_override_merges_with_defaults(tmp_path, monkeypatch):
+    """Test config overrides only specified backends, keeps defaults for others."""
+    import json
+    from job_radar import rate_limits
+
+    monkeypatch.chdir(tmp_path)
+
+    # Create config with override for adzuna only
+    config_dir = tmp_path / ".job-radar"
+    config_dir.mkdir(exist_ok=True)
+    config_file = config_dir / "config.json"
+    config_file.write_text(json.dumps({
+        "rate_limits": {
+            "adzuna": [{"limit": 300, "interval": 60}]
+        }
+    }))
+
+    # Mock the config path
+    monkeypatch.setenv("HOME", str(tmp_path))
+
+    # Reload rate_limits module
+    import importlib
+    importlib.reload(rate_limits)
+
+    # adzuna should use custom limit
+    assert "adzuna" in rate_limits.RATE_LIMITS
+    assert rate_limits.RATE_LIMITS["adzuna"][0].limit == 300
+
+    # authentic_jobs should still use default
+    assert "authentic_jobs" in rate_limits.RATE_LIMITS
+    assert rate_limits.RATE_LIMITS["authentic_jobs"][0].limit == 60

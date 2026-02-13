@@ -181,6 +181,7 @@ def test_default_config_path_ends_with_config_json():
     ("output", True),      # output_valid
     ("profile_path", True),  # profile_path_valid
     ("auto_open_browser", True),  # auto_open_browser_valid
+    ("rate_limits", True),  # rate_limits_valid
     ("profile", False),    # profile_rejected
     ("config", False),     # config_rejected
     ("unknown", False),    # unknown_rejected
@@ -190,15 +191,25 @@ def test_default_config_path_ends_with_config_json():
     "output_valid",
     "profile_path_valid",
     "auto_open_browser_valid",
+    "rate_limits_valid",
     "profile_rejected",
     "config_rejected",
     "unknown_rejected",
 ])
 def test_known_keys_membership(key, should_exist):
-    """Test KNOWN_KEYS contains exactly min_score, new_only, output, profile_path, auto_open_browser."""
+    """Test KNOWN_KEYS contains exactly min_score, new_only, output, profile_path, auto_open_browser, rate_limits."""
     assert (key in KNOWN_KEYS) == should_exist
 
 
 def test_known_keys_exact_size():
-    """Test KNOWN_KEYS contains exactly 5 members."""
-    assert len(KNOWN_KEYS) == 5
+    """Test KNOWN_KEYS contains exactly 6 members."""
+    assert len(KNOWN_KEYS) == 6
+
+
+# ---------------------------------------------------------------------------
+# rate_limits config key (Success Criteria 6)
+# ---------------------------------------------------------------------------
+
+def test_config_recognizes_rate_limits_key():
+    """Test KNOWN_KEYS contains rate_limits key for config-driven rate limits."""
+    assert "rate_limits" in KNOWN_KEYS
