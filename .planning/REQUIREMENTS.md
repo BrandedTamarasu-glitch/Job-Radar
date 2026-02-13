@@ -36,9 +36,9 @@ Requirements for desktop GUI launcher. Each maps to roadmap phases.
 
 ### Packaging
 
-- [ ] **PKG-01**: PyInstaller builds produce a GUI executable for Windows, macOS, and Linux
-- [ ] **PKG-02**: GUI executable is separate from CLI executable (both included in distribution)
-- [ ] **PKG-03**: CustomTkinter theme files are bundled correctly via --add-data
+- [x] **PKG-01**: PyInstaller builds produce a GUI executable for Windows, macOS, and Linux
+- [x] **PKG-02**: GUI executable is separate from CLI executable (both included in distribution)
+- [x] **PKG-03**: CustomTkinter theme files are bundled correctly via --add-data
 
 ## Future Requirements
 
@@ -97,9 +97,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SRCH-05 | Phase 29 | Complete |
 | PROG-01 | Phase 29 | Complete |
 | PROG-02 | Phase 29 | Complete |
-| PKG-01 | Phase 30 | Pending |
-| PKG-02 | Phase 30 | Pending |
-| PKG-03 | Phase 30 | Pending |
+| PKG-01 | Phase 30 | Complete |
+| PKG-02 | Phase 30 | Complete |
+| PKG-03 | Phase 30 | Complete |
 
 **Coverage:**
 - v2.0.0 requirements: 18 total
@@ -110,4 +110,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-12*
-*Last updated: 2026-02-13 after Phase 29 completion*
+*Last updated: 2026-02-13 after Phase 30 completion — all v2.0.0 requirements complete*

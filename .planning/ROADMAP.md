@@ -326,8 +326,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 30-01-PLAN.md — Entitlements, spec file updates, CI smoke tests and symlink fix
-- [ ] 30-02-PLAN.md — Local build verification and human executable testing checkpoint
+- [x] 30-01-PLAN.md — Entitlements, spec file updates, CI smoke tests and symlink fix
+- [x] 30-02-PLAN.md — Local build verification and human executable testing checkpoint
 
 ## Progress
 
@@ -341,9 +341,9 @@ Plans:
 | 24-27 | v1.5.0 | 7/7 | Complete | 2026-02-12 |
 | 28 | v2.0.0 | 3/3 | Complete | 2026-02-12 |
 | 29 | v2.0.0 | 3/3 | Complete | 2026-02-13 |
-| 30 | v2.0.0 | 0/TBD | Not started | - |
+| 30 | v2.0.0 | 2/2 | Complete | 2026-02-13 |
 
-**Total: 28 completed phases (55 plans, 6 milestones shipped) + 1 planned phase for v2.0.0**
+**Total: 29 completed phases (57 plans, 6 milestones shipped) — v2.0.0 ready for release**
 
 ---
-*Last updated: 2026-02-13 after Phase 29 execution*
+*Last updated: 2026-02-13 after Phase 30 execution*
