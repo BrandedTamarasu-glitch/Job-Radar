@@ -303,8 +303,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 31-01-PLAN.md — Add atexit cleanup and shared backend API rate limiters
-- [ ] 31-02-PLAN.md — Load rate limit configs from config.json
+- [x] 31-01-PLAN.md — Add atexit cleanup and shared backend API rate limiters
+- [x] 31-02-PLAN.md — Load rate limit configs from config.json
 
 **Success Criteria:**
 1. Rate limiter SQLite connections are cleaned up on app exit with atexit handler
@@ -416,7 +416,7 @@ Plans:
 | 19-23 | v1.4.0 | 9/9 | Complete | 2026-02-11 |
 | 24-27 | v1.5.0 | 7/7 | Complete | 2026-02-12 |
 | 28-30 | v2.0.0 | 8/8 | Complete | 2026-02-13 |
-| 31 | v2.1.0 | 0/2 | Pending | — |
+| 31 | v2.1.0 | 2/2 | Complete | 2026-02-13 |
 | 32 | v2.1.0 | 0/? | Pending | — |
 | 33 | v2.1.0 | 0/? | Pending | — |
 | 34 | v2.1.0 | 0/? | Pending | — |

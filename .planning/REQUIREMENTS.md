@@ -78,9 +78,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INFRA-01 | Phase 31 | Pending |
-| INFRA-02 | Phase 31 | Pending |
-| INFRA-03 | Phase 31 | Pending |
+| INFRA-01 | Phase 31 | Complete |
+| INFRA-02 | Phase 31 | Complete |
+| INFRA-03 | Phase 31 | Complete |
 | SRC-01 | Phase 32 | Pending |
 | SRC-02 | Phase 32 | Pending |
 | SRC-05 | Phase 32 | Pending |
