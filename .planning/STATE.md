@@ -11,7 +11,7 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 
 Milestone: v2.0.0 Desktop GUI Launcher
 Phase: 29 of 30 complete (Profile Setup & Search Controls ✓)
-Status: Phase 30 not yet planned
+Status: Phase 30 planned (2 plans, 2 waves)
 Last activity: 2026-02-13 — Completed Phase 29 (all 3 plans, human-verified)
 
 Progress: [██████████████████████████████░] 97%
@@ -84,9 +84,8 @@ Stopped at: Completed Phase 29 execution (all 3 plans, verified)
 Resume file: None
 
 **Next steps:**
-1. Plan Phase 30 (Packaging & Distribution)
-2. Execute Phase 30
-3. Audit and complete v2.0.0 milestone
+1. Execute Phase 30 (Packaging & Distribution)
+2. Audit and complete v2.0.0 milestone
 
 ---
 *Last updated: 2026-02-13 after Phase 29 completion*
