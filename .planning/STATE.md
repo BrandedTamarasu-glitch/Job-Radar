@@ -11,9 +11,9 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 
 Milestone: v2.0.0 Desktop GUI Launcher
 Phase: 29 of 30 (Profile Setup & Search Controls)
-Plan: Not yet planned
-Status: Ready to plan
-Last activity: 2026-02-12 — Phase 28 complete and verified
+Plan: 3 plans (29-01, 29-02, 29-03) — verified ✓
+Status: Ready to execute
+Last activity: 2026-02-13 — Phase 29 plans created and verified
 
 Progress: [█████████████████████████████░] 93%
 
@@ -72,13 +72,13 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Phase 28 complete and verified
+Stopped at: Phase 29 plans created and verified
 Resume file: None
 
 **Next steps:**
-1. Run `/gsd:plan-phase 29` to plan Profile Setup & Search Controls
-2. Phase 29 delivers GUI feature parity with CLI (forms, search config, visual feedback)
-3. 11 requirements to cover: PROF-01–04, SRCH-01–05, PROG-01–02
+1. Run `/gsd:execute-phase 29` to implement Profile Setup & Search Controls
+2. Wave 1 (parallel): 29-01 (tag chips + profile form) + 29-02 (search controls + real worker)
+3. Wave 2: 29-03 (main window integration + human verification)
 
 ---
-*Last updated: 2026-02-12 after Phase 28 complete*
+*Last updated: 2026-02-13 after Phase 29 planning complete*
