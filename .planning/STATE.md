@@ -1,6 +1,6 @@
 # Project State: Job Radar
 
-**Last Updated:** 2026-02-13
+**Last Updated:** 2026-02-13T18:24:16Z
 
 ## Project Reference
 
@@ -13,12 +13,12 @@
 ## Current Position
 
 **Phase:** 31 - Rate Limiter Infrastructure
-**Plan:** Not started
-**Status:** Ready to begin
+**Current Plan:** 2/2
+**Status:** In progress
 
-**Progress:** `[░░░░░░░░░░░░░░░░░░░░] 0/7 phases (0%)`
+**Progress:** [██████████] 98%
 
-**Next Action:** Begin Phase 31 planning - fix rate limiter connection leaks and establish shared backend API management
+**Next Action:** Continue Phase 31 - Plan 31-02 (configuration-driven rate limits)
 
 ## Performance Metrics
 
@@ -33,12 +33,18 @@
 
 **Average velocity:** ~5 plans/day (varies by complexity)
 
+### Recent Plan Executions
+
+| Plan | Duration (sec) | Tasks | Files | Date |
+|------|---------------|-------|-------|------|
+| 31-01 | 224 | 2 | 2 | 2026-02-13 |
+
 ### Quality Indicators
 
 **Test Coverage:**
-- 452 tests across 17 test files
-- All passing (v2.0.0 baseline)
-- Coverage areas: scoring, config, tracker, wizard, report, UX, API, PDF, dedup, accessibility, profile management, GUI
+- 455 tests across 17 test files
+- All passing (v2.1.0 in progress)
+- Coverage areas: scoring, config, tracker, wizard, report, UX, API, PDF, dedup, accessibility, profile management, GUI, rate limiting
 
 **Code Stats (v2.0.0):**
 - ~19,000 LOC Python (source + tests + GUI)
@@ -60,6 +66,8 @@
 | Infrastructure-first ordering | Fix rate limiter before adding APIs prevents technical debt | 2026-02-13 |
 | Schema migration as separate phase | Isolate risk, validate backend before GUI | 2026-02-13 |
 | Defer Linux DEB/RPM packaging | .tar.gz acceptable for Linux users, focus macOS/Windows | 2026-02-13 |
+| Clear limiters before closing connections | pyrate-limiter background threads cause segfaults if connections closed while active | 2026-02-13 |
+| BACKEND_API_MAP fallback to source name | Backward compatibility - unmapped sources continue to work | 2026-02-13 |
 
 ### Active Constraints
 
@@ -88,26 +96,32 @@ None.
 
 ### What Just Happened
 
-Created v2.1.0 roadmap with 7 phases (31-37) derived from 22 requirements:
-- Phase 31: Rate Limiter Infrastructure (INFRA-01, INFRA-02, INFRA-03)
-- Phase 32: Job Aggregator APIs - JSearch, USAJobs (SRC-01, SRC-02, SRC-05, SRC-06, SRC-08)
-- Phase 33: Scoring Configuration Backend (SCORE-03)
-- Phase 34: GUI Scoring Configuration (SCORE-01, SCORE-02, SCORE-04, SCORE-05)
-- Phase 35: Additional API Sources - SerpAPI, Jobicy (SRC-03, SRC-04, SRC-07)
-- Phase 36: GUI Uninstall Feature (PKG-01, PKG-02, PKG-03, PKG-06)
-- Phase 37: Platform-Native Installers (PKG-04, PKG-05)
+Completed Phase 31 Plan 01: Rate Limiter Infrastructure
 
-Coverage: 22/22 requirements mapped (100%)
+**Executed:** Fixed SQLite connection leaks via atexit cleanup and established shared rate limiter architecture
+
+**Key accomplishments:**
+- Task 1: Added atexit cleanup handler that clears limiters before closing connections (prevents segfaults)
+- Task 2: Implemented BACKEND_API_MAP for shared rate limiters across sources using same backend API
+- Added 3 new tests: cleanup, shared backend, fallback behavior
+- All 455 tests passing (no regressions)
+
+**Commits:**
+- 487a7b2 - feat(31-rate-limiter-infrastructure): add atexit cleanup handler for SQLite connections
+- 98cbee3 - feat(31-rate-limiter-infrastructure): implement shared rate limiters for backend APIs
+
+**Duration:** 224 seconds (3.7 minutes)
 
 ### What's Next
 
-Run `/gsd:plan-phase 31` to begin planning Phase 31: Rate Limiter Infrastructure.
+Execute Phase 31 Plan 02: Configuration-driven rate limits
 
 ### Files Changed This Session
 
-- `/home/corye/Claude/Job-Radar/.planning/ROADMAP.md` - Added v2.1.0 phases 31-37
-- `/home/corye/Claude/Job-Radar/.planning/STATE.md` - Created initial state
-- `/home/corye/Claude/Job-Radar/.planning/REQUIREMENTS.md` - Pending traceability update
+- `/home/corye/Claude/Job-Radar/job_radar/rate_limits.py` - Added atexit cleanup, BACKEND_API_MAP, shared limiter logic
+- `/home/corye/Claude/Job-Radar/tests/test_rate_limits.py` - Added 3 new tests
+- `/home/corye/Claude/Job-Radar/.planning/phases/31-rate-limiter-infrastructure/31-01-SUMMARY.md` - Created
+- `/home/corye/Claude/Job-Radar/.planning/STATE.md` - Updated position and decisions
 
 ### Context for Next Session
 
