@@ -296,7 +296,7 @@ Plans:
 6. User can set date range (from/to), minimum score, and "new only" mode through GUI controls
 7. Visual progress indicator displays during search execution showing current source being queried
 8. Error messages appear in GUI when search fails (network errors, source failures) with actionable text
-9. HTML report auto-opens in the default browser when search completes successfully
+9. Search completion shows results count and "Open Report" button that opens HTML report in default browser
 10. All GUI operations integrate correctly with existing business logic modules (sources.py, scoring.py, report.py, profile_manager.py) without code duplication
 
 **Plans:** 3 plans

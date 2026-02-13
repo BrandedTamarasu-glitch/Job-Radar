@@ -27,7 +27,7 @@ Requirements for desktop GUI launcher. Each maps to roadmap phases.
 - [ ] **SRCH-02**: User can set date range (from/to) for job postings
 - [ ] **SRCH-03**: User can set minimum score threshold
 - [ ] **SRCH-04**: User can toggle "new only" mode
-- [ ] **SRCH-05**: HTML report auto-opens in the default browser when search completes
+- [ ] **SRCH-05**: Search completion shows results count and "Open Report" button to open HTML report in browser
 
 ### Progress & Feedback
 
