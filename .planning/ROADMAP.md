@@ -345,6 +345,13 @@ Plans:
 
 **Requirements:** SCORE-03
 
+**Plans:** 3 plans
+
+Plans:
+- [ ] 33-01-PLAN.md — Profile schema v2 migration with scoring weights and validation (TDD)
+- [ ] 33-02-PLAN.md — Scoring engine configurable weights and staffing preference (TDD)
+- [ ] 33-03-PLAN.md — Wizard integration for v2 profile fields
+
 **Success Criteria:**
 1. Existing v1 profiles automatically migrate to v2 schema on first load without data loss
 2. New profiles include scoring_weights object with default values in profile template
@@ -426,7 +433,7 @@ Plans:
 | 28-30 | v2.0.0 | 8/8 | Complete | 2026-02-13 |
 | 31 | v2.1.0 | 2/2 | Complete | 2026-02-13 |
 | 32 | v2.1.0 | 4/4 | Complete | 2026-02-13 |
-| 33 | v2.1.0 | 0/? | Pending | — |
+| 33 | v2.1.0 | 0/3 | Planned | — |
 | 34 | v2.1.0 | 0/? | Pending | — |
 | 35 | v2.1.0 | 0/? | Pending | — |
 | 36 | v2.1.0 | 0/? | Pending | — |
