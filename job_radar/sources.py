@@ -1505,13 +1505,32 @@ def build_search_queries(profile: dict) -> list[dict]:
             "location": location,
         })
 
+    # JSearch queries: each target title (aggregates LinkedIn, Indeed, Glassdoor)
+    for title in titles:
+        jsearch_query = {"source": "jsearch", "query": title}
+        # Location mapping: match location_preference
+        arrangement = profile.get("arrangement", [])
+        if "remote" in [a.lower() for a in arrangement]:
+            jsearch_query["location"] = "remote"
+        elif location:
+            jsearch_query["location"] = location
+        queries.append(jsearch_query)
+
+    # USAJobs queries: each target title
+    for title in titles:
+        usajobs_query = {"source": "usajobs", "query": title}
+        if location:
+            usajobs_query["location"] = location
+        queries.append(usajobs_query)
+
     return queries
 
 
 def fetch_all(profile: dict, on_progress=None, on_source_progress=None) -> list[JobResult]:
-    """Fetch from all automated sources with sequential scraper-then-API flow.
+    """Fetch from all automated sources with three-phase source ordering.
 
-    Runs scrapers first (Dice, HN Hiring, RemoteOK, WWR), then APIs (Adzuna, Authentic Jobs).
+    Runs scrapers first (Dice, HN Hiring, RemoteOK, WWR), then APIs (Adzuna, Authentic Jobs),
+    then aggregators (JSearch, USAJobs) to ensure native sources win in dedup.
     All results are deduplicated using cross-source fuzzy matching.
 
     Args:
@@ -1524,12 +1543,14 @@ def fetch_all(profile: dict, on_progress=None, on_source_progress=None) -> list[
     """
     queries = build_search_queries(profile)
 
-    # Split queries into scraper and API groups
+    # Split queries into three phases: native source wins over aggregator
     SCRAPER_SOURCES = {"dice", "hn_hiring", "remoteok", "weworkremotely"}
-    API_SOURCES = {"adzuna", "authentic_jobs"}
+    API_SOURCES = {"adzuna", "authentic_jobs", "usajobs"}  # USAJobs is native federal source
+    AGGREGATOR_SOURCES = {"jsearch"}  # JSearch is aggregator — runs LAST
 
     scraper_queries = [q for q in queries if q["source"] in SCRAPER_SOURCES]
     api_queries = [q for q in queries if q["source"] in API_SOURCES]
+    aggregator_queries = [q for q in queries if q["source"] in AGGREGATOR_SOURCES]
 
     all_results = []
     seen = set()
@@ -1537,7 +1558,19 @@ def fetch_all(profile: dict, on_progress=None, on_source_progress=None) -> list[
     completed = 0
 
     # Source-level tracking
-    source_names = list(dict.fromkeys(q["source"] for q in queries))  # unique, ordered
+    # Replace "jsearch" with its display sources for total source count
+    JSEARCH_DISPLAY_SOURCES = ["linkedin", "indeed", "glassdoor"]
+    source_names = []
+    for q in queries:
+        if q["source"] == "jsearch":
+            # JSearch splits into multiple display sources
+            for display_source in JSEARCH_DISPLAY_SOURCES:
+                if display_source not in source_names:
+                    source_names.append(display_source)
+        else:
+            if q["source"] not in source_names:
+                source_names.append(q["source"])
+
     source_query_counts = {}
     source_completed = {}
     source_job_counts = {}
@@ -1545,6 +1578,11 @@ def fetch_all(profile: dict, on_progress=None, on_source_progress=None) -> list[
         source_query_counts[q["source"]] = source_query_counts.get(q["source"], 0) + 1
         source_completed[q["source"]] = 0
         source_job_counts[q["source"]] = 0
+
+    # Initialize JSearch display sources
+    for display_source in JSEARCH_DISPLAY_SOURCES:
+        source_job_counts[display_source] = 0
+
     sources_started = 0
     sources_done = 0
     total_sources = len(source_names)
@@ -1562,6 +1600,10 @@ def fetch_all(profile: dict, on_progress=None, on_source_progress=None) -> list[
             return fetch_adzuna(q["query"], q.get("location", ""))
         elif q["source"] == "authentic_jobs":
             return fetch_authenticjobs(q["query"], q.get("location", ""))
+        elif q["source"] == "jsearch":
+            return fetch_jsearch(q["query"], q.get("location", ""))
+        elif q["source"] == "usajobs":
+            return fetch_usajobs(q["query"], q.get("location", ""), profile=profile)
         return []
 
     def _run_queries_parallel(query_list, phase_name):
@@ -1595,8 +1637,9 @@ def fetch_all(profile: dict, on_progress=None, on_source_progress=None) -> list[
                         if key not in seen:
                             seen.add(key)
                             phase_results.append(r)
-                            # Track per-source job count
-                            source_job_counts[source] += 1
+                            # Track by actual source (for JSearch split display)
+                            actual_source = r.source
+                            source_job_counts[actual_source] = source_job_counts.get(actual_source, 0) + 1
                 except Exception as e:
                     log.error("Query failed (%s): %s", q, e)
                 if on_progress:
@@ -1625,6 +1668,12 @@ def fetch_all(profile: dict, on_progress=None, on_source_progress=None) -> list[
         log.debug("Phase 2: Running %d API queries", len(api_queries))
         api_results = _run_queries_parallel(api_queries, "api")
         all_results.extend(api_results)
+
+    # Phase 3: Aggregators (run last — native sources win in dedup)
+    if aggregator_queries:
+        log.debug("Phase 3: Running %d aggregator queries", len(aggregator_queries))
+        aggregator_results = _run_queries_parallel(aggregator_queries, "aggregator")
+        all_results.extend(aggregator_results)
 
     log.info("Total results before deduplication: %d", len(all_results))
 
