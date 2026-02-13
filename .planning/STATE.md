@@ -1,6 +1,6 @@
 # Project State: Job Radar
 
-**Last Updated:** 2026-02-13T18:24:16Z
+**Last Updated:** 2026-02-13T20:00:09Z
 
 ## Project Reference
 
@@ -12,13 +12,13 @@
 
 ## Current Position
 
-**Phase:** 31 - Rate Limiter Infrastructure
-**Current Plan:** Complete (2/2)
-**Status:** Complete
+**Phase:** 32 - Job Aggregator APIs
+**Current Plan:** 2/4
+**Status:** In Progress
 
-**Progress:** [██████████] 100%
+**Progress:** [██████████] 97%
 
-**Next Action:** Plan Phase 32 (Job Aggregator APIs - JSearch integration)
+**Next Action:** Execute Phase 32 Plan 02 (API Setup Wizard Extension)
 
 ## Performance Metrics
 
@@ -33,6 +33,8 @@
 
 **Average velocity:** ~5 plans/day (varies by complexity)
 | Phase 31 P02 | 213 | 1 tasks | 5 files |
+| Phase 32 P02 | 158 | 2 tasks | 2 files |
+| Phase 32 P01 | 164 | 2 tasks | 2 files |
 
 ### Recent Plan Executions
 
@@ -72,6 +74,8 @@
 | BACKEND_API_MAP fallback to source name | Backward compatibility - unmapped sources continue to work | 2026-02-13 |
 | Merge config overrides with defaults | Partial rate limit overrides for better UX - users only customize specific APIs | 2026-02-13 |
 | Validate and warn on invalid configs | Invalid rate limit configs show warnings and use defaults - graceful degradation | 2026-02-13 |
+| JSearch source attribution from job_publisher | Show original board name (LinkedIn/Indeed/Glassdoor) not "JSearch" for accurate attribution | 2026-02-13 |
+| All JSearch sources share rate limiter | linkedin/indeed/glassdoor/jsearch_other use single "jsearch" backend to prevent API violations | 2026-02-13 |
 
 ### Active Constraints
 
@@ -100,43 +104,39 @@ None.
 
 ### What Just Happened
 
-Completed Phase 31 Plan 02: Configuration-Driven Rate Limits (FINAL PLAN OF PHASE 31)
+Completed Phase 32 Plan 01: JSearch and USAJobs API Integration
 
-**Executed:** Dynamic rate limit configuration from config.json with validation and merge behavior
+**Executed:** JSearch aggregator (LinkedIn/Indeed/Glassdoor) and USAJobs federal API with source attribution and shared rate limiting
 
 **Key accomplishments:**
-- Task 1: Added "rate_limits" to KNOWN_KEYS, implemented _load_rate_limits() with validation
-- Config overrides merge with hardcoded defaults (partial overrides supported)
-- Invalid configs show warnings and fall back to defaults (graceful degradation)
-- Added 4 new tests: rate_limits key recognition, config loading, validation, merge behavior
+- Task 1: Implemented fetch_jsearch, map_jsearch_to_job_result, fetch_usajobs, map_usajobs_to_job_result functions
+- JSearch uses job_publisher field for source attribution (linkedin, indeed, glassdoor, jsearch_other)
+- USAJobs handles nested MatchedObjectDescriptor response structure
+- Task 2: Configured BACKEND_API_MAP and RATE_LIMITS for shared rate limiting across JSearch sources
 - All 460 tests passing (no regressions)
 
 **Commits:**
-- e3351a1 - feat(31-rate-limiter-infrastructure): add configuration-driven rate limits
+- 18b0cef - feat(32-job-aggregator-apis): add JSearch and USAJobs fetch functions
+- ba1c9be - feat(32-job-aggregator-apis): configure rate limiters for JSearch and USAJobs
 
-**Duration:** 213 seconds (3.6 minutes)
-
-**Phase 31 Complete:** Both plans executed successfully. Rate limiter infrastructure is now production-ready with atexit cleanup, shared backend limiters, and config-driven customization.
+**Duration:** 164 seconds (2.7 minutes)
 
 ### What's Next
 
-Plan Phase 32: Job Aggregator APIs - JSearch integration (linkedin, indeed, glassdoor sources)
+Execute Phase 32 Plan 02: API Setup Wizard Extension (add JSearch and USAJobs to --setup-apis)
 
 ### Files Changed This Session
 
-- `/home/corye/Claude/Job-Radar/job_radar/config.py` - Added "rate_limits" to KNOWN_KEYS
-- `/home/corye/Claude/Job-Radar/job_radar/rate_limits.py` - Added config loading, validation, merge logic
-- `/home/corye/Claude/Job-Radar/tests/test_config.py` - Added rate_limits key test, updated size checks
-- `/home/corye/Claude/Job-Radar/tests/test_rate_limits.py` - Added 3 config loading tests
-- `/home/corye/Claude/Job-Radar/tests/test_browser.py` - Updated KNOWN_KEYS count expectation
-- `/home/corye/Claude/Job-Radar/.planning/phases/31-rate-limiter-infrastructure/31-02-SUMMARY.md` - Created
+- `/home/corye/Claude/Job-Radar/job_radar/sources.py` - Added JSearch/USAJobs fetch functions and mappers
+- `/home/corye/Claude/Job-Radar/job_radar/rate_limits.py` - Configured backend API mapping and rate limits
+- `/home/corye/Claude/Job-Radar/.planning/phases/32-job-aggregator-apis/32-01-SUMMARY.md` - Created
 - `/home/corye/Claude/Job-Radar/.planning/STATE.md` - Updated position, decisions, metrics
 
 ### Context for Next Session
 
-**If continuing:** Proceed to Phase 32 planning. Rate limiter infrastructure complete - atexit cleanup, shared backend limiters, and config-driven customization all working. JSearch integration can now leverage this foundation.
+**If continuing:** Proceed to Phase 32 Plan 02. JSearch and USAJobs fetch functions implemented and tested. Rate limiters configured with conservative defaults. Ready to extend --setup-apis wizard with new sources.
 
-**If resuming later:** Read STATE.md for current position, check ROADMAP.md Phase 32 for JSearch integration details, review Phase 31 SUMMARY files for infrastructure capabilities.
+**If resuming later:** Read STATE.md for current position, check .planning/phases/32-job-aggregator-apis/32-01-SUMMARY.md for implementation details.
 
 ---
 *State initialized: 2026-02-13*
