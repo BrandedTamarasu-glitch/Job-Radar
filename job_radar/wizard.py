@@ -14,7 +14,7 @@ from pathlib import Path
 import questionary
 from questionary import Style, Validator, ValidationError
 
-from .profile_manager import save_profile
+from .profile_manager import save_profile, DEFAULT_SCORING_WEIGHTS
 # Config.json also uses atomic write but doesn't need backup/validation
 from .profile_manager import _write_json_atomic as _write_json
 
@@ -146,6 +146,104 @@ custom_style = Style([
 ])
 
 
+def _prompt_custom_weights() -> dict | None:
+    """Prompt user to customize scoring weights.
+
+    Displays current defaults, prompts for each of 6 weight components,
+    validates they sum to 1.0, and offers retry on validation failure.
+
+    Returns
+    -------
+    dict | None
+        Custom weights dict if successful, None if user cancels
+    """
+    print("\nCustomize Scoring Weights")
+    print("-" * 40)
+    print("Default values (balanced):")
+    for component, weight in DEFAULT_SCORING_WEIGHTS.items():
+        print(f"  {component}: {weight:.0%}")
+    print("\nEnter new values (must sum to 1.0):\n")
+
+    # Weight component order for consistent prompting
+    components = [
+        ("skill_match", "Skills Match"),
+        ("title_relevance", "Title Relevance"),
+        ("seniority", "Seniority Level"),
+        ("location", "Location"),
+        ("domain", "Domain/Industry"),
+        ("response_likelihood", "Response Likelihood"),
+    ]
+
+    while True:
+        custom_weights = {}
+        cancelled = False
+
+        for key, label in components:
+            default_val = DEFAULT_SCORING_WEIGHTS[key]
+            result = questionary.text(
+                f"{label} weight (0.05-1.0):",
+                default=str(default_val),
+                instruction=f"Default: {default_val:.0%}",
+                style=custom_style,
+            ).ask()
+
+            if result is None:
+                # User cancelled
+                cancelled = True
+                break
+
+            try:
+                weight = float(result)
+                if not (0.05 <= weight <= 1.0):
+                    print(f"❌ Weight must be between 0.05 and 1.0, got {weight}")
+                    break
+                custom_weights[key] = weight
+            except ValueError:
+                print(f"❌ Invalid number: {result}")
+                break
+
+        if cancelled:
+            # User pressed Ctrl+C
+            use_defaults = questionary.confirm(
+                "Use default weights instead?",
+                default=True,
+                style=custom_style
+            ).ask()
+            if use_defaults:
+                return None  # Signal to use defaults
+            else:
+                return None  # Cancel entirely
+
+        # Check if all 6 weights were collected
+        if len(custom_weights) != 6:
+            # Validation failed mid-prompt, retry
+            retry = questionary.confirm(
+                "Would you like to try again?",
+                default=True,
+                style=custom_style
+            ).ask()
+            if not retry:
+                return None  # Fall back to defaults
+            continue
+
+        # Validate sum
+        total = sum(custom_weights.values())
+        if not (0.99 <= total <= 1.01):
+            print(f"\n❌ Weights must sum to 1.0, got {total:.3f}")
+            retry = questionary.confirm(
+                "Would you like to try again?",
+                default=True,
+                style=custom_style
+            ).ask()
+            if not retry:
+                return None  # Fall back to defaults
+            continue
+
+        # Success
+        print("\n✅ Custom weights validated!")
+        return custom_weights
+
+
 def is_first_run() -> bool:
     """Check if this is the first run by checking for profile.json existence.
 
@@ -261,6 +359,29 @@ def run_setup_wizard() -> bool:
             'required': False,
         },
         {
+            'key': 'staffing_preference',
+            'type': 'select',
+            'message': "How should staffing/recruiting firms be scored?",
+            'instruction': None,
+            'choices': [
+                "Neutral (treat same as direct employers)",
+                "Boost (prefer staffing firms -- higher placement incentive)",
+                "Penalize (avoid staffing firms -- prefer direct employers)",
+            ],
+            'validator': None,
+            'required': True,
+            'default': "Neutral (treat same as direct employers)",
+        },
+        {
+            'key': 'customize_weights',
+            'type': 'confirm',
+            'message': "Customize scoring component weights?",
+            'instruction': "Advanced: adjust how much skills, title, seniority, location, domain, and response likelihood affect job scores. Most users should skip this.",
+            'validator': None,
+            'required': True,
+            'default': False,
+        },
+        {
             'key': 'min_score',
             'type': 'text',
             'message': "Minimum job score (1.0-5.0)?",
@@ -374,11 +495,14 @@ def run_setup_wizard() -> bool:
         q = questions[idx]
         key = q['key']
 
-        # Section headers
-        if idx == 0:
+        # Section headers (key-based for stability)
+        if key == 'name':
             print("\n👤 Profile Information")
             print("-" * 40 + "\n")
-        elif idx == 5:
+        elif key == 'staffing_preference':
+            print("\n🎯 Scoring Preferences")
+            print("-" * 40 + "\n")
+        elif key == 'min_score':
             print("\n⚙️  Search Preferences")
             print("-" * 40 + "\n")
 
@@ -425,6 +549,17 @@ def run_setup_wizard() -> bool:
             elif q.get('default') is not None:
                 prompt_kwargs['default'] = q['default']
             result = questionary.confirm(**prompt_kwargs).ask()
+        elif q['type'] == 'select':
+            prompt_kwargs_select = {
+                'message': q['message'],
+                'choices': q['choices'],
+                'style': custom_style,
+            }
+            if key in answers:
+                prompt_kwargs_select['default'] = answers[key]
+            elif q.get('default') is not None:
+                prompt_kwargs_select['default'] = q['default']
+            result = questionary.select(**prompt_kwargs_select).ask()
         else:
             raise ValueError(f"Unknown question type: {q['type']}")
 
@@ -505,6 +640,26 @@ def run_setup_wizard() -> bool:
         if dealbreakers_list:
             profile_data['dealbreakers'] = dealbreakers_list
 
+    # Handle scoring weights (v2 schema)
+    if answers.get('customize_weights'):
+        custom_weights = _prompt_custom_weights()
+        if custom_weights is None:
+            # User cancelled or failed validation, fall back to defaults
+            profile_data["scoring_weights"] = dict(DEFAULT_SCORING_WEIGHTS)
+        else:
+            profile_data["scoring_weights"] = custom_weights
+    else:
+        profile_data["scoring_weights"] = dict(DEFAULT_SCORING_WEIGHTS)
+
+    # Handle staffing preference (v2 schema)
+    staffing_answer = answers.get('staffing_preference', 'Neutral (treat same as direct employers)')
+    if 'Boost' in staffing_answer:
+        profile_data['staffing_preference'] = 'boost'
+    elif 'Penalize' in staffing_answer:
+        profile_data['staffing_preference'] = 'penalize'
+    else:
+        profile_data['staffing_preference'] = 'neutral'
+
     # Get data directory for path resolution
     data_dir = get_data_dir()
 
@@ -546,6 +701,18 @@ def run_setup_wizard() -> bool:
         else:
             print(f"   Dealbreakers: (not set)")
 
+        # Scoring weights display
+        weights = profile_data.get('scoring_weights', {})
+        if weights == DEFAULT_SCORING_WEIGHTS:
+            print(f"   Scoring Weights: Default (balanced)")
+        else:
+            print(f"   Scoring Weights: Custom")
+            for component, weight in weights.items():
+                print(f"      {component}: {weight:.0%}")
+
+        staffing = profile_data.get('staffing_preference', 'neutral')
+        print(f"   Staffing Firms: {staffing.capitalize()}")
+
         print("\n⚙️  Preferences:")
         print(f"   Minimum Score: {config_data['min_score']}")
         print(f"   New Jobs Only: {'Yes' if config_data['new_only'] else 'No'}")
@@ -573,6 +740,15 @@ def run_setup_wizard() -> bool:
         # Format compensation value
         comp_display = f"${profile_data['comp_floor']:,}" if profile_data.get('comp_floor') else '(not set)'
 
+        # Format scoring weights display
+        weights = profile_data.get('scoring_weights', {})
+        if weights == DEFAULT_SCORING_WEIGHTS:
+            weights_display = "Default (balanced)"
+        else:
+            weights_display = "Custom"
+
+        staffing_display = profile_data.get('staffing_preference', 'neutral').capitalize()
+
         field_choices = [
             f"Name ({profile_data['name']})",
             f"Experience ({profile_data['years_experience']} years - {profile_data['level']} level)",
@@ -583,6 +759,8 @@ def run_setup_wizard() -> bool:
             f"Industries ({', '.join(profile_data.get('domain_expertise', [])) or '(not set)'})",
             f"Min Compensation ({comp_display})",
             f"Dealbreakers ({', '.join(profile_data.get('dealbreakers', [])) or '(not set)'})",
+            f"Scoring Weights ({weights_display})",
+            f"Staffing Firms ({staffing_display})",
             f"Minimum Score ({config_data['min_score']})",
             f"New Jobs Only ({'Yes' if config_data['new_only'] else 'No'})",
         ]
@@ -729,6 +907,44 @@ def run_setup_wizard() -> bool:
                         del profile_data['dealbreakers']
                 elif 'dealbreakers' in profile_data:
                     del profile_data['dealbreakers']
+
+        elif field_to_edit.startswith("Scoring Weights"):
+            # Offer to reset to defaults or customize
+            action = questionary.select(
+                "Scoring weights action:",
+                choices=[
+                    "Reset to defaults",
+                    "Customize weights",
+                    "Keep current"
+                ],
+                style=custom_style
+            ).ask()
+            if action == "Reset to defaults":
+                profile_data['scoring_weights'] = dict(DEFAULT_SCORING_WEIGHTS)
+            elif action == "Customize weights":
+                custom_weights = _prompt_custom_weights()
+                if custom_weights is not None:
+                    profile_data['scoring_weights'] = custom_weights
+                # If None, keep current
+
+        elif field_to_edit.startswith("Staffing Firms"):
+            new_val = questionary.select(
+                "How should staffing/recruiting firms be scored?",
+                choices=[
+                    "Neutral (treat same as direct employers)",
+                    "Boost (prefer staffing firms -- higher placement incentive)",
+                    "Penalize (avoid staffing firms -- prefer direct employers)",
+                ],
+                default=profile_data.get('staffing_preference', 'neutral'),
+                style=custom_style
+            ).ask()
+            if new_val:
+                if 'Boost' in new_val:
+                    profile_data['staffing_preference'] = 'boost'
+                elif 'Penalize' in new_val:
+                    profile_data['staffing_preference'] = 'penalize'
+                else:
+                    profile_data['staffing_preference'] = 'neutral'
 
         elif field_to_edit.startswith("Minimum Score"):
             new_val = questionary.text(
