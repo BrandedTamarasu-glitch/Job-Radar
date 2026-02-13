@@ -106,7 +106,7 @@ exe = EXE(
     argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
-    entitlements_file=None,
+    entitlements_file='entitlements.plist',
     icon='icon.png' if sys.platform == 'win32' else None,  # Windows uses .ico (converted by PyInstaller)
 )
 
@@ -125,7 +125,7 @@ gui_exe = EXE(
     argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
-    entitlements_file=None,
+    entitlements_file='entitlements.plist',
     icon='icon.png' if sys.platform == 'win32' else None,
 )
 
@@ -148,6 +148,7 @@ if sys.platform == 'darwin':
         name='JobRadar.app',
         icon='icon.icns',
         bundle_identifier='com.jobradar.app',
+        entitlements_file='entitlements.plist',
         info_plist={
             'NSHighResolutionCapable': 'True',
             'LSBackgroundOnly': 'False',    # Locked decision: show in dock
