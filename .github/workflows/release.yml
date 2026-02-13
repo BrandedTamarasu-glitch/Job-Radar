@@ -66,6 +66,21 @@ jobs:
       - name: Build with PyInstaller
         run: pyinstaller job-radar.spec --clean
 
+      - name: Verify CustomTkinter assets bundled (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          ls dist/job-radar/customtkinter/assets/themes/ && echo "CustomTkinter themes bundled OK"
+          ls dist/job-radar/customtkinter/assets/fonts/ && echo "CustomTkinter fonts bundled OK"
+
+      - name: Smoke test CLI executable (Linux)
+        if: runner.os == 'Linux'
+        run: cd dist && ./job-radar/job-radar --version
+
+      - name: Smoke test CLI executable (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: cd dist && .\job-radar\job-radar.exe --version
+
       - name: Install Terminal launcher (macOS)
         if: runner.os == 'macOS'
         run: |
@@ -73,6 +88,10 @@ jobs:
           mv job-radar job-radar-cli
           cp ../../../../macos-launcher.sh job-radar
           chmod +x job-radar job-radar-cli
+
+      - name: Smoke test CLI executable (macOS)
+        if: runner.os == 'macOS'
+        run: cd dist/JobRadar.app/Contents/MacOS && ./job-radar-cli --version
 
       - name: Create archive (Linux)
         if: runner.os == 'Linux'
@@ -91,7 +110,7 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           cd dist
-          zip -r ../job-radar-${{ github.ref_name }}-macos.zip JobRadar.app
+          zip -r --symlinks ../job-radar-${{ github.ref_name }}-macos.zip JobRadar.app
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
