@@ -4,10 +4,14 @@ import pytest
 from job_radar.sources import (
     map_adzuna_to_job_result,
     map_authenticjobs_to_job_result,
+    map_jsearch_to_job_result,
+    map_usajobs_to_job_result,
     strip_html_and_normalize,
     parse_location_to_city_state,
     fetch_adzuna,
     fetch_authenticjobs,
+    fetch_jsearch,
+    fetch_usajobs,
     build_search_queries,
     generate_wellfound_url,
     _slugify_for_wellfound,
@@ -497,3 +501,283 @@ def test_generate_manual_urls_wellfound_uses_first_three_titles():
 
     titles = {u["title"] for u in wellfound_urls}
     assert titles == {"A", "B", "C"}
+
+
+# ==============================================================================
+# JSearch Mapper Tests
+# ==============================================================================
+
+@pytest.mark.parametrize("job_publisher,expected_source", [
+    ("LinkedIn", "linkedin"),
+    ("Indeed", "indeed"),
+    ("Glassdoor", "glassdoor"),
+    ("Monster", "jsearch_other"),
+    ("ZipRecruiter", "jsearch_other"),
+    ("", "jsearch_other"),
+])
+def test_jsearch_maps_job_publisher_to_source(job_publisher, expected_source):
+    """JSearch results use job_publisher for source attribution."""
+    item = {
+        "job_title": "Software Engineer",
+        "employer_name": "Google Inc",
+        "job_apply_link": "https://example.com/job/123",
+        "job_publisher": job_publisher,
+    }
+
+    result = map_jsearch_to_job_result(item)
+
+    assert result is not None
+    assert result.source == expected_source
+
+
+def test_jsearch_requires_title_company_url():
+    """JSearch returns None when required fields missing."""
+    # Missing title
+    item1 = {
+        "job_title": "",
+        "employer_name": "Google",
+        "job_apply_link": "https://example.com/job",
+        "job_publisher": "LinkedIn",
+    }
+    assert map_jsearch_to_job_result(item1) is None
+
+    # Missing company
+    item2 = {
+        "job_title": "Engineer",
+        "employer_name": "",
+        "job_apply_link": "https://example.com/job",
+        "job_publisher": "LinkedIn",
+    }
+    assert map_jsearch_to_job_result(item2) is None
+
+    # Missing URL
+    item3 = {
+        "job_title": "Engineer",
+        "employer_name": "Google",
+        "job_apply_link": "",
+        "job_publisher": "LinkedIn",
+    }
+    assert map_jsearch_to_job_result(item3) is None
+
+
+def test_jsearch_maps_remote_location():
+    """JSearch remote flag maps to 'Remote' location."""
+    item = {
+        "job_title": "Software Engineer",
+        "employer_name": "Google Inc",
+        "job_apply_link": "https://example.com/job/123",
+        "job_publisher": "LinkedIn",
+        "job_is_remote": True,
+    }
+
+    result = map_jsearch_to_job_result(item)
+
+    assert result is not None
+    assert result.location == "Remote"
+
+
+def test_jsearch_maps_salary():
+    """JSearch salary formatting from min/max fields."""
+    item = {
+        "job_title": "Engineer",
+        "employer_name": "Acme",
+        "job_apply_link": "https://example.com/job",
+        "job_publisher": "Indeed",
+        "job_min_salary": 100000,
+        "job_max_salary": 150000,
+    }
+
+    result = map_jsearch_to_job_result(item)
+
+    assert result is not None
+    assert result.salary == "$100,000 - $150,000"
+    assert result.salary_min == 100000
+    assert result.salary_max == 150000
+
+
+def test_fetch_jsearch_handles_auth_error(monkeypatch):
+    """JSearch returns empty list on 401/403."""
+    monkeypatch.setattr("job_radar.sources.get_api_key", lambda key, source: "fake_key")
+    monkeypatch.setattr("job_radar.sources.check_rate_limit", lambda source, verbose=False: True)
+
+    # Mock fetch_with_retry to return None (simulates auth error)
+    monkeypatch.setattr("job_radar.sources.fetch_with_retry", lambda *args, **kwargs: None)
+
+    result = fetch_jsearch("python developer")
+
+    assert result == []
+
+
+def test_fetch_jsearch_handles_missing_api_key(monkeypatch):
+    """JSearch returns empty list when API key missing."""
+    monkeypatch.setattr("job_radar.sources.get_api_key", lambda key, source: None)
+
+    result = fetch_jsearch("python developer")
+
+    assert result == []
+
+
+# ==============================================================================
+# USAJobs Mapper Tests
+# ==============================================================================
+
+def test_usajobs_maps_nested_descriptor():
+    """USAJobs extracts from MatchedObjectDescriptor structure."""
+    item = {
+        "MatchedObjectDescriptor": {
+            "PositionTitle": "Software Developer",
+            "OrganizationName": "Department of Treasury",
+            "PositionURI": "https://usajobs.gov/job/123",
+            "PositionLocationDisplay": "Washington, DC",
+        }
+    }
+
+    result = map_usajobs_to_job_result(item)
+
+    assert result is not None
+    assert result.title == "Software Developer"
+    assert result.company == "Department of Treasury"
+    assert result.location == "Washington, DC"
+    assert result.url == "https://usajobs.gov/job/123"
+    assert result.source == "usajobs"
+
+
+def test_usajobs_maps_salary_from_remuneration():
+    """USAJobs salary mapping from PositionRemuneration array."""
+    item = {
+        "MatchedObjectDescriptor": {
+            "PositionTitle": "Engineer",
+            "OrganizationName": "NASA",
+            "PositionURI": "https://usajobs.gov/job/456",
+            "PositionRemuneration": [
+                {
+                    "MinimumRange": "80000",
+                    "MaximumRange": "120000",
+                }
+            ]
+        }
+    }
+
+    result = map_usajobs_to_job_result(item)
+
+    assert result is not None
+    assert result.salary == "$80,000 - $120,000"
+    assert result.salary_min == 80000.0
+    assert result.salary_max == 120000.0
+
+
+def test_usajobs_requires_both_credentials(monkeypatch):
+    """USAJobs returns empty list when email or API key missing."""
+    # Missing API key
+    def mock_get_api_key_no_key(key, source):
+        if key == "USAJOBS_API_KEY":
+            return None
+        return "test@example.com"
+
+    monkeypatch.setattr("job_radar.sources.get_api_key", mock_get_api_key_no_key)
+
+    result = fetch_usajobs("engineer")
+    assert result == []
+
+    # Missing email
+    def mock_get_api_key_no_email(key, source):
+        if key == "USAJOBS_EMAIL":
+            return None
+        return "fake_api_key"
+
+    monkeypatch.setattr("job_radar.sources.get_api_key", mock_get_api_key_no_email)
+
+    result = fetch_usajobs("engineer")
+    assert result == []
+
+
+def test_usajobs_handles_empty_search_result():
+    """USAJobs handles empty SearchResultItems gracefully."""
+    item = {
+        "MatchedObjectDescriptor": {
+            "PositionTitle": "",
+            "OrganizationName": "",
+            "PositionURI": "",
+        }
+    }
+
+    result = map_usajobs_to_job_result(item)
+
+    assert result is None
+
+
+def test_fetch_usajobs_passes_federal_filters(monkeypatch):
+    """USAJobs passes federal profile filters as query params."""
+    monkeypatch.setattr("job_radar.sources.get_api_key", lambda key, source: "fake_value")
+    monkeypatch.setattr("job_radar.sources.check_rate_limit", lambda source, verbose=False: True)
+
+    # Capture URL to verify params
+    captured_url = []
+
+    def mock_fetch_with_retry(url, headers=None, use_cache=None):
+        captured_url.append(url)
+        return '{"SearchResult": {"SearchResultItems": []}}'
+
+    monkeypatch.setattr("job_radar.sources.fetch_with_retry", mock_fetch_with_retry)
+
+    profile = {
+        "gs_grade_min": 12,
+        "gs_grade_max": 14,
+        "preferred_agencies": ["TREAS"],
+    }
+
+    fetch_usajobs("engineer", profile=profile)
+
+    assert len(captured_url) == 1
+    url = captured_url[0]
+    assert "PayGradeLow=12" in url
+    assert "PayGradeHigh=14" in url
+    assert "Organization=TREAS" in url
+
+
+# ==============================================================================
+# Query Builder Tests
+# ==============================================================================
+
+def test_build_queries_includes_jsearch():
+    """build_search_queries generates jsearch queries."""
+    profile = {
+        "target_titles": ["Software Engineer"],
+        "core_skills": ["python"],
+        "target_market": "Remote",
+    }
+
+    queries = build_search_queries(profile)
+
+    sources = {q["source"] for q in queries}
+    assert "jsearch" in sources
+
+
+def test_build_queries_includes_usajobs():
+    """build_search_queries generates usajobs queries."""
+    profile = {
+        "target_titles": ["Engineer"],
+        "core_skills": ["python"],
+        "target_market": "Washington, DC",
+    }
+
+    queries = build_search_queries(profile)
+
+    sources = {q["source"] for q in queries}
+    assert "usajobs" in sources
+
+
+def test_build_queries_jsearch_remote_location():
+    """JSearch queries map remote arrangement to location=remote."""
+    profile = {
+        "target_titles": ["Developer"],
+        "core_skills": ["python"],
+        "target_market": "New York, NY",
+        "arrangement": ["remote"],
+    }
+
+    queries = build_search_queries(profile)
+
+    jsearch_queries = [q for q in queries if q["source"] == "jsearch"]
+    assert len(jsearch_queries) > 0
+    assert all(q.get("location") == "remote" for q in jsearch_queries)

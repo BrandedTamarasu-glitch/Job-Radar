@@ -55,10 +55,11 @@ def test_exact_duplicates_removed():
     j1 = _make_job(source="Dice")
     j2 = _make_job(source="adzuna")
 
-    result = deduplicate_cross_source([j1, j2])
+    dedup = deduplicate_cross_source([j1, j2])
 
-    assert len(result["results"]) == 1
-    assert result["results"][0].source == "Dice"  # First occurrence kept
+    assert len(dedup["results"]) == 1
+    assert dedup["results"][0].source == "Dice"  # First occurrence kept
+    assert dedup["stats"]["duplicates_removed"] == 1
 
 
 # ==============================================================================
@@ -70,9 +71,9 @@ def test_fuzzy_title_duplicates_removed():
     j1 = _make_job(title="Senior Software Engineer", source="Dice")
     j2 = _make_job(title="Software Engineer, Senior", source="adzuna")
 
-    result = deduplicate_cross_source([j1, j2])
+    dedup = deduplicate_cross_source([j1, j2])
 
-    assert len(result["results"]) == 1
+    assert len(dedup["results"]) == 1
 
 
 def test_fuzzy_company_variation():
@@ -80,9 +81,9 @@ def test_fuzzy_company_variation():
     j1 = _make_job(company="Google Inc", source="Dice")
     j2 = _make_job(company="Google Inc.", source="adzuna")
 
-    result = deduplicate_cross_source([j1, j2])
+    dedup = deduplicate_cross_source([j1, j2])
 
-    assert len(result["results"]) == 1
+    assert len(dedup["results"]) == 1
 
 
 def test_fuzzy_title_case_variations():
@@ -90,9 +91,9 @@ def test_fuzzy_title_case_variations():
     j1 = _make_job(title="Software Engineer", company="Acme", source="Dice")
     j2 = _make_job(title="SOFTWARE ENGINEER", company="Acme", source="adzuna")
 
-    result = deduplicate_cross_source([j1, j2])
+    dedup = deduplicate_cross_source([j1, j2])
 
-    assert len(result["results"]) == 1
+    assert len(dedup["results"]) == 1
 
 
 def test_fuzzy_company_with_punctuation():
@@ -102,10 +103,10 @@ def test_fuzzy_company_with_punctuation():
     j1 = _make_job(company="Smith & Jones", source="Dice")
     j2 = _make_job(company="Smith and Jones", source="adzuna")
 
-    result = deduplicate_cross_source([j1, j2])
+    dedup = deduplicate_cross_source([j1, j2])
 
     # These are treated as different companies due to threshold
-    assert len(result["results"]) == 2
+    assert len(dedup["results"]) == 2
 
 
 # ==============================================================================
@@ -117,9 +118,9 @@ def test_different_jobs_not_deduplicated():
     j1 = _make_job(title="Frontend Dev", company="Google")
     j2 = _make_job(title="Backend Dev", company="Meta")
 
-    result = deduplicate_cross_source([j1, j2])
+    dedup = deduplicate_cross_source([j1, j2])
 
-    assert len(result["results"]) == 2
+    assert len(dedup["results"]) == 2
 
 
 def test_same_title_different_company_not_deduplicated():
@@ -127,9 +128,9 @@ def test_same_title_different_company_not_deduplicated():
     j1 = _make_job(title="Software Engineer", company="Google")
     j2 = _make_job(title="Software Engineer", company="Meta")
 
-    result = deduplicate_cross_source([j1, j2])
+    dedup = deduplicate_cross_source([j1, j2])
 
-    assert len(result["results"]) == 2
+    assert len(dedup["results"]) == 2
 
 
 def test_same_company_different_title_not_deduplicated():
@@ -138,9 +139,9 @@ def test_same_company_different_title_not_deduplicated():
     j1 = _make_job(title="Frontend Developer", company="Acme")
     j2 = _make_job(title="Backend Engineer", company="Acme")
 
-    result = deduplicate_cross_source([j1, j2])
+    dedup = deduplicate_cross_source([j1, j2])
 
-    assert len(result["results"]) == 2
+    assert len(dedup["results"]) == 2
 
 
 # ==============================================================================
@@ -153,10 +154,10 @@ def test_preserves_order():
     j2 = _make_job(title="Dev", company="Co", source="adzuna")
     j3 = _make_job(title="Other", company="Other", source="HN Hiring")
 
-    result = deduplicate_cross_source([j1, j2, j3])
+    dedup = deduplicate_cross_source([j1, j2, j3])
 
-    assert len(result["results"]) == 2
-    assert result["results"][0].source == "Dice"
+    assert len(dedup["results"]) == 2
+    assert dedup["results"][0].source == "Dice"
 
 
 def test_scraper_priority_over_api():
@@ -164,10 +165,10 @@ def test_scraper_priority_over_api():
     scraper_job = _make_job(title="Engineer", company="Tech Co", source="Dice")
     api_job = _make_job(title="Engineer", company="Tech Co", source="adzuna")
 
-    result = deduplicate_cross_source([scraper_job, api_job])
+    dedup = deduplicate_cross_source([scraper_job, api_job])
 
-    assert len(result["results"]) == 1
-    assert result["results"][0].source == "Dice"
+    assert len(dedup["results"]) == 1
+    assert dedup["results"][0].source == "Dice"
 
 
 # ==============================================================================
@@ -179,9 +180,9 @@ def test_location_similarity_threshold():
     j1 = _make_job(location="San Francisco, CA")
     j2 = _make_job(location="New York, NY")
 
-    result = deduplicate_cross_source([j1, j2])
+    dedup = deduplicate_cross_source([j1, j2])
 
-    assert len(result["results"]) == 2  # Different locations = different jobs
+    assert len(dedup["results"]) == 2  # Different locations = different jobs
 
 
 def test_similar_locations_same_city():
@@ -191,10 +192,10 @@ def test_similar_locations_same_city():
     j1 = _make_job(location="San Francisco, CA", source="Dice")
     j2 = _make_job(location="San Francisco, California", source="adzuna")
 
-    result = deduplicate_cross_source([j1, j2])
+    dedup = deduplicate_cross_source([j1, j2])
 
     # These are treated as different due to location threshold
-    assert len(result["results"]) == 2
+    assert len(dedup["results"]) == 2
 
 
 def test_exact_location_match_deduplicated():
@@ -202,9 +203,9 @@ def test_exact_location_match_deduplicated():
     j1 = _make_job(location="Remote", source="Dice")
     j2 = _make_job(location="Remote", source="adzuna")
 
-    result = deduplicate_cross_source([j1, j2])
+    dedup = deduplicate_cross_source([j1, j2])
 
-    assert len(result["results"]) == 1
+    assert len(dedup["results"]) == 1
 
 
 # ==============================================================================
@@ -261,9 +262,9 @@ def test_empty_company_handled():
     j1 = _make_job(company="", source="Dice")
     j2 = _make_job(company="Acme", source="adzuna")
 
-    result = deduplicate_cross_source([j1, j2])
+    dedup = deduplicate_cross_source([j1, j2])
 
-    assert len(result["results"]) == 2  # Different companies, both kept
+    assert len(dedup["results"]) == 2  # Different companies, both kept
 
 
 def test_empty_title_handled():
@@ -271,9 +272,9 @@ def test_empty_title_handled():
     j1 = _make_job(title="", company="Acme", source="Dice")
     j2 = _make_job(title="Engineer", company="Acme", source="adzuna")
 
-    result = deduplicate_cross_source([j1, j2])
+    dedup = deduplicate_cross_source([j1, j2])
 
-    assert len(result["results"]) == 2  # Different titles, both kept
+    assert len(dedup["results"]) == 2  # Different titles, both kept
 
 
 def test_empty_location_handled():
@@ -281,9 +282,9 @@ def test_empty_location_handled():
     j1 = _make_job(location="", source="Dice")
     j2 = _make_job(location="Remote", source="adzuna")
 
-    result = deduplicate_cross_source([j1, j2])
+    dedup = deduplicate_cross_source([j1, j2])
 
-    assert len(result["results"]) == 2  # Different locations, both kept
+    assert len(dedup["results"]) == 2  # Different locations, both kept
 
 
 def test_multiple_duplicates_across_sources():
@@ -293,10 +294,10 @@ def test_multiple_duplicates_across_sources():
     j3 = _make_job(title="Dev", company="Co", source="authentic_jobs")
     j4 = _make_job(title="Dev", company="Co", source="RemoteOK")
 
-    result = deduplicate_cross_source([j1, j2, j3, j4])
+    dedup = deduplicate_cross_source([j1, j2, j3, j4])
 
-    assert len(result["results"]) == 1
-    assert result["results"][0].source == "Dice"  # First in list kept
+    assert len(dedup["results"]) == 1
+    assert dedup["results"][0].source == "Dice"  # First in list kept
 
 
 def test_mixed_unique_and_duplicate_jobs():
@@ -307,12 +308,65 @@ def test_mixed_unique_and_duplicate_jobs():
     j4 = _make_job(title="Manager", company="Apple", source="RemoteOK")  # unique
     j5 = _make_job(title="Manager", company="Apple", source="authentic_jobs")  # duplicate of j4
 
-    result = deduplicate_cross_source([j1, j2, j3, j4, j5])
+    dedup = deduplicate_cross_source([j1, j2, j3, j4, j5])
 
-    assert len(result["results"]) == 3
-    sources = {job.source for job in result["results"]}
+    assert len(dedup["results"]) == 3
+    sources = {job.source for job in dedup["results"]}
     assert "Dice" in sources  # j1 kept
     assert "HN Hiring" in sources  # j3 kept
     assert "RemoteOK" in sources  # j4 kept
     assert "adzuna" not in sources  # j2 removed (duplicate of j1)
     assert "authentic_jobs" not in sources  # j5 removed (duplicate of j4)
+
+
+# ==============================================================================
+# Deduplication Stats Tests
+# ==============================================================================
+
+def test_dedup_returns_stats():
+    """Deduplication returns stats dict with counts."""
+    j1 = _make_job(title="Engineer", company="Google", source="Dice")
+    j2 = _make_job(title="Engineer", company="Google", source="adzuna")  # duplicate
+    j3 = _make_job(title="Designer", company="Meta", source="linkedin")
+    j4 = _make_job(title="Manager", company="Apple", source="indeed")
+    j5 = _make_job(title="Manager", company="Apple", source="glassdoor")  # duplicate
+
+    dedup = deduplicate_cross_source([j1, j2, j3, j4, j5])
+
+    assert "stats" in dedup
+    assert dedup["stats"]["original_count"] == 5
+    assert dedup["stats"]["deduped_count"] == 3
+    assert dedup["stats"]["duplicates_removed"] == 2
+    assert dedup["stats"]["sources_involved"] >= 4  # At least Dice, adzuna, linkedin, indeed
+
+
+def test_dedup_tracks_multi_source():
+    """Deduplication tracks jobs found on multiple sources."""
+    j1 = _make_job(title="Engineer", company="Google", source="dice")
+    j2 = _make_job(title="Engineer", company="Google", source="linkedin")  # duplicate
+
+    dedup = deduplicate_cross_source([j1, j2])
+
+    assert "multi_source" in dedup
+    # Check that there's at least one multi-source entry
+    assert len(dedup["multi_source"]) > 0
+    # The key should be (title, company) normalized
+    key = ("engineer", "google")
+    assert key in dedup["multi_source"]
+    # Should have both sources listed
+    sources = dedup["multi_source"][key]
+    assert "dice" in sources
+    assert "linkedin" in sources
+
+
+def test_dedup_empty_returns_stats():
+    """Empty input returns valid stats dict."""
+    dedup = deduplicate_cross_source([])
+
+    assert "results" in dedup
+    assert "stats" in dedup
+    assert "multi_source" in dedup
+    assert dedup["stats"]["original_count"] == 0
+    assert dedup["stats"]["deduped_count"] == 0
+    assert dedup["stats"]["duplicates_removed"] == 0
+    assert dedup["stats"]["sources_involved"] == 0
