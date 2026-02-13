@@ -379,6 +379,19 @@ class ProfileForm(ctk.CTkFrame):
         form_frame = ctk.CTkScrollableFrame(self._content_container)
         form_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
 
+        # Linux mouse wheel scrolling fix — CTkScrollableFrame may not bind
+        # Button-4/Button-5 (X11 scroll events) on all platforms
+        import sys
+        if sys.platform == "linux":
+            def _on_linux_scroll(event):
+                canvas = form_frame._parent_canvas
+                if event.num == 4:
+                    canvas.yview_scroll(-3, "units")
+                elif event.num == 5:
+                    canvas.yview_scroll(3, "units")
+            form_frame.bind_all("<Button-4>", _on_linux_scroll)
+            form_frame.bind_all("<Button-5>", _on_linux_scroll)
+
         # Store field references for validation and value extraction
         self._fields = {}
         self._error_labels = {}
