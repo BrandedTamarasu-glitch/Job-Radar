@@ -1,6 +1,6 @@
 # Project State: Job Radar
 
-**Last Updated:** 2026-02-13T20:00:09Z
+**Last Updated:** 2026-02-13T20:07:37Z
 
 ## Project Reference
 
@@ -13,12 +13,12 @@
 ## Current Position
 
 **Phase:** 32 - Job Aggregator APIs
-**Current Plan:** 2/4
+**Current Plan:** 3/4
 **Status:** In Progress
 
-**Progress:** [██████████] 97%
+**Progress:** [██████████] 98%
 
-**Next Action:** Execute Phase 32 Plan 02 (API Setup Wizard Extension)
+**Next Action:** Execute Phase 32 Plan 04 (if exists) or complete phase
 
 ## Performance Metrics
 
@@ -32,6 +32,7 @@
 | v1.3.0 Accessibility | 3 | 7 | 1 | 7.0 |
 
 **Average velocity:** ~5 plans/day (varies by complexity)
+| Phase 32 P03 | 330 | 2 tasks | 6 files |
 | Phase 31 P02 | 213 | 1 tasks | 5 files |
 | Phase 32 P02 | 158 | 2 tasks | 2 files |
 | Phase 32 P01 | 164 | 2 tasks | 2 files |
@@ -79,6 +80,9 @@
 | Validate API keys during setup with inline test requests | Immediate feedback to users prevents configuration errors | 2026-02-13 |
 | Store keys even on validation failure | Network issues should not block setup - graceful degradation | 2026-02-13 |
 | Profile schema forward-compatible design | New optional fields accepted without code changes - extensibility | 2026-02-13 |
+| Three-phase source ordering (scrapers -> APIs -> aggregators) | Ensures native sources win in dedup over aggregated duplicates | 2026-02-13 |
+| JSearch display source splitting for progress tracking | Shows individual source progress (LinkedIn: 5, Indeed: 7) not "JSearch: 12" | 2026-02-13 |
+| Deduplication returns dict with stats and multi-source map | Enables transparency and future multi-source badge feature | 2026-02-13 |
 
 ### Active Constraints
 
@@ -107,41 +111,49 @@ None.
 
 ### What Just Happened
 
-Completed Phase 32 Plan 02: API Setup Extensions (PLAN 2 OF 4)
+Completed Phase 32 Plan 03: JSearch and USAJobs Integration into Search Pipeline (PLAN 3 OF 4)
 
-**Executed:** Extended API setup wizard and profile schema for JSearch and USAJobs sources
+**Executed:** Integrated JSearch and USAJobs into main search workflow with three-phase source ordering and enhanced deduplication
 
 **Key accomplishments:**
-- Task 1: Added JSearch and USAJobs sections to setup_apis() and test_apis() with inline validation
-- API keys validated during setup with immediate feedback (✓ valid, ✗ invalid, ⚠ network error)
-- Keys stored even on validation failure (graceful degradation for network issues)
-- Tips shown when JSearch not configured (user education)
-- Task 2: Added federal job filter fields to profile schema (gs_grade_min, gs_grade_max, preferred_agencies, security_clearance)
-- Forward-compatible profile schema accepts new optional fields without code changes
+- Task 1: Integrated JSearch and USAJobs into query builder and fetch_all orchestrator
+- Query generation creates jsearch and usajobs queries from profile titles with location mapping
+- Three-phase source ordering ensures native sources win in dedup (scrapers -> APIs -> aggregators)
+- USAJobs added to API_SOURCES (native federal source runs before JSearch)
+- JSearch results split by actual source (linkedin/indeed/glassdoor) for accurate progress display
+- Task 2: Enhanced deduplication with multi-source tracking and statistics reporting
+- Deduplication now returns dict with results, stats, and multi_source map
+- Stats track original_count, deduped_count, duplicates_removed, sources_involved
+- CLI displays dedup stats when duplicates found: "N duplicates removed across M sources"
+- Updated sources_searched to include LinkedIn, Indeed, Glassdoor, USAJobs (Federal)
 - All 460 tests passing (no regressions)
 
 **Commits:**
-- d7f61fb - feat(32-job-aggregator-apis): add JSearch and USAJobs to API setup wizard
-- 32642c1 - feat(32-job-aggregator-apis): add optional federal job fields to profile schema
+- f67d896 - feat(32-job-aggregator-apis): integrate JSearch and USAJobs into search pipeline
+- 8b80a14 - feat(32-job-aggregator-apis): enhance deduplication with multi-source tracking and stats
 
-**Duration:** 158 seconds (2.6 minutes)
+**Duration:** 330 seconds (5.5 minutes)
 
 ### What's Next
 
-Execute Phase 32 Plan 03 (integration into main search workflow)
+Check if Phase 32 Plan 04 exists, otherwise phase is complete. Ready for GUI API settings or source integration testing.
 
 ### Files Changed This Session
 
-- `/home/corye/Claude/Job-Radar/job_radar/api_setup.py` - Added JSearch/USAJobs setup and test sections (+196 lines)
-- `/home/corye/Claude/Job-Radar/profiles/_template.json` - Added federal job filter fields
-- `/home/corye/Claude/Job-Radar/.planning/phases/32-job-aggregator-apis/32-02-SUMMARY.md` - Created
+- `/home/corye/Claude/Job-Radar/job_radar/sources.py` - Integrated JSearch/USAJobs queries, three-phase fetch_all, enhanced tracking (+56/-7 lines)
+- `/home/corye/Claude/Job-Radar/job_radar/deduplication.py` - Enhanced with stats and multi-source tracking (+73/-9 lines)
+- `/home/corye/Claude/Job-Radar/job_radar/search.py` - Updated to handle dedup stats and new sources (+8/-1 lines)
+- `/home/corye/Claude/Job-Radar/job_radar/gui/worker_thread.py` - Updated for new fetch_all return type (+4/-1 lines)
+- `/home/corye/Claude/Job-Radar/tests/test_deduplication.py` - Updated for new return type (+31/-31 lines)
+- `/home/corye/Claude/Job-Radar/tests/test_ux.py` - Updated mock to return tuple (+1/-1 lines)
+- `/home/corye/Claude/Job-Radar/.planning/phases/32-job-aggregator-apis/32-03-SUMMARY.md` - Created
 - `/home/corye/Claude/Job-Radar/.planning/STATE.md` - Updated position, decisions, metrics
 
 ### Context for Next Session
 
-**If continuing:** Proceed to Phase 32 Plan 03. Setup wizard now supports JSearch and USAJobs credential configuration. Profile schema supports federal job filters. Ready to integrate into main search workflow.
+**If continuing:** Check for Phase 32 Plan 04. If none exists, phase is complete. JSearch and USAJobs now fully integrated into search pipeline with three-phase source ordering and enhanced dedup stats.
 
-**If resuming later:** Read STATE.md for current position, check .planning/phases/32-job-aggregator-apis/32-02-SUMMARY.md for setup wizard implementation details.
+**If resuming later:** Read STATE.md for current position, check .planning/phases/32-job-aggregator-apis/32-03-SUMMARY.md for integration details.
 
 ---
 *State initialized: 2026-02-13*
