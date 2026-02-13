@@ -321,6 +321,14 @@ Plans:
 
 **Requirements:** SRC-01, SRC-02, SRC-05, SRC-06, SRC-08
 
+**Plans:** 4 plans
+
+Plans:
+- [ ] 32-01-PLAN.md — JSearch + USAJobs fetch functions, response mapping, rate limiter config
+- [ ] 32-02-PLAN.md — API setup wizard extension + profile schema (federal fields)
+- [ ] 32-03-PLAN.md — Search pipeline integration (query builder, fetch_all, dedup enhancements)
+- [ ] 32-04-PLAN.md — GUI API key settings + comprehensive tests
+
 **Success Criteria:**
 1. Users can run searches that return results from JSearch API (LinkedIn, Indeed, Glassdoor aggregation)
 2. Users can run searches that return results from USAJobs API for federal government jobs
@@ -417,7 +425,7 @@ Plans:
 | 24-27 | v1.5.0 | 7/7 | Complete | 2026-02-12 |
 | 28-30 | v2.0.0 | 8/8 | Complete | 2026-02-13 |
 | 31 | v2.1.0 | 2/2 | Complete | 2026-02-13 |
-| 32 | v2.1.0 | 0/? | Pending | — |
+| 32 | v2.1.0 | 0/4 | Pending | — |
 | 33 | v2.1.0 | 0/? | Pending | — |
 | 34 | v2.1.0 | 0/? | Pending | — |
 | 35 | v2.1.0 | 0/? | Pending | — |
