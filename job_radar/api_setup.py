@@ -108,6 +108,116 @@ def setup_apis():
         print("\nSetup cancelled.")
         return
 
+    # Section 3 - JSearch
+    print("\n" + "=" * 60)
+    print("JSearch API (LinkedIn, Indeed, Glassdoor)")
+    print("=" * 60)
+    print("Sign up at: https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch\n")
+
+    try:
+        jsearch_key = questionary.text(
+            "JSEARCH_API_KEY (press Enter to skip):",
+            style=custom_style
+        ).ask()
+
+        if jsearch_key is None:  # Ctrl+C
+            print("\nSetup cancelled.")
+            return
+
+        if jsearch_key.strip():
+            # Validate key with test request
+            print("  Testing...", end=" ", flush=True)
+            try:
+                test_url = "https://jsearch.p.rapidapi.com/search?query=test&num_pages=1"
+                headers = {
+                    "X-RapidAPI-Key": jsearch_key.strip(),
+                    "X-RapidAPI-Host": "jsearch.p.rapidapi.com"
+                }
+                response = requests.get(test_url, headers=headers, timeout=10)
+
+                if response.status_code == 200:
+                    print("✓ Key is valid")
+                    credentials["JSEARCH_API_KEY"] = jsearch_key.strip()
+                elif response.status_code in (401, 403):
+                    print(f"✗ Invalid key (HTTP {response.status_code})")
+                    credentials["JSEARCH_API_KEY"] = jsearch_key.strip()
+                else:
+                    print(f"⚠ Could not validate (HTTP {response.status_code}) — key saved anyway")
+                    credentials["JSEARCH_API_KEY"] = jsearch_key.strip()
+            except requests.Timeout:
+                print("⚠ Could not validate (timeout) — key saved anyway")
+                credentials["JSEARCH_API_KEY"] = jsearch_key.strip()
+            except requests.RequestException as e:
+                print(f"⚠ Could not validate (network error) — key saved anyway")
+                credentials["JSEARCH_API_KEY"] = jsearch_key.strip()
+
+    except KeyboardInterrupt:
+        print("\nSetup cancelled.")
+        return
+
+    # Section 4 - USAJobs
+    print("\n" + "=" * 60)
+    print("USAJobs API (Federal Government Jobs)")
+    print("=" * 60)
+    print("Sign up at: https://developer.usajobs.gov/apirequest/\n")
+
+    try:
+        usajobs_email = questionary.text(
+            "USAJOBS_EMAIL (press Enter to skip):",
+            style=custom_style
+        ).ask()
+
+        if usajobs_email is None:  # Ctrl+C
+            print("\nSetup cancelled.")
+            return
+
+        if usajobs_email.strip():
+            usajobs_key = questionary.text(
+                "USAJOBS_API_KEY:",
+                style=custom_style
+            ).ask()
+
+            if usajobs_key is None:  # Ctrl+C
+                print("\nSetup cancelled.")
+                return
+
+            if usajobs_key.strip():
+                # Validate key with test request
+                print("  Testing...", end=" ", flush=True)
+                try:
+                    test_url = "https://data.usajobs.gov/api/search?Keyword=test&ResultsPerPage=1"
+                    headers = {
+                        "Host": "data.usajobs.gov",
+                        "User-Agent": usajobs_email.strip(),
+                        "Authorization-Key": usajobs_key.strip()
+                    }
+                    response = requests.get(test_url, headers=headers, timeout=10)
+
+                    if response.status_code == 200:
+                        print("✓ Key is valid")
+                        credentials["USAJOBS_API_KEY"] = usajobs_key.strip()
+                        credentials["USAJOBS_EMAIL"] = usajobs_email.strip()
+                    elif response.status_code in (401, 403):
+                        print(f"✗ Invalid credentials (HTTP {response.status_code})")
+                        credentials["USAJOBS_API_KEY"] = usajobs_key.strip()
+                        credentials["USAJOBS_EMAIL"] = usajobs_email.strip()
+                    else:
+                        print(f"⚠ Could not validate (HTTP {response.status_code}) — credentials saved anyway")
+                        credentials["USAJOBS_API_KEY"] = usajobs_key.strip()
+                        credentials["USAJOBS_EMAIL"] = usajobs_email.strip()
+                except requests.Timeout:
+                    print("⚠ Could not validate (timeout) — credentials saved anyway")
+                    credentials["USAJOBS_API_KEY"] = usajobs_key.strip()
+                    credentials["USAJOBS_EMAIL"] = usajobs_email.strip()
+                except requests.RequestException as e:
+                    print(f"⚠ Could not validate (network error) — credentials saved anyway")
+                    credentials["USAJOBS_API_KEY"] = usajobs_key.strip()
+                    credentials["USAJOBS_EMAIL"] = usajobs_email.strip()
+
+    except KeyboardInterrupt:
+        print("\nSetup cancelled.")
+        return
+
     # Summary
     print("\n" + "=" * 60)
     print("Summary")
@@ -119,8 +229,16 @@ def setup_apis():
             print("  ✓ Adzuna")
         if "AUTHENTIC_JOBS_API_KEY" in credentials:
             print("  ✓ Authentic Jobs")
+        if "JSEARCH_API_KEY" in credentials:
+            print("  ✓ JSearch (LinkedIn, Indeed, Glassdoor)")
+        if "USAJOBS_API_KEY" in credentials:
+            print("  ✓ USAJobs (Federal)")
     else:
         print("\nNo sources configured (all skipped)")
+
+    # Show tip for JSearch if not configured
+    if "JSEARCH_API_KEY" not in credentials:
+        print("\nTip: Set up JSearch API key to search LinkedIn, Indeed, and Glassdoor")
 
     # Confirm save
     try:
@@ -150,6 +268,15 @@ def setup_apis():
     if "AUTHENTIC_JOBS_API_KEY" in credentials:
         env_lines.append("# Authentic Jobs API Key\n")
         env_lines.append(f"AUTHENTIC_JOBS_API_KEY={credentials['AUTHENTIC_JOBS_API_KEY']}\n\n")
+
+    if "JSEARCH_API_KEY" in credentials:
+        env_lines.append("# JSearch API Key (RapidAPI)\n")
+        env_lines.append(f"JSEARCH_API_KEY={credentials['JSEARCH_API_KEY']}\n\n")
+
+    if "USAJOBS_API_KEY" in credentials:
+        env_lines.append("# USAJobs API Credentials\n")
+        env_lines.append(f"USAJOBS_API_KEY={credentials['USAJOBS_API_KEY']}\n")
+        env_lines.append(f"USAJOBS_EMAIL={credentials['USAJOBS_EMAIL']}\n\n")
 
     env_content = "".join(env_lines)
 
@@ -284,6 +411,75 @@ def test_apis():
         except requests.RequestException as e:
             print(f"  ✗ Error: Network error ({e})\n")
             results["authentic_jobs"] = "error"
+
+    # Test JSearch
+    print("JSearch API:")
+    jsearch_key = os.getenv("JSEARCH_API_KEY")
+
+    if not jsearch_key:
+        print("  ✗ Not configured (skipped)")
+        print("  Tip: Set up JSearch API key to search LinkedIn, Indeed, and Glassdoor\n")
+        results["jsearch"] = "skipped"
+    else:
+        try:
+            url = "https://jsearch.p.rapidapi.com/search?query=test&num_pages=1"
+            headers = {
+                "X-RapidAPI-Key": jsearch_key,
+                "X-RapidAPI-Host": "jsearch.p.rapidapi.com"
+            }
+            response = requests.get(url, headers=headers, timeout=10)
+
+            if response.status_code == 200:
+                print("  ✓ Pass\n")
+                results["jsearch"] = "pass"
+            elif response.status_code in (401, 403):
+                print("  ✗ Fail: Invalid credentials\n")
+                results["jsearch"] = "fail"
+            else:
+                print(f"  ✗ Error: HTTP {response.status_code}\n")
+                results["jsearch"] = "error"
+
+        except requests.Timeout:
+            print("  ✗ Error: Request timeout\n")
+            results["jsearch"] = "error"
+        except requests.RequestException as e:
+            print(f"  ✗ Error: Network error ({e})\n")
+            results["jsearch"] = "error"
+
+    # Test USAJobs
+    print("USAJobs API:")
+    usajobs_key = os.getenv("USAJOBS_API_KEY")
+    usajobs_email = os.getenv("USAJOBS_EMAIL")
+
+    if not usajobs_key or not usajobs_email:
+        print("  ✗ Not configured (skipped)\n")
+        results["usajobs"] = "skipped"
+    else:
+        try:
+            url = "https://data.usajobs.gov/api/search?Keyword=test&ResultsPerPage=1"
+            headers = {
+                "Host": "data.usajobs.gov",
+                "User-Agent": usajobs_email,
+                "Authorization-Key": usajobs_key
+            }
+            response = requests.get(url, headers=headers, timeout=10)
+
+            if response.status_code == 200:
+                print("  ✓ Pass\n")
+                results["usajobs"] = "pass"
+            elif response.status_code in (401, 403):
+                print("  ✗ Fail: Invalid credentials\n")
+                results["usajobs"] = "fail"
+            else:
+                print(f"  ✗ Error: HTTP {response.status_code}\n")
+                results["usajobs"] = "error"
+
+        except requests.Timeout:
+            print("  ✗ Error: Request timeout\n")
+            results["usajobs"] = "error"
+        except requests.RequestException as e:
+            print(f"  ✗ Error: Network error ({e})\n")
+            results["usajobs"] = "error"
 
     # Summary
     print("=" * 60)
