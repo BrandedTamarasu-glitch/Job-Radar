@@ -323,11 +323,11 @@ Plans:
 6. GitHub Actions CI/CD workflow builds all platforms on tag triggers and publishes to releases
 7. GUI executable does not show console window on Windows when launched by double-click
 
-**Plans:** TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 30-01: TBD
-- [ ] 30-02: TBD
+- [ ] 30-01-PLAN.md — Entitlements, spec file updates, CI smoke tests and symlink fix
+- [ ] 30-02-PLAN.md — Local build verification and human executable testing checkpoint
 
 ## Progress
 
