@@ -275,9 +275,9 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 28-01-PLAN.md — GUI window shell + entry point detection
-- [ ] 28-02-PLAN.md — Threading infrastructure + progress demo
-- [ ] 28-03-PLAN.md — Human verification checkpoint
+- [x] 28-01-PLAN.md — GUI window shell + entry point detection
+- [x] 28-02-PLAN.md — Threading infrastructure + progress demo
+- [x] 28-03-PLAN.md — Human verification checkpoint
 
 #### Phase 29: Profile Setup & Search Controls
 
@@ -339,7 +339,7 @@ Plans:
 | 16-18 | v1.3.0 | 7/7 | Complete | 2026-02-11 |
 | 19-23 | v1.4.0 | 9/9 | Complete | 2026-02-11 |
 | 24-27 | v1.5.0 | 7/7 | Complete | 2026-02-12 |
-| 28 | v2.0.0 | 0/TBD | Not started | - |
+| 28 | v2.0.0 | 3/3 | Complete | 2026-02-12 |
 | 29 | v2.0.0 | 0/TBD | Not started | - |
 | 30 | v2.0.0 | 0/TBD | Not started | - |
 

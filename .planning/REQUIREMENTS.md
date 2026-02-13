@@ -82,10 +82,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| GUI-01 | Phase 28 | Pending |
-| GUI-02 | Phase 28 | Pending |
-| GUI-03 | Phase 28 | Pending |
-| GUI-04 | Phase 28 | Pending |
+| GUI-01 | Phase 28 | Complete |
+| GUI-02 | Phase 28 | Complete |
+| GUI-03 | Phase 28 | Complete |
+| GUI-04 | Phase 28 | Complete |
 | PROF-01 | Phase 29 | Pending |
 | PROF-02 | Phase 29 | Pending |
 | PROF-03 | Phase 29 | Pending |

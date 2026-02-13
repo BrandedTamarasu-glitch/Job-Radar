@@ -5,24 +5,24 @@
 See: .planning/PROJECT.md (updated 2026-02-12)
 
 **Core value:** Accurate job-candidate scoring — if the scoring is wrong, nothing else matters.
-**Current focus:** Phase 28 - GUI Foundation & Threading
+**Current focus:** Phase 29 - Profile Setup & Search Controls
 
 ## Current Position
 
 Milestone: v2.0.0 Desktop GUI Launcher
-Phase: 28 of 30 (GUI Foundation & Threading)
-Plan: 2 of 3 complete (28-01 ✓, 28-02 ✓, 28-03)
-Status: In progress
-Last activity: 2026-02-12 — Plan 28-02 complete (Threading infrastructure)
+Phase: 29 of 30 (Profile Setup & Search Controls)
+Plan: Not yet planned
+Status: Ready to plan
+Last activity: 2026-02-12 — Phase 28 complete and verified
 
-Progress: [█████████████████████████████░] 92%
+Progress: [█████████████████████████████░] 93%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 51
+- Total plans completed: 52
 - Average duration: ~44 min
-- Total execution time: ~36.3 hours
+- Total execution time: ~36.4 hours
 
 **By Milestone:**
 
@@ -34,7 +34,7 @@ Progress: [███████████████████████
 | v1.3.0 | 16-18 | 7 | Complete (2026-02-11) |
 | v1.4.0 | 19-23 | 9 | Complete (2026-02-11) |
 | v1.5.0 | 24-27 | 7 | Complete (2026-02-12) |
-| v2.0.0 | 28-30 | 2/TBD | In progress |
+| v2.0.0 | 28-30 | 3/TBD | In progress |
 
 **Recent Trend:**
 - Last 5 plans: ~30-60 min range
@@ -43,6 +43,7 @@ Progress: [███████████████████████
 *Updated after each plan completion*
 | Phase 28 P01 | 15 | 2 tasks | 5 files |
 | Phase 28 P02 | 3 | 2 tasks | 2 files |
+| Phase 28 P03 | 5 | 1 task | 0 files |
 
 ## Accumulated Context
 
@@ -71,12 +72,13 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Completed 28-02-PLAN.md
+Stopped at: Phase 28 complete and verified
 Resume file: None
 
 **Next steps:**
-1. Execute 28-03-PLAN.md (Human verification checkpoint)
-2. Continue to Phase 29 (GUI profile forms integration)
+1. Run `/gsd:plan-phase 29` to plan Profile Setup & Search Controls
+2. Phase 29 delivers GUI feature parity with CLI (forms, search config, visual feedback)
+3. 11 requirements to cover: PROF-01–04, SRCH-01–05, PROG-01–02
 
 ---
-*Last updated: 2026-02-12 after Phase 28 Plan 02 complete*
+*Last updated: 2026-02-12 after Phase 28 complete*
