@@ -220,7 +220,7 @@ class SearchWorker:
                 elif status == "complete":
                     self._queue.put(("source_complete", source_name, current, total, job_count))
 
-            results = fetch_all(self._profile, on_source_progress=on_source_progress)
+            results, dedup_stats = fetch_all(self._profile, on_source_progress=on_source_progress)
 
             if self._stop_event.is_set():
                 self._queue.put(("cancelled",))
@@ -278,7 +278,10 @@ class SearchWorker:
             tracker_stats = get_stats()
 
             # Build sources_searched list (all sources we attempted)
-            sources_searched = ["Dice", "HN Hiring", "RemoteOK", "We Work Remotely", "Adzuna", "Authentic Jobs"]
+            sources_searched = [
+                "Dice", "HN Hiring", "RemoteOK", "We Work Remotely",
+                "Adzuna", "Authentic Jobs", "LinkedIn", "Indeed", "Glassdoor", "USAJobs (Federal)"
+            ]
 
             report_result = generate_report(
                 profile=self._profile,

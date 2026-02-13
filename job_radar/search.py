@@ -895,7 +895,7 @@ def main():
             l.setLevel(logging.WARNING)
 
     try:
-        all_results = fetch_all(profile, on_source_progress=_on_source_progress)
+        all_results, dedup_stats = fetch_all(profile, on_source_progress=_on_source_progress)
     except Exception as e:
         print("\nCouldn't fetch job listings — check your internet connection")
         from .banner import log_error_to_file
@@ -904,6 +904,10 @@ def main():
 
     for l, prev in zip(fetch_loggers, prev_levels):
         l.setLevel(prev)
+
+    # Display dedup stats if duplicates found
+    if dedup_stats["duplicates_removed"] > 0:
+        print(f"  {C.DIM}{dedup_stats['duplicates_removed']} duplicates removed across {dedup_stats['sources_involved']} sources{C.RESET}")
 
     # Step 2: Date filter
     print(f"\n{C.BOLD}Step 2:{C.RESET} Filtering by date range ({from_date} to {to_date})...")
@@ -951,7 +955,10 @@ def main():
 
     # Step 5: Generate report
     manual_urls = generate_manual_urls(profile)
-    sources_searched = list({r["job"].source for r in scored}) if scored else ["Dice", "HN Hiring", "RemoteOK", "WWR"]
+    sources_searched = list({r["job"].source for r in scored}) if scored else [
+        "Dice", "HN Hiring", "RemoteOK", "We Work Remotely",
+        "Adzuna", "Authentic Jobs", "LinkedIn", "Indeed", "Glassdoor", "USAJobs (Federal)"
+    ]
     tracker_stats = get_stats()
 
     print(f"\n{C.BOLD}Step 5:{C.RESET} Generating report...")

@@ -7,7 +7,7 @@ from rapidfuzz import fuzz
 log = logging.getLogger(__name__)
 
 
-def deduplicate_cross_source(results: list, threshold: int = 85) -> list:
+def deduplicate_cross_source(results: list, threshold: int = 85) -> dict:
     """Remove duplicate jobs across sources using fuzzy matching.
 
     Match criteria:
@@ -25,13 +25,43 @@ def deduplicate_cross_source(results: list, threshold: int = 85) -> list:
         threshold: Similarity threshold (0-100), default 85
 
     Returns:
-        Deduplicated list of JobResult objects
+        dict with keys:
+          - "results": Deduplicated list of JobResult objects
+          - "stats": Dict with dedup statistics:
+              - "original_count": total before dedup
+              - "deduped_count": total after dedup
+              - "duplicates_removed": number removed
+              - "sources_involved": number of unique sources with duplicates
+          - "multi_source": Dict mapping job key -> list of source names
+              (only for jobs found on 2+ sources)
     """
     if not results:
-        return []
+        return {
+            "results": [],
+            "stats": {
+                "original_count": 0,
+                "deduped_count": 0,
+                "duplicates_removed": 0,
+                "sources_involved": 0,
+            },
+            "multi_source": {}
+        }
 
     if len(results) == 1:
-        return results
+        return {
+            "results": results,
+            "stats": {
+                "original_count": 1,
+                "deduped_count": 1,
+                "duplicates_removed": 0,
+                "sources_involved": 0,
+            },
+            "multi_source": {}
+        }
+
+    # Track multi-source matches
+    multi_source_map = {}  # (title, company) -> [source1, source2, ...]
+    original_count = len(results)
 
     # Bucket by normalized company name (optimization: reduces O(N²) to O(N*B))
     buckets = defaultdict(list)
@@ -49,6 +79,16 @@ def deduplicate_cross_source(results: list, threshold: int = 85) -> list:
             key = (job.title.lower(), job.company.lower(), job.location.lower())
             if key in seen_keys:
                 log.debug(f"Exact duplicate: {job.title} at {job.company} ({job.source})")
+                # Record multi-source for exact duplicate
+                seen_key = (job.title.lower(), job.company.lower())
+                if seen_key not in multi_source_map:
+                    # Find the original job and initialize with its source
+                    for seen_job in seen:
+                        if seen_job.title.lower() == seen_key[0] and seen_job.company.lower() == seen_key[1]:
+                            multi_source_map[seen_key] = [seen_job.source]
+                            break
+                if job.source not in multi_source_map[seen_key]:
+                    multi_source_map[seen_key].append(job.source)
                 continue
 
             # Fuzzy duplicate check against seen jobs in same bucket
@@ -72,18 +112,37 @@ def deduplicate_cross_source(results: list, threshold: int = 85) -> list:
                         f"matches {seen_job.source} (title={title_sim}, company={company_sim}, location={location_sim})"
                     )
                     is_duplicate = True
+                    # Record multi-source for fuzzy duplicate
+                    seen_key = (seen_job.title.lower(), seen_job.company.lower())
+                    if seen_key not in multi_source_map:
+                        multi_source_map[seen_key] = [seen_job.source]
+                    if job.source not in multi_source_map[seen_key]:
+                        multi_source_map[seen_key].append(job.source)
                     break
 
             if not is_duplicate:
                 seen.append(job)
                 seen_keys.add(key)
 
-    original_count = len(results)
     deduped_count = len(seen)
+
+    # Build stats
+    sources_with_dupes = set()
+    for key, sources in multi_source_map.items():
+        if len(sources) > 1:
+            sources_with_dupes.update(sources)
+
+    stats = {
+        "original_count": original_count,
+        "deduped_count": deduped_count,
+        "duplicates_removed": original_count - deduped_count,
+        "sources_involved": len(sources_with_dupes),
+    }
+
     if original_count > deduped_count:
         log.info(
             f"Deduplication: {original_count} -> {deduped_count} jobs "
             f"({original_count - deduped_count} duplicates removed)"
         )
 
-    return seen
+    return {"results": seen, "stats": stats, "multi_source": multi_source_map}

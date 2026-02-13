@@ -27,8 +27,11 @@ def _make_job(title="Engineer", company="Acme", location="Remote", source="Dice"
 # ==============================================================================
 
 def test_empty_input():
-    """Empty list returns empty list."""
-    assert deduplicate_cross_source([]) == []
+    """Empty list returns empty dict with stats."""
+    result = deduplicate_cross_source([])
+    assert result["results"] == []
+    assert result["stats"]["original_count"] == 0
+    assert result["stats"]["deduped_count"] == 0
 
 
 def test_single_job_returned():
@@ -36,8 +39,11 @@ def test_single_job_returned():
     job = _make_job()
     result = deduplicate_cross_source([job])
 
-    assert len(result) == 1
-    assert result[0] == job
+    assert len(result["results"]) == 1
+    assert result["results"][0] == job
+    assert result["stats"]["original_count"] == 1
+    assert result["stats"]["deduped_count"] == 1
+    assert result["stats"]["duplicates_removed"] == 0
 
 
 # ==============================================================================
@@ -51,8 +57,8 @@ def test_exact_duplicates_removed():
 
     result = deduplicate_cross_source([j1, j2])
 
-    assert len(result) == 1
-    assert result[0].source == "Dice"  # First occurrence kept
+    assert len(result["results"]) == 1
+    assert result["results"][0].source == "Dice"  # First occurrence kept
 
 
 # ==============================================================================
@@ -66,7 +72,7 @@ def test_fuzzy_title_duplicates_removed():
 
     result = deduplicate_cross_source([j1, j2])
 
-    assert len(result) == 1
+    assert len(result["results"]) == 1
 
 
 def test_fuzzy_company_variation():
@@ -76,7 +82,7 @@ def test_fuzzy_company_variation():
 
     result = deduplicate_cross_source([j1, j2])
 
-    assert len(result) == 1
+    assert len(result["results"]) == 1
 
 
 def test_fuzzy_title_case_variations():
@@ -86,7 +92,7 @@ def test_fuzzy_title_case_variations():
 
     result = deduplicate_cross_source([j1, j2])
 
-    assert len(result) == 1
+    assert len(result["results"]) == 1
 
 
 def test_fuzzy_company_with_punctuation():
@@ -99,7 +105,7 @@ def test_fuzzy_company_with_punctuation():
     result = deduplicate_cross_source([j1, j2])
 
     # These are treated as different companies due to threshold
-    assert len(result) == 2
+    assert len(result["results"]) == 2
 
 
 # ==============================================================================
@@ -113,7 +119,7 @@ def test_different_jobs_not_deduplicated():
 
     result = deduplicate_cross_source([j1, j2])
 
-    assert len(result) == 2
+    assert len(result["results"]) == 2
 
 
 def test_same_title_different_company_not_deduplicated():
@@ -123,7 +129,7 @@ def test_same_title_different_company_not_deduplicated():
 
     result = deduplicate_cross_source([j1, j2])
 
-    assert len(result) == 2
+    assert len(result["results"]) == 2
 
 
 def test_same_company_different_title_not_deduplicated():
@@ -134,7 +140,7 @@ def test_same_company_different_title_not_deduplicated():
 
     result = deduplicate_cross_source([j1, j2])
 
-    assert len(result) == 2
+    assert len(result["results"]) == 2
 
 
 # ==============================================================================
@@ -149,8 +155,8 @@ def test_preserves_order():
 
     result = deduplicate_cross_source([j1, j2, j3])
 
-    assert len(result) == 2
-    assert result[0].source == "Dice"
+    assert len(result["results"]) == 2
+    assert result["results"][0].source == "Dice"
 
 
 def test_scraper_priority_over_api():
@@ -160,8 +166,8 @@ def test_scraper_priority_over_api():
 
     result = deduplicate_cross_source([scraper_job, api_job])
 
-    assert len(result) == 1
-    assert result[0].source == "Dice"
+    assert len(result["results"]) == 1
+    assert result["results"][0].source == "Dice"
 
 
 # ==============================================================================
@@ -175,7 +181,7 @@ def test_location_similarity_threshold():
 
     result = deduplicate_cross_source([j1, j2])
 
-    assert len(result) == 2  # Different locations = different jobs
+    assert len(result["results"]) == 2  # Different locations = different jobs
 
 
 def test_similar_locations_same_city():
@@ -188,7 +194,7 @@ def test_similar_locations_same_city():
     result = deduplicate_cross_source([j1, j2])
 
     # These are treated as different due to location threshold
-    assert len(result) == 2
+    assert len(result["results"]) == 2
 
 
 def test_exact_location_match_deduplicated():
@@ -198,7 +204,7 @@ def test_exact_location_match_deduplicated():
 
     result = deduplicate_cross_source([j1, j2])
 
-    assert len(result) == 1
+    assert len(result["results"]) == 1
 
 
 # ==============================================================================
@@ -257,7 +263,7 @@ def test_empty_company_handled():
 
     result = deduplicate_cross_source([j1, j2])
 
-    assert len(result) == 2  # Different companies, both kept
+    assert len(result["results"]) == 2  # Different companies, both kept
 
 
 def test_empty_title_handled():
@@ -267,7 +273,7 @@ def test_empty_title_handled():
 
     result = deduplicate_cross_source([j1, j2])
 
-    assert len(result) == 2  # Different titles, both kept
+    assert len(result["results"]) == 2  # Different titles, both kept
 
 
 def test_empty_location_handled():
@@ -277,7 +283,7 @@ def test_empty_location_handled():
 
     result = deduplicate_cross_source([j1, j2])
 
-    assert len(result) == 2  # Different locations, both kept
+    assert len(result["results"]) == 2  # Different locations, both kept
 
 
 def test_multiple_duplicates_across_sources():
@@ -289,8 +295,8 @@ def test_multiple_duplicates_across_sources():
 
     result = deduplicate_cross_source([j1, j2, j3, j4])
 
-    assert len(result) == 1
-    assert result[0].source == "Dice"  # First in list kept
+    assert len(result["results"]) == 1
+    assert result["results"][0].source == "Dice"  # First in list kept
 
 
 def test_mixed_unique_and_duplicate_jobs():
@@ -303,8 +309,8 @@ def test_mixed_unique_and_duplicate_jobs():
 
     result = deduplicate_cross_source([j1, j2, j3, j4, j5])
 
-    assert len(result) == 3
-    sources = {job.source for job in result}
+    assert len(result["results"]) == 3
+    sources = {job.source for job in result["results"]}
     assert "Dice" in sources  # j1 kept
     assert "HN Hiring" in sources  # j3 kept
     assert "RemoteOK" in sources  # j4 kept

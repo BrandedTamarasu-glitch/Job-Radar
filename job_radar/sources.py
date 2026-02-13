@@ -1678,7 +1678,9 @@ def fetch_all(profile: dict, on_progress=None, on_source_progress=None) -> list[
     log.info("Total results before deduplication: %d", len(all_results))
 
     # Cross-source deduplication
-    all_results = deduplicate_cross_source(all_results)
+    dedup_result = deduplicate_cross_source(all_results)
+    all_results = dedup_result["results"]
+    dedup_stats = dedup_result["stats"]
 
     log.info("Total unique results after deduplication: %d", len(all_results))
-    return all_results
+    return all_results, dedup_stats

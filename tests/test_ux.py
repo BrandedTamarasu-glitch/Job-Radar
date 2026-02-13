@@ -290,7 +290,7 @@ class TestFriendlyErrors:
         with patch.object(sys, 'argv', ['job-radar']):
             with patch('job_radar.search.load_config', return_value={}):
                 with patch('job_radar.search.load_profile_with_recovery', return_value=mock_profile):
-                    with patch('job_radar.search.fetch_all', return_value=[]):
+                    with patch('job_radar.search.fetch_all', return_value=([], {"original_count": 0, "deduped_count": 0, "duplicates_removed": 0, "sources_involved": 0})):
                         with patch('job_radar.search.get_os_info', return_value={"os_name": "Test", "arch": "x64"}):
                             with patch('job_radar.search.generate_report', return_value={
                                 "html": str(tmp_path / "report.html"),
