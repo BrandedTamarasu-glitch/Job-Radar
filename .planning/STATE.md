@@ -1,6 +1,6 @@
 # Project State: Job Radar
 
-**Last Updated:** 2026-02-13T20:18:14Z
+**Last Updated:** 2026-02-13T21:42:06Z
 
 ## Project Reference
 
@@ -12,13 +12,13 @@
 
 ## Current Position
 
-**Phase:** 32 - Job Aggregator APIs
-**Current Plan:** 4/4
-**Status:** Complete
+**Phase:** 33 - Scoring Configuration Backend
+**Current Plan:** 1/3
+**Status:** In Progress
 
-**Progress:** [██████████] 100%
+**Progress:** [███░░░░░░░] 33%
 
-**Next Action:** Plan Phase 33 (Scoring Configuration Backend)
+**Next Action:** Execute Phase 33 Plan 02 (Wizard Integration)
 
 ## Performance Metrics
 
@@ -41,17 +41,17 @@
 
 | Plan | Duration (sec) | Tasks | Files | Date |
 |------|---------------|-------|-------|------|
+| 33-01 | 165 | 2 | 2 | 2026-02-13 |
 | 32-04 | 426 | 2 | 3 | 2026-02-13 |
 | 32-03 | 330 | 2 | 6 | 2026-02-13 |
 | 32-02 | 158 | 2 | 2 | 2026-02-13 |
-| 32-01 | 164 | 2 | 2 | 2026-02-13 |
 
 ### Quality Indicators
 
 **Test Coverage:**
-- 482 tests across 17 test files
+- 494 tests across 17 test files
 - All passing (v2.1.0 in progress)
-- Coverage areas: scoring, config, tracker, wizard, report, UX, API, PDF, dedup, accessibility, profile management, GUI, rate limiting, JSearch, USAJobs
+- Coverage areas: scoring, config, tracker, wizard, report, UX, API, PDF, dedup, accessibility, profile management, GUI, rate limiting, JSearch, USAJobs, schema migration
 
 **Code Stats (v2.0.0):**
 - ~19,000 LOC Python (source + tests + GUI)
@@ -88,6 +88,11 @@
 | GUI Settings tab for API key configuration | Non-technical users can configure API keys without terminal | 2026-02-13 |
 | Inline API validation with test buttons | Immediate feedback prevents configuration errors | 2026-02-13 |
 | Atomic .env writes using tempfile + replace | Prevents corruption on crashes or interrupts | 2026-02-13 |
+| DEFAULT_SCORING_WEIGHTS matches hardcoded scoring.py | Preserve score stability for existing users during migration to v2 | 2026-02-13 |
+| v0/v1 profiles migrate directly to v2 | Simplified migration using schema_version < 2 check, not incremental | 2026-02-13 |
+| Default staffing_preference is 'neutral' | Clean slate for users to configure (differs from old +4.5 boost) | 2026-02-13 |
+| Minimum 0.05 per scoring weight component | Prevents zeroing dimensions while allowing customization | 2026-02-13 |
+| Graceful fallback for corrupted scoring_weights | Reset to defaults with warning instead of crashing (availability over strict validation) | 2026-02-13 |
 
 ### Active Constraints
 
@@ -116,49 +121,45 @@ None.
 
 ### What Just Happened
 
-Completed Phase 32 Plan 04: GUI API Settings and Comprehensive Tests (PLAN 4 OF 4 - PHASE COMPLETE)
+Completed Phase 33 Plan 01: Profile Schema v2 Migration (PLAN 1 OF 3)
 
-**Executed:** Added GUI API Settings tab and comprehensive test coverage for all Phase 32 functionality
+**Executed:** Added profile schema v2 with auto-migration, scoring_weights validation, and graceful fallback
 
 **Key accomplishments:**
-- Task 1: Added Settings tab to GUI with API key configuration for all sources
-- JSearch section: API key field with test button and status indicator
-- USAJobs section: email and API key fields with dual-credential validation
-- Adzuna section: App ID and App Key fields
-- Authentic Jobs section: API key field
-- Keys masked by default with Show/Hide toggle for security
-- Test buttons validate credentials via inline API requests with status feedback
-- Save button writes atomically to .env using tempfile + replace pattern
-- Tip displayed when JSearch not configured to drive adoption
-- Task 2: Added comprehensive test suite for JSearch, USAJobs, and deduplication stats
-- 18+ new tests covering JSearch source attribution, USAJobs nested structure, federal filters, dedup stats
-- Updated all 22 existing dedup tests to handle new dict return type
-- All 482 tests passing (up from 460 baseline)
+- Task 1 (RED): Added 12 failing tests for v2 schema migration and validation
+- 5 migration tests (v0→v2, v1→v2, backup creation, data preservation, no-op for v2)
+- 7 validation tests (scoring_weights components, sum-to-1.0, min 0.05, staffing_preference values, corrupted fallback)
+- Task 2 (GREEN): Implemented v2 migration and validation in profile_manager.py
+- Bumped CURRENT_SCHEMA_VERSION from 1 to 2
+- Added DEFAULT_SCORING_WEIGHTS constant matching current hardcoded behavior
+- Implemented v0→v2 and v1→v2 auto-migration with backup creation
+- Extended validate_profile with scoring_weights and staffing_preference checks
+- Added graceful fallback for corrupted scoring_weights with warning
+- All 494 tests passing (12 new tests, zero regressions)
 
 **Commits:**
-- f96f645 - feat(32-04): add API key configuration to GUI Settings tab
-- aa4bced - test(32-04): add comprehensive tests for JSearch, USAJobs, dedup stats
+- 6a943ad - test(33-01): add failing tests for v2 schema migration and validation
+- 78ad414 - feat(33-01): implement v2 schema migration with scoring weights and staffing preference
 
-**Duration:** 426 seconds (7.1 minutes)
+**Duration:** 165 seconds (2min 45s)
 
 ### What's Next
 
-Phase 32 complete - all 4 plans executed successfully. Ready for next phase or milestone completion.
+Phase 33 in progress - 2 plans remaining (wizard integration, scoring engine integration)
 
 ### Files Changed This Session
 
-- `/home/corye/Claude/Job-Radar/job_radar/gui/main_window.py` - Added Settings tab with API configuration UI (+482 lines)
-- `/home/corye/Claude/Job-Radar/tests/test_sources_api.py` - Added JSearch, USAJobs, query builder tests (+224 lines)
-- `/home/corye/Claude/Job-Radar/tests/test_deduplication.py` - Updated for dict return type, added stats tests (+155/-41 lines)
-- `/home/corye/Claude/Job-Radar/.planning/phases/32-job-aggregator-apis/32-04-SUMMARY.md` - Created
+- `/home/corye/Claude/Job-Radar/job_radar/profile_manager.py` - Added DEFAULT_SCORING_WEIGHTS, v2 migration logic, extended validation (+80 lines)
+- `/home/corye/Claude/Job-Radar/tests/test_profile_manager.py` - Added 12 new tests for migration and validation (+195 lines)
+- `/home/corye/Claude/Job-Radar/.planning/phases/33-scoring-configuration-backend/33-01-SUMMARY.md` - Created
 - `/home/corye/Claude/Job-Radar/.planning/STATE.md` - Updated position, decisions, metrics
 
 ### Context for Next Session
 
-**If continuing:** Phase 32 complete - all 4 plans executed. JSearch and USAJobs fully integrated with GUI API settings and comprehensive test coverage. Ready for next phase.
+**If continuing:** Phase 33 Plan 01 complete - profile schema v2 with auto-migration ready. Next: Plan 02 (wizard integration for scoring_weights configuration) or Plan 03 (scoring engine integration).
 
-**If resuming later:** Read STATE.md for current position, check .planning/phases/32-job-aggregator-apis/32-04-SUMMARY.md for GUI settings and test details.
+**If resuming later:** Read STATE.md for current position, check .planning/phases/33-scoring-configuration-backend/33-01-SUMMARY.md for migration details and DEFAULT_SCORING_WEIGHTS values.
 
 ---
 *State initialized: 2026-02-13*
-*Phase 32 complete, ready for Phase 33 planning*
+*Phase 33 Plan 01 complete - schema v2 migration ready, 2 plans remaining*
