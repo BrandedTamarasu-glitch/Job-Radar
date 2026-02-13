@@ -35,6 +35,18 @@ RATE_LIMITS = {
     ],
 }
 
+# Map sources to backend APIs - sources sharing the same backend API share rate limiters
+# This is critical for future JSearch integration where multiple sources (linkedin, indeed,
+# glassdoor) will all use the same JSearch API and should share rate limits
+BACKEND_API_MAP = {
+    "adzuna": "adzuna",
+    "authentic_jobs": "authentic_jobs",
+    # Future sources will map multiple sources to same backend:
+    # "linkedin": "jsearch",
+    # "indeed": "jsearch",
+    # "glassdoor": "jsearch",
+}
+
 # Cache limiters to avoid re-creating objects
 _limiters: dict[str, Limiter] = {}
 _connections: dict[str, sqlite3.Connection] = {}
@@ -90,31 +102,39 @@ def get_rate_limiter(source: str) -> Limiter:
     Creates .rate_limits/ directory and SQLite database for persistent state.
     Limiters are cached to avoid re-initialization.
 
+    Sources sharing the same backend API (via BACKEND_API_MAP) will share
+    the same rate limiter instance to prevent hitting API limits faster
+    when multiple sources use the same backend.
+
     Parameters
     ----------
     source : str
-        Source name (e.g., "adzuna", "authentic_jobs")
+        Source name (e.g., "adzuna", "authentic_jobs", "linkedin")
 
     Returns
     -------
     Limiter
         Rate limiter instance with persistent SQLite backend
     """
-    if source in _limiters:
-        return _limiters[source]
+    # Look up backend API (fallback to source name if not mapped)
+    backend_api = BACKEND_API_MAP.get(source, source)
+
+    # Check if limiter already exists for this backend API
+    if backend_api in _limiters:
+        return _limiters[backend_api]
 
     # Create .rate_limits/ directory
     rate_limits_dir = Path.cwd() / ".rate_limits"
     rate_limits_dir.mkdir(exist_ok=True)
 
-    # Get rate configuration (with fallback default)
-    rates = RATE_LIMITS.get(source, [Rate(60, Duration.MINUTE)])
+    # Get rate configuration using backend API name (with fallback default)
+    rates = RATE_LIMITS.get(backend_api, [Rate(60, Duration.MINUTE)])
 
-    # Create SQLite database and connection
+    # Create SQLite database and connection using backend API name
     # Use check_same_thread=False to allow background leaker thread access
-    db_path = rate_limits_dir / f"{source}.db"
+    db_path = rate_limits_dir / f"{backend_api}.db"
     conn = sqlite3.connect(str(db_path), check_same_thread=False)
-    _connections[source] = conn
+    _connections[backend_api] = conn
 
     # Create table if it doesn't exist
     table_name = "rate_limits"
@@ -127,8 +147,9 @@ def get_rate_limiter(source: str) -> Limiter:
     factory = SingleBucketFactory(bucket)
     limiter = Limiter(factory)
 
-    _limiters[source] = limiter
-    log.debug(f"Initialized rate limiter for {source} with {len(rates)} rate(s)")
+    # Cache using backend API name (so multiple sources share the same limiter)
+    _limiters[backend_api] = limiter
+    log.debug(f"Initialized rate limiter for {source} (backend: {backend_api}) with {len(rates)} rate(s)")
 
     return limiter
 
@@ -142,7 +163,7 @@ def check_rate_limit(source: str, verbose: bool = False) -> bool:
     Parameters
     ----------
     source : str
-        Source name (e.g., "adzuna", "authentic_jobs")
+        Source name (e.g., "adzuna", "authentic_jobs", "linkedin")
     verbose : bool, default False
         If True, log remaining calls and reset time
 
@@ -151,18 +172,21 @@ def check_rate_limit(source: str, verbose: bool = False) -> bool:
     bool
         True if allowed (within rate limit), False if rate limited
     """
+    # Look up backend API to get correct rate configuration
+    backend_api = BACKEND_API_MAP.get(source, source)
     limiter = get_rate_limiter(source)
 
     # Non-blocking acquire (skip immediately if rate limited)
     allowed = limiter.try_acquire(source, blocking=False)
 
     if not allowed:
-        # Calculate retry time using the shortest configured rate
-        rates = RATE_LIMITS.get(source, [Rate(60, Duration.MINUTE)])
+        # Calculate retry time using the backend API's configured rate
+        rates = RATE_LIMITS.get(backend_api, [Rate(60, Duration.MINUTE)])
         shortest_duration = min(r.interval for r in rates)
         reset_at = datetime.datetime.now() + datetime.timedelta(seconds=shortest_duration)
         reset_str = reset_at.strftime('%I:%M%p').lstrip('0').lower()
 
+        # Keep user-facing message with source name (not backend API)
         log.warning(f"Skipped {source}: rate limited, retry after {reset_str}")
         return False
 

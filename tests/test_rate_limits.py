@@ -2,7 +2,13 @@
 
 import pytest
 from pathlib import Path
-from job_radar.rate_limits import RATE_LIMITS, check_rate_limit, get_rate_limit_status
+from job_radar.rate_limits import (
+    BACKEND_API_MAP,
+    RATE_LIMITS,
+    check_rate_limit,
+    get_rate_limit_status,
+    get_rate_limiter,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -119,3 +125,68 @@ def test_cleanup_closes_all_connections(tmp_path, monkeypatch):
     # Limiters must be cleared first to stop background threads
     assert len(rate_limits._limiters) == 0
     assert len(rate_limits._connections) == 0
+
+
+def test_shared_backend_limiters(tmp_path, monkeypatch):
+    """Test sources mapped to same backend API share limiter instance."""
+    from job_radar import rate_limits
+
+    monkeypatch.chdir(tmp_path)
+
+    # Temporarily add test mapping for sources sharing same backend
+    # Simulate future JSearch scenario where multiple sources share backend
+    original_map = rate_limits.BACKEND_API_MAP.copy()
+    rate_limits.BACKEND_API_MAP.update({
+        "test_source_1": "shared_backend",
+        "test_source_2": "shared_backend",
+    })
+
+    # Add rate config for the shared backend
+    rate_limits.RATE_LIMITS["shared_backend"] = [rate_limits.Rate(60, rate_limits.Duration.MINUTE)]
+
+    try:
+        # Get limiters for both sources
+        limiter1 = get_rate_limiter("test_source_1")
+        limiter2 = get_rate_limiter("test_source_2")
+
+        # Both sources should get the same limiter instance
+        assert limiter1 is limiter2, "Sources with same backend should share limiter instance"
+
+        # Should only create one connection (for shared_backend, not per source)
+        assert len(rate_limits._connections) == 1
+        assert "shared_backend" in rate_limits._connections
+
+        # Should only create one limiter cache entry
+        assert len(rate_limits._limiters) == 1
+        assert "shared_backend" in rate_limits._limiters
+
+        # Should only create one database file (using backend name)
+        db_path = tmp_path / ".rate_limits" / "shared_backend.db"
+        assert db_path.exists()
+
+    finally:
+        # Restore original mapping
+        rate_limits.BACKEND_API_MAP.clear()
+        rate_limits.BACKEND_API_MAP.update(original_map)
+
+
+def test_backend_map_fallback(tmp_path, monkeypatch):
+    """Test unmapped sources use source name as backend (backward compatibility)."""
+    from job_radar import rate_limits
+
+    monkeypatch.chdir(tmp_path)
+
+    # Use a source not in BACKEND_API_MAP
+    unmapped_source = "unmapped_test_source"
+    assert unmapped_source not in rate_limits.BACKEND_API_MAP
+
+    # Get limiter for unmapped source
+    limiter = get_rate_limiter(unmapped_source)
+
+    # Should create connection and limiter using source name as fallback
+    assert unmapped_source in rate_limits._connections
+    assert unmapped_source in rate_limits._limiters
+
+    # Should create database file using source name
+    db_path = tmp_path / ".rate_limits" / f"{unmapped_source}.db"
+    assert db_path.exists()
