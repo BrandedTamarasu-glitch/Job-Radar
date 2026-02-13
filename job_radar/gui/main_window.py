@@ -5,12 +5,15 @@ and SearchWorker (full search pipeline) into a tabbed interface. Manages
 navigation, progress display, and report opening.
 """
 
+import os
 import queue
+import tempfile
 import threading
 import webbrowser
 from pathlib import Path
 
 import customtkinter as ctk
+import requests
 
 from job_radar import __version__
 from job_radar.paths import get_data_dir
@@ -19,6 +22,7 @@ from job_radar.config import load_config
 from job_radar.gui.profile_form import ProfileForm
 from job_radar.gui.search_controls import SearchControls
 from job_radar.gui.worker_thread import create_search_worker
+from dotenv import find_dotenv, load_dotenv
 
 
 class MainWindow(ctk.CTk):
@@ -244,6 +248,7 @@ class MainWindow(ctk.CTk):
         # Add tabs
         self._tabview.add("Profile")
         self._tabview.add("Search")
+        self._tabview.add("Settings")
 
         # Set default to Profile tab
         self._tabview.set("Profile")
@@ -251,6 +256,7 @@ class MainWindow(ctk.CTk):
         # Build tab contents
         self._build_profile_tab(self._tabview.tab("Profile"))
         self._build_search_tab(self._tabview.tab("Search"))
+        self._build_settings_tab(self._tabview.tab("Settings"))
 
     def _build_profile_tab(self, parent):
         """Build Profile tab with profile summary display and Edit button.
@@ -754,6 +760,482 @@ class MainWindow(ctk.CTk):
             font=ctk.CTkFont(size=13)
         )
         error_label.pack(pady=30, padx=20)
+
+        # OK button
+        ok_btn = ctk.CTkButton(
+            dialog,
+            text="OK",
+            width=100,
+            command=dialog.destroy
+        )
+        ok_btn.pack(pady=(0, 20))
+
+    def _build_settings_tab(self, parent):
+        """Build Settings tab with API key configuration.
+
+        Parameters
+        ----------
+        parent
+            Parent tab widget
+        """
+        # Create scrollable frame for settings content
+        scroll_frame = ctk.CTkScrollableFrame(parent)
+        scroll_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+        # Title
+        title_label = ctk.CTkLabel(
+            scroll_frame,
+            text="API Key Settings",
+            font=ctk.CTkFont(size=18, weight="bold")
+        )
+        title_label.pack(pady=(0, 10))
+
+        # Description
+        desc_label = ctk.CTkLabel(
+            scroll_frame,
+            text="Configure API keys to enable additional job sources",
+            wraplength=600
+        )
+        desc_label.pack(pady=(0, 20))
+
+        # Load current env values
+        dotenv_path = find_dotenv(usecwd=True)
+        if dotenv_path:
+            load_dotenv(dotenv_path, override=False)
+
+        # Store API field references for saving
+        self._api_fields = {}
+        self._api_status_labels = {}
+
+        # JSearch section
+        self._add_api_section(
+            scroll_frame,
+            "JSearch API (LinkedIn, Indeed, Glassdoor)",
+            [("JSEARCH_API_KEY", "JSearch API Key", "jsearch")],
+            "Get your key from RapidAPI: https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch"
+        )
+
+        # USAJobs section
+        self._add_api_section(
+            scroll_frame,
+            "USAJobs (Federal Government Jobs)",
+            [
+                ("USAJOBS_EMAIL", "Email (User-Agent)", "usajobs_email"),
+                ("USAJOBS_API_KEY", "API Key", "usajobs")
+            ],
+            "Register at: https://developer.usajobs.gov/"
+        )
+
+        # Adzuna section
+        self._add_api_section(
+            scroll_frame,
+            "Adzuna API",
+            [
+                ("ADZUNA_APP_ID", "App ID", "adzuna_id"),
+                ("ADZUNA_APP_KEY", "App Key", "adzuna_key")
+            ],
+            "Sign up at: https://developer.adzuna.com/"
+        )
+
+        # Authentic Jobs section
+        self._add_api_section(
+            scroll_frame,
+            "Authentic Jobs",
+            [("AUTHENTIC_JOBS_API_KEY", "API Key", "authentic_jobs")],
+            "Get your key from: https://authenticjobs.com/api/"
+        )
+
+        # Tip for JSearch
+        jsearch_key = os.getenv("JSEARCH_API_KEY", "").strip()
+        if not jsearch_key:
+            tip_frame = ctk.CTkFrame(scroll_frame, fg_color="transparent", border_width=2, border_color="blue")
+            tip_frame.pack(fill="x", pady=(20, 10), padx=10)
+
+            tip_label = ctk.CTkLabel(
+                tip_frame,
+                text="💡 Tip: Set up JSearch API key to search LinkedIn, Indeed, and Glassdoor",
+                font=ctk.CTkFont(size=12),
+                text_color="blue",
+                wraplength=600
+            )
+            tip_label.pack(pady=10, padx=10)
+
+        # Save button
+        save_btn = ctk.CTkButton(
+            scroll_frame,
+            text="Save API Keys",
+            height=40,
+            width=200,
+            command=self._save_api_keys
+        )
+        save_btn.pack(pady=(20, 10))
+
+    def _add_api_section(self, parent, title, fields, signup_url):
+        """Add an API configuration section with fields and test button.
+
+        Parameters
+        ----------
+        parent
+            Parent widget
+        title : str
+            Section title
+        fields : list of tuple
+            List of (env_var_name, label, field_id) tuples
+        signup_url : str
+            Signup URL for the API
+        """
+        # Section frame
+        section_frame = ctk.CTkFrame(parent, fg_color="transparent")
+        section_frame.pack(fill="x", pady=(10, 20), padx=10)
+
+        # Title
+        title_label = ctk.CTkLabel(
+            section_frame,
+            text=title,
+            font=ctk.CTkFont(size=14, weight="bold")
+        )
+        title_label.pack(anchor="w", pady=(0, 5))
+
+        # Signup URL
+        url_label = ctk.CTkLabel(
+            section_frame,
+            text=signup_url,
+            font=ctk.CTkFont(size=10),
+            text_color="gray"
+        )
+        url_label.pack(anchor="w", pady=(0, 10))
+
+        # Fields
+        for env_var, label, field_id in fields:
+            field_frame = ctk.CTkFrame(section_frame, fg_color="transparent")
+            field_frame.pack(fill="x", pady=5)
+
+            # Label
+            lbl = ctk.CTkLabel(
+                field_frame,
+                text=f"{label}:",
+                width=180,
+                anchor="w"
+            )
+            lbl.pack(side="left", padx=(0, 10))
+
+            # Entry field (masked by default)
+            current_value = os.getenv(env_var, "")
+            entry = ctk.CTkEntry(
+                field_frame,
+                width=300,
+                show="*" if "KEY" in env_var or "PASSWORD" in env_var else ""
+            )
+            entry.insert(0, current_value)
+            entry.pack(side="left", padx=(0, 10))
+
+            self._api_fields[field_id] = (entry, env_var)
+
+            # Show/Hide toggle for masked fields
+            if "KEY" in env_var or "PASSWORD" in env_var:
+                show_var = ctk.BooleanVar(value=False)
+
+                def toggle_visibility(e=entry, v=show_var):
+                    if v.get():
+                        e.configure(show="")
+                    else:
+                        e.configure(show="*")
+
+                show_btn = ctk.CTkButton(
+                    field_frame,
+                    text="Show",
+                    width=60,
+                    command=lambda: (show_var.set(not show_var.get()), toggle_visibility())
+                )
+                show_btn.pack(side="left")
+
+        # Test button and status
+        test_frame = ctk.CTkFrame(section_frame, fg_color="transparent")
+        test_frame.pack(fill="x", pady=(10, 0))
+
+        test_btn = ctk.CTkButton(
+            test_frame,
+            text="Test API Key",
+            width=120,
+            command=lambda: self._test_api_keys(fields)
+        )
+        test_btn.pack(side="left", padx=(0, 10))
+
+        status_label = ctk.CTkLabel(
+            test_frame,
+            text="",
+            anchor="w"
+        )
+        status_label.pack(side="left")
+
+        # Store status label reference (use first field's ID as section ID)
+        self._api_status_labels[fields[0][2]] = status_label
+
+    def _test_api_keys(self, fields):
+        """Test API keys by making validation requests.
+
+        Parameters
+        ----------
+        fields : list of tuple
+            List of (env_var_name, label, field_id) tuples
+        """
+        # Get field values
+        field_values = {}
+        for env_var, label, field_id in fields:
+            entry, _ = self._api_fields[field_id]
+            field_values[env_var] = entry.get().strip()
+
+        # Get status label
+        status_label = self._api_status_labels[fields[0][2]]
+
+        # Run test in thread to avoid blocking GUI
+        def test_thread():
+            # Determine which API to test based on fields
+            if "JSEARCH_API_KEY" in field_values:
+                self._test_jsearch(field_values["JSEARCH_API_KEY"], status_label)
+            elif "USAJOBS_API_KEY" in field_values:
+                self._test_usajobs(
+                    field_values.get("USAJOBS_EMAIL", ""),
+                    field_values.get("USAJOBS_API_KEY", ""),
+                    status_label
+                )
+            elif "ADZUNA_APP_ID" in field_values:
+                self._test_adzuna(
+                    field_values.get("ADZUNA_APP_ID", ""),
+                    field_values.get("ADZUNA_APP_KEY", ""),
+                    status_label
+                )
+            elif "AUTHENTIC_JOBS_API_KEY" in field_values:
+                self._test_authentic_jobs(field_values["AUTHENTIC_JOBS_API_KEY"], status_label)
+
+        status_label.configure(text="Testing...", text_color="gray")
+        threading.Thread(target=test_thread, daemon=True).start()
+
+    def _test_jsearch(self, api_key, status_label):
+        """Test JSearch API key."""
+        if not api_key:
+            self.after(0, lambda: status_label.configure(text="⚠ No API key provided", text_color="orange"))
+            return
+
+        try:
+            url = "https://jsearch.p.rapidapi.com/search"
+            headers = {
+                "X-RapidAPI-Key": api_key,
+                "X-RapidAPI-Host": "jsearch.p.rapidapi.com"
+            }
+            params = {"query": "test", "num_pages": "1"}
+            response = requests.get(url, headers=headers, params=params, timeout=10)
+
+            if response.status_code == 200:
+                self.after(0, lambda: status_label.configure(text="✓ Valid", text_color="green"))
+            elif response.status_code in (401, 403):
+                self.after(0, lambda: status_label.configure(text="✗ Invalid key", text_color="red"))
+            else:
+                self.after(0, lambda: status_label.configure(text=f"⚠ Unexpected status {response.status_code}", text_color="orange"))
+        except (requests.Timeout, requests.RequestException) as e:
+            self.after(0, lambda: status_label.configure(text="⚠ Network error", text_color="orange"))
+
+    def _test_usajobs(self, email, api_key, status_label):
+        """Test USAJobs API credentials."""
+        if not email or not api_key:
+            self.after(0, lambda: status_label.configure(text="⚠ Both email and API key required", text_color="orange"))
+            return
+
+        try:
+            url = "https://data.usajobs.gov/api/search"
+            headers = {
+                "Host": "data.usajobs.gov",
+                "User-Agent": email,
+                "Authorization-Key": api_key
+            }
+            params = {"Keyword": "test", "ResultsPerPage": "1"}
+            response = requests.get(url, headers=headers, params=params, timeout=10)
+
+            if response.status_code == 200:
+                self.after(0, lambda: status_label.configure(text="✓ Valid", text_color="green"))
+            elif response.status_code in (401, 403):
+                self.after(0, lambda: status_label.configure(text="✗ Invalid credentials", text_color="red"))
+            else:
+                self.after(0, lambda: status_label.configure(text=f"⚠ Unexpected status {response.status_code}", text_color="orange"))
+        except (requests.Timeout, requests.RequestException) as e:
+            self.after(0, lambda: status_label.configure(text="⚠ Network error", text_color="orange"))
+
+    def _test_adzuna(self, app_id, app_key, status_label):
+        """Test Adzuna API credentials."""
+        if not app_id or not app_key:
+            self.after(0, lambda: status_label.configure(text="⚠ Both App ID and App Key required", text_color="orange"))
+            return
+
+        try:
+            url = f"https://api.adzuna.com/v1/api/jobs/us/search/1"
+            params = {
+                "app_id": app_id,
+                "app_key": app_key,
+                "what": "test",
+                "results_per_page": "1"
+            }
+            response = requests.get(url, params=params, timeout=10)
+
+            if response.status_code == 200:
+                self.after(0, lambda: status_label.configure(text="✓ Valid", text_color="green"))
+            elif response.status_code in (401, 403):
+                self.after(0, lambda: status_label.configure(text="✗ Invalid credentials", text_color="red"))
+            else:
+                self.after(0, lambda: status_label.configure(text=f"⚠ Unexpected status {response.status_code}", text_color="orange"))
+        except (requests.Timeout, requests.RequestException) as e:
+            self.after(0, lambda: status_label.configure(text="⚠ Network error", text_color="orange"))
+
+    def _test_authentic_jobs(self, api_key, status_label):
+        """Test Authentic Jobs API key."""
+        if not api_key:
+            self.after(0, lambda: status_label.configure(text="⚠ No API key provided", text_color="orange"))
+            return
+
+        try:
+            url = "https://authenticjobs.com/api/"
+            params = {
+                "api_key": api_key,
+                "method": "aj.jobs.search",
+                "keywords": "test",
+                "perpage": "1",
+                "format": "json"
+            }
+            response = requests.get(url, params=params, timeout=10)
+
+            if response.status_code == 200:
+                self.after(0, lambda: status_label.configure(text="✓ Valid", text_color="green"))
+            elif response.status_code in (401, 403):
+                self.after(0, lambda: status_label.configure(text="✗ Invalid key", text_color="red"))
+            else:
+                self.after(0, lambda: status_label.configure(text=f"⚠ Unexpected status {response.status_code}", text_color="orange"))
+        except (requests.Timeout, requests.RequestException) as e:
+            self.after(0, lambda: status_label.configure(text="⚠ Network error", text_color="orange"))
+
+    def _save_api_keys(self):
+        """Save API keys to .env file atomically."""
+        # Collect all field values
+        env_vars = {}
+        for field_id, (entry, env_var) in self._api_fields.items():
+            value = entry.get().strip()
+            if value:  # Only save non-empty values
+                env_vars[env_var] = value
+
+        # Find or create .env path
+        dotenv_path = find_dotenv(usecwd=True)
+        if not dotenv_path:
+            dotenv_path = os.path.join(os.getcwd(), ".env")
+
+        # Read existing .env content
+        existing_vars = {}
+        if os.path.exists(dotenv_path):
+            with open(dotenv_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith("#") and "=" in line:
+                        key, value = line.split("=", 1)
+                        existing_vars[key.strip()] = value.strip()
+
+        # Merge with new values
+        existing_vars.update(env_vars)
+
+        # Build .env content
+        content_lines = ["# Job Radar API Configuration\n"]
+
+        # JSearch section
+        content_lines.append("\n# JSearch API (LinkedIn, Indeed, Glassdoor aggregator)")
+        content_lines.append("# Get your key from RapidAPI: https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch")
+        if "JSEARCH_API_KEY" in existing_vars:
+            content_lines.append(f"JSEARCH_API_KEY={existing_vars['JSEARCH_API_KEY']}")
+        else:
+            content_lines.append("JSEARCH_API_KEY=")
+
+        # USAJobs section
+        content_lines.append("\n# USAJobs API (Federal Government Jobs)")
+        content_lines.append("# Register at: https://developer.usajobs.gov/")
+        if "USAJOBS_EMAIL" in existing_vars:
+            content_lines.append(f"USAJOBS_EMAIL={existing_vars['USAJOBS_EMAIL']}")
+        else:
+            content_lines.append("USAJOBS_EMAIL=")
+        if "USAJOBS_API_KEY" in existing_vars:
+            content_lines.append(f"USAJOBS_API_KEY={existing_vars['USAJOBS_API_KEY']}")
+        else:
+            content_lines.append("USAJOBS_API_KEY=")
+
+        # Adzuna section
+        content_lines.append("\n# Adzuna API")
+        content_lines.append("# Sign up at: https://developer.adzuna.com/")
+        if "ADZUNA_APP_ID" in existing_vars:
+            content_lines.append(f"ADZUNA_APP_ID={existing_vars['ADZUNA_APP_ID']}")
+        else:
+            content_lines.append("ADZUNA_APP_ID=")
+        if "ADZUNA_APP_KEY" in existing_vars:
+            content_lines.append(f"ADZUNA_APP_KEY={existing_vars['ADZUNA_APP_KEY']}")
+        else:
+            content_lines.append("ADZUNA_APP_KEY=")
+
+        # Authentic Jobs section
+        content_lines.append("\n# Authentic Jobs API")
+        content_lines.append("# Get your key from: https://authenticjobs.com/api/")
+        if "AUTHENTIC_JOBS_API_KEY" in existing_vars:
+            content_lines.append(f"AUTHENTIC_JOBS_API_KEY={existing_vars['AUTHENTIC_JOBS_API_KEY']}")
+        else:
+            content_lines.append("AUTHENTIC_JOBS_API_KEY=")
+
+        content = "\n".join(content_lines) + "\n"
+
+        # Atomic write using tempfile + replace
+        try:
+            fd, temp_path = tempfile.mkstemp(mode="w", encoding="utf-8", dir=os.path.dirname(dotenv_path) or ".")
+            try:
+                os.write(fd, content.encode("utf-8"))
+                os.close(fd)
+                Path(temp_path).replace(dotenv_path)
+
+                # Reload environment variables
+                load_dotenv(dotenv_path, override=True)
+
+                # Show success message
+                self._show_info_dialog("API keys saved successfully!")
+
+            except Exception as e:
+                os.close(fd)
+                os.unlink(temp_path)
+                raise
+        except Exception as e:
+            self._show_error_dialog(f"Failed to save API keys: {e}")
+
+    def _show_info_dialog(self, message: str):
+        """Show modal info dialog.
+
+        Parameters
+        ----------
+        message : str
+            Info message to display
+        """
+        # Create modal dialog
+        dialog = ctk.CTkToplevel(self)
+        dialog.title("Success")
+        dialog.geometry("400x150")
+
+        # Make modal
+        dialog.transient(self)
+        dialog.grab_set()
+
+        # Center dialog on parent
+        dialog.update_idletasks()
+        x = self.winfo_x() + (self.winfo_width() - dialog.winfo_width()) // 2
+        y = self.winfo_y() + (self.winfo_height() - dialog.winfo_height()) // 2
+        dialog.geometry(f"+{x}+{y}")
+
+        # Info message
+        info_label = ctk.CTkLabel(
+            dialog,
+            text=message,
+            wraplength=350,
+            font=ctk.CTkFont(size=13),
+            text_color="green"
+        )
+        info_label.pack(pady=30, padx=20)
 
         # OK button
         ok_btn = ctk.CTkButton(
