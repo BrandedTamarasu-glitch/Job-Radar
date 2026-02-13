@@ -56,6 +56,8 @@ def _load_rate_limits() -> dict:
     defaults = {
         "adzuna": [Rate(100, Duration.MINUTE), Rate(1000, Duration.HOUR)],
         "authentic_jobs": [Rate(60, Duration.MINUTE)],
+        "jsearch": [Rate(100, Duration.MINUTE)],      # 100 req/min (RapidAPI free tier)
+        "usajobs": [Rate(60, Duration.MINUTE)],        # 60 req/min (conservative for gov API)
     }
 
     # Load config file
@@ -103,15 +105,18 @@ def _load_rate_limits() -> dict:
 RATE_LIMITS = _load_rate_limits()
 
 # Map sources to backend APIs - sources sharing the same backend API share rate limiters
-# This is critical for future JSearch integration where multiple sources (linkedin, indeed,
-# glassdoor) will all use the same JSearch API and should share rate limits
+# This is critical for JSearch integration where multiple sources (linkedin, indeed,
+# glassdoor) all use the same JSearch API and should share rate limits
 BACKEND_API_MAP = {
     "adzuna": "adzuna",
     "authentic_jobs": "authentic_jobs",
-    # Future sources will map multiple sources to same backend:
-    # "linkedin": "jsearch",
-    # "indeed": "jsearch",
-    # "glassdoor": "jsearch",
+    # JSearch aggregator — all sources share same rate limiter instance
+    "linkedin": "jsearch",
+    "indeed": "jsearch",
+    "glassdoor": "jsearch",
+    "jsearch_other": "jsearch",
+    # USAJobs — single source
+    "usajobs": "usajobs",
 }
 
 # Cache limiters to avoid re-creating objects
