@@ -69,8 +69,8 @@ jobs:
       - name: Verify CustomTkinter assets bundled (Linux)
         if: runner.os == 'Linux'
         run: |
-          ls dist/job-radar/customtkinter/assets/themes/ && echo "CustomTkinter themes bundled OK"
-          ls dist/job-radar/customtkinter/assets/fonts/ && echo "CustomTkinter fonts bundled OK"
+          ls dist/job-radar/_internal/customtkinter/assets/themes/ && echo "CustomTkinter themes bundled OK"
+          ls dist/job-radar/_internal/customtkinter/assets/fonts/ && echo "CustomTkinter fonts bundled OK"
 
       - name: Smoke test CLI executable (Linux)
         if: runner.os == 'Linux'
