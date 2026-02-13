@@ -76,6 +76,9 @@
 | Validate and warn on invalid configs | Invalid rate limit configs show warnings and use defaults - graceful degradation | 2026-02-13 |
 | JSearch source attribution from job_publisher | Show original board name (LinkedIn/Indeed/Glassdoor) not "JSearch" for accurate attribution | 2026-02-13 |
 | All JSearch sources share rate limiter | linkedin/indeed/glassdoor/jsearch_other use single "jsearch" backend to prevent API violations | 2026-02-13 |
+| Validate API keys during setup with inline test requests | Immediate feedback to users prevents configuration errors | 2026-02-13 |
+| Store keys even on validation failure | Network issues should not block setup - graceful degradation | 2026-02-13 |
+| Profile schema forward-compatible design | New optional fields accepted without code changes - extensibility | 2026-02-13 |
 
 ### Active Constraints
 
@@ -104,39 +107,41 @@ None.
 
 ### What Just Happened
 
-Completed Phase 32 Plan 01: JSearch and USAJobs API Integration
+Completed Phase 32 Plan 02: API Setup Extensions (PLAN 2 OF 4)
 
-**Executed:** JSearch aggregator (LinkedIn/Indeed/Glassdoor) and USAJobs federal API with source attribution and shared rate limiting
+**Executed:** Extended API setup wizard and profile schema for JSearch and USAJobs sources
 
 **Key accomplishments:**
-- Task 1: Implemented fetch_jsearch, map_jsearch_to_job_result, fetch_usajobs, map_usajobs_to_job_result functions
-- JSearch uses job_publisher field for source attribution (linkedin, indeed, glassdoor, jsearch_other)
-- USAJobs handles nested MatchedObjectDescriptor response structure
-- Task 2: Configured BACKEND_API_MAP and RATE_LIMITS for shared rate limiting across JSearch sources
+- Task 1: Added JSearch and USAJobs sections to setup_apis() and test_apis() with inline validation
+- API keys validated during setup with immediate feedback (✓ valid, ✗ invalid, ⚠ network error)
+- Keys stored even on validation failure (graceful degradation for network issues)
+- Tips shown when JSearch not configured (user education)
+- Task 2: Added federal job filter fields to profile schema (gs_grade_min, gs_grade_max, preferred_agencies, security_clearance)
+- Forward-compatible profile schema accepts new optional fields without code changes
 - All 460 tests passing (no regressions)
 
 **Commits:**
-- 18b0cef - feat(32-job-aggregator-apis): add JSearch and USAJobs fetch functions
-- ba1c9be - feat(32-job-aggregator-apis): configure rate limiters for JSearch and USAJobs
+- d7f61fb - feat(32-job-aggregator-apis): add JSearch and USAJobs to API setup wizard
+- 32642c1 - feat(32-job-aggregator-apis): add optional federal job fields to profile schema
 
-**Duration:** 164 seconds (2.7 minutes)
+**Duration:** 158 seconds (2.6 minutes)
 
 ### What's Next
 
-Execute Phase 32 Plan 02: API Setup Wizard Extension (add JSearch and USAJobs to --setup-apis)
+Execute Phase 32 Plan 03 (integration into main search workflow)
 
 ### Files Changed This Session
 
-- `/home/corye/Claude/Job-Radar/job_radar/sources.py` - Added JSearch/USAJobs fetch functions and mappers
-- `/home/corye/Claude/Job-Radar/job_radar/rate_limits.py` - Configured backend API mapping and rate limits
-- `/home/corye/Claude/Job-Radar/.planning/phases/32-job-aggregator-apis/32-01-SUMMARY.md` - Created
+- `/home/corye/Claude/Job-Radar/job_radar/api_setup.py` - Added JSearch/USAJobs setup and test sections (+196 lines)
+- `/home/corye/Claude/Job-Radar/profiles/_template.json` - Added federal job filter fields
+- `/home/corye/Claude/Job-Radar/.planning/phases/32-job-aggregator-apis/32-02-SUMMARY.md` - Created
 - `/home/corye/Claude/Job-Radar/.planning/STATE.md` - Updated position, decisions, metrics
 
 ### Context for Next Session
 
-**If continuing:** Proceed to Phase 32 Plan 02. JSearch and USAJobs fetch functions implemented and tested. Rate limiters configured with conservative defaults. Ready to extend --setup-apis wizard with new sources.
+**If continuing:** Proceed to Phase 32 Plan 03. Setup wizard now supports JSearch and USAJobs credential configuration. Profile schema supports federal job filters. Ready to integrate into main search workflow.
 
-**If resuming later:** Read STATE.md for current position, check .planning/phases/32-job-aggregator-apis/32-01-SUMMARY.md for implementation details.
+**If resuming later:** Read STATE.md for current position, check .planning/phases/32-job-aggregator-apis/32-02-SUMMARY.md for setup wizard implementation details.
 
 ---
 *State initialized: 2026-02-13*
