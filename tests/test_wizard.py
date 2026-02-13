@@ -704,3 +704,277 @@ def test_wizard_pdf_manual_fallback_exists():
     # Verify fallback logic exists
     assert "Fill manually" in source
     assert "not extracted_data" in source or "extracted_data" in source
+
+
+# --- V2 Schema Integration Tests (Phase 33-03) ---
+
+
+def test_wizard_profile_has_scoring_weights(tmp_path, mocker):
+    """Wizard output includes scoring_weights with DEFAULT_SCORING_WEIGHTS values."""
+    from job_radar.profile_manager import DEFAULT_SCORING_WEIGHTS
+
+    mocker.patch('job_radar.paths.get_data_dir', return_value=tmp_path)
+    mocker.patch('job_radar.pdf_parser.PDF_SUPPORT', False)
+
+    mock_text = mocker.patch('job_radar.wizard.questionary.text')
+    mock_confirm = mocker.patch('job_radar.wizard.questionary.confirm')
+    mock_select = mocker.patch('job_radar.wizard.questionary.select')
+
+    # Answers including staffing_preference and customize_weights
+    text_answers = [
+        "Test User",
+        "5",
+        "Engineer",
+        "Python",
+        "",  # location
+        "",  # arrangement
+        "",  # domain_expertise
+        "",  # comp_floor
+        "",  # dealbreakers
+        "3.0",  # min_score
+    ]
+
+    def text_side_effect(*args, **kwargs):
+        mock = Mock()
+        mock.ask.return_value = text_answers.pop(0) if text_answers else None
+        return mock
+
+    mock_text.side_effect = text_side_effect
+
+    # Confirm: customize_weights=False, new_only=True
+    confirm_answers = [False, True]
+
+    def confirm_side_effect(*args, **kwargs):
+        mock = Mock()
+        mock.ask.return_value = confirm_answers.pop(0) if confirm_answers else None
+        return mock
+
+    mock_confirm.side_effect = confirm_side_effect
+
+    # Select: staffing_preference="Neutral...", then "Save"
+    select_answers = [
+        "Neutral (treat same as direct employers)",
+        "Save this configuration"
+    ]
+
+    def select_side_effect(*args, **kwargs):
+        mock = Mock()
+        mock.ask.return_value = select_answers.pop(0) if select_answers else None
+        return mock
+
+    mock_select.side_effect = select_side_effect
+
+    result = run_setup_wizard()
+
+    assert result is True
+
+    # Verify profile has scoring_weights
+    profile_path = tmp_path / "profile.json"
+    profile_data = json.loads(profile_path.read_text())
+    assert "scoring_weights" in profile_data
+    assert profile_data["scoring_weights"] == DEFAULT_SCORING_WEIGHTS
+
+
+def test_wizard_profile_has_staffing_preference_neutral(tmp_path, mocker):
+    """Wizard sets staffing_preference to 'neutral' when Neutral choice selected."""
+    mocker.patch('job_radar.paths.get_data_dir', return_value=tmp_path)
+    mocker.patch('job_radar.pdf_parser.PDF_SUPPORT', False)
+
+    mock_text = mocker.patch('job_radar.wizard.questionary.text')
+    mock_confirm = mocker.patch('job_radar.wizard.questionary.confirm')
+    mock_select = mocker.patch('job_radar.wizard.questionary.select')
+
+    text_answers = [
+        "Test User", "5", "Engineer", "Python", "", "", "", "", "", "3.0"
+    ]
+
+    def text_side_effect(*args, **kwargs):
+        mock = Mock()
+        mock.ask.return_value = text_answers.pop(0) if text_answers else None
+        return mock
+
+    mock_text.side_effect = text_side_effect
+
+    confirm_answers = [False, True]
+
+    def confirm_side_effect(*args, **kwargs):
+        mock = Mock()
+        mock.ask.return_value = confirm_answers.pop(0) if confirm_answers else None
+        return mock
+
+    mock_confirm.side_effect = confirm_side_effect
+
+    select_answers = [
+        "Neutral (treat same as direct employers)",
+        "Save this configuration"
+    ]
+
+    def select_side_effect(*args, **kwargs):
+        mock = Mock()
+        mock.ask.return_value = select_answers.pop(0) if select_answers else None
+        return mock
+
+    mock_select.side_effect = select_side_effect
+
+    result = run_setup_wizard()
+
+    assert result is True
+
+    profile_path = tmp_path / "profile.json"
+    profile_data = json.loads(profile_path.read_text())
+    assert profile_data["staffing_preference"] == "neutral"
+
+
+def test_wizard_profile_has_staffing_preference_boost(tmp_path, mocker):
+    """Wizard sets staffing_preference to 'boost' when Boost choice selected."""
+    mocker.patch('job_radar.paths.get_data_dir', return_value=tmp_path)
+    mocker.patch('job_radar.pdf_parser.PDF_SUPPORT', False)
+
+    mock_text = mocker.patch('job_radar.wizard.questionary.text')
+    mock_confirm = mocker.patch('job_radar.wizard.questionary.confirm')
+    mock_select = mocker.patch('job_radar.wizard.questionary.select')
+
+    text_answers = [
+        "Test User", "5", "Engineer", "Python", "", "", "", "", "", "3.0"
+    ]
+
+    def text_side_effect(*args, **kwargs):
+        mock = Mock()
+        mock.ask.return_value = text_answers.pop(0) if text_answers else None
+        return mock
+
+    mock_text.side_effect = text_side_effect
+
+    confirm_answers = [False, True]
+
+    def confirm_side_effect(*args, **kwargs):
+        mock = Mock()
+        mock.ask.return_value = confirm_answers.pop(0) if confirm_answers else None
+        return mock
+
+    mock_confirm.side_effect = confirm_side_effect
+
+    select_answers = [
+        "Boost (prefer staffing firms -- higher placement incentive)",
+        "Save this configuration"
+    ]
+
+    def select_side_effect(*args, **kwargs):
+        mock = Mock()
+        mock.ask.return_value = select_answers.pop(0) if select_answers else None
+        return mock
+
+    mock_select.side_effect = select_side_effect
+
+    result = run_setup_wizard()
+
+    assert result is True
+
+    profile_path = tmp_path / "profile.json"
+    profile_data = json.loads(profile_path.read_text())
+    assert profile_data["staffing_preference"] == "boost"
+
+
+def test_wizard_profile_has_staffing_preference_penalize(tmp_path, mocker):
+    """Wizard sets staffing_preference to 'penalize' when Penalize choice selected."""
+    mocker.patch('job_radar.paths.get_data_dir', return_value=tmp_path)
+    mocker.patch('job_radar.pdf_parser.PDF_SUPPORT', False)
+
+    mock_text = mocker.patch('job_radar.wizard.questionary.text')
+    mock_confirm = mocker.patch('job_radar.wizard.questionary.confirm')
+    mock_select = mocker.patch('job_radar.wizard.questionary.select')
+
+    text_answers = [
+        "Test User", "5", "Engineer", "Python", "", "", "", "", "", "3.0"
+    ]
+
+    def text_side_effect(*args, **kwargs):
+        mock = Mock()
+        mock.ask.return_value = text_answers.pop(0) if text_answers else None
+        return mock
+
+    mock_text.side_effect = text_side_effect
+
+    confirm_answers = [False, True]
+
+    def confirm_side_effect(*args, **kwargs):
+        mock = Mock()
+        mock.ask.return_value = confirm_answers.pop(0) if confirm_answers else None
+        return mock
+
+    mock_confirm.side_effect = confirm_side_effect
+
+    select_answers = [
+        "Penalize (avoid staffing firms -- prefer direct employers)",
+        "Save this configuration"
+    ]
+
+    def select_side_effect(*args, **kwargs):
+        mock = Mock()
+        mock.ask.return_value = select_answers.pop(0) if select_answers else None
+        return mock
+
+    mock_select.side_effect = select_side_effect
+
+    result = run_setup_wizard()
+
+    assert result is True
+
+    profile_path = tmp_path / "profile.json"
+    profile_data = json.loads(profile_path.read_text())
+    assert profile_data["staffing_preference"] == "penalize"
+
+
+def test_wizard_default_weights_used_when_not_customized(tmp_path, mocker):
+    """Wizard uses DEFAULT_SCORING_WEIGHTS when customize_weights=False."""
+    from job_radar.profile_manager import DEFAULT_SCORING_WEIGHTS
+
+    mocker.patch('job_radar.paths.get_data_dir', return_value=tmp_path)
+    mocker.patch('job_radar.pdf_parser.PDF_SUPPORT', False)
+
+    mock_text = mocker.patch('job_radar.wizard.questionary.text')
+    mock_confirm = mocker.patch('job_radar.wizard.questionary.confirm')
+    mock_select = mocker.patch('job_radar.wizard.questionary.select')
+
+    text_answers = [
+        "Test User", "5", "Engineer", "Python", "", "", "", "", "", "3.0"
+    ]
+
+    def text_side_effect(*args, **kwargs):
+        mock = Mock()
+        mock.ask.return_value = text_answers.pop(0) if text_answers else None
+        return mock
+
+    mock_text.side_effect = text_side_effect
+
+    # customize_weights=False explicitly
+    confirm_answers = [False, True]
+
+    def confirm_side_effect(*args, **kwargs):
+        mock = Mock()
+        mock.ask.return_value = confirm_answers.pop(0) if confirm_answers else None
+        return mock
+
+    mock_confirm.side_effect = confirm_side_effect
+
+    select_answers = [
+        "Neutral (treat same as direct employers)",
+        "Save this configuration"
+    ]
+
+    def select_side_effect(*args, **kwargs):
+        mock = Mock()
+        mock.ask.return_value = select_answers.pop(0) if select_answers else None
+        return mock
+
+    mock_select.side_effect = select_side_effect
+
+    result = run_setup_wizard()
+
+    assert result is True
+
+    profile_path = tmp_path / "profile.json"
+    profile_data = json.loads(profile_path.read_text())
+
+    # Verify exact match with DEFAULT_SCORING_WEIGHTS
+    assert profile_data["scoring_weights"] == DEFAULT_SCORING_WEIGHTS
