@@ -116,15 +116,16 @@ def _parse_salary_number(text: str) -> float | None:
     text = text.replace(",", "").strip()
 
     # Match patterns like "$120000", "$120k", "$60/hr"
-    match = re.search(r'\$?([\d.]+)\s*(?:k|K)', text)
+    # Require at least one digit to avoid matching bare '.' or '$.'
+    match = re.search(r'\$?(\d[\d.]*)\s*(?:k|K)', text)
     if match:
         return float(match.group(1)) * 1000
 
-    match = re.search(r'\$?([\d.]+)\s*/?\s*(?:hr|hour)', text)
+    match = re.search(r'\$?(\d[\d.]*)\s*/?\s*(?:hr|hour)', text)
     if match:
         return float(match.group(1)) * 2080  # hourly to annual
 
-    match = re.search(r'\$?([\d.]+)', text)
+    match = re.search(r'\$?(\d[\d.]*)', text)
     if match:
         val = float(match.group(1))
         if val < 500:
