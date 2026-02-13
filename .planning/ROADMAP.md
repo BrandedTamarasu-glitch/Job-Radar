@@ -302,9 +302,9 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 29-01-PLAN.md — Tag chip widget + profile form with validation, PDF upload, and dirty tracking
-- [ ] 29-02-PLAN.md — Search controls widget + real search worker replacing mock
-- [ ] 29-03-PLAN.md — Main window integration + visual verification checkpoint
+- [x] 29-01-PLAN.md — Tag chip widget + profile form with validation, PDF upload, and dirty tracking
+- [x] 29-02-PLAN.md — Search controls widget + real search worker replacing mock
+- [x] 29-03-PLAN.md — Main window integration + visual verification checkpoint
 
 #### Phase 30: Packaging & Distribution
 
@@ -340,10 +340,10 @@ Plans:
 | 19-23 | v1.4.0 | 9/9 | Complete | 2026-02-11 |
 | 24-27 | v1.5.0 | 7/7 | Complete | 2026-02-12 |
 | 28 | v2.0.0 | 3/3 | Complete | 2026-02-12 |
-| 29 | v2.0.0 | 0/3 | Planned | - |
+| 29 | v2.0.0 | 3/3 | Complete | 2026-02-13 |
 | 30 | v2.0.0 | 0/TBD | Not started | - |
 
-**Total: 27 completed phases (52 plans, 6 milestones shipped) + 3 planned phases for v2.0.0**
+**Total: 28 completed phases (55 plans, 6 milestones shipped) + 1 planned phase for v2.0.0**
 
 ---
-*Last updated: 2026-02-13 after Phase 29 planning*
+*Last updated: 2026-02-13 after Phase 29 execution*

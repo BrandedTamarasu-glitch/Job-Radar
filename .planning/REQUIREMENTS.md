@@ -9,30 +9,30 @@ Requirements for desktop GUI launcher. Each maps to roadmap phases.
 
 ### GUI Foundation
 
-- [ ] **GUI-01**: Double-clicking the executable opens a desktop window (not a terminal)
-- [ ] **GUI-02**: Running with CLI flags (e.g., `job-radar --min-score 3.5`) uses the existing CLI path
-- [ ] **GUI-03**: Search execution does not freeze the GUI window (non-blocking threading)
-- [ ] **GUI-04**: GUI updates (progress, errors) are thread-safe via main thread callbacks
+- [x] **GUI-01**: Double-clicking the executable opens a desktop window (not a terminal)
+- [x] **GUI-02**: Running with CLI flags (e.g., `job-radar --min-score 3.5`) uses the existing CLI path
+- [x] **GUI-03**: Search execution does not freeze the GUI window (non-blocking threading)
+- [x] **GUI-04**: GUI updates (progress, errors) are thread-safe via main thread callbacks
 
 ### Profile Setup
 
-- [ ] **PROF-01**: User can create a new profile via GUI form fields (name, skills, titles, experience, location, arrangement)
-- [ ] **PROF-02**: User can upload a PDF resume via file dialog to pre-fill profile fields
-- [ ] **PROF-03**: Profile form validates input and shows error messages for invalid fields
-- [ ] **PROF-04**: User can edit an existing profile through the same GUI form (pre-filled with current values)
+- [x] **PROF-01**: User can create a new profile via GUI form fields (name, skills, titles, experience, location, arrangement)
+- [x] **PROF-02**: User can upload a PDF resume via file dialog to pre-fill profile fields
+- [x] **PROF-03**: Profile form validates input and shows error messages for invalid fields
+- [x] **PROF-04**: User can edit an existing profile through the same GUI form (pre-filled with current values)
 
 ### Search Controls
 
-- [ ] **SRCH-01**: User can click a "Run Search" button to start a job search
-- [ ] **SRCH-02**: User can set date range (from/to) for job postings
-- [ ] **SRCH-03**: User can set minimum score threshold
-- [ ] **SRCH-04**: User can toggle "new only" mode
-- [ ] **SRCH-05**: Search completion shows results count and "Open Report" button to open HTML report in browser
+- [x] **SRCH-01**: User can click a "Run Search" button to start a job search
+- [x] **SRCH-02**: User can set date range (from/to) for job postings
+- [x] **SRCH-03**: User can set minimum score threshold
+- [x] **SRCH-04**: User can toggle "new only" mode
+- [x] **SRCH-05**: Search completion shows results count and "Open Report" button to open HTML report in browser
 
 ### Progress & Feedback
 
-- [ ] **PROG-01**: User sees a visual progress indicator while search is running
-- [ ] **PROG-02**: User sees error messages when search fails (network errors, source failures)
+- [x] **PROG-01**: User sees a visual progress indicator while search is running
+- [x] **PROG-02**: User sees error messages when search fails (network errors, source failures)
 
 ### Packaging
 
@@ -86,17 +86,17 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GUI-02 | Phase 28 | Complete |
 | GUI-03 | Phase 28 | Complete |
 | GUI-04 | Phase 28 | Complete |
-| PROF-01 | Phase 29 | Pending |
-| PROF-02 | Phase 29 | Pending |
-| PROF-03 | Phase 29 | Pending |
-| PROF-04 | Phase 29 | Pending |
-| SRCH-01 | Phase 29 | Pending |
-| SRCH-02 | Phase 29 | Pending |
-| SRCH-03 | Phase 29 | Pending |
-| SRCH-04 | Phase 29 | Pending |
-| SRCH-05 | Phase 29 | Pending |
-| PROG-01 | Phase 29 | Pending |
-| PROG-02 | Phase 29 | Pending |
+| PROF-01 | Phase 29 | Complete |
+| PROF-02 | Phase 29 | Complete |
+| PROF-03 | Phase 29 | Complete |
+| PROF-04 | Phase 29 | Complete |
+| SRCH-01 | Phase 29 | Complete |
+| SRCH-02 | Phase 29 | Complete |
+| SRCH-03 | Phase 29 | Complete |
+| SRCH-04 | Phase 29 | Complete |
+| SRCH-05 | Phase 29 | Complete |
+| PROG-01 | Phase 29 | Complete |
+| PROG-02 | Phase 29 | Complete |
 | PKG-01 | Phase 30 | Pending |
 | PKG-02 | Phase 30 | Pending |
 | PKG-03 | Phase 30 | Pending |
@@ -110,4 +110,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-12*
-*Last updated: 2026-02-12 after v2.0.0 roadmap creation*
+*Last updated: 2026-02-13 after Phase 29 completion*

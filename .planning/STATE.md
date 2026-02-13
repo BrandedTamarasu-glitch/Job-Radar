@@ -5,24 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-12)
 
 **Core value:** Accurate job-candidate scoring — if the scoring is wrong, nothing else matters.
-**Current focus:** Phase 29 - Profile Setup & Search Controls
+**Current focus:** Phase 30 - Packaging & Distribution
 
 ## Current Position
 
 Milestone: v2.0.0 Desktop GUI Launcher
-Phase: 29 of 30 (Profile Setup & Search Controls)
-Plan: 2 of 3 complete (29-01 ✓, 29-02 ✓, 29-03 pending)
-Status: In progress - 29-03 next
-Last activity: 2026-02-13 — Completed 29-01 (tag chips + profile form)
+Phase: 29 of 30 complete (Profile Setup & Search Controls ✓)
+Status: Phase 30 not yet planned
+Last activity: 2026-02-13 — Completed Phase 29 (all 3 plans, human-verified)
 
-Progress: [█████████████████████████████░] 94%
+Progress: [██████████████████████████████░] 97%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 54
+- Total plans completed: 57
 - Average duration: ~43 min
-- Total execution time: ~38.5 hours
+- Total execution time: ~39.5 hours
 
 **By Milestone:**
 
@@ -34,18 +33,16 @@ Progress: [███████████████████████
 | v1.3.0 | 16-18 | 7 | Complete (2026-02-11) |
 | v1.4.0 | 19-23 | 9 | Complete (2026-02-11) |
 | v1.5.0 | 24-27 | 7 | Complete (2026-02-12) |
-| v2.0.0 | 28-30 | 5/TBD | In progress |
+| v2.0.0 | 28-30 | 8/TBD | In progress |
 
 **Recent Trend:**
 - Last 5 plans: ~30-60 min range
 - Trend: Stable velocity across milestones
 
 *Updated after each plan completion*
-| Phase 28 P01 | 15 | 2 tasks | 5 files |
-| Phase 28 P02 | 3 | 2 tasks | 2 files |
-| Phase 28 P03 | 5 | 1 task | 0 files |
-| Phase 29 P02 | 2 | 2 tasks | 3 files |
 | Phase 29 P01 | 195 | 2 tasks | 2 files |
+| Phase 29 P02 | 2 | 2 tasks | 3 files |
+| Phase 29 P03 | 30 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -68,6 +65,9 @@ Recent decisions affecting current work:
 - [Phase 29-01]: Reused wizard.py validation logic via extracted functions - zero duplication
 - [Phase 29-01]: TagChipWidget uses scrollable container for vertical chip stacking
 - [Phase 29-01]: Dirty tracking compares full form snapshot against original values at load time
+- [Phase 29-03]: ProfileForm instances must be explicitly placed with grid/pack after creation
+- [Phase 29-03]: Linux mouse wheel scrolling requires explicit Button-4/Button-5 bindings
+- [Phase 29-03]: Report path resolved to absolute before URI conversion
 
 ### Pending Todos
 
@@ -80,12 +80,13 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-13
-Stopped at: Completed 29-01-PLAN.md (tag chips + profile form)
+Stopped at: Completed Phase 29 execution (all 3 plans, verified)
 Resume file: None
 
 **Next steps:**
-1. Execute 29-03 (main window integration + human verification)
-2. Complete Phase 29 and advance to Phase 30
+1. Plan Phase 30 (Packaging & Distribution)
+2. Execute Phase 30
+3. Audit and complete v2.0.0 milestone
 
 ---
-*Last updated: 2026-02-13 after completing 29-01*
+*Last updated: 2026-02-13 after Phase 29 completion*
