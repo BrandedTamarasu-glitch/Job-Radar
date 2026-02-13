@@ -65,19 +65,23 @@ Accurate job-candidate scoring — if the scoring is wrong, nothing else matters
 - ✓ Profile preview on startup and via --view-profile command — v1.5.0
 - ✓ Interactive quick-edit with categorized field menu, diff preview, and confirmation — v1.5.0
 - ✓ CLI update flags (--update-skills, --set-min-score, --set-titles) with validation — v1.5.0
+- ✓ Desktop GUI window on launch (CustomTkinter) — double-click opens window, no terminal — v2.0.0
+- ✓ CLI flags use existing CLI path (GUI only when no args) — v2.0.0
+- ✓ Non-blocking threading with queue-based messaging and cooperative cancellation — v2.0.0
+- ✓ Thread-safe GUI updates via main thread queue polling (100ms) — v2.0.0
+- ✓ GUI profile creation form with validation, PDF upload, and dirty tracking — v2.0.0
+- ✓ GUI profile edit with pre-filled form (same form as create) — v2.0.0
+- ✓ Run Search button with date range, min score, and new-only controls — v2.0.0
+- ✓ Per-source visual progress indicator during search — v2.0.0
+- ✓ Error messages on search failure with actionable text — v2.0.0
+- ✓ Search completion with results count and Open Report button — v2.0.0
+- ✓ Dual executables (CLI console + GUI no-console) for all platforms — v2.0.0
+- ✓ CustomTkinter theme files and fonts bundled via PyInstaller — v2.0.0
+- ✓ macOS code signing entitlements for Python JIT — v2.0.0
 
 ### Active
 
-## Current Milestone: v2.0.0 Desktop GUI Launcher
-
-**Goal:** Replace the terminal-first experience with a desktop GUI window so non-technical users never need to touch a command prompt.
-
-**Target features:**
-- Desktop window application with search controls (Run Search button, date range, min score, etc.)
-- GUI-based profile setup (form fields, PDF upload button) replacing terminal wizard for new users
-- Visual progress feedback during search
-- Opens existing HTML report in browser when search completes
-- CLI preserved alongside GUI for power users and scripting
+(No active milestone — next milestone TBD via `/gsd:new-milestone`)
 
 ### Out of Scope
 
@@ -95,17 +99,17 @@ Accurate job-candidate scoring — if the scoring is wrong, nothing else matters
 
 ## Context
 
-### Current State (v2.0.0 in progress)
+### Current State (v2.0.0 shipped)
 
-- v1.5.0 shipped with 16,449 LOC Python (source + tests)
-- Tech stack: Python 3.10+, pytest, requests, BeautifulSoup, questionary, PyInstaller, pdfplumber, rapidfuzz, python-dotenv, pyrate-limiter, tabulate
+- v2.0.0 shipped with ~19,000 LOC Python (source + tests + GUI)
+- Tech stack: Python 3.10+, pytest, requests, BeautifulSoup, questionary, PyInstaller, pdfplumber, rapidfuzz, python-dotenv, pyrate-limiter, tabulate, customtkinter
 - Test suite: 452 tests across scoring, config, tracker, wizard, report, UX, API, PDF, dedup, accessibility, profile management
 - Job sources: 6 API sources + 4 manual URLs (Wellfound, Indeed, LinkedIn, Glassdoor)
-- Standalone executables for Windows, macOS, and Linux (currently terminal-based)
+- Desktop GUI application (CustomTkinter) + CLI — dual executables for Windows, macOS, Linux
+- GUI modules: 7 files, 2,665 LOC (main_window, profile_form, search_controls, tag_chip_widget, worker_thread)
 - HTML reports: Bootstrap 5 with visual hierarchy, responsive layout, status filtering, CSV export, print, WCAG 2.1 AA
-- Profile management: centralized I/O (atomic writes, backups, schema versioning), preview, interactive editor, CLI flags
-- Current workflow: download executable → terminal wizard → daily searches → HTML reports in browser
-- Target workflow: download executable → GUI setup → click Run Search → HTML reports in browser
+- Profile management: centralized I/O (atomic writes, backups, schema versioning), preview, interactive editor, CLI flags, GUI form
+- Current workflow: download executable → GUI setup → click Run Search → HTML reports in browser (CLI still available)
 - Automated accessibility CI: Lighthouse (≥95%) and axe-core WCAG validation on every PR
 
 ### Development
@@ -153,6 +157,15 @@ Accurate job-candidate scoring — if the scoring is wrong, nothing else matters
 | Reuse wizard validators in profile editor | Zero duplication; single validation source of truth | ✓ Good |
 | argparse type validators for CLI flags | Parse-time validation with friendly error messages | ✓ Good |
 | Mutually exclusive update flag group | Prevents ambiguous multi-update commands | ✓ Good |
+| Dual-mode entry point via len(sys.argv) > 1 | Simple CLI detection, no argparse overhead | ✓ Good |
+| ImportError fallback to CLI | Graceful degradation when customtkinter missing | ✓ Good |
+| Queue polling at 100ms interval | Balances responsiveness and CPU usage | ✓ Good |
+| Cooperative cancellation via Event | Never force-kill threads, clean shutdown | ✓ Good |
+| Reuse wizard validators in GUI form | Zero duplication, single validation source | ✓ Good |
+| Opt-in date filter (unchecked default) | Matches CLI default behavior (no date filtering) | ✓ Good |
+| Lazy imports in SearchWorker.run() | Avoids circular dependencies, keeps module importable | ✓ Good |
+| Ad-hoc signing with entitlements | Sufficient for GitHub releases, no signing cert needed | ✓ Good |
+| CI smoke tests CLI-only (headless) | GUI tests require display server, --version is safe | ✓ Good |
 
 ---
-*Last updated: 2026-02-12 after v2.0.0 milestone start*
+*Last updated: 2026-02-13 after v2.0.0 milestone completion*

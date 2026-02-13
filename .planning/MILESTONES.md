@@ -189,3 +189,42 @@
 
 ---
 
+
+## v2.0.0 Desktop GUI Launcher (Shipped: 2026-02-13)
+
+**Delivered:** Replace terminal-first experience with a desktop GUI window so non-technical users never need to touch a command prompt
+
+**Phases completed:** 28-30 (8 plans total)
+
+**Key accomplishments:**
+
+- Desktop GUI application with CustomTkinter — double-click launches a styled window, no terminal needed
+- Dual-mode entry point: GUI on bare invocation, CLI preserved when flags present — fully backward compatible
+- Thread-safe architecture with queue-based messaging (100ms polling), cooperative cancellation via Event, modal error dialogs
+- Profile form with PDF upload via file dialog, inline blur validation, dirty tracking with discard confirmation, and edit mode pre-fill
+- Real search execution with per-source progress display, job counts, and "Open Report" button opening HTML report in browser
+- Dual executables (CLI with console, GUI without console) bundled with CustomTkinter themes/fonts for all platforms
+- macOS code signing entitlements for Python JIT, CI smoke tests on all platforms, symlink-preserved archives
+
+**Stats:**
+
+- 35 files changed, +6,361 / -81 lines
+- 2,665 LOC across 7 GUI modules
+- 3 phases, 8 plans, ~15 tasks
+- 2 days (2026-02-12 → 2026-02-13)
+
+**Git range:** `docs(28)` → `docs(30-02)`
+
+**Requirements:** 18/18 satisfied (4 GUI + 4 PROF + 5 SRCH + 2 PROG + 3 PKG)
+
+**Quality metrics:**
+- Phase verification: 3/3 passed (28: 17/17, 29: 10/10, 30: 5/7 + 2 human_needed)
+- Cross-phase integration: 11/11 connections verified
+- E2E flows: 5/5 complete
+- Tech debt: 0 items
+- Anti-patterns: 0
+
+**What's next:** New milestone planning
+
+---
+
