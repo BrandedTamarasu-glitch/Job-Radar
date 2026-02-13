@@ -11,18 +11,18 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 
 Milestone: v2.0.0 Desktop GUI Launcher
 Phase: 29 of 30 (Profile Setup & Search Controls)
-Plan: 3 plans (29-01, 29-02, 29-03) — verified ✓
-Status: Ready to execute
-Last activity: 2026-02-13 — Phase 29 plans created and verified
+Plan: 2 of 3 complete (29-01 ✓, 29-02 ✓, 29-03 pending)
+Status: In progress - 29-03 next
+Last activity: 2026-02-13 — Completed 29-01 (tag chips + profile form)
 
-Progress: [█████████████████████████████░] 93%
+Progress: [█████████████████████████████░] 94%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 52
-- Average duration: ~44 min
-- Total execution time: ~36.4 hours
+- Total plans completed: 54
+- Average duration: ~43 min
+- Total execution time: ~38.5 hours
 
 **By Milestone:**
 
@@ -34,7 +34,7 @@ Progress: [███████████████████████
 | v1.3.0 | 16-18 | 7 | Complete (2026-02-11) |
 | v1.4.0 | 19-23 | 9 | Complete (2026-02-11) |
 | v1.5.0 | 24-27 | 7 | Complete (2026-02-12) |
-| v2.0.0 | 28-30 | 3/TBD | In progress |
+| v2.0.0 | 28-30 | 5/TBD | In progress |
 
 **Recent Trend:**
 - Last 5 plans: ~30-60 min range
@@ -65,6 +65,9 @@ Recent decisions affecting current work:
 - [Phase 29-02]: Date filter is opt-in (unchecked by default) to match CLI default behavior
 - [Phase 29-02]: Lazy imports in SearchWorker.run() to avoid circular dependencies
 - [Phase 29-02]: Per-source job counts tracked and passed as 5th callback parameter
+- [Phase 29-01]: Reused wizard.py validation logic via extracted functions - zero duplication
+- [Phase 29-01]: TagChipWidget uses scrollable container for vertical chip stacking
+- [Phase 29-01]: Dirty tracking compares full form snapshot against original values at load time
 
 ### Pending Todos
 
@@ -76,14 +79,13 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-12
-Stopped at: Phase 29 plans created and verified
+Last session: 2026-02-13
+Stopped at: Completed 29-01-PLAN.md (tag chips + profile form)
 Resume file: None
 
 **Next steps:**
-1. Run `/gsd:execute-phase 29` to implement Profile Setup & Search Controls
-2. Wave 1 (parallel): 29-01 (tag chips + profile form) + 29-02 (search controls + real worker)
-3. Wave 2: 29-03 (main window integration + human verification)
+1. Execute 29-03 (main window integration + human verification)
+2. Complete Phase 29 and advance to Phase 30
 
 ---
-*Last updated: 2026-02-13 after Phase 29 planning complete*
+*Last updated: 2026-02-13 after completing 29-01*
