@@ -1,6 +1,6 @@
 # Project State: Job Radar
 
-**Last Updated:** 2026-02-13T20:07:37Z
+**Last Updated:** 2026-02-13T20:18:14Z
 
 ## Project Reference
 
@@ -13,12 +13,12 @@
 ## Current Position
 
 **Phase:** 32 - Job Aggregator APIs
-**Current Plan:** 3/4
-**Status:** In Progress
+**Current Plan:** 4/4
+**Status:** Complete
 
-**Progress:** [██████████] 98%
+**Progress:** [██████████] 100%
 
-**Next Action:** Execute Phase 32 Plan 04 (if exists) or complete phase
+**Next Action:** Phase 32 complete - ready for next phase or milestone completion
 
 ## Performance Metrics
 
@@ -32,24 +32,26 @@
 | v1.3.0 Accessibility | 3 | 7 | 1 | 7.0 |
 
 **Average velocity:** ~5 plans/day (varies by complexity)
+| Phase 32 P04 | 426 | 2 tasks | 3 files |
 | Phase 32 P03 | 330 | 2 tasks | 6 files |
 | Phase 31 P02 | 213 | 1 tasks | 5 files |
 | Phase 32 P02 | 158 | 2 tasks | 2 files |
-| Phase 32 P01 | 164 | 2 tasks | 2 files |
 
 ### Recent Plan Executions
 
 | Plan | Duration (sec) | Tasks | Files | Date |
 |------|---------------|-------|-------|------|
-| 31-02 | 213 | 1 | 5 | 2026-02-13 |
-| 31-01 | 224 | 2 | 2 | 2026-02-13 |
+| 32-04 | 426 | 2 | 3 | 2026-02-13 |
+| 32-03 | 330 | 2 | 6 | 2026-02-13 |
+| 32-02 | 158 | 2 | 2 | 2026-02-13 |
+| 32-01 | 164 | 2 | 2 | 2026-02-13 |
 
 ### Quality Indicators
 
 **Test Coverage:**
-- 460 tests across 17 test files
+- 482 tests across 17 test files
 - All passing (v2.1.0 in progress)
-- Coverage areas: scoring, config, tracker, wizard, report, UX, API, PDF, dedup, accessibility, profile management, GUI, rate limiting
+- Coverage areas: scoring, config, tracker, wizard, report, UX, API, PDF, dedup, accessibility, profile management, GUI, rate limiting, JSearch, USAJobs
 
 **Code Stats (v2.0.0):**
 - ~19,000 LOC Python (source + tests + GUI)
@@ -83,6 +85,9 @@
 | Three-phase source ordering (scrapers -> APIs -> aggregators) | Ensures native sources win in dedup over aggregated duplicates | 2026-02-13 |
 | JSearch display source splitting for progress tracking | Shows individual source progress (LinkedIn: 5, Indeed: 7) not "JSearch: 12" | 2026-02-13 |
 | Deduplication returns dict with stats and multi-source map | Enables transparency and future multi-source badge feature | 2026-02-13 |
+| GUI Settings tab for API key configuration | Non-technical users can configure API keys without terminal | 2026-02-13 |
+| Inline API validation with test buttons | Immediate feedback prevents configuration errors | 2026-02-13 |
+| Atomic .env writes using tempfile + replace | Prevents corruption on crashes or interrupts | 2026-02-13 |
 
 ### Active Constraints
 
@@ -111,49 +116,48 @@ None.
 
 ### What Just Happened
 
-Completed Phase 32 Plan 03: JSearch and USAJobs Integration into Search Pipeline (PLAN 3 OF 4)
+Completed Phase 32 Plan 04: GUI API Settings and Comprehensive Tests (PLAN 4 OF 4 - PHASE COMPLETE)
 
-**Executed:** Integrated JSearch and USAJobs into main search workflow with three-phase source ordering and enhanced deduplication
+**Executed:** Added GUI API Settings tab and comprehensive test coverage for all Phase 32 functionality
 
 **Key accomplishments:**
-- Task 1: Integrated JSearch and USAJobs into query builder and fetch_all orchestrator
-- Query generation creates jsearch and usajobs queries from profile titles with location mapping
-- Three-phase source ordering ensures native sources win in dedup (scrapers -> APIs -> aggregators)
-- USAJobs added to API_SOURCES (native federal source runs before JSearch)
-- JSearch results split by actual source (linkedin/indeed/glassdoor) for accurate progress display
-- Task 2: Enhanced deduplication with multi-source tracking and statistics reporting
-- Deduplication now returns dict with results, stats, and multi_source map
-- Stats track original_count, deduped_count, duplicates_removed, sources_involved
-- CLI displays dedup stats when duplicates found: "N duplicates removed across M sources"
-- Updated sources_searched to include LinkedIn, Indeed, Glassdoor, USAJobs (Federal)
-- All 460 tests passing (no regressions)
+- Task 1: Added Settings tab to GUI with API key configuration for all sources
+- JSearch section: API key field with test button and status indicator
+- USAJobs section: email and API key fields with dual-credential validation
+- Adzuna section: App ID and App Key fields
+- Authentic Jobs section: API key field
+- Keys masked by default with Show/Hide toggle for security
+- Test buttons validate credentials via inline API requests with status feedback
+- Save button writes atomically to .env using tempfile + replace pattern
+- Tip displayed when JSearch not configured to drive adoption
+- Task 2: Added comprehensive test suite for JSearch, USAJobs, and deduplication stats
+- 18+ new tests covering JSearch source attribution, USAJobs nested structure, federal filters, dedup stats
+- Updated all 22 existing dedup tests to handle new dict return type
+- All 482 tests passing (up from 460 baseline)
 
 **Commits:**
-- f67d896 - feat(32-job-aggregator-apis): integrate JSearch and USAJobs into search pipeline
-- 8b80a14 - feat(32-job-aggregator-apis): enhance deduplication with multi-source tracking and stats
+- f96f645 - feat(32-04): add API key configuration to GUI Settings tab
+- aa4bced - test(32-04): add comprehensive tests for JSearch, USAJobs, dedup stats
 
-**Duration:** 330 seconds (5.5 minutes)
+**Duration:** 426 seconds (7.1 minutes)
 
 ### What's Next
 
-Check if Phase 32 Plan 04 exists, otherwise phase is complete. Ready for GUI API settings or source integration testing.
+Phase 32 complete - all 4 plans executed successfully. Ready for next phase or milestone completion.
 
 ### Files Changed This Session
 
-- `/home/corye/Claude/Job-Radar/job_radar/sources.py` - Integrated JSearch/USAJobs queries, three-phase fetch_all, enhanced tracking (+56/-7 lines)
-- `/home/corye/Claude/Job-Radar/job_radar/deduplication.py` - Enhanced with stats and multi-source tracking (+73/-9 lines)
-- `/home/corye/Claude/Job-Radar/job_radar/search.py` - Updated to handle dedup stats and new sources (+8/-1 lines)
-- `/home/corye/Claude/Job-Radar/job_radar/gui/worker_thread.py` - Updated for new fetch_all return type (+4/-1 lines)
-- `/home/corye/Claude/Job-Radar/tests/test_deduplication.py` - Updated for new return type (+31/-31 lines)
-- `/home/corye/Claude/Job-Radar/tests/test_ux.py` - Updated mock to return tuple (+1/-1 lines)
-- `/home/corye/Claude/Job-Radar/.planning/phases/32-job-aggregator-apis/32-03-SUMMARY.md` - Created
+- `/home/corye/Claude/Job-Radar/job_radar/gui/main_window.py` - Added Settings tab with API configuration UI (+482 lines)
+- `/home/corye/Claude/Job-Radar/tests/test_sources_api.py` - Added JSearch, USAJobs, query builder tests (+224 lines)
+- `/home/corye/Claude/Job-Radar/tests/test_deduplication.py` - Updated for dict return type, added stats tests (+155/-41 lines)
+- `/home/corye/Claude/Job-Radar/.planning/phases/32-job-aggregator-apis/32-04-SUMMARY.md` - Created
 - `/home/corye/Claude/Job-Radar/.planning/STATE.md` - Updated position, decisions, metrics
 
 ### Context for Next Session
 
-**If continuing:** Check for Phase 32 Plan 04. If none exists, phase is complete. JSearch and USAJobs now fully integrated into search pipeline with three-phase source ordering and enhanced dedup stats.
+**If continuing:** Phase 32 complete - all 4 plans executed. JSearch and USAJobs fully integrated with GUI API settings and comprehensive test coverage. Ready for next phase.
 
-**If resuming later:** Read STATE.md for current position, check .planning/phases/32-job-aggregator-apis/32-03-SUMMARY.md for integration details.
+**If resuming later:** Read STATE.md for current position, check .planning/phases/32-job-aggregator-apis/32-04-SUMMARY.md for GUI settings and test details.
 
 ---
 *State initialized: 2026-02-13*
