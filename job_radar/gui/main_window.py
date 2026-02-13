@@ -720,7 +720,7 @@ class MainWindow(ctk.CTk):
     def _open_report(self):
         """Open HTML report in default browser."""
         if self._report_path:
-            report_uri = Path(self._report_path).as_uri()
+            report_uri = Path(self._report_path).resolve().as_uri()
             webbrowser.open(report_uri)
 
     def _show_error_dialog(self, message: str):
