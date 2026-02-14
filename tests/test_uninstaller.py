@@ -387,6 +387,8 @@ def test_create_cleanup_script_windows_creates_batch_file(tmp_path, monkeypatch)
 
 def test_create_cleanup_script_linux_creates_executable_script(tmp_path, monkeypatch):
     """Test Linux: creates .sh script with execute permission."""
+    import platform
+
     monkeypatch.setattr("sys.platform", "linux")
 
     binary_path = Path("/usr/local/bin/job-radar")
@@ -403,8 +405,9 @@ def test_create_cleanup_script_linux_creates_executable_script(tmp_path, monkeyp
     assert script.exists()
     assert script.name == ".job-radar-cleanup.sh"
 
-    # Verify script is executable
-    assert script.stat().st_mode & stat.S_IEXEC
+    # Verify script is executable (skip on Windows where execute bits don't apply)
+    if platform.system() != "Windows":
+        assert script.stat().st_mode & stat.S_IEXEC
 
     # Verify script content
     content = script.read_text()

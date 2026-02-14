@@ -210,8 +210,9 @@ def test_rate_limits_loaded_from_config(tmp_path, monkeypatch):
         }
     }))
 
-    # Mock the config path to use tmp_path
+    # Mock the config path to use tmp_path (Windows uses USERPROFILE, Unix uses HOME)
     monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
 
     # Reload rate_limits module to pick up new config
     import importlib
@@ -245,8 +246,9 @@ def test_rate_limits_invalid_config_uses_defaults(tmp_path, monkeypatch, caplog)
         "rate_limits": "not_a_dict"  # Invalid: should be dict
     }))
 
-    # Mock the config path
+    # Mock the config path (Windows uses USERPROFILE, Unix uses HOME)
     monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
 
     # Reload rate_limits module
     import importlib
@@ -277,8 +279,9 @@ def test_rate_limits_config_override_merges_with_defaults(tmp_path, monkeypatch)
         }
     }))
 
-    # Mock the config path
+    # Mock the config path (Windows uses USERPROFILE, Unix uses HOME)
     monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
 
     # Reload rate_limits module
     import importlib
