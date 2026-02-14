@@ -118,9 +118,95 @@ jobs:
           name: job-radar-${{ matrix.platform }}
           path: job-radar-${{ github.ref_name }}-*
 
+  build-installers:
+    name: Build ${{ matrix.platform }} installer
+    needs: build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            platform: macos
+            artifact_name: job-radar-macos
+          - os: windows-latest
+            platform: windows
+            artifact_name: job-radar-windows
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Pillow (for asset generation)
+        run: pip install Pillow
+
+      - name: Download PyInstaller artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+
+      - name: Extract macOS artifact
+        if: runner.os == 'macOS'
+        run: |
+          mkdir -p dist
+          # The artifact is a .zip containing JobRadar.app
+          unzip job-radar-${{ github.ref_name }}-macos.zip -d dist/
+
+      - name: Extract Windows artifact
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist
+          Expand-Archive -Path job-radar-${{ github.ref_name }}-windows.zip -DestinationPath dist/
+
+      - name: Install create-dmg (macOS)
+        if: runner.os == 'macOS'
+        run: brew install create-dmg
+
+      - name: Install NSIS (Windows)
+        if: runner.os == 'Windows'
+        run: choco install nsis -y
+
+      - name: Build DMG installer (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          chmod +x installers/macos/build-dmg.sh
+          installers/macos/build-dmg.sh ${{ github.ref_name }}
+        env:
+          MACOS_CERT_BASE64: ${{ secrets.MACOS_CERT_BASE64 }}
+          MACOS_CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
+          MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
+
+      - name: Build NSIS installer (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: |
+          cd installers\windows
+          build-installer.bat ${{ github.ref_name }}
+        env:
+          WINDOWS_CERT_BASE64: ${{ secrets.WINDOWS_CERT_BASE64 }}
+          WINDOWS_CERT_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
+
+      - name: Upload DMG artifact (macOS)
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer-macos
+          path: "*.dmg"
+
+      - name: Upload installer artifact (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer-windows
+          path: "installers/windows/Job-Radar-Setup-*.exe"
+
   release:
     name: Create Release
-    needs: build
+    needs: [build, build-installers]
     runs-on: ubuntu-latest
     steps:
       - name: Download all artifacts
@@ -132,3 +218,5 @@ jobs:
           generate_release_notes: true
           files: |
             job-radar-*/job-radar-${{ github.ref_name }}-*
+            installer-macos/*.dmg
+            installer-windows/*.exe
