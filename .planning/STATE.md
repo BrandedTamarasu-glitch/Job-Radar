@@ -1,6 +1,6 @@
 # Project State: Job Radar
 
-**Last Updated:** 2026-02-14T03:30:00Z
+**Last Updated:** 2026-02-14T03:31:09Z
 
 ## Project Reference
 
@@ -12,13 +12,13 @@
 
 ## Current Position
 
-**Phase:** 34 - GUI Scoring Configuration
-**Current Plan:** 2/2
-**Status:** Complete
+**Phase:** 35 - Additional API Sources (SerpAPI, Jobicy)
+**Current Plan:** 1/2
+**Status:** In progress
 
-**Progress:** [██████████] 100% (phase 34 complete)
+**Progress:** [██████████░] 50% (phase 35: 1/2 plans complete)
 
-**Next Action:** Begin Phase 35 or milestone audit
+**Next Action:** Plan 35-02 (GUI quota tracking)
 
 ## Performance Metrics
 
@@ -43,6 +43,7 @@
 
 | Plan | Duration (sec) | Tasks | Files | Date |
 |------|---------------|-------|-------|------|
+| 35-01 | 230 | 2 | 2 | 2026-02-14 |
 | 34-02 | 89 | 3 | 2 | 2026-02-14 |
 | 34-01 | 182 | 2 | 1 | 2026-02-13 |
 | 33-03 | 923 | 2 | 2 | 2026-02-13 |
@@ -107,6 +108,11 @@
 | Collapsible section pattern with triangle indicators | Uses ▶/▼ unicode (not emoji) for expand/collapse, standard pattern for Settings sections | 2026-02-13 |
 | Live preview with hardcoded sample job | "Senior Python Developer" with consistent scores provides stable demonstration of weight impact | 2026-02-13 |
 | Two-tier validation for scoring weights | Inline orange warning during editing (non-blocking) + error dialog on save (blocking) balances UX and correctness | 2026-02-13 |
+| SerpAPI conservative 50/min rate limit | Free tier has 100 searches/month cap, conservative rate prevents exhaustion | 2026-02-14 |
+| Jobicy 1/hour rate limit | Per API documentation ("once per hour"), strict public API limit | 2026-02-14 |
+| SerpAPI in aggregator phase, Jobicy in API phase | SerpAPI is Google Jobs aggregator (runs last), Jobicy is native remote source (runs middle) | 2026-02-14 |
+| get_quota_usage() queries SQLite bucket directly | Read-only SELECT on rate_limits table for (used, limit, period) tuples enables real-time quota display | 2026-02-14 |
+| Jobicy requires non-empty description after HTML cleaning | Skip jobs with empty description to ensure scoring quality | 2026-02-14 |
 
 ### Active Constraints
 
@@ -135,52 +141,41 @@ None.
 
 ### What Just Happened
 
-Completed Phase 34: GUI Scoring Configuration (2 PLANS COMPLETE)
+Completed Phase 35 Plan 01: SerpAPI and Jobicy Backend Integration (1/2 PLANS COMPLETE)
 
-**Executed:** Full scoring configuration UI with widget implementation and Settings tab integration
+**Executed:** Backend integration for two new job API sources with rate limiting and quota tracking
 
 **Key accomplishments:**
-- Created 634-line ScoringConfigWidget class with 6 weight sliders, staffing preference dropdown, live preview panel
-- Integrated widget into Settings tab below API key configuration with proper profile loading
-- Added 11 comprehensive unit tests covering normalization, validation, preview calculations
-- Extracted testable functions (normalize_weights, validate_weights) as module-level utilities
-- Implemented two-tier validation: inline orange warning (non-blocking) + save dialog (blocking)
-- Added normalize button (proportional weight adjustment), reset button (with confirmation)
-- Live preview shows sample job breakdown with real-time updates on every slider/dropdown change
-- Collapsible section pattern with ▶/▼ indicators
-- All 8 must_haves verified by gsd-verifier (passed)
+- Added SerpAPI Google Jobs fetch function with conservative 50/min rate limiting (100 searches/month free tier)
+- Added Jobicy remote jobs fetch function (public API, 1/hour rate limit)
+- Implemented get_quota_usage() utility to query SQLite bucket for real-time quota tracking
+- Created response mappers with HTML cleaning and field validation for both sources
+- Integrated both sources into search pipeline (SerpAPI→aggregator phase, Jobicy→API phase)
+- Both sources follow existing fetch_jsearch()/fetch_usajobs() patterns for consistency
 
 **Commits:**
-- b0962b8 - feat(34-01): create ScoringConfigWidget with sliders, dropdown, and collapsible section
-- ec00e67 - docs(34-01): complete ScoringConfigWidget plan
-- affbc76 - feat(34-02): integrate ScoringConfigWidget into Settings tab
-- 196db9b - test(34-02): add scoring config tests and extract testable functions
-- 95c837e - docs(34-02): complete Settings tab integration plan
+- 1d7aeb9 - feat(35-01): add SerpAPI and Jobicy rate limiter config with quota tracking
+- 0f4f291 - feat(35-01): implement SerpAPI and Jobicy fetch functions and mappers
 
-**Duration:** 271 seconds total (182s Plan 01 + 89s Plan 02)
+**Duration:** 230 seconds (3.8 min)
 
 ### What's Next
 
-Phase 35: Additional API Sources (SerpAPI, Jobicy) - pending discussion/planning
+Phase 35 Plan 02: GUI quota tracking display for rate-limited sources
 
 ### Files Changed This Session
 
-- `job_radar/gui/scoring_config.py` - Created ScoringConfigWidget class (+634 lines)
-- `job_radar/gui/main_window.py` - Integrated widget into Settings tab (+24 lines)
-- `tests/test_scoring_config.py` - Created comprehensive unit tests (+218 lines)
-- `.planning/phases/34-gui-scoring-configuration/34-01-SUMMARY.md` - Created
-- `.planning/phases/34-gui-scoring-configuration/34-02-SUMMARY.md` - Created
-- `.planning/phases/34-gui-scoring-configuration/34-VERIFICATION.md` - Created (8/8 verified)
-- `.planning/ROADMAP.md` - Updated Phase 34 complete
-- `.planning/REQUIREMENTS.md` - Updated SCORE-01, SCORE-02, SCORE-04, SCORE-05 to Complete
+- `job_radar/rate_limits.py` - Added serpapi/jobicy rate configs, BACKEND_API_MAP entries, get_quota_usage() (+70 lines)
+- `job_radar/sources.py` - Added fetch_serpapi(), fetch_jobicy(), mappers, updated build_search_queries() and fetch_all() (+287 lines)
+- `.planning/phases/35-additional-api-sources--serpapi--jobicy-/35-01-SUMMARY.md` - Created
 - `.planning/STATE.md` - Updated position, decisions, metrics
 
 ### Context for Next Session
 
-**If continuing:** Phase 34 complete and verified. Users can now customize scoring weights and staffing firm preference through GUI controls. Ready for Phase 35 (additional API sources) or milestone audit.
+**If continuing:** Backend integration complete. SerpAPI and Jobicy sources now available in automated search pipeline. Ready for GUI quota tracking display (Plan 35-02).
 
-**If resuming later:** Read STATE.md for current position. Phase 34 delivered full scoring configuration UI with verification passed.
+**If resuming later:** Read STATE.md for current position. Phase 35 Plan 01 delivered SerpAPI and Jobicy backend integration with rate limiting and quota tracking utility.
 
 ---
 *State initialized: 2026-02-13*
-*Phase 34 complete - GUI scoring configuration delivered*
+*Phase 35 Plan 01 complete - SerpAPI and Jobicy backend integration delivered*
