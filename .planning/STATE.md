@@ -1,6 +1,6 @@
 # Project State: Job Radar
 
-**Last Updated:** 2026-02-14T03:40:52Z
+**Last Updated:** 2026-02-14T17:45:17Z
 
 ## Project Reference
 
@@ -12,13 +12,13 @@
 
 ## Current Position
 
-**Phase:** 35 - Additional API Sources (SerpAPI, Jobicy)
-**Current Plan:** 2/2 (PHASE COMPLETE)
-**Status:** Phase complete
+**Phase:** 36 - GUI Uninstall Feature
+**Current Plan:** 1/2
+**Status:** In progress
 
-**Progress:** [███████████] 100% (phase 35: 2/2 plans complete)
+**Progress:** [████████████] 50% (phase 36: 1/2 plans complete)
 
-**Next Action:** Phase 35 complete - ready for v2.1.0 milestone wrap-up
+**Next Action:** Phase 36 Plan 02 - GUI uninstall dialogs
 
 ## Performance Metrics
 
@@ -43,18 +43,18 @@
 
 | Plan | Duration (sec) | Tasks | Files | Date |
 |------|---------------|-------|-------|------|
+| 36-01 | 225 | 2 | 2 | 2026-02-14 |
 | 35-02 | 410 | 3 | 4 | 2026-02-14 |
 | 35-01 | 230 | 2 | 2 | 2026-02-14 |
 | 34-02 | 89 | 3 | 2 | 2026-02-14 |
 | 34-01 | 182 | 2 | 1 | 2026-02-13 |
-| 33-03 | 923 | 2 | 2 | 2026-02-13 |
 
 ### Quality Indicators
 
 **Test Coverage:**
-- 505 tests across 18 test files
+- 562 tests across 19 test files
 - All passing (v2.1.0 in progress)
-- Coverage areas: scoring, config, tracker, wizard, report, UX, API, PDF, dedup, accessibility, profile management, GUI, rate limiting, JSearch, USAJobs, schema migration, scoring config widget
+- Coverage areas: scoring, config, tracker, wizard, report, UX, API, PDF, dedup, accessibility, profile management, GUI, rate limiting, JSearch, USAJobs, schema migration, scoring config widget, uninstaller
 
 **Code Stats (v2.1.0 in progress):**
 - ~20,450 LOC Python (source + tests + GUI)
@@ -117,6 +117,10 @@
 | Color-coded quota warnings (gray/orange/red) | Orange at 80% usage, red at 100% for quota awareness | 2026-02-14 |
 | update_quota_display() called after search | Updates quota labels from SQLite buckets for immediate feedback | 2026-02-14 |
 | Jobicy displayed as always-available in wizard | Public API with no key required, rate limited to 1/hour | 2026-02-14 |
+| shutil.rmtree onerror for Python 3.10+ compatibility | Use onerror parameter (not onexc) for backward compatibility with Python 3.10-3.11 | 2026-02-14 |
+| Best-effort deletion with error collection | Continue deletion on failures, return list of (path, error) tuples for transparency | 2026-02-14 |
+| macOS .app bundle resolution for Trash | Walk path upward to find .app directory, move entire bundle to Trash (not just binary) | 2026-02-14 |
+| Cleanup SQLite connections before deletion | Call _cleanup_connections() before shutil.rmtree to prevent "database is locked" errors | 2026-02-14 |
 
 ### Active Constraints
 
@@ -145,42 +149,42 @@ None.
 
 ### What Just Happened
 
-Completed Phase 35 Plan 02: GUI Quota Tracking for SerpAPI and Jobicy (PHASE 35 COMPLETE)
+Completed Phase 36 Plan 01: Core Uninstaller Module
 
-**Executed:** CLI wizard and GUI Settings tab integration with real-time quota display
+**Executed:** Backend uninstaller module with backup, deletion, and cleanup scripts
 
 **Key accomplishments:**
-- Added SerpAPI and Jobicy to CLI setup wizard with inline validation
-- Added GUI Settings tab sections with API key fields and test buttons
-- Implemented real-time quota display with color warnings (gray/orange/red at 80%/100% thresholds)
-- Added 23 comprehensive tests covering mappers, pipeline integration, and rate limit config
-- Total test suite expanded to 543 tests, all passing with zero regressions
+- Created job_radar/uninstaller.py with 5 core functions (257 lines)
+- get_uninstall_paths(): enumerate app data with human-readable descriptions
+- create_backup(): ZIP profile.json and config.json with compression
+- delete_app_data(): best-effort deletion with SQLite connection cleanup
+- get_binary_path(): detect frozen executable path
+- create_cleanup_script(): platform-specific binary removal (macOS/Windows/Linux)
+- Added 19 comprehensive unit tests (430 lines)
+- Total test suite: 562 tests, all passing with zero regressions
 
 **Commits:**
-- 0e4172a - feat(35-02): add SerpAPI and Jobicy to CLI wizard and config
-- d059aea - feat(35-02): add SerpAPI and Jobicy GUI sections with quota display
-- 2454893 - test(35-02): add comprehensive tests for SerpAPI and Jobicy
+- 4ca86a2 - feat(36-01): create uninstaller module with backup, deletion, and cleanup scripts
+- 3a76c02 - test(36-01): add comprehensive unit tests for uninstaller module
 
-**Duration:** 410 seconds (6.8 min)
+**Duration:** 225 seconds (3.75 min)
 
 ### What's Next
 
-Phase 35 complete. v2.1.0 milestone ready for final integration and release.
+Phase 36 Plan 02: GUI uninstall dialogs (preview, backup, confirmation, progress)
 
 ### Files Changed This Session
 
-- `job_radar/api_setup.py` - Added SerpAPI wizard section with validation, Jobicy info section, test_apis() validators (+99 lines)
-- `job_radar/api_config.py` - Updated .env.example template with SERPAPI_API_KEY (+6 lines)
-- `job_radar/gui/main_window.py` - Added SerpAPI/Jobicy sections, quota labels, update_quota_display(), _test_serpapi() (+135 lines)
-- `tests/test_sources_api.py` - Added 23 tests (7 SerpAPI, 9 Jobicy, 3 pipeline, 4 rate config) (+307 lines)
-- `.planning/phases/35-additional-api-sources--serpapi--jobicy-/35-02-SUMMARY.md` - Created
+- `job_radar/uninstaller.py` - Created core uninstaller backend (+257 lines)
+- `tests/test_uninstaller.py` - Created comprehensive test suite (+430 lines)
+- `.planning/phases/36-gui-uninstall-feature/36-01-SUMMARY.md` - Created
 - `.planning/STATE.md` - Updated position, decisions, metrics
 
 ### Context for Next Session
 
-**If continuing:** Phase 35 delivered complete SerpAPI and Jobicy integration with backend, CLI wizard, GUI Settings, quota tracking, and comprehensive tests. Ready for v2.1.0 milestone wrap-up.
+**If continuing:** Core uninstaller backend ready. Next: GUI dialogs to call these functions (preview paths, offer backup, confirm deletion, show progress).
 
-**If resuming later:** Read STATE.md for current position. Phase 35 complete - SerpAPI (Google Jobs aggregator) and Jobicy (remote jobs) now fully integrated with user-facing configuration and quota visibility.
+**If resuming later:** Read STATE.md for current position. Phase 36-01 delivered testable uninstaller backend with platform-aware cleanup scripts and best-effort deletion patterns.
 
 ---
 *State initialized: 2026-02-13*
