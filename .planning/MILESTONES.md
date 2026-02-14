@@ -1,5 +1,41 @@
 # Project Milestones: Job Radar
 
+## v2.1.0 Source Expansion & Polish (Shipped: 2026-02-14)
+
+**Delivered:** Expand automated job source coverage, give users control over staffing firm scoring, and provide clean uninstall experiences across platforms
+
+**Phases completed:** 31-37 (18 plans total)
+
+**Key accomplishments:**
+
+- 4 new aggregator/API sources: JSearch (LinkedIn/Indeed/Glassdoor), USAJobs (federal jobs), SerpAPI (Google Jobs aggregator), Jobicy (remote-focused jobs)
+- User-configurable scoring weights (6-component sliders) and staffing firm preference (Boost/Neutral/Penalize) with live preview and normalize/reset controls
+- Profile schema v2 migration with automatic v0/v1→v2 upgrade, backup creation before migration, and graceful fallback for corrupted fields
+- GUI uninstall feature with backup option, path preview confirmation, checkbox-gated red button, and platform-specific cleanup scripts
+- Platform-native installers: macOS DMG with custom branded 800x500 background and .jobprofile file association, Windows NSIS Modern UI with wizard, shortcuts, and Add/Remove Programs
+- CI/CD automation builds DMG and NSIS installers on tagged releases with conditional code signing infrastructure
+
+**Stats:**
+
+- 18 feature commits (feat(31-01) → feat(37-03))
+- ~26,073 lines of Python (source + tests + GUI)
+- 7 phases, 18 plans, ~36 tasks
+- 2 days (2026-02-13 → 2026-02-14)
+
+**Git range:** `feat(32-job-aggregator-apis)` → `feat(37-03)`
+
+**Requirements:** 22/22 satisfied (3 INFRA + 8 SRC + 5 SCORE + 6 PKG requirements)
+
+**Quality metrics:**
+- Phase verification: 7/7 passed (75/75 must-haves verified)
+- Cross-phase integration: 24/24 connections verified
+- E2E flows: 5/5 complete (onboarding, API config, scoring customization, uninstall, aggregator dedup)
+- Known issues: 0
+
+**What's next:** Plan v2.2.0 or v3.0 milestone
+
+---
+
 ## v1.4.0 Visual Design & Polish (Shipped: 2026-02-11)
 
 **Delivered:** Improve report scannability through visual hierarchy, responsive design, and quality-of-life polish features

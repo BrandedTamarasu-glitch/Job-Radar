@@ -4,20 +4,20 @@
 
 ## Project Reference
 
-**Core Value:** Accurate job-candidate scoring — if the scoring is wrong, nothing else matters. Every listing must be ranked reliably so the user can trust the report and focus their time on the best matches.
+See: .planning/PROJECT.md (updated 2026-02-14)
 
-**Current Milestone:** v2.1.0 Source Expansion & Polish
-
-**Milestone Goal:** Expand automated job source coverage, give users control over staffing firm scoring, and provide clean uninstall experiences across platforms
+**Core value:** Accurate job-candidate scoring — if the scoring is wrong, nothing else matters.
+**Current focus:** Planning next milestone
 
 ## Current Position
 
-**Phase:** 37 - Platform-Native Installers
-**Current Plan:** 3 of 3 in current phase
-**Status:** Phase complete
-**Last activity:** 2026-02-14 - Completed 37-03-PLAN.md
+**Milestone:** v2.1.0 complete (archived)
+**Phase:** Next milestone not yet planned
+**Plan:** Not started
+**Status:** Ready to plan next milestone
+**Last activity:** 2026-02-14 - v2.1.0 milestone archived
 
-**Progress:** [████████████] 100% (phases 31-37 complete)
+**Progress:** v2.1.0: 100% complete (7 phases, 18 plans)
 
 ## Performance Metrics
 

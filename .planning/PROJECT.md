@@ -78,25 +78,24 @@ Accurate job-candidate scoring — if the scoring is wrong, nothing else matters
 - ✓ Dual executables (CLI console + GUI no-console) for all platforms — v2.0.0
 - ✓ CustomTkinter theme files and fonts bundled via PyInstaller — v2.0.0
 - ✓ macOS code signing entitlements for Python JIT — v2.0.0
+- ✓ JSearch aggregator API (LinkedIn/Indeed/Glassdoor) with source attribution — v2.1.0
+- ✓ USAJobs federal job listings integration — v2.1.0
+- ✓ SerpAPI Google Jobs aggregator — v2.1.0
+- ✓ Jobicy remote job board integration — v2.1.0
+- ✓ User-configurable scoring weights (6 sliders with live preview) — v2.1.0
+- ✓ Staffing firm preference (Boost/Neutral/Penalize dropdown) — v2.1.0
+- ✓ GUI uninstall with backup, path preview, and platform cleanup — v2.1.0
+- ✓ macOS DMG installer with custom background and .jobprofile association — v2.1.0
+- ✓ Windows NSIS installer with Modern UI and Add/Remove Programs — v2.1.0
+- ✓ CI/CD automated installer builds on tagged releases — v2.1.0
 
 ### Active
 
-## Current Milestone: v2.1.0 Source Expansion & Polish
-
-**Goal:** Expand automated job source coverage, give users control over staffing firm scoring, and provide clean uninstall experiences across platforms
-
-**Target features:**
-- Job aggregator API integration (JSearch/SerpAPI) pulling from LinkedIn, Indeed, Glassdoor, and company career pages
-- Additional free job board integrations (ZipRecruiter, Jobicy, USAJobs, etc.)
-- Better staffing firm filtering with user-configurable scoring preference (boost/neutral/penalize)
-- GUI uninstall button that removes app + all config/data/cache
-- Platform-native packaging: macOS trashable app, Windows Add/Remove Programs installer
-- Tiered source approach: works great without API keys, optional freemium APIs for more volume
+(No active milestone — ready to plan next)
 
 ### Out of Scope
 
 - LinkedIn/Indeed direct scraping — both sites aggressively block automation; unreliable long-term
-- Job data aggregator API (SerpAPI, JSearch) — deferred; revisit after core improvements ship
 - Web UI or email digest — desktop app + report is the workflow; no server needed
 - Application tracking CLI commands — tracker.py has the functions but exposing them is deferred
 - Mobile app — desktop tool
@@ -109,24 +108,26 @@ Accurate job-candidate scoring — if the scoring is wrong, nothing else matters
 
 ## Context
 
-### Current State (v2.0.0 shipped)
+### Current State (v2.1.0 shipped)
 
-- v2.0.0 shipped with ~19,000 LOC Python (source + tests + GUI)
+- v2.1.0 shipped with ~26,000 LOC Python (source + tests + GUI)
 - Tech stack: Python 3.10+, pytest, requests, BeautifulSoup, questionary, PyInstaller, pdfplumber, rapidfuzz, python-dotenv, pyrate-limiter, tabulate, customtkinter
-- Test suite: 452 tests across scoring, config, tracker, wizard, report, UX, API, PDF, dedup, accessibility, profile management
-- Job sources: 6 API sources + 4 manual URLs (Wellfound, Indeed, LinkedIn, Glassdoor)
+- Test suite: 566 tests across scoring, config, tracker, wizard, report, UX, API, PDF, dedup, accessibility, profile management, GUI, rate limiting, JSearch, USAJobs, schema migration, scoring config widget, uninstaller
+- Job sources: 10 API sources (JSearch, USAJobs, SerpAPI, Jobicy, Adzuna, Authentic Jobs, Dice, HN, RemoteOK, WWR) + 4 manual URLs (Wellfound, Indeed, LinkedIn, Glassdoor)
 - Desktop GUI application (CustomTkinter) + CLI — dual executables for Windows, macOS, Linux
-- GUI modules: 7 files, 2,665 LOC (main_window, profile_form, search_controls, tag_chip_widget, worker_thread)
+- GUI modules: 9 files, 3,899 LOC (main_window, profile_form, search_controls, tag_chip_widget, worker_thread, scoring_config, uninstall_dialog)
 - HTML reports: Bootstrap 5 with visual hierarchy, responsive layout, status filtering, CSV export, print, WCAG 2.1 AA
 - Profile management: centralized I/O (atomic writes, backups, schema versioning), preview, interactive editor, CLI flags, GUI form
-- Current workflow: download executable → GUI setup → click Run Search → HTML reports in browser (CLI still available)
+- Current workflow: download installer (DMG/NSIS) → install → GUI setup → customize scoring → click Run Search → HTML reports in browser (CLI still available)
 - Automated accessibility CI: Lighthouse (≥95%) and axe-core WCAG validation on every PR
+- Platform-native installers: macOS DMG with custom background, Windows NSIS with Modern UI
+- Uninstall: GUI button with backup option and platform-specific cleanup
 
 ### Development
 
 - Tool is run daily during active job search
 - User reads HTML reports in browser, uses copy buttons and keyboard shortcuts
-- Scoring weights are hardcoded (validated by test suite)
+- Scoring weights are user-configurable via GUI (schema v2 with live preview)
 - Broad `except Exception` patterns throughout scrapers for crash tolerance (intentional)
 - Questionary library screen reader support is unknown; --profile flag bypasses wizard
 
@@ -178,4 +179,4 @@ Accurate job-candidate scoring — if the scoring is wrong, nothing else matters
 | CI smoke tests CLI-only (headless) | GUI tests require display server, --version is safe | ✓ Good |
 
 ---
-*Last updated: 2026-02-13 after v2.1.0 milestone start*
+*Last updated: 2026-02-14 after v2.1.0 milestone completion*
