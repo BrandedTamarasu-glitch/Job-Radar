@@ -386,6 +386,7 @@ class ScoringConfigWidget(ctk.CTkFrame):
             font=ctk.CTkFont(size=11, family="Courier"),
             justify="left",
             anchor="nw",
+            width=400,
         )
         self._preview_label.grid(row=4, column=0, sticky="nw", padx=15, pady=(5, 15))
 
