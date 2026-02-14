@@ -94,10 +94,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SRC-03 | Phase 35 | Complete |
 | SRC-04 | Phase 35 | Complete |
 | SRC-07 | Phase 35 | Complete |
-| PKG-01 | Phase 36 | Pending |
-| PKG-02 | Phase 36 | Pending |
-| PKG-03 | Phase 36 | Pending |
-| PKG-06 | Phase 36 | Pending |
+| PKG-01 | Phase 36 | Complete |
+| PKG-02 | Phase 36 | Complete |
+| PKG-03 | Phase 36 | Complete |
+| PKG-06 | Phase 36 | Complete |
 | PKG-04 | Phase 37 | Pending |
 | PKG-05 | Phase 37 | Pending |
 
@@ -108,4 +108,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-13*
-*Last updated: 2026-02-14 after Phase 34 completion (100% coverage achieved)*
+*Last updated: 2026-02-14 after Phase 36 completion*

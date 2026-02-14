@@ -412,8 +412,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 36-01-PLAN.md — Core uninstaller backend: backup, deletion, path enumeration, platform-specific cleanup scripts
-- [ ] 36-02-PLAN.md — GUI uninstall dialogs, Settings tab integration, orchestration flow, integration tests
+- [x] 36-01-PLAN.md — Core uninstaller backend: backup, deletion, path enumeration, platform-specific cleanup scripts
+- [x] 36-02-PLAN.md — GUI uninstall dialogs, Settings tab integration, orchestration flow, integration tests
 
 **Success Criteria:**
 1. Users can click "Uninstall" button in GUI Settings tab to remove all app data
@@ -454,10 +454,10 @@ Plans:
 | 33 | v2.1.0 | 3/3 | Complete | 2026-02-13 |
 | 34 | v2.1.0 | 2/2 | Complete | 2026-02-13 |
 | 35 | v2.1.0 | 2/2 | Complete | 2026-02-14 |
-| 36 | v2.1.0 | 0/2 | Pending | — |
+| 36 | v2.1.0 | 2/2 | Complete | 2026-02-14 |
 | 37 | v2.1.0 | 0/? | Pending | — |
 
-**Total: 34 completed phases + 3 planned phases (68 completed plans, 7 milestones: 7 shipped + 1 in progress)**
+**Total: 35 completed phases + 2 planned phases (70 completed plans, 7 milestones: 7 shipped + 1 in progress)**
 
 ---
-*Last updated: 2026-02-13 after Phase 34 planning*
+*Last updated: 2026-02-14 after Phase 36 completion*
