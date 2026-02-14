@@ -430,11 +430,19 @@ Plans:
 
 **Requirements:** PKG-04, PKG-05
 
+**Plans:** 3 plans
+
+Plans:
+- [ ] 37-01-PLAN.md — macOS DMG installer with custom background, drag-to-Applications, and .jobprofile file association
+- [ ] 37-02-PLAN.md — Windows NSIS installer with Modern UI wizard, shortcuts, Add/Remove Programs, and .jobprofile file association
+- [ ] 37-03-PLAN.md — CI/CD integration, installer README with bypass instructions, and auto-update config infrastructure
+
 **Success Criteria:**
 1. macOS users receive a DMG installer with drag-to-Applications folder workflow
 2. Windows users receive an NSIS .exe installer with setup wizard and Add/Remove Programs integration
-3. macOS installer is properly code-signed to avoid Gatekeeper "damaged app" warnings
-4. Windows installer creates Start Menu shortcuts and desktop icon (optional)
+3. Both installers prepared for future code signing (conditional build scripts)
+4. CI/CD automated installer builds on GitHub Actions
+5. Windows installer creates Start Menu shortcuts and desktop icon (optional)
 
 ---
 
@@ -455,7 +463,7 @@ Plans:
 | 34 | v2.1.0 | 2/2 | Complete | 2026-02-13 |
 | 35 | v2.1.0 | 2/2 | Complete | 2026-02-14 |
 | 36 | v2.1.0 | 2/2 | Complete | 2026-02-14 |
-| 37 | v2.1.0 | 0/? | Pending | — |
+| 37 | v2.1.0 | 0/3 | Planned | — |
 
 **Total: 35 completed phases + 2 planned phases (70 completed plans, 7 milestones: 7 shipped + 1 in progress)**
 
