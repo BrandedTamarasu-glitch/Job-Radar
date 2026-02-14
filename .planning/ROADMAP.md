@@ -433,9 +433,9 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 37-01-PLAN.md — macOS DMG installer with custom background, drag-to-Applications, and .jobprofile file association
-- [ ] 37-02-PLAN.md — Windows NSIS installer with Modern UI wizard, shortcuts, Add/Remove Programs, and .jobprofile file association
-- [ ] 37-03-PLAN.md — CI/CD integration, installer README with bypass instructions, and auto-update config infrastructure
+- [x] 37-01-PLAN.md — macOS DMG installer with custom background, drag-to-Applications, and .jobprofile file association
+- [x] 37-02-PLAN.md — Windows NSIS installer with Modern UI wizard, shortcuts, Add/Remove Programs, and .jobprofile file association
+- [x] 37-03-PLAN.md — CI/CD integration, installer README with bypass instructions, and auto-update config infrastructure
 
 **Success Criteria:**
 1. macOS users receive a DMG installer with drag-to-Applications folder workflow

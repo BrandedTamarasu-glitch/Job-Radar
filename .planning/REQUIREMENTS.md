@@ -31,8 +31,8 @@ Requirements for v2.1.0 Source Expansion & Polish. Each maps to roadmap phases.
 - [ ] **PKG-01**: User can uninstall via GUI button that removes all app data (config, cache, rate limits)
 - [ ] **PKG-02**: GUI uninstall shows confirmation dialog listing exact paths to be deleted
 - [ ] **PKG-03**: User can create a backup of profile/config before uninstalling
-- [ ] **PKG-04**: macOS users get a DMG installer with Applications folder drag-drop
-- [ ] **PKG-05**: Windows users get an NSIS installer with setup wizard and Add/Remove Programs entry
+- [x] **PKG-04**: macOS users get a DMG installer with Applications folder drag-drop
+- [x] **PKG-05**: Windows users get an NSIS installer with setup wizard and Add/Remove Programs entry
 - [ ] **PKG-06**: Uninstall works even while the app is running (two-stage cleanup)
 
 ### Infrastructure
@@ -98,8 +98,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PKG-02 | Phase 36 | Complete |
 | PKG-03 | Phase 36 | Complete |
 | PKG-06 | Phase 36 | Complete |
-| PKG-04 | Phase 37 | Pending |
-| PKG-05 | Phase 37 | Pending |
+| PKG-04 | Phase 37 | Complete |
+| PKG-05 | Phase 37 | Complete |
 
 **Coverage:**
 - v2.1.0 requirements: 22 total
