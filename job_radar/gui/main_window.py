@@ -849,14 +849,14 @@ class MainWindow(ctk.CTk):
         # Tip for JSearch
         jsearch_key = os.getenv("JSEARCH_API_KEY", "").strip()
         if not jsearch_key:
-            tip_frame = ctk.CTkFrame(scroll_frame, fg_color="transparent", border_width=2, border_color="blue")
+            tip_frame = ctk.CTkFrame(scroll_frame, fg_color="transparent", border_width=2, border_color="#5DADE2")
             tip_frame.pack(fill="x", pady=(20, 10), padx=10)
 
             tip_label = ctk.CTkLabel(
                 tip_frame,
                 text="💡 Tip: Set up JSearch API key to search LinkedIn, Indeed, and Glassdoor",
                 font=ctk.CTkFont(size=12),
-                text_color="blue",
+                text_color="#5DADE2",
                 wraplength=600
             )
             tip_label.pack(pady=10, padx=10)
