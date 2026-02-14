@@ -26,6 +26,65 @@ SAMPLE_SCORES = {
     "response_likelihood": 3.2,
 }
 
+# Staffing preference mappings
+STAFFING_DISPLAY_MAP = {
+    "Boost (+0.5)": "boost",
+    "Neutral (no change)": "neutral",
+    "Penalize (-1.0)": "penalize",
+}
+
+STAFFING_INTERNAL_MAP = {
+    "boost": "Boost (+0.5)",
+    "neutral": "Neutral (no change)",
+    "penalize": "Penalize (-1.0)",
+}
+
+
+def normalize_weights(weights):
+    """Proportionally adjust weights to sum to 1.0.
+
+    Args:
+        weights: Dict of component -> weight value
+
+    Returns:
+        Dict with normalized weights (rounded to 2 decimals)
+    """
+    total = sum(weights.values())
+
+    if total == 0:
+        # Avoid division by zero - set all to equal weight
+        n = len(weights)
+        return {k: round(1.0 / n, 2) for k in weights}
+
+    # Proportionally scale each weight
+    return {k: round(v / total, 2) for k, v in weights.items()}
+
+
+def validate_weights(weights, tolerance=0.01, min_value=0.05):
+    """Validate that weights sum to 1.0 and meet minimum threshold.
+
+    Args:
+        weights: Dict of component -> weight value
+        tolerance: Allowed deviation from 1.0 (default 0.01)
+        min_value: Minimum value per component (default 0.05)
+
+    Returns:
+        Tuple of (is_valid: bool, error_message: str or None)
+    """
+    total = sum(weights.values())
+
+    # Check sum to 1.0
+    if abs(total - 1.0) > tolerance:
+        return False, f"Weights must sum to 1.0 (currently {total:.3f})"
+
+    # Check minimum per component
+    for key, value in weights.items():
+        if value < min_value:
+            display_name = key.replace("_", " ").title()
+            return False, f"{display_name} must be at least {min_value} (currently {value:.2f})"
+
+    return True, None
+
 
 class ScoringConfigWidget(ctk.CTkFrame):
     """Self-contained widget for configuring scoring weights and staffing preference.
@@ -55,17 +114,9 @@ class ScoringConfigWidget(ctk.CTkFrame):
         self._on_save_callback = on_save_callback
         self._is_expanded = True
 
-        # Staffing preference mappings
-        self._staffing_display_to_internal = {
-            "Boost (+0.5)": "boost",
-            "Neutral (no change)": "neutral",
-            "Penalize (-1.0)": "penalize",
-        }
-        self._staffing_internal_to_display = {
-            "boost": "Boost (+0.5)",
-            "neutral": "Neutral (no change)",
-            "penalize": "Penalize (-1.0)",
-        }
+        # Use module-level staffing preference mappings
+        self._staffing_display_to_internal = STAFFING_DISPLAY_MAP
+        self._staffing_internal_to_display = STAFFING_INTERNAL_MAP
 
         # Widget references
         self._sliders = {}
@@ -445,21 +496,16 @@ class ScoringConfigWidget(ctk.CTkFrame):
 
     def _normalize_weights(self):
         """Proportionally adjust all weights to sum to 1.0."""
-        total = sum(slider.get() for slider in self._sliders.values())
+        # Gather current weights
+        current_weights = {key: slider.get() for key, slider in self._sliders.items()}
 
-        if total == 0:
-            # Avoid division by zero - set all to equal weight
-            equal_weight = 1.0 / len(self._sliders)
-            for key, slider in self._sliders.items():
-                slider.set(equal_weight)
-                self._update_value_label(key, equal_weight)
-        else:
-            # Proportionally scale each weight
-            for key, slider in self._sliders.items():
-                current = slider.get()
-                normalized = current / total
-                slider.set(normalized)
-                self._update_value_label(key, normalized)
+        # Normalize using module function
+        normalized = normalize_weights(current_weights)
+
+        # Update sliders with normalized values
+        for key, value in normalized.items():
+            self._sliders[key].set(value)
+            self._update_value_label(key, value)
 
         self._check_sum_validation()
         self._update_preview()
@@ -486,24 +532,11 @@ class ScoringConfigWidget(ctk.CTkFrame):
             for key, slider in self._sliders.items()
         }
 
-        # Validate sum to 1.0 (tolerance 0.01)
-        total = sum(weights.values())
-        if abs(total - 1.0) > 0.01:
-            messagebox.showerror(
-                "Invalid Configuration",
-                f"Weights must sum to 1.0 (currently {total:.3f}). Click Normalize to fix.",
-            )
+        # Validate using module function
+        is_valid, error_msg = validate_weights(weights)
+        if not is_valid:
+            messagebox.showerror("Invalid Configuration", error_msg)
             return
-
-        # Validate minimum 0.05 per component
-        for key, value in weights.items():
-            if value < 0.05:
-                display_name = key.replace("_", " ").title()
-                messagebox.showerror(
-                    "Invalid Configuration",
-                    f"{display_name} must be at least 0.05 (currently {value:.2f}).",
-                )
-                return
 
         # Get staffing preference
         staffing_display = self._staffing_dropdown.get()
