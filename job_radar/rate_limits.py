@@ -58,6 +58,8 @@ def _load_rate_limits() -> dict:
         "authentic_jobs": [Rate(60, Duration.MINUTE)],
         "jsearch": [Rate(100, Duration.MINUTE)],      # 100 req/min (RapidAPI free tier)
         "usajobs": [Rate(60, Duration.MINUTE)],        # 60 req/min (conservative for gov API)
+        "serpapi": [Rate(50, Duration.MINUTE)],        # Conservative for free tier (100 searches/month cap)
+        "jobicy": [Rate(1, Duration.HOUR)],            # Per docs: "once per hour"
     }
 
     # Load config file
@@ -117,6 +119,10 @@ BACKEND_API_MAP = {
     "jsearch_other": "jsearch",
     # USAJobs — single source
     "usajobs": "usajobs",
+    # SerpAPI — single source
+    "serpapi": "serpapi",
+    # Jobicy — single source (no API key required, but rate limited)
+    "jobicy": "jobicy",
 }
 
 # Cache limiters to avoid re-creating objects
@@ -310,3 +316,67 @@ def get_rate_limit_status(source: str) -> dict:
         "reset_time": None,
         "configured_rate": configured_rate,
     }
+
+
+def get_quota_usage(source: str) -> tuple[int, int, str] | None:
+    """Get current quota usage for a rate-limited source.
+
+    Queries the pyrate-limiter SQLite bucket table directly to count
+    items within the current rate window. Returns (used, limit, period)
+    tuple or None if quota info is not available.
+
+    Parameters
+    ----------
+    source : str
+        Source name (e.g., "serpapi", "jsearch", "adzuna")
+
+    Returns
+    -------
+    tuple[int, int, str] | None
+        (used_count, limit, period_label) or None if not available.
+        period_label is one of "minute", "hour", "day", or "{N}s".
+    """
+    import time
+
+    backend_api = BACKEND_API_MAP.get(source, source)
+
+    # Get rate configuration
+    rates = RATE_LIMITS.get(backend_api)
+    if not rates:
+        return None
+
+    # Get SQLite connection (must already be initialized)
+    conn = _connections.get(backend_api)
+    if not conn:
+        return None
+
+    # Use the shortest rate window for display (most relevant for quota)
+    shortest_rate = min(rates, key=lambda r: r.interval)
+    limit = shortest_rate.limit
+    interval_seconds = shortest_rate.interval
+
+    # Calculate current window start
+    now = time.time()
+    window_start = now - interval_seconds
+
+    try:
+        cursor = conn.execute(
+            "SELECT COUNT(*) FROM rate_limits WHERE created_at >= ?",
+            (window_start,)
+        )
+        used = cursor.fetchone()[0]
+
+        # Format period label
+        if interval_seconds <= 60:
+            period = "minute"
+        elif interval_seconds <= 3600:
+            period = "hour"
+        elif interval_seconds <= 86400:
+            period = "day"
+        else:
+            period = f"{int(interval_seconds)}s"
+
+        return (used, limit, period)
+    except Exception as e:
+        log.debug("Could not get quota for %s: %s", source, e)
+        return None
