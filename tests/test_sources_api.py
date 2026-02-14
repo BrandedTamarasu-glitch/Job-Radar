@@ -6,6 +6,8 @@ from job_radar.sources import (
     map_authenticjobs_to_job_result,
     map_jsearch_to_job_result,
     map_usajobs_to_job_result,
+    map_serpapi_to_job_result,
+    map_jobicy_to_job_result,
     strip_html_and_normalize,
     parse_location_to_city_state,
     fetch_adzuna,
@@ -18,6 +20,7 @@ from job_radar.sources import (
     generate_manual_urls,
     JobResult,
 )
+from job_radar.rate_limits import RATE_LIMITS, BACKEND_API_MAP
 
 
 # ==============================================================================
@@ -781,3 +784,307 @@ def test_build_queries_jsearch_remote_location():
     jsearch_queries = [q for q in queries if q["source"] == "jsearch"]
     assert len(jsearch_queries) > 0
     assert all(q.get("location") == "remote" for q in jsearch_queries)
+
+
+# ==============================================================================
+# SerpAPI Tests
+# ==============================================================================
+
+class TestMapSerpAPIToJobResult:
+    """Tests for SerpAPI response mapper."""
+
+    def test_valid_serpapi_item(self):
+        """Complete SerpAPI item maps correctly."""
+        item = {
+            "title": "Software Engineer",
+            "company_name": "Google",
+            "location": "Mountain View, CA",
+            "description": "Build scalable systems",
+            "apply_options": [{"title": "Apply", "link": "https://careers.google.com/apply/123"}],
+            "detected_extensions": {
+                "posted_at": "2 days ago",
+                "schedule_type": "Full-time",
+                "work_from_home": False,
+            },
+            "job_id": "abc123",
+        }
+        job = map_serpapi_to_job_result(item)
+        assert job is not None
+        assert job.title == "Software Engineer"
+        assert job.company == "Google"
+        assert job.source == "serpapi"
+        assert job.url == "https://careers.google.com/apply/123"
+        assert job.employment_type == "Full-time"
+        assert job.parse_confidence == "high"
+
+    def test_serpapi_remote_detection(self):
+        """Work from home flag sets arrangement to remote."""
+        item = {
+            "title": "Remote Developer",
+            "company_name": "Remote Co",
+            "location": "Anywhere",
+            "description": "Work from home position",
+            "apply_options": [{"link": "https://example.com"}],
+            "detected_extensions": {"work_from_home": True},
+        }
+        job = map_serpapi_to_job_result(item)
+        assert job is not None
+        assert job.arrangement == "remote"
+
+    def test_serpapi_missing_title(self):
+        """Missing title returns None."""
+        item = {
+            "title": "",
+            "company_name": "Corp",
+            "apply_options": [{"link": "https://example.com"}],
+        }
+        assert map_serpapi_to_job_result(item) is None
+
+    def test_serpapi_missing_company(self):
+        """Missing company returns None."""
+        item = {
+            "title": "Engineer",
+            "company_name": "",
+            "apply_options": [{"link": "https://example.com"}],
+        }
+        assert map_serpapi_to_job_result(item) is None
+
+    def test_serpapi_missing_url(self):
+        """Missing apply URL returns None."""
+        item = {
+            "title": "Engineer",
+            "company_name": "Corp",
+            "apply_options": [],
+        }
+        assert map_serpapi_to_job_result(item) is None
+
+    def test_serpapi_fallback_share_link(self):
+        """Falls back to share_link when apply_options empty."""
+        item = {
+            "title": "Engineer",
+            "company_name": "Corp",
+            "location": "Remote",
+            "description": "A job",
+            "apply_options": [],
+            "share_link": "https://google.com/jobs/share/123",
+        }
+        job = map_serpapi_to_job_result(item)
+        assert job is not None
+        assert job.url == "https://google.com/jobs/share/123"
+
+    def test_serpapi_description_truncation(self):
+        """Long descriptions are truncated to 500 chars."""
+        item = {
+            "title": "Engineer",
+            "company_name": "Corp",
+            "location": "NYC",
+            "description": "x" * 600,
+            "apply_options": [{"link": "https://example.com"}],
+        }
+        job = map_serpapi_to_job_result(item)
+        assert job is not None
+        assert len(job.description) <= 500
+
+
+# ==============================================================================
+# Jobicy Tests
+# ==============================================================================
+
+class TestMapJobicyToJobResult:
+    """Tests for Jobicy response mapper."""
+
+    def test_valid_jobicy_item(self):
+        """Complete Jobicy item maps correctly."""
+        item = {
+            "id": "12345",
+            "url": "https://jobicy.com/jobs/12345",
+            "jobTitle": "Senior Python Developer",
+            "companyName": "Remote Corp",
+            "jobGeo": "USA",
+            "jobType": "full-time",
+            "jobDescription": "<p>Build <b>awesome</b> things with Python.</p>",
+            "pubDate": "2026-02-13 10:30:00",
+            "annualSalaryMin": "120000",
+            "annualSalaryMax": "180000",
+            "salaryCurrency": "USD",
+        }
+        job = map_jobicy_to_job_result(item)
+        assert job is not None
+        assert job.title == "Senior Python Developer"
+        assert job.company == "Remote Corp"
+        assert job.source == "jobicy"
+        assert job.arrangement == "remote"  # Always remote
+        assert "<p>" not in job.description  # HTML stripped
+        assert "<b>" not in job.description
+        assert "awesome" in job.description
+        assert job.salary_min == 120000.0
+        assert job.salary_max == 180000.0
+        assert "120,000" in job.salary
+        assert "180,000" in job.salary
+
+    def test_jobicy_always_remote(self):
+        """Jobicy jobs are always marked as remote."""
+        item = {
+            "jobTitle": "Developer",
+            "companyName": "Corp",
+            "url": "https://jobicy.com/jobs/1",
+            "jobDescription": "A job description",
+        }
+        job = map_jobicy_to_job_result(item)
+        assert job is not None
+        assert job.arrangement == "remote"
+
+    def test_jobicy_html_stripping(self):
+        """HTML tags are stripped from descriptions."""
+        item = {
+            "jobTitle": "Dev",
+            "companyName": "Corp",
+            "url": "https://jobicy.com/jobs/1",
+            "jobDescription": "<h1>Title</h1><p>We need a <strong>great</strong> developer.</p><ul><li>Python</li></ul>",
+        }
+        job = map_jobicy_to_job_result(item)
+        assert job is not None
+        assert "<" not in job.description
+        assert "great" in job.description
+        assert "Python" in job.description
+
+    def test_jobicy_missing_title(self):
+        """Missing title returns None."""
+        item = {
+            "jobTitle": "",
+            "companyName": "Corp",
+            "url": "https://jobicy.com/jobs/1",
+        }
+        assert map_jobicy_to_job_result(item) is None
+
+    def test_jobicy_missing_company(self):
+        """Missing company returns None."""
+        item = {
+            "jobTitle": "Dev",
+            "companyName": "",
+            "url": "https://jobicy.com/jobs/1",
+        }
+        assert map_jobicy_to_job_result(item) is None
+
+    def test_jobicy_empty_description(self):
+        """Empty description after HTML stripping returns None."""
+        item = {
+            "jobTitle": "Dev",
+            "companyName": "Corp",
+            "url": "https://jobicy.com/jobs/1",
+            "jobDescription": "",
+            "jobExcerpt": "",
+        }
+        assert map_jobicy_to_job_result(item) is None
+
+    def test_jobicy_salary_min_only(self):
+        """Salary with only minimum formats correctly."""
+        item = {
+            "jobTitle": "Dev",
+            "companyName": "Corp",
+            "url": "https://jobicy.com/jobs/1",
+            "jobDescription": "A real job",
+            "annualSalaryMin": "100000",
+            "annualSalaryMax": "",
+        }
+        job = map_jobicy_to_job_result(item)
+        assert job is not None
+        assert "100,000" in job.salary
+
+    def test_jobicy_no_salary(self):
+        """Missing salary shows 'Not specified'."""
+        item = {
+            "jobTitle": "Dev",
+            "companyName": "Corp",
+            "url": "https://jobicy.com/jobs/1",
+            "jobDescription": "A job posting",
+        }
+        job = map_jobicy_to_job_result(item)
+        assert job is not None
+        assert job.salary == "Not specified"
+
+    def test_jobicy_fallback_to_excerpt(self):
+        """Uses jobExcerpt when jobDescription is empty."""
+        item = {
+            "jobTitle": "Dev",
+            "companyName": "Corp",
+            "url": "https://jobicy.com/jobs/1",
+            "jobDescription": "",
+            "jobExcerpt": "A brief excerpt about this job",
+        }
+        job = map_jobicy_to_job_result(item)
+        assert job is not None
+        assert "brief excerpt" in job.description
+
+
+# ==============================================================================
+# Search Pipeline Integration Tests
+# ==============================================================================
+
+class TestSearchPipelineSerpAPIJobicy:
+    """Tests for SerpAPI and Jobicy integration in search pipeline."""
+
+    def test_build_search_queries_includes_serpapi(self):
+        """build_search_queries generates SerpAPI queries."""
+        profile = {
+            "target_titles": ["Software Engineer"],
+            "core_skills": ["python"],
+            "target_market": "San Francisco, CA",
+        }
+        queries = build_search_queries(profile)
+        serpapi_queries = [q for q in queries if q["source"] == "serpapi"]
+        assert len(serpapi_queries) >= 1
+        assert serpapi_queries[0]["query"] == "Software Engineer"
+
+    def test_build_search_queries_includes_jobicy(self):
+        """build_search_queries generates Jobicy queries."""
+        profile = {
+            "target_titles": ["Python Developer", "Backend Engineer"],
+            "core_skills": ["python"],
+            "target_market": "Remote",
+        }
+        queries = build_search_queries(profile)
+        jobicy_queries = [q for q in queries if q["source"] == "jobicy"]
+        assert len(jobicy_queries) >= 1
+        assert len(jobicy_queries) <= 2  # Limited to top 2 titles
+
+    def test_serpapi_query_has_location(self):
+        """SerpAPI queries include location from profile."""
+        profile = {
+            "target_titles": ["Engineer"],
+            "core_skills": ["python"],
+            "target_market": "New York, NY",
+        }
+        queries = build_search_queries(profile)
+        serpapi_queries = [q for q in queries if q["source"] == "serpapi"]
+        assert serpapi_queries[0].get("location") == "New York, NY"
+
+
+# ==============================================================================
+# Rate Limit Config Tests
+# ==============================================================================
+
+class TestRateLimitConfigSerpAPIJobicy:
+    """Tests for SerpAPI and Jobicy rate limiter configuration."""
+
+    def test_serpapi_in_rate_limits(self):
+        """SerpAPI has rate limit configuration."""
+        assert "serpapi" in RATE_LIMITS
+        rates = RATE_LIMITS["serpapi"]
+        assert len(rates) >= 1
+
+    def test_jobicy_in_rate_limits(self):
+        """Jobicy has rate limit configuration."""
+        assert "jobicy" in RATE_LIMITS
+        rates = RATE_LIMITS["jobicy"]
+        assert len(rates) >= 1
+
+    def test_serpapi_in_backend_api_map(self):
+        """SerpAPI is in BACKEND_API_MAP."""
+        assert "serpapi" in BACKEND_API_MAP
+        assert BACKEND_API_MAP["serpapi"] == "serpapi"
+
+    def test_jobicy_in_backend_api_map(self):
+        """Jobicy is in BACKEND_API_MAP."""
+        assert "jobicy" in BACKEND_API_MAP
+        assert BACKEND_API_MAP["jobicy"] == "jobicy"
