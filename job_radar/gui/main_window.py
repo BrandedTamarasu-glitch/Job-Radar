@@ -23,6 +23,7 @@ from job_radar.gui.profile_form import ProfileForm
 from job_radar.gui.search_controls import SearchControls
 from job_radar.gui.worker_thread import create_search_worker
 from job_radar.gui.scoring_config import ScoringConfigWidget
+from job_radar.rate_limits import get_quota_usage
 from dotenv import find_dotenv, load_dotenv
 
 
@@ -703,6 +704,7 @@ class MainWindow(ctk.CTk):
         """
         self._report_path = report_path
         self._show_search_complete(job_count)
+        self.update_quota_display()
 
     def _on_search_cancelled(self):
         """Handle search cancellation."""
@@ -807,6 +809,7 @@ class MainWindow(ctk.CTk):
         # Store API field references for saving
         self._api_fields = {}
         self._api_status_labels = {}
+        self._quota_labels = {}
 
         # JSearch section
         self._add_api_section(
@@ -845,6 +848,50 @@ class MainWindow(ctk.CTk):
             [("AUTHENTIC_JOBS_API_KEY", "API Key", "authentic_jobs")],
             "Get your key from: https://authenticjobs.com/api/"
         )
+
+        # SerpAPI section
+        self._add_api_section(
+            scroll_frame,
+            "SerpAPI (Google Jobs)",
+            [("SERPAPI_API_KEY", "API Key", "serpapi")],
+            "Sign up at: https://serpapi.com/ (100 searches/month free)"
+        )
+
+        # Jobicy section (no API key, just info and enable status)
+        jobicy_frame = ctk.CTkFrame(scroll_frame, fg_color="transparent")
+        jobicy_frame.pack(fill="x", pady=(10, 20), padx=10)
+
+        jobicy_title = ctk.CTkLabel(
+            jobicy_frame,
+            text="Jobicy (Remote Jobs)",
+            font=ctk.CTkFont(size=14, weight="bold")
+        )
+        jobicy_title.pack(anchor="w", pady=(0, 5))
+
+        jobicy_info = ctk.CTkLabel(
+            jobicy_frame,
+            text="Public API - no key required (rate limited to 1 request/hour)",
+            font=ctk.CTkFont(size=10),
+            text_color="gray"
+        )
+        jobicy_info.pack(anchor="w", pady=(0, 5))
+
+        jobicy_status = ctk.CTkLabel(
+            jobicy_frame,
+            text="✓ Always available",
+            text_color="green"
+        )
+        jobicy_status.pack(anchor="w")
+
+        # Jobicy quota label
+        jobicy_quota = ctk.CTkLabel(
+            jobicy_frame,
+            text="",
+            font=ctk.CTkFont(size=10),
+            text_color="gray"
+        )
+        jobicy_quota.pack(anchor="w", pady=(5, 0))
+        self._quota_labels["jobicy"] = jobicy_quota
 
         # Tip for JSearch
         jsearch_key = os.getenv("JSEARCH_API_KEY", "").strip()
@@ -988,6 +1035,29 @@ class MainWindow(ctk.CTk):
         )
         status_label.pack(side="left")
 
+        # Quota usage label
+        quota_label = ctk.CTkLabel(
+            test_frame,
+            text="",
+            font=ctk.CTkFont(size=10),
+            text_color="gray"
+        )
+        quota_label.pack(side="left", padx=(10, 0))
+
+        # Store quota label reference using first field's backend API name
+        # Map field_id to backend API for quota lookup
+        backend_api_map = {
+            "jsearch": "jsearch",
+            "usajobs": "usajobs",
+            "adzuna_id": "adzuna",
+            "authentic_jobs": "authentic_jobs",
+            "serpapi": "serpapi",
+        }
+        first_field_id = fields[0][2]
+        backend_api = backend_api_map.get(first_field_id)
+        if backend_api:
+            self._quota_labels[backend_api] = quota_label
+
         # Store status label reference (use first field's ID as section ID)
         self._api_status_labels[fields[0][2]] = status_label
 
@@ -1027,6 +1097,8 @@ class MainWindow(ctk.CTk):
                 )
             elif "AUTHENTIC_JOBS_API_KEY" in field_values:
                 self._test_authentic_jobs(field_values["AUTHENTIC_JOBS_API_KEY"], status_label)
+            elif "SERPAPI_API_KEY" in field_values:
+                self._test_serpapi(field_values["SERPAPI_API_KEY"], status_label)
 
         status_label.configure(text="Testing...", text_color="gray")
         threading.Thread(target=test_thread, daemon=True).start()
@@ -1131,6 +1203,29 @@ class MainWindow(ctk.CTk):
         except (requests.Timeout, requests.RequestException) as e:
             self.after(0, lambda: status_label.configure(text="⚠ Network error", text_color="orange"))
 
+    def _test_serpapi(self, api_key, status_label):
+        """Test SerpAPI key."""
+        if not api_key:
+            self.after(0, lambda: status_label.configure(text="⚠ No API key provided", text_color="orange"))
+            return
+
+        try:
+            url = f"https://serpapi.com/search?engine=google_jobs&q=test&api_key={api_key}"
+            response = requests.get(url, timeout=10)
+
+            if response.status_code == 200:
+                self.after(0, lambda: status_label.configure(text="✓ Valid", text_color="green"))
+            elif response.status_code in (401, 403):
+                self.after(0, lambda: status_label.configure(text="✗ Invalid key", text_color="red"))
+            else:
+                self.after(0, lambda: status_label.configure(
+                    text=f"⚠ HTTP {response.status_code}", text_color="orange"))
+
+        except requests.Timeout:
+            self.after(0, lambda: status_label.configure(text="⚠ Timeout", text_color="orange"))
+        except requests.RequestException as e:
+            self.after(0, lambda: status_label.configure(text=f"⚠ Error: {e}", text_color="orange"))
+
     def _save_api_keys(self):
         """Save API keys to .env file atomically."""
         # Collect all field values
@@ -1201,6 +1296,14 @@ class MainWindow(ctk.CTk):
         else:
             content_lines.append("AUTHENTIC_JOBS_API_KEY=")
 
+        # SerpAPI section
+        content_lines.append("\n# SerpAPI (Google Jobs)")
+        content_lines.append("# Sign up at: https://serpapi.com/")
+        if "SERPAPI_API_KEY" in existing_vars:
+            content_lines.append(f"SERPAPI_API_KEY={existing_vars['SERPAPI_API_KEY']}")
+        else:
+            content_lines.append("SERPAPI_API_KEY=")
+
         content = "\n".join(content_lines) + "\n"
 
         # Atomic write using tempfile + replace
@@ -1223,6 +1326,38 @@ class MainWindow(ctk.CTk):
                 raise
         except Exception as e:
             self._show_error_dialog(f"Failed to save API keys: {e}")
+
+    def update_quota_display(self):
+        """Update quota usage displays for all configured APIs.
+
+        Called after each search completes. Queries SQLite buckets directly
+        for current window usage. Shows warning color (orange) when >80% used.
+        """
+        if not hasattr(self, '_quota_labels'):
+            return
+
+        for backend_api, label in self._quota_labels.items():
+            try:
+                quota_info = get_quota_usage(backend_api)
+                if quota_info:
+                    used, limit, period = quota_info
+                    percentage = (used / limit) * 100 if limit > 0 else 0
+
+                    # Color based on usage
+                    if percentage >= 100:
+                        color = "red"
+                    elif percentage >= 80:
+                        color = "orange"
+                    else:
+                        color = "gray"
+
+                    self.after(0, lambda l=label, t=f"{used}/{limit} this {period}", c=color: (
+                        l.configure(text=t, text_color=c)
+                    ))
+                else:
+                    self.after(0, lambda l=label: l.configure(text=""))
+            except Exception:
+                pass  # Quota display is best-effort
 
     def _on_scoring_saved(self):
         """Handle scoring configuration save success."""
