@@ -392,8 +392,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 35-01-PLAN.md — SerpAPI + Jobicy backend: fetch functions, mappers, rate limiter config, search pipeline integration, quota tracking utility
-- [ ] 35-02-PLAN.md — CLI wizard extension, GUI Settings tab (API sections, test buttons, quota display), comprehensive tests
+- [x] 35-01-PLAN.md — SerpAPI + Jobicy backend: fetch functions, mappers, rate limiter config, search pipeline integration, quota tracking utility
+- [x] 35-02-PLAN.md — CLI wizard extension, GUI Settings tab (API sections, test buttons, quota display), comprehensive tests
 
 **Success Criteria:**
 1. Users can receive job results from SerpAPI Google Jobs as alternative to JSearch
@@ -447,7 +447,7 @@ Plans:
 | 32 | v2.1.0 | 4/4 | Complete | 2026-02-13 |
 | 33 | v2.1.0 | 3/3 | Complete | 2026-02-13 |
 | 34 | v2.1.0 | 2/2 | Complete | 2026-02-13 |
-| 35 | v2.1.0 | 0/2 | Planned | — |
+| 35 | v2.1.0 | 2/2 | Complete | 2026-02-14 |
 | 36 | v2.1.0 | 0/? | Pending | — |
 | 37 | v2.1.0 | 0/? | Pending | — |
 

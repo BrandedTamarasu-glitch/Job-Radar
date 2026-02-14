@@ -91,9 +91,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SCORE-02 | Phase 34 | Complete |
 | SCORE-04 | Phase 34 | Complete |
 | SCORE-05 | Phase 34 | Complete |
-| SRC-03 | Phase 35 | Pending |
-| SRC-04 | Phase 35 | Pending |
-| SRC-07 | Phase 35 | Pending |
+| SRC-03 | Phase 35 | Complete |
+| SRC-04 | Phase 35 | Complete |
+| SRC-07 | Phase 35 | Complete |
 | PKG-01 | Phase 36 | Pending |
 | PKG-02 | Phase 36 | Pending |
 | PKG-03 | Phase 36 | Pending |
