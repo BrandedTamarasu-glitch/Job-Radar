@@ -1,6 +1,6 @@
 # Project State: Job Radar
 
-**Last Updated:** 2026-02-14T19:25:42Z
+**Last Updated:** 2026-02-14T19:26:53Z
 
 ## Project Reference
 
@@ -13,12 +13,11 @@
 ## Current Position
 
 **Phase:** 37 - Platform-Native Installers
-**Current Plan:** 1 of ? (IN PROGRESS)
+**Current Plan:** 2 of 3 in current phase
 **Status:** In progress
+**Last activity:** 2026-02-14 - Completed 37-02-PLAN.md
 
-**Progress:** [███████████░] 91% (phases 31-36 complete, 37 in progress)
-
-**Next Action:** Continue Phase 37 - Next plan in phase or move to Phase 38
+**Progress:** [███████████░] 93% (phases 31-36 complete, 37 in progress: 2/3 plans complete)
 
 ## Performance Metrics
 
@@ -43,11 +42,11 @@
 
 | Plan | Duration (sec) | Tasks | Files | Date |
 |------|---------------|-------|-------|------|
+| 37-02 | 176 | 2 | 7 | 2026-02-14 |
 | 37-01 | 116 | 2 | 4 | 2026-02-14 |
 | 36-02 | 213 | 2 | 3 | 2026-02-14 |
 | 36-01 | 225 | 2 | 2 | 2026-02-14 |
 | 35-02 | 410 | 3 | 4 | 2026-02-14 |
-| 35-01 | 230 | 2 | 2 | 2026-02-14 |
 
 ### Quality Indicators
 
@@ -131,6 +130,16 @@
 | Pillow-generated DMG backgrounds | Programmatic generation using system fonts with fallback ensures consistent branding across builds | 2026-02-14 |
 | .jobprofile file association via CFBundleDocumentTypes | Register Job Radar as Owner (default handler) for .jobprofile files in macOS | 2026-02-14 |
 | LSHandlerRank 'Owner' for .jobprofile | Job Radar is the primary/default application for .jobprofile files | 2026-02-14 |
+| NSIS Modern UI 2 for Windows installer | Industry standard (Firefox, VLC, 7-Zip), provides consistent wizard UX across Windows versions | 2026-02-14 |
+| Dual uninstall approach for Windows | UninstallString launches GUI (with backup), QuietUninstallString uses NSIS direct removal - user choice | 2026-02-14 |
+| Custom shortcuts page with Desktop and Quick Launch | Both default checked for maximum discoverability, Start Menu shortcuts always created | 2026-02-14 |
+| SetCompressor /SOLID lzma in NSIS | Best compression ratio (per research pitfall 6), balances build time vs download size | 2026-02-14 |
+| Conditional code signing for Windows | Check WINDOWS_CERT_BASE64 env var, skip if not set, sign automatically when certificate added | 2026-02-14 |
+| Pillow-based NSIS asset generation | Programmatic generation of header.bmp (150x57), sidebar.bmp (164x314), icon.ico (multi-size: 16,32,48,256) | 2026-02-14 |
+| .jobprofile association with SHChangeNotify | Windows requires SHChangeNotify call for shell to recognize association without reboot | 2026-02-14 |
+| Full Add/Remove Programs registry integration | All standard registry entries (DisplayName, UninstallString, QuietUninstallString, DisplayVersion, Publisher, URLInfoAbout, DisplayIcon, EstimatedSize, NoModify, NoRepair) | 2026-02-14 |
+| Version injection via /DVERSION= in NSIS | Enables CI/CD automation (GitHub Actions passes version from git tag), no hardcoded versions | 2026-02-14 |
+| icon.ico for NSIS MUI_ICON/MUI_UNICON | NSIS requires .ico format (not .png), generate-assets.py converts from icon.png with multi-size ICO | 2026-02-14 |
 
 ### Active Constraints
 
@@ -159,54 +168,64 @@ None.
 
 ### What Just Happened
 
-Completed Phase 37 Plan 01: macOS DMG Installer Infrastructure
+Completed Phase 37 Plan 02: Windows NSIS Installer with Modern UI
 
-**Executed:** Create DMG build script, background generator, and file association
+**Executed:** Create NSIS installer script and Windows build automation
 
 **Key accomplishments:**
-- Created installers/macos/build-dmg.sh (create-dmg automation script):
-  - Validates PyInstaller .app bundle exists
-  - Auto-generates background if missing
-  - Configures DMG window (800x500) and icon positions (200,190 and 600,190)
-  - Conditional code signing (skips if MACOS_CERT_BASE64 not set)
-  - Logs Gatekeeper bypass instructions for unsigned DMG
-- Created installers/macos/generate-background.py (Pillow-based generator):
-  - Dark navy branded background with Job Radar logo and tagline
-  - White arrow pointing from app icon to Applications folder
-  - Version text and branding at bottom (800x500 PNG)
-- Updated job-radar.spec BUNDLE info_plist:
-  - CFBundleDocumentTypes for .jobprofile file association
-  - LSHandlerRank 'Owner' (default handler)
-  - CFBundleShortVersionString and CFBundleVersion (2.1.0)
-- Total: 4 files created/modified (159+ lines installer infrastructure)
+- Created installers/windows/installer.nsi (NSIS Modern UI 2 script, 177 lines):
+  - Wizard flow: welcome, license, directory, custom shortcuts page, install, finish
+  - Dual uninstall: UninstallString launches job-radar-gui.exe --uninstall (GUI with backup), QuietUninstallString uses Uninstall.exe /S (NSIS direct)
+  - Custom shortcuts page with Desktop and Quick Launch checkboxes (both default checked)
+  - Start Menu shortcuts always created (GUI, CLI, uninstaller)
+  - .jobprofile file association with SHChangeNotify shell refresh
+  - Full Add/Remove Programs registry integration (DisplayName, UninstallString, QuietUninstallString, DisplayVersion, Publisher, URLInfoAbout, DisplayIcon, EstimatedSize, NoModify, NoRepair)
+  - SetCompressor /SOLID lzma for best compression
+  - Conditional version injection via /DVERSION= compile flag
+- Created installers/windows/build-installer.bat (Windows batch build script):
+  - Pre-flight checks (NSIS, PyInstaller output)
+  - Generates branding assets if not present
+  - Compiles NSIS installer with version injection
+  - Conditional code signing with signtool if WINDOWS_CERT_BASE64 env var set
+  - Shows warning if unsigned (SmartScreen bypass instructions in README)
+- Created installers/windows/generate-assets.py (Pillow-based branding generator):
+  - header.bmp (150x57): Dark navy background, right-aligned "Job Radar" text, target icon
+  - sidebar.bmp (164x314): Dark navy gradient, centered logo, version text
+  - icon.ico: Multi-size ICO (16, 32, 48, 256) converted from icon.png
+- Created installers/windows/license.txt (MIT License from project LICENSE)
+- Generated branding assets: header.bmp, sidebar.bmp, icon.ico
+- Total: 7 files created (395+ lines installer infrastructure)
 
 **Commits:**
-- ba0a641 - feat(37-01): create DMG build infrastructure for macOS
-- b225785 - feat(37-01): add .jobprofile file association to macOS app bundle
+- aff0b73 - feat(37-02): create NSIS installer script with Modern UI
+- be5af20 - feat(37-02): create Windows build script and branding asset generator
 
-**Duration:** 116 seconds (1.93 min)
+**Duration:** 176 seconds (2.9 min)
 
-**Phase 37 Plan 01 Complete:** macOS DMG installer infrastructure ready
+**Phase 37 Plan 02 Complete:** Windows NSIS installer infrastructure ready
 
 ### What's Next
 
-Continue Phase 37 - Next plan in platform-native installers phase
+Continue Phase 37 - Plan 03 (CI/CD integration, installer README, auto-update config)
 
 ### Files Changed This Session
 
-- `installers/macos/build-dmg.sh` - Created DMG automation script with conditional signing (+67 lines)
-- `installers/macos/generate-background.py` - Created Pillow-based background generator (+85 lines)
-- `installers/macos/dmg-background.png` - Generated 800x500 branded background image
-- `job-radar.spec` - Updated BUNDLE info_plist with CFBundleDocumentTypes (+10 lines)
-- `.planning/phases/37-platform-native-installers/37-01-SUMMARY.md` - Created
+- `installers/windows/installer.nsi` - Created NSIS Modern UI 2 installer script (+177 lines)
+- `installers/windows/build-installer.bat` - Created Windows build script with conditional signing (+82 lines)
+- `installers/windows/generate-assets.py` - Created Pillow-based asset generator (+136 lines)
+- `installers/windows/license.txt` - Created MIT license text from project LICENSE (+21 lines)
+- `installers/windows/header.bmp` - Generated 150x57 NSIS header image
+- `installers/windows/sidebar.bmp` - Generated 164x314 NSIS sidebar image
+- `installers/windows/icon.ico` - Generated multi-size Windows icon (16, 32, 48, 256)
+- `.planning/phases/37-platform-native-installers/37-02-SUMMARY.md` - Created
 - `.planning/STATE.md` - Updated position, decisions, metrics
 
 ### Context for Next Session
 
-**If continuing:** Phase 37 Plan 01 complete. macOS DMG installer infrastructure ready with create-dmg automation, Pillow-generated branded background (800x500), .jobprofile file association, and conditional code signing. Next plan: Windows NSIS installer (37-02) or installer documentation.
+**If continuing:** Phase 37 Plan 02 complete. Windows NSIS installer infrastructure ready with Modern UI wizard, dual uninstall (GUI with backup + NSIS quick remove), Add/Remove Programs integration, .jobprofile file association, conditional code signing, and programmatic branding asset generation. Next plan: CI/CD integration for automated installer builds (37-03).
 
-**If resuming later:** Read STATE.md for current position. Phase 37-01 delivered DMG build infrastructure for professional macOS distribution. build-dmg.sh script in installers/macos/ ready for manual testing and CI/CD integration.
+**If resuming later:** Read STATE.md for current position. Phase 37-02 delivered Windows NSIS installer infrastructure for professional Windows distribution. build-installer.bat script in installers/windows/ ready for manual testing and CI/CD integration.
 
 ---
 *State initialized: 2026-02-13*
-*Last activity: 2026-02-14T19:25:42Z - Completed 37-01-PLAN.md*
+*Last activity: 2026-02-14T19:26:53Z - Completed 37-02-PLAN.md*
