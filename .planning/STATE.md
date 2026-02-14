@@ -1,6 +1,6 @@
 # Project State: Job Radar
 
-**Last Updated:** 2026-02-14T17:45:17Z
+**Last Updated:** 2026-02-14T17:53:23Z
 
 ## Project Reference
 
@@ -13,12 +13,12 @@
 ## Current Position
 
 **Phase:** 36 - GUI Uninstall Feature
-**Current Plan:** 1/2
-**Status:** In progress
+**Current Plan:** 2/2
+**Status:** Phase complete
 
-**Progress:** [████████████] 50% (phase 36: 1/2 plans complete)
+**Progress:** [████████████████████████] 100% (phase 36: 2/2 plans complete)
 
-**Next Action:** Phase 36 Plan 02 - GUI uninstall dialogs
+**Next Action:** Phase 36 complete - Ready for next milestone phase
 
 ## Performance Metrics
 
@@ -43,16 +43,16 @@
 
 | Plan | Duration (sec) | Tasks | Files | Date |
 |------|---------------|-------|-------|------|
+| 36-02 | 213 | 2 | 3 | 2026-02-14 |
 | 36-01 | 225 | 2 | 2 | 2026-02-14 |
 | 35-02 | 410 | 3 | 4 | 2026-02-14 |
 | 35-01 | 230 | 2 | 2 | 2026-02-14 |
 | 34-02 | 89 | 3 | 2 | 2026-02-14 |
-| 34-01 | 182 | 2 | 1 | 2026-02-13 |
 
 ### Quality Indicators
 
 **Test Coverage:**
-- 562 tests across 19 test files
+- 566 tests across 19 test files
 - All passing (v2.1.0 in progress)
 - Coverage areas: scoring, config, tracker, wizard, report, UX, API, PDF, dedup, accessibility, profile management, GUI, rate limiting, JSearch, USAJobs, schema migration, scoring config widget, uninstaller
 
@@ -121,6 +121,10 @@
 | Best-effort deletion with error collection | Continue deletion on failures, return list of (path, error) tuples for transparency | 2026-02-14 |
 | macOS .app bundle resolution for Trash | Walk path upward to find .app directory, move entire bundle to Trash (not just binary) | 2026-02-14 |
 | Cleanup SQLite connections before deletion | Call _cleanup_connections() before shutil.rmtree to prevent "database is locked" errors | 2026-02-14 |
+| Native file picker for backup | Use tkinter.filedialog.asksaveasfilename for backup ZIP location - familiar OS-native experience | 2026-02-14 |
+| Threading for deletion | Run delete_app_data() in background thread with polling to prevent GUI freeze during uninstall | 2026-02-14 |
+| Checkbox-gated red button | Red "Uninstall" button starts disabled until "I understand" checkbox checked - prevents accidental clicks | 2026-02-14 |
+| Three-step confirmation for uninstall | Path preview -> Final confirmation with checkbox -> Progress provides transparency and multiple escape hatches | 2026-02-14 |
 
 ### Active Constraints
 
@@ -149,42 +153,51 @@ None.
 
 ### What Just Happened
 
-Completed Phase 36 Plan 01: Core Uninstaller Module
+Completed Phase 36 Plan 02: GUI Uninstall Dialogs
 
-**Executed:** Backend uninstaller module with backup, deletion, and cleanup scripts
+**Executed:** Complete GUI uninstall flow with dialogs and orchestration
 
 **Key accomplishments:**
-- Created job_radar/uninstaller.py with 5 core functions (257 lines)
-- get_uninstall_paths(): enumerate app data with human-readable descriptions
-- create_backup(): ZIP profile.json and config.json with compression
-- delete_app_data(): best-effort deletion with SQLite connection cleanup
-- get_binary_path(): detect frozen executable path
-- create_cleanup_script(): platform-specific binary removal (macOS/Windows/Linux)
-- Added 19 comprehensive unit tests (430 lines)
-- Total test suite: 562 tests, all passing with zero regressions
+- Created job_radar/gui/uninstall_dialog.py with 4 dialog classes (413 lines):
+  - BackupOfferDialog: backup offer with native file picker
+  - PathPreviewDialog: scrollable path list with descriptions
+  - FinalConfirmationDialog: checkbox-gated red button
+  - DeletionProgressDialog: indeterminate progress during deletion
+- Wired uninstall button into Settings tab with Danger Zone section
+- Implemented _start_uninstall() orchestration method (156 lines):
+  - Backup offer -> path preview -> final confirmation
+  - Threaded deletion with progress dialog
+  - Partial failure reporting with error list
+  - Binary cleanup script generation for frozen apps
+  - Auto-quit after completion
+- Added 4 integration tests (144 lines)
+- Total test suite: 566 tests, all passing with zero regressions
 
 **Commits:**
-- 4ca86a2 - feat(36-01): create uninstaller module with backup, deletion, and cleanup scripts
-- 3a76c02 - test(36-01): add comprehensive unit tests for uninstaller module
+- d1ef217 - feat(36-02): create uninstall dialog classes
+- fd026bd - feat(36-02): wire uninstall button and orchestration to Settings tab
 
-**Duration:** 225 seconds (3.75 min)
+**Duration:** 213 seconds (3.55 min)
+
+**Phase 36 Complete:** GUI uninstall feature fully delivered (PKG-01, PKG-02, PKG-03, PKG-06)
 
 ### What's Next
 
-Phase 36 Plan 02: GUI uninstall dialogs (preview, backup, confirmation, progress)
+Phase 36 complete - Ready for next milestone phase
 
 ### Files Changed This Session
 
-- `job_radar/uninstaller.py` - Created core uninstaller backend (+257 lines)
-- `tests/test_uninstaller.py` - Created comprehensive test suite (+430 lines)
-- `.planning/phases/36-gui-uninstall-feature/36-01-SUMMARY.md` - Created
+- `job_radar/gui/uninstall_dialog.py` - Created 4 dialog classes (+413 lines)
+- `job_radar/gui/main_window.py` - Added Danger Zone section, uninstall button, orchestration method (+158 lines)
+- `tests/test_uninstaller.py` - Added 4 integration tests (+144 lines)
+- `.planning/phases/36-gui-uninstall-feature/36-02-SUMMARY.md` - Created
 - `.planning/STATE.md` - Updated position, decisions, metrics
 
 ### Context for Next Session
 
-**If continuing:** Core uninstaller backend ready. Next: GUI dialogs to call these functions (preview paths, offer backup, confirm deletion, show progress).
+**If continuing:** Phase 36 complete. GUI uninstall feature delivered with full backup-preview-confirm-delete-quit flow. Settings tab has red "Uninstall Job Radar" button in Danger Zone section.
 
-**If resuming later:** Read STATE.md for current position. Phase 36-01 delivered testable uninstaller backend with platform-aware cleanup scripts and best-effort deletion patterns.
+**If resuming later:** Read STATE.md for current position. Phase 36 delivered complete user-facing uninstall experience with three-step confirmation, optional backup, progress feedback, and automatic quit.
 
 ---
 *State initialized: 2026-02-13*
