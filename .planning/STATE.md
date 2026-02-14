@@ -1,6 +1,6 @@
 # Project State: Job Radar
 
-**Last Updated:** 2026-02-14T02:15:47Z
+**Last Updated:** 2026-02-14T03:30:00Z
 
 ## Project Reference
 
@@ -13,12 +13,12 @@
 ## Current Position
 
 **Phase:** 34 - GUI Scoring Configuration
-**Current Plan:** 1/2
-**Status:** In progress
+**Current Plan:** 2/2
+**Status:** Complete
 
-**Progress:** [██████████░] 50% (of phase 34)
+**Progress:** [██████████] 100% (phase 34 complete)
 
-**Next Action:** Continue Phase 34 Plan 02 (Settings tab integration)
+**Next Action:** Begin Phase 35 or milestone audit
 
 ## Performance Metrics
 
@@ -43,21 +43,21 @@
 
 | Plan | Duration (sec) | Tasks | Files | Date |
 |------|---------------|-------|-------|------|
+| 34-02 | 89 | 3 | 2 | 2026-02-14 |
 | 34-01 | 182 | 2 | 1 | 2026-02-13 |
 | 33-03 | 923 | 2 | 2 | 2026-02-13 |
 | 33-02 | 408 | 2 | 2 | 2026-02-13 |
-| 33-01 | 165 | 2 | 2 | 2026-02-13 |
 
 ### Quality Indicators
 
 **Test Coverage:**
-- 494 tests across 17 test files
+- 505 tests across 18 test files
 - All passing (v2.1.0 in progress)
-- Coverage areas: scoring, config, tracker, wizard, report, UX, API, PDF, dedup, accessibility, profile management, GUI, rate limiting, JSearch, USAJobs, schema migration
+- Coverage areas: scoring, config, tracker, wizard, report, UX, API, PDF, dedup, accessibility, profile management, GUI, rate limiting, JSearch, USAJobs, schema migration, scoring config widget
 
 **Code Stats (v2.1.0 in progress):**
-- ~19,600 LOC Python (source + tests + GUI)
-- 8 GUI modules (3,265 LOC)
+- ~20,450 LOC Python (source + tests + GUI)
+- 9 GUI modules (3,899 LOC)
 - Zero regressions across milestone transitions
 
 **CI/CD:**
@@ -135,43 +135,52 @@ None.
 
 ### What Just Happened
 
-Completed Phase 34 Plan 01: ScoringConfigWidget Implementation (PLAN 1 OF 2)
+Completed Phase 34: GUI Scoring Configuration (2 PLANS COMPLETE)
 
-**Executed:** Created self-contained CustomTkinter widget for scoring configuration UI
+**Executed:** Full scoring configuration UI with widget implementation and Settings tab integration
 
 **Key accomplishments:**
-- Created 600-line ScoringConfigWidget class in job_radar/gui/scoring_config.py
-- Implemented 6 weight sliders (0.05-1.0 range, 0.05 increments) organized into Skills & Fit and Context groups
-- Built staffing preference dropdown with 3 options (Boost/Neutral/Penalize)
-- Added live preview panel showing sample job score calculation with component breakdown
-- Integrated with profile_manager for loading and saving scoring configuration
-- Implemented normalize button (proportionally adjusts weights to sum to 1.0)
-- Implemented reset button (restores defaults with confirmation dialog)
-- Added two-tier validation: inline orange warning during editing, blocking error on save
-- Widget includes collapsible header with triangle indicators (▶/▼)
-- Combined Task 1 and Task 2 into single implementation (profile integration essential to design)
+- Created 634-line ScoringConfigWidget class with 6 weight sliders, staffing preference dropdown, live preview panel
+- Integrated widget into Settings tab below API key configuration with proper profile loading
+- Added 11 comprehensive unit tests covering normalization, validation, preview calculations
+- Extracted testable functions (normalize_weights, validate_weights) as module-level utilities
+- Implemented two-tier validation: inline orange warning (non-blocking) + save dialog (blocking)
+- Added normalize button (proportional weight adjustment), reset button (with confirmation)
+- Live preview shows sample job breakdown with real-time updates on every slider/dropdown change
+- Collapsible section pattern with ▶/▼ indicators
+- All 8 must_haves verified by gsd-verifier (passed)
 
 **Commits:**
 - b0962b8 - feat(34-01): create ScoringConfigWidget with sliders, dropdown, and collapsible section
+- ec00e67 - docs(34-01): complete ScoringConfigWidget plan
+- affbc76 - feat(34-02): integrate ScoringConfigWidget into Settings tab
+- 196db9b - test(34-02): add scoring config tests and extract testable functions
+- 95c837e - docs(34-02): complete Settings tab integration plan
 
-**Duration:** 182 seconds (3min 2s)
+**Duration:** 271 seconds total (182s Plan 01 + 89s Plan 02)
 
 ### What's Next
 
-Phase 34 Plan 02: Embed ScoringConfigWidget in Settings tab of main_window.py
+Phase 35: Additional API Sources (SerpAPI, Jobicy) - pending discussion/planning
 
 ### Files Changed This Session
 
-- `/Users/coryebert/Job-Radar/job_radar/gui/scoring_config.py` - Created ScoringConfigWidget class (+600 lines)
-- `/Users/coryebert/Job-Radar/.planning/phases/34-gui-scoring-configuration/34-01-SUMMARY.md` - Created
-- `/Users/coryebert/Job-Radar/.planning/STATE.md` - Updated position, decisions, metrics
+- `job_radar/gui/scoring_config.py` - Created ScoringConfigWidget class (+634 lines)
+- `job_radar/gui/main_window.py` - Integrated widget into Settings tab (+24 lines)
+- `tests/test_scoring_config.py` - Created comprehensive unit tests (+218 lines)
+- `.planning/phases/34-gui-scoring-configuration/34-01-SUMMARY.md` - Created
+- `.planning/phases/34-gui-scoring-configuration/34-02-SUMMARY.md` - Created
+- `.planning/phases/34-gui-scoring-configuration/34-VERIFICATION.md` - Created (8/8 verified)
+- `.planning/ROADMAP.md` - Updated Phase 34 complete
+- `.planning/REQUIREMENTS.md` - Updated SCORE-01, SCORE-02, SCORE-04, SCORE-05 to Complete
+- `.planning/STATE.md` - Updated position, decisions, metrics
 
 ### Context for Next Session
 
-**If continuing:** Phase 34 Plan 01 complete - ScoringConfigWidget ready for integration. Next step: embed widget in Settings tab with proper layout and initialization.
+**If continuing:** Phase 34 complete and verified. Users can now customize scoring weights and staffing firm preference through GUI controls. Ready for Phase 35 (additional API sources) or milestone audit.
 
-**If resuming later:** Read STATE.md for current position, check .planning/phases/34-gui-scoring-configuration/ for summaries. Widget is self-contained and ready to integrate.
+**If resuming later:** Read STATE.md for current position. Phase 34 delivered full scoring configuration UI with verification passed.
 
 ---
 *State initialized: 2026-02-13*
-*Phase 34 in progress - GUI scoring configuration widget complete, Settings integration next*
+*Phase 34 complete - GUI scoring configuration delivered*

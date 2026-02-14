@@ -370,8 +370,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 34-01-PLAN.md — ScoringConfigWidget with sliders, dropdown, live preview, and validation
-- [ ] 34-02-PLAN.md — Settings tab integration, tests, and visual verification
+- [x] 34-01-PLAN.md — ScoringConfigWidget with sliders, dropdown, live preview, and validation
+- [x] 34-02-PLAN.md — Settings tab integration, tests, and visual verification
 
 **Success Criteria:**
 1. Users can adjust 6 scoring component weights via GUI sliders with real-time validation
@@ -440,12 +440,12 @@ Plans:
 | 31 | v2.1.0 | 2/2 | Complete | 2026-02-13 |
 | 32 | v2.1.0 | 4/4 | Complete | 2026-02-13 |
 | 33 | v2.1.0 | 3/3 | Complete | 2026-02-13 |
-| 34 | v2.1.0 | 0/2 | Planned | — |
+| 34 | v2.1.0 | 2/2 | Complete | 2026-02-13 |
 | 35 | v2.1.0 | 0/? | Pending | — |
 | 36 | v2.1.0 | 0/? | Pending | — |
 | 37 | v2.1.0 | 0/? | Pending | — |
 
-**Total: 33 completed phases + 4 planned phases (66 completed plans, 7 milestones: 7 shipped + 1 in progress)**
+**Total: 34 completed phases + 3 planned phases (68 completed plans, 7 milestones: 7 shipped + 1 in progress)**
 
 ---
 *Last updated: 2026-02-13 after Phase 34 planning*
