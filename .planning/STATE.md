@@ -1,6 +1,6 @@
 # Project State: Job Radar
 
-**Last Updated:** 2026-02-14T03:31:09Z
+**Last Updated:** 2026-02-14T03:40:52Z
 
 ## Project Reference
 
@@ -13,12 +13,12 @@
 ## Current Position
 
 **Phase:** 35 - Additional API Sources (SerpAPI, Jobicy)
-**Current Plan:** 1/2
-**Status:** In progress
+**Current Plan:** 2/2 (PHASE COMPLETE)
+**Status:** Phase complete
 
-**Progress:** [██████████░] 50% (phase 35: 1/2 plans complete)
+**Progress:** [███████████] 100% (phase 35: 2/2 plans complete)
 
-**Next Action:** Plan 35-02 (GUI quota tracking)
+**Next Action:** Phase 35 complete - ready for v2.1.0 milestone wrap-up
 
 ## Performance Metrics
 
@@ -43,11 +43,11 @@
 
 | Plan | Duration (sec) | Tasks | Files | Date |
 |------|---------------|-------|-------|------|
+| 35-02 | 410 | 3 | 4 | 2026-02-14 |
 | 35-01 | 230 | 2 | 2 | 2026-02-14 |
 | 34-02 | 89 | 3 | 2 | 2026-02-14 |
 | 34-01 | 182 | 2 | 1 | 2026-02-13 |
 | 33-03 | 923 | 2 | 2 | 2026-02-13 |
-| 33-02 | 408 | 2 | 2 | 2026-02-13 |
 
 ### Quality Indicators
 
@@ -113,6 +113,10 @@
 | SerpAPI in aggregator phase, Jobicy in API phase | SerpAPI is Google Jobs aggregator (runs last), Jobicy is native remote source (runs middle) | 2026-02-14 |
 | get_quota_usage() queries SQLite bucket directly | Read-only SELECT on rate_limits table for (used, limit, period) tuples enables real-time quota display | 2026-02-14 |
 | Jobicy requires non-empty description after HTML cleaning | Skip jobs with empty description to ensure scoring quality | 2026-02-14 |
+| Quota labels show 'X/Y this period' format | Real-time feedback next to each API section in GUI Settings tab | 2026-02-14 |
+| Color-coded quota warnings (gray/orange/red) | Orange at 80% usage, red at 100% for quota awareness | 2026-02-14 |
+| update_quota_display() called after search | Updates quota labels from SQLite buckets for immediate feedback | 2026-02-14 |
+| Jobicy displayed as always-available in wizard | Public API with no key required, rate limited to 1/hour | 2026-02-14 |
 
 ### Active Constraints
 
@@ -141,40 +145,42 @@ None.
 
 ### What Just Happened
 
-Completed Phase 35 Plan 01: SerpAPI and Jobicy Backend Integration (1/2 PLANS COMPLETE)
+Completed Phase 35 Plan 02: GUI Quota Tracking for SerpAPI and Jobicy (PHASE 35 COMPLETE)
 
-**Executed:** Backend integration for two new job API sources with rate limiting and quota tracking
+**Executed:** CLI wizard and GUI Settings tab integration with real-time quota display
 
 **Key accomplishments:**
-- Added SerpAPI Google Jobs fetch function with conservative 50/min rate limiting (100 searches/month free tier)
-- Added Jobicy remote jobs fetch function (public API, 1/hour rate limit)
-- Implemented get_quota_usage() utility to query SQLite bucket for real-time quota tracking
-- Created response mappers with HTML cleaning and field validation for both sources
-- Integrated both sources into search pipeline (SerpAPI→aggregator phase, Jobicy→API phase)
-- Both sources follow existing fetch_jsearch()/fetch_usajobs() patterns for consistency
+- Added SerpAPI and Jobicy to CLI setup wizard with inline validation
+- Added GUI Settings tab sections with API key fields and test buttons
+- Implemented real-time quota display with color warnings (gray/orange/red at 80%/100% thresholds)
+- Added 23 comprehensive tests covering mappers, pipeline integration, and rate limit config
+- Total test suite expanded to 543 tests, all passing with zero regressions
 
 **Commits:**
-- 1d7aeb9 - feat(35-01): add SerpAPI and Jobicy rate limiter config with quota tracking
-- 0f4f291 - feat(35-01): implement SerpAPI and Jobicy fetch functions and mappers
+- 0e4172a - feat(35-02): add SerpAPI and Jobicy to CLI wizard and config
+- d059aea - feat(35-02): add SerpAPI and Jobicy GUI sections with quota display
+- 2454893 - test(35-02): add comprehensive tests for SerpAPI and Jobicy
 
-**Duration:** 230 seconds (3.8 min)
+**Duration:** 410 seconds (6.8 min)
 
 ### What's Next
 
-Phase 35 Plan 02: GUI quota tracking display for rate-limited sources
+Phase 35 complete. v2.1.0 milestone ready for final integration and release.
 
 ### Files Changed This Session
 
-- `job_radar/rate_limits.py` - Added serpapi/jobicy rate configs, BACKEND_API_MAP entries, get_quota_usage() (+70 lines)
-- `job_radar/sources.py` - Added fetch_serpapi(), fetch_jobicy(), mappers, updated build_search_queries() and fetch_all() (+287 lines)
-- `.planning/phases/35-additional-api-sources--serpapi--jobicy-/35-01-SUMMARY.md` - Created
+- `job_radar/api_setup.py` - Added SerpAPI wizard section with validation, Jobicy info section, test_apis() validators (+99 lines)
+- `job_radar/api_config.py` - Updated .env.example template with SERPAPI_API_KEY (+6 lines)
+- `job_radar/gui/main_window.py` - Added SerpAPI/Jobicy sections, quota labels, update_quota_display(), _test_serpapi() (+135 lines)
+- `tests/test_sources_api.py` - Added 23 tests (7 SerpAPI, 9 Jobicy, 3 pipeline, 4 rate config) (+307 lines)
+- `.planning/phases/35-additional-api-sources--serpapi--jobicy-/35-02-SUMMARY.md` - Created
 - `.planning/STATE.md` - Updated position, decisions, metrics
 
 ### Context for Next Session
 
-**If continuing:** Backend integration complete. SerpAPI and Jobicy sources now available in automated search pipeline. Ready for GUI quota tracking display (Plan 35-02).
+**If continuing:** Phase 35 delivered complete SerpAPI and Jobicy integration with backend, CLI wizard, GUI Settings, quota tracking, and comprehensive tests. Ready for v2.1.0 milestone wrap-up.
 
-**If resuming later:** Read STATE.md for current position. Phase 35 Plan 01 delivered SerpAPI and Jobicy backend integration with rate limiting and quota tracking utility.
+**If resuming later:** Read STATE.md for current position. Phase 35 complete - SerpAPI (Google Jobs aggregator) and Jobicy (remote jobs) now fully integrated with user-facing configuration and quota visibility.
 
 ---
 *State initialized: 2026-02-13*
