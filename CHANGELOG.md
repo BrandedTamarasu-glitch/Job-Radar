@@ -1,5 +1,47 @@
 # Changelog
 
+## v2.1.0 — 2026-02-14
+
+### Source Expansion
+- **4 new API sources** — JSearch (Google Jobs aggregator covering LinkedIn, Indeed, Glassdoor, company career pages), USAJobs (federal government jobs), SerpAPI (alternative Google Jobs aggregator), Jobicy (remote job listings)
+- **10 total API sources** — Expanded from 6 to 10 API-based sources for broader job coverage
+- **Source attribution** — Each job listing shows its original source (e.g., "via LinkedIn", "via USAJobs") for transparency
+- **Real-time quota tracking** — GUI Settings tab displays API usage (e.g., "15/100 daily searches used") with color-coded warnings (orange at 80%, red at 100%)
+- **Jobicy always-available** — Public API with no key required, rate limited to 1/hour per documentation
+- **API setup wizard extension** — CLI `--setup-apis` wizard guides through obtaining and validating API keys for all sources
+- **GUI API configuration** — Settings tab includes API key input fields with inline Test buttons for immediate validation
+
+### Scoring Customization
+- **User-configurable weights** — GUI sliders for the 6 scoring components (skills, seniority, job type, salary alignment, response likelihood, description quality) with proportional normalization
+- **Staffing firm preference** — Dropdown to boost (+30%), neutralize, or penalize (-80%) staffing firm job listings
+- **Live score preview** — "Sample Job" section shows real-time score breakdown with weighted components as sliders are adjusted
+- **Profile schema v2** — Automatic migration from v0/v1 to v2 with backward compatibility, automatic backup creation, and graceful fallback for corrupted scoring_weights
+- **Default preservation** — DEFAULT_SCORING_WEIGHTS matches hardcoded scoring.py to preserve score stability during migration
+- **Triple-fallback system** — Profile weights → DEFAULT_SCORING_WEIGHTS → hardcoded .get() defaults for defense-in-depth
+- **Wizard customization** — Setup wizard offers optional advanced scoring customization (defaults to False for simplicity)
+- **Two-tier validation** — Inline orange warning during editing (non-blocking) + error dialog on save (blocking) for good UX
+
+### Uninstall & Packaging
+- **GUI uninstall button** — Settings tab includes red "Uninstall" button with checkbox-gated confirmation to remove all app data
+- **Backup before uninstall** — Optional ZIP backup of profile and config before deletion with native file picker
+- **Three-step confirmation** — Path preview → Final confirmation with checkbox → Progress provides transparency and multiple escape hatches
+- **Platform-specific cleanup** — macOS .app bundle resolution for Trash, Windows NSIS uninstaller integration
+- **Two-stage cleanup** — Delete data now, schedule binary deletion after exit to work while app is running
+- **macOS DMG installer** — Drag-to-Applications installer with custom background, 800x500 window, automatic .jobprofile file association
+- **Windows NSIS installer** — Modern UI 2 setup wizard with Desktop/Quick Launch shortcuts, Add/Remove Programs integration, .jobprofile file association
+- **Conditional code signing** — Check MACOS_CERT_BASE64/WINDOWS_CERT_BASE64 env vars, skip if not set with clear Gatekeeper/SmartScreen bypass instructions
+- **CI/CD automation** — GitHub Actions builds DMG and NSIS installers on tagged releases with matrix strategy (parallel builds)
+
+### Infrastructure
+- **Rate limiter cleanup** — atexit handler closes all SQLite connections and clears limiters to prevent "database is locked" errors
+- **Shared backend limiters** — Sources using the same backend API (e.g., JSearch display sources: linkedin/indeed/glassdoor/jsearch_other) share a single rate limiter instance
+- **BACKEND_API_MAP fallback** — Unmapped sources use source name as backend for backward compatibility
+- **Config-driven rate limits** — Rate limit configs loaded from config.json instead of hardcoded values
+- **Merge config overrides** — Partial rate limit overrides in config.json merge with defaults for better UX
+- **Graceful degradation** — Invalid rate limit configs show warnings and use defaults instead of crashing
+- **Quota query utility** — get_quota_usage() queries SQLite bucket directly for real-time quota display in GUI
+- **Atomic .env writes** — Tempfile + replace prevents corruption on crashes or interrupts during API key storage
+
 ## v2.0.0 — 2026-02-13
 
 ### Desktop GUI
