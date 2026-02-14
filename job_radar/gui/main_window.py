@@ -43,7 +43,7 @@ class MainWindow(ctk.CTk):
 
         # Configure window
         self.title("Job Radar")
-        self.geometry("700x500")
+        self.geometry("900x600")
         self.minsize(700, 500)
 
         # Grid layout: row 0 = header (fixed), row 1 = content (expands)
