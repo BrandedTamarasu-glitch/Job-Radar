@@ -152,5 +152,15 @@ if sys.platform == 'darwin':
         info_plist={
             'NSHighResolutionCapable': 'True',
             'LSBackgroundOnly': 'False',    # Locked decision: show in dock
+            'CFBundleDocumentTypes': [
+                {
+                    'CFBundleTypeName': 'Job Radar Profile',
+                    'CFBundleTypeExtensions': ['jobprofile'],
+                    'CFBundleTypeRole': 'Editor',
+                    'LSHandlerRank': 'Owner',
+                },
+            ],
+            'CFBundleShortVersionString': '2.1.0',
+            'CFBundleVersion': '2.1.0',
         },
     )
