@@ -1,6 +1,6 @@
 # Job Radar
 
-A desktop job search tool that searches multiple job boards, scores listings against your profile, and generates ranked reports. Available as both a **desktop GUI application** (double-click to launch) and a **CLI** for power users and scripting. Features include multi-source search (6 API sources: Dice, HN Hiring, RemoteOK, We Work Remotely, Adzuna, Authentic Jobs + 4 manual URLs: Wellfound, Indeed, LinkedIn, Glassdoor), PDF resume import, fuzzy skill matching, cross-source deduplication, and dual-format HTML and Markdown reports with one-click URL copying, keyboard shortcuts, application status tracking, and WCAG 2.1 Level AA accessibility.
+A desktop job search tool that searches multiple job boards, scores listings against your profile, and generates ranked reports. Available as both a **desktop GUI application** (double-click to launch) and a **CLI** for power users and scripting. Features include multi-source search (10 API sources: Dice, HN Hiring, RemoteOK, We Work Remotely, Adzuna, Authentic Jobs, JSearch, USAJobs, SerpAPI, Jobicy + 4 manual URLs: Wellfound, Indeed, LinkedIn, Glassdoor), PDF resume import, fuzzy skill matching, user-configurable scoring weights, cross-source deduplication, real-time API quota tracking, and dual-format HTML and Markdown reports with one-click URL copying, keyboard shortcuts, application status tracking, and WCAG 2.1 Level AA accessibility.
 
 ## Installation
 
@@ -8,9 +8,11 @@ A desktop job search tool that searches multiple job boards, scores listings aga
 
 Download the latest release for your platform from the [GitHub Releases page](https://github.com/BrandedTamarasu-glitch/Job-Radar/releases/latest):
 
-- **Windows:** `job-radar-vX.X.X-windows.zip`
-- **macOS:** `job-radar-vX.X.X-macos.zip`
-- **Linux:** `job-radar-vX.X.X-linux.tar.gz`
+- **Windows (Recommended):** `Job-Radar-Setup-vX.X.X.exe` — NSIS installer with Start Menu shortcuts and Add/Remove Programs integration
+- **Windows (Portable):** `job-radar-vX.X.X-windows.zip` — No installation required
+- **macOS (Recommended):** `Job-Radar-vX.X.X-macos.dmg` — Drag-to-Applications installer with file associations
+- **macOS (Portable):** `job-radar-vX.X.X-macos.zip` — No installation required
+- **Linux:** `job-radar-vX.X.X-linux.tar.gz` — Extract and run
 
 > **IMPORTANT: Security Warnings**
 >
@@ -18,7 +20,7 @@ Download the latest release for your platform from the [GitHub Releases page](ht
 >
 > **You will see security warnings:**
 > - **Windows SmartScreen:** Click "More info" then click "Run anyway"
-> - **macOS Gatekeeper:** Right-click the app and select "Open" (first launch only)
+> - **macOS Gatekeeper:** Right-click the app and select "Open", or System Settings → Privacy & Security → "Open Anyway" (first launch only)
 > - **Antivirus software:** May flag the executable as suspicious - this is a false positive common with PyInstaller-packaged applications
 >
 > These warnings do NOT mean the software is malicious. The source code is publicly available in this repository for inspection.
@@ -29,6 +31,24 @@ Each release includes two executables:
 
 ### Windows
 
+**Option 1: NSIS Installer (Recommended)**
+
+1. Download `Job-Radar-Setup-vX.X.X.exe` from the Releases page
+2. Double-click the installer to run it
+3. When Windows SmartScreen appears, click "More info" then "Run anyway"
+4. Follow the setup wizard to choose installation location and shortcuts
+5. Launch Job Radar from the Start Menu or Desktop shortcut
+6. The GUI will guide you through creating your profile
+
+The installer includes:
+- Start Menu shortcuts for GUI and CLI
+- Desktop shortcut (optional)
+- Add/Remove Programs integration
+- Automatic file association for `.jobprofile` files
+- GUI uninstall option in Settings tab
+
+**Option 2: Portable ZIP (No Installation)**
+
 1. Download `job-radar-vX.X.X-windows.zip` from the Releases page
 2. Right-click the ZIP file and select "Extract All"
 3. Open the extracted `job-radar` folder
@@ -37,6 +57,26 @@ Each release includes two executables:
 6. The GUI will guide you through creating your profile
 
 ### macOS
+
+**Option 1: DMG Installer (Recommended)**
+
+1. Download `Job-Radar-vX.X.X-macos.dmg` from the Releases page
+2. Double-click the DMG file to mount it
+3. Drag `JobRadar.app` to the Applications folder shown in the window
+4. Eject the DMG (right-click → Eject)
+5. Remove the quarantine attribute (required for unsigned apps):
+   ```bash
+   xattr -d com.apple.quarantine /Applications/JobRadar.app
+   ```
+6. **Double-click `JobRadar.app`** in Applications to launch the GUI
+7. When prompted by Gatekeeper, right-click the app and select "Open", or go to System Settings → Privacy & Security → "Open Anyway"
+
+The installer includes:
+- Drag-to-Applications installation
+- Automatic file association for `.jobprofile` files
+- GUI uninstall option in Settings tab
+
+**Option 2: Portable ZIP (No Installation)**
 
 1. Download `job-radar-vX.X.X-macos.zip` from the Releases page
 2. Double-click the ZIP file to extract it
@@ -93,6 +133,12 @@ source ~/.zshrc
 
 On subsequent launches, you'll go straight to the Search tab. Use the Profile tab to edit your settings anytime.
 
+**Additional GUI Features:**
+- **Settings Tab:** Configure API keys, adjust scoring weights, set staffing firm preference, view API quota usage, and uninstall the app
+- **Scoring Customization:** Fine-tune the 6 scoring components (skills, seniority, etc.) with sliders and see live preview of score changes
+- **API Quota Tracking:** Real-time display of API usage (e.g., "15/100 daily searches used") with color-coded warnings
+- **Uninstall:** Clean removal of all app data with optional backup creation
+
 ### CLI
 
 The CLI is available for power users and scripting:
@@ -143,13 +189,28 @@ The HTML report includes interactive features and visual hierarchy to help you s
 
 ### Optional: API Credentials
 
-To use Adzuna and Authentic Jobs API sources, set up API keys:
+Job Radar works out-of-the-box with 6 free sources (Dice, HN Hiring, RemoteOK, We Work Remotely, Jobicy, + 4 manual URLs). To expand coverage with additional API sources, configure API keys:
 
+**GUI Method (Recommended):**
+1. Open the **Settings** tab in the Job Radar GUI
+2. Scroll to the API Configuration section
+3. Enter your API keys and click **Test** to validate
+4. View real-time quota usage for each API
+
+**CLI Method:**
 ```bash
 job-radar --setup-apis
 ```
 
-The wizard will guide you through obtaining and configuring API credentials. API keys are optional — the tool works without them using the 4 scraper-based sources.
+**Available API Sources:**
+- **Adzuna** (requires API key) — Job aggregator with global coverage
+- **Authentic Jobs** (requires API key) — Creative and tech job board
+- **JSearch** (requires API key) — Google Jobs aggregator (LinkedIn, Indeed, Glassdoor, company sites)
+- **USAJobs** (requires API key) — Federal government job listings
+- **SerpAPI** (requires API key) — Alternative Google Jobs aggregator
+- **Jobicy** (no key required) — Remote job listings (rate limited: 1/hour)
+
+The wizard will guide you through obtaining and configuring API credentials. API keys are optional but significantly expand job coverage.
 
 For advanced usage and all available options, run:
 ```bash
@@ -158,14 +219,48 @@ job-radar --help
 
 ## Uninstalling
 
-### Windows
+### GUI Uninstall (Recommended)
+
+The easiest way to uninstall Job Radar is through the built-in GUI uninstaller:
+
+1. **Launch Job Radar GUI**
+2. Go to the **Settings** tab
+3. Scroll to the **Uninstall** section at the bottom
+4. **Optional:** Click "Create Backup" to save your profile and config before uninstalling
+5. Check the "I understand this will delete all Job Radar data" checkbox
+6. Click the red "Uninstall" button
+7. Review the confirmation dialog showing exactly what will be deleted
+8. Confirm to proceed
+
+The GUI uninstaller will:
+- Remove all configuration files (`~/.job-radar`)
+- Remove rate limit databases (`~/.rate_limits`)
+- Remove cached data
+- On macOS: Move the app bundle to Trash
+- On Windows (NSIS installer): Unregister from Add/Remove Programs and remove shortcuts
+
+### Manual Uninstall
+
+#### Windows (NSIS Installer)
+
+1. **Uninstall via Add/Remove Programs:**
+   - Press `Win+R`, type `appwiz.cpl`, press Enter
+   - Find "Job Radar" in the list
+   - Click "Uninstall" and follow the prompts
+   - The uninstaller offers a GUI option with backup capability
+
+2. **Or manually delete:**
+   - Delete the installation folder (default: `C:\Program Files\Job Radar`)
+   - Delete configuration: Press `Win+R`, type `%USERPROFILE%\.job-radar`, delete the folder
+
+#### Windows (Portable ZIP)
 
 1. Delete the `job-radar` folder (wherever you extracted it)
 2. Delete the configuration directory:
    - Press `Win+R`, type `%USERPROFILE%\.job-radar`, press Enter
    - Delete the entire `.job-radar` folder
 
-### macOS
+#### macOS (DMG or ZIP)
 
 **For unsigned apps like Job Radar, you cannot simply drag to Trash. Follow these steps:**
 
@@ -187,7 +282,7 @@ job-radar --help
 
 **Why sudo is needed:** macOS prevents unsigned apps from being deleted normally as a security measure. The `sudo rm` command bypasses this restriction.
 
-### Linux
+#### Linux
 
 1. Delete the extracted `job-radar` directory
 2. Delete configuration files:
@@ -305,7 +400,7 @@ python -m job_radar --help
 
 ### Running Tests
 
-The project includes a comprehensive test suite with 450+ automated tests:
+The project includes a comprehensive test suite with 566 automated tests:
 
 ```bash
 # Install dev dependencies
@@ -323,10 +418,13 @@ pytest tests/test_scoring.py
 
 **Test coverage:**
 - Scoring functions (37 tests) - validates all `_score_*` functions with parametrized edge cases
+- Scoring config (25 tests) - validates scoring weights, staffing preference, normalization, live preview
 - Tracker functions (11 tests) - validates deduplication and stats aggregation with tmp_path isolation
 - Config module (23 tests) - validates config file parsing, CLI override, defaults, validation
 - Wizard (38 tests) - validates setup flow, PDF integration, navigation, error handling
-- API integration (45 tests) - validates Adzuna/Authentic Jobs mappers, rate limiting, deduplication
+- API integration (45 tests) - validates all 10 API sources, mappers, rate limiting, deduplication
+- API config (18 tests) - validates API key storage, validation, GUI integration, quota tracking
+- Rate limits (16 tests) - validates rate limiter cleanup, shared backends, config loading, quota queries
 - PDF parser (34 tests) - validates extraction, validation, Unicode support, error handling
 - Report generation (34 tests) - validates HTML/Markdown output, clipboard UI, status tracking, accessibility
 - UX polish (68 tests) - validates banner, help text, progress messages, error handling
@@ -334,6 +432,11 @@ pytest tests/test_scoring.py
 - Profile display (16 tests) - validates formatted output, field filtering, NO_COLOR compliance
 - Profile editor (23 tests) - validates field menu, diff preview, editing, validator reuse
 - CLI update flags (40 tests) - validates validators, handlers, mutual exclusion, integration
+- Uninstaller (14 tests) - validates backup creation, path enumeration, cleanup scripts, platform detection
+- Deduplication (28 tests) - validates exact-match URL dedup, stats tracking, multi-source mapping
+- Entry integration (46 tests) - validates GUI/CLI entry points, wizard flow, error handling
+- Browser (12 tests) - validates report opening, platform detection, error handling
+- Paths (16 tests) - validates config directory resolution, platform compatibility
 
 ### Building Executables
 
