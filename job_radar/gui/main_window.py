@@ -22,6 +22,7 @@ from job_radar.config import load_config
 from job_radar.gui.profile_form import ProfileForm
 from job_radar.gui.search_controls import SearchControls
 from job_radar.gui.worker_thread import create_search_worker
+from job_radar.gui.scoring_config import ScoringConfigWidget
 from dotenv import find_dotenv, load_dotenv
 
 
@@ -870,6 +871,25 @@ class MainWindow(ctk.CTk):
         )
         save_btn.pack(pady=(20, 10))
 
+        # Separator between API settings and scoring config
+        separator = ctk.CTkFrame(scroll_frame, height=2, fg_color="gray70")
+        separator.pack(fill="x", pady=(20, 10), padx=10)
+
+        # Load profile for scoring config widget
+        try:
+            profile_path = get_data_dir() / "profile.json"
+            profile = load_profile(profile_path)
+        except Exception:
+            profile = None
+
+        # Scoring configuration widget
+        self._scoring_config = ScoringConfigWidget(
+            scroll_frame,
+            profile=profile,
+            on_save_callback=self._on_scoring_saved
+        )
+        self._scoring_config.pack(fill="x", padx=10, pady=(10, 20))
+
     def _add_api_section(self, parent, title, fields, signup_url):
         """Add an API configuration section with fields and test button.
 
@@ -1203,6 +1223,11 @@ class MainWindow(ctk.CTk):
                 raise
         except Exception as e:
             self._show_error_dialog(f"Failed to save API keys: {e}")
+
+    def _on_scoring_saved(self):
+        """Handle scoring configuration save success."""
+        # No tab navigation needed -- user stays on Settings tab
+        pass
 
     def _show_info_dialog(self, message: str):
         """Show modal info dialog.
