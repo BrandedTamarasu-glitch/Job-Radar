@@ -23,7 +23,20 @@ from job_radar.gui.profile_form import ProfileForm
 from job_radar.gui.search_controls import SearchControls
 from job_radar.gui.worker_thread import create_search_worker
 from job_radar.gui.scoring_config import ScoringConfigWidget
+from job_radar.gui.uninstall_dialog import (
+    BackupOfferDialog,
+    PathPreviewDialog,
+    FinalConfirmationDialog,
+    DeletionProgressDialog,
+)
 from job_radar.rate_limits import get_quota_usage
+from job_radar.uninstaller import (
+    get_uninstall_paths,
+    create_backup,
+    delete_app_data,
+    get_binary_path,
+    create_cleanup_script,
+)
 from dotenv import find_dotenv, load_dotenv
 
 
@@ -937,6 +950,44 @@ class MainWindow(ctk.CTk):
         )
         self._scoring_config.pack(fill="x", padx=10, pady=(10, 20))
 
+        # Separator before Danger Zone
+        danger_separator = ctk.CTkFrame(scroll_frame, height=2, fg_color="gray70")
+        danger_separator.pack(fill="x", pady=(20, 10), padx=10)
+
+        # Danger Zone section
+        danger_section = ctk.CTkFrame(scroll_frame, fg_color="transparent")
+        danger_section.pack(fill="x", pady=(10, 20), padx=10)
+
+        # Section title
+        danger_title = ctk.CTkLabel(
+            danger_section,
+            text="Danger Zone",
+            font=ctk.CTkFont(size=16, weight="bold"),
+            text_color="red"
+        )
+        danger_title.pack(anchor="w", pady=(0, 5))
+
+        # Description
+        danger_desc = ctk.CTkLabel(
+            danger_section,
+            text="Remove Job Radar and all associated data from your system",
+            font=ctk.CTkFont(size=12),
+            text_color="gray"
+        )
+        danger_desc.pack(anchor="w", pady=(0, 10))
+
+        # Uninstall button
+        uninstall_btn = ctk.CTkButton(
+            danger_section,
+            text="Uninstall Job Radar",
+            height=40,
+            width=200,
+            fg_color="red",
+            hover_color="darkred",
+            command=self._start_uninstall
+        )
+        uninstall_btn.pack(anchor="w", pady=(10, 0))
+
     def _add_api_section(self, parent, title, fields, signup_url):
         """Add an API configuration section with fields and test button.
 
@@ -1363,6 +1414,136 @@ class MainWindow(ctk.CTk):
         """Handle scoring configuration save success."""
         # No tab navigation needed -- user stays on Settings tab
         pass
+
+    def _start_uninstall(self):
+        """Orchestrate the full uninstall flow.
+
+        Steps:
+        1. Offer backup
+        2. Preview paths to be deleted
+        3. Final confirmation with checkbox
+        4. Delete data in background thread
+        5. Handle results (failures, binary cleanup)
+        6. Quit app
+        """
+        # Step 1: Offer backup
+        backup_dialog = BackupOfferDialog(self)
+        backup_dialog.wait_window()
+
+        if backup_dialog.result == "cancel":
+            return
+
+        # Step 2: Preview paths to be deleted
+        try:
+            paths = get_uninstall_paths()
+        except Exception as e:
+            self._show_error_dialog(f"Failed to enumerate paths: {e}")
+            return
+
+        if not paths:
+            self._show_error_dialog("No application data found to uninstall.")
+            return
+
+        preview_dialog = PathPreviewDialog(self, paths)
+        preview_dialog.wait_window()
+
+        if not preview_dialog.result:
+            return
+
+        # Step 3: Final confirmation
+        confirmation_dialog = FinalConfirmationDialog(self)
+        confirmation_dialog.wait_window()
+
+        if not confirmation_dialog.result:
+            return
+
+        # Step 4: Show progress dialog and delete in background thread
+        progress_dialog = DeletionProgressDialog(self)
+
+        # Container for thread result
+        result_container = {"failures": None, "done": False}
+
+        def delete_thread():
+            """Background deletion thread."""
+            failures = delete_app_data()
+            result_container["failures"] = failures
+            result_container["done"] = True
+
+        # Start deletion thread
+        thread = threading.Thread(target=delete_thread, daemon=True)
+        thread.start()
+
+        # Poll for completion
+        def check_completion():
+            if result_container["done"]:
+                progress_dialog.close()
+                self._handle_uninstall_results(result_container["failures"])
+            else:
+                self.after(100, check_completion)
+
+        self.after(100, check_completion)
+
+    def _handle_uninstall_results(self, failures: list[tuple[str, str]]):
+        """Handle uninstall results and quit app.
+
+        Parameters
+        ----------
+        failures : list[tuple[str, str]]
+            List of (path, error_message) tuples for failed deletions
+        """
+        # Step 5: Handle results
+        if failures:
+            # Partial failure - show what failed
+            failure_msg = "Some files could not be deleted:\n\n"
+            for path, error in failures[:5]:  # Show first 5
+                failure_msg += f"• {path}\n  Error: {error}\n"
+            if len(failures) > 5:
+                failure_msg += f"\n...and {len(failures) - 5} more"
+
+            self._show_error_dialog(failure_msg)
+
+        # Check if binary cleanup needed
+        binary_path = get_binary_path()
+        if binary_path:
+            try:
+                message, script_path = create_cleanup_script(binary_path)
+                final_msg = message
+            except Exception as e:
+                final_msg = f"Data removed. Please manually delete: {binary_path}"
+        else:
+            final_msg = "Data removed successfully."
+
+        # Step 6: Show final success dialog and quit
+        success_dialog = ctk.CTkToplevel(self)
+        success_dialog.title("Uninstall Complete")
+        success_dialog.geometry("400x200")
+        success_dialog.transient(self)
+        success_dialog.grab_set()
+
+        # Center on parent
+        success_dialog.update_idletasks()
+        x = self.winfo_x() + (self.winfo_width() - success_dialog.winfo_width()) // 2
+        y = self.winfo_y() + (self.winfo_height() - success_dialog.winfo_height()) // 2
+        success_dialog.geometry(f"+{x}+{y}")
+
+        # Message
+        msg_label = ctk.CTkLabel(
+            success_dialog,
+            text=f"{final_msg}\n\nGoodbye!",
+            wraplength=350,
+            font=ctk.CTkFont(size=13),
+            text_color="green"
+        )
+        msg_label.pack(pady=30, padx=20)
+
+        # OK button that quits
+        ok_btn = ctk.CTkButton(
+            success_dialog,
+            text="OK",
+            width=100,
+            command=lambda: (success_dialog.destroy(), self.quit())
+        )
+        ok_btn.pack(pady=(0, 20))
 
     def _show_info_dialog(self, message: str):
         """Show modal info dialog.

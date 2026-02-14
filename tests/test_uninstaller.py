@@ -1,5 +1,7 @@
 """Comprehensive unit tests for uninstaller module."""
 
+import os
+import shutil
 import stat
 import sys
 import zipfile
@@ -428,3 +430,169 @@ def test_create_cleanup_script_returns_manual_instructions_on_failure(monkeypatc
     assert "manually delete" in message.lower()
     assert str(binary_path) in message
     assert script_path is None
+
+
+# Integration tests
+
+
+def test_delete_app_data_full_flow(tmp_path, monkeypatch):
+    """Test complete delete_app_data flow with realistic directory structure."""
+    # Setup: Create realistic data directory structure
+    data_dir = tmp_path / "job-radar-data"
+    data_dir.mkdir()
+
+    (data_dir / "profile.json").write_text('{"name": "test"}')
+    (data_dir / "config.json").write_text('{"version": "1.0"}')
+
+    backups_dir = data_dir / "backups"
+    backups_dir.mkdir()
+    (backups_dir / "backup1.json").write_text('{"old": "data"}')
+
+    rate_limits_dir = tmp_path / ".rate_limits"
+    rate_limits_dir.mkdir()
+    (rate_limits_dir / "jsearch.db").write_text("fake db")
+
+    log_file = tmp_path / "job-radar-error.log"
+    log_file.write_text("error logs")
+
+    # Monkeypatch paths module
+    monkeypatch.setattr("job_radar.uninstaller.get_data_dir", lambda: data_dir)
+    monkeypatch.setattr("job_radar.uninstaller.get_log_file", lambda: log_file)
+
+    # Mock _cleanup_connections (no-op for this test)
+    with patch("job_radar.uninstaller._cleanup_connections"):
+        failures = delete_app_data()
+
+    # Verify all deleted
+    assert failures == []
+    assert not data_dir.exists()
+    assert not log_file.exists()
+
+
+def test_create_backup_then_delete_preserves_backup(tmp_path, monkeypatch):
+    """Test backup is preserved at external location after deletion."""
+    # Setup: Create data directory
+    data_dir = tmp_path / "job-radar-data"
+    data_dir.mkdir()
+
+    (data_dir / "profile.json").write_text('{"name": "test"}')
+    (data_dir / "config.json").write_text('{"version": "1.0"}')
+
+    # Backup location (outside data dir)
+    backup_path = tmp_path / "backup.zip"
+
+    # Monkeypatch paths
+    monkeypatch.setattr("job_radar.uninstaller.get_data_dir", lambda: data_dir)
+    monkeypatch.setattr("job_radar.uninstaller.get_log_file", lambda: tmp_path / "log.log")
+
+    # Create backup
+    create_backup(str(backup_path))
+    assert backup_path.exists()
+
+    # Delete app data
+    with patch("job_radar.uninstaller._cleanup_connections"):
+        failures = delete_app_data()
+
+    # Verify: data deleted but backup preserved
+    assert failures == []
+    assert not data_dir.exists()
+    assert backup_path.exists()
+
+    # Verify backup contents
+    import zipfile
+    with zipfile.ZipFile(backup_path, 'r') as zf:
+        assert "profile.json" in zf.namelist()
+        assert "config.json" in zf.namelist()
+
+
+def test_get_uninstall_paths_returns_correct_descriptions(tmp_path, monkeypatch):
+    """Test path enumeration includes correct human-readable descriptions."""
+    # Setup: Create standard file layout
+    data_dir = tmp_path / "job-radar-data"
+    data_dir.mkdir()
+
+    (data_dir / "profile.json").write_text('{}')
+    (data_dir / "config.json").write_text('{}')
+
+    backups_dir = data_dir / "backups"
+    backups_dir.mkdir()
+
+    rate_limits_dir = tmp_path / ".rate_limits"
+    rate_limits_dir.mkdir()
+
+    log_file = tmp_path / "job-radar-error.log"
+    log_file.write_text("logs")
+
+    # Monkeypatch paths
+    monkeypatch.setattr("job_radar.uninstaller.get_data_dir", lambda: data_dir)
+    monkeypatch.setattr("job_radar.uninstaller.get_log_file", lambda: log_file)
+    monkeypatch.setattr("pathlib.Path.cwd", lambda: tmp_path)
+
+    # Get paths
+    paths = get_uninstall_paths()
+
+    # Verify descriptions
+    path_dict = {path: desc for path, desc in paths}
+
+    assert "profile.json" in path_dict[str(data_dir / "profile.json")]
+    assert "search preferences" in path_dict[str(data_dir / "profile.json")].lower()
+
+    assert "config.json" in path_dict[str(data_dir / "config.json")]
+    assert "settings" in path_dict[str(data_dir / "config.json")].lower()
+
+    assert "backups" in path_dict[str(backups_dir)].lower()
+
+    assert "rate limit" in path_dict[str(rate_limits_dir)].lower()
+
+    assert "error log" in path_dict[str(log_file)].lower()
+
+
+def test_integration_delete_with_locked_file_continues(tmp_path, monkeypatch):
+    """Test delete_app_data continues when file is locked, collects failure."""
+    # Setup: Create data directory
+    data_dir = tmp_path / "job-radar-data"
+    data_dir.mkdir()
+
+    (data_dir / "profile.json").write_text('{}')
+    (data_dir / "config.json").write_text('{}')
+    locked_file = data_dir / "locked.db"
+    locked_file.write_text("locked")
+
+    # Monkeypatch paths
+    monkeypatch.setattr("job_radar.uninstaller.get_data_dir", lambda: data_dir)
+    monkeypatch.setattr("job_radar.uninstaller.get_log_file", lambda: tmp_path / "log.log")
+
+    # Mock rmtree to fail on locked.db
+    original_rmtree = shutil.rmtree
+
+    def mock_rmtree(path, onerror=None):
+        """Simulate permission error on locked.db."""
+        def mock_onerror(func, fpath, exc_info):
+            if "locked.db" in str(fpath):
+                if onerror:
+                    onerror(func, fpath, (None, PermissionError("locked"), None))
+            else:
+                func(fpath)
+
+        # Walk tree and simulate locked file
+        if onerror:
+            for root, dirs, files in os.walk(path, topdown=False):
+                for name in files:
+                    fpath = os.path.join(root, name)
+                    if "locked.db" in fpath:
+                        mock_onerror(os.unlink, fpath, None)
+                    else:
+                        os.unlink(fpath)
+                for name in dirs:
+                    os.rmdir(os.path.join(root, name))
+            # Don't remove parent if it has locked file
+            if not any("locked.db" in f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))):
+                os.rmdir(path)
+
+    with patch("job_radar.uninstaller._cleanup_connections"):
+        with patch("shutil.rmtree", side_effect=mock_rmtree):
+            failures = delete_app_data()
+
+    # Verify: collected failure for locked file
+    assert len(failures) > 0
+    assert any("locked.db" in path for path, _ in failures)
