@@ -409,6 +409,12 @@ Plans:
 
 **Requirements:** PKG-01, PKG-02, PKG-03, PKG-06
 
+**Plans:** 2 plans
+
+Plans:
+- [ ] 36-01-PLAN.md — Core uninstaller backend: backup, deletion, path enumeration, platform-specific cleanup scripts
+- [ ] 36-02-PLAN.md — GUI uninstall dialogs, Settings tab integration, orchestration flow, integration tests
+
 **Success Criteria:**
 1. Users can click "Uninstall" button in GUI Settings tab to remove all app data
 2. Uninstall shows confirmation dialog listing exact paths that will be deleted before proceeding
@@ -448,7 +454,7 @@ Plans:
 | 33 | v2.1.0 | 3/3 | Complete | 2026-02-13 |
 | 34 | v2.1.0 | 2/2 | Complete | 2026-02-13 |
 | 35 | v2.1.0 | 2/2 | Complete | 2026-02-14 |
-| 36 | v2.1.0 | 0/? | Pending | — |
+| 36 | v2.1.0 | 0/2 | Pending | — |
 | 37 | v2.1.0 | 0/? | Pending | — |
 
 **Total: 34 completed phases + 3 planned phases (68 completed plans, 7 milestones: 7 shipped + 1 in progress)**
