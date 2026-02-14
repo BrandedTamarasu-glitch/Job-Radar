@@ -596,6 +596,8 @@ _SOURCE_DISPLAY_NAMES = {
     "glassdoor": "Glassdoor",
     "jsearch_other": "JSearch (Other)",
     "usajobs": "USAJobs (Federal)",
+    "serpapi": "SerpAPI (Google Jobs)",
+    "jobicy": "Jobicy (Remote)",
 }
 
 
@@ -1269,6 +1271,270 @@ def map_usajobs_to_job_result(item: dict) -> JobResult | None:
 
 
 # ---------------------------------------------------------------------------
+# SerpAPI Google Jobs fetcher
+# ---------------------------------------------------------------------------
+
+def map_serpapi_to_job_result(item: dict) -> JobResult | None:
+    """Map SerpAPI Google Jobs response item to JobResult.
+
+    Validates required fields (title, company_name, apply link) and returns
+    None if any are missing. Uses detected_extensions for work arrangement
+    and employment type.
+    """
+    title = item.get("title", "").strip()
+    company = item.get("company_name", "").strip()
+
+    # URL from apply_options (first link) or fall back to share_link
+    apply_options = item.get("apply_options", [])
+    url = ""
+    if apply_options and isinstance(apply_options, list):
+        url = apply_options[0].get("link", "").strip()
+    if not url:
+        url = item.get("share_link", "").strip()
+
+    if not title or not company or not url:
+        log.debug("[SerpAPI] Skipping job with missing required fields: title=%s, company=%s, url=%s",
+                 bool(title), bool(company), bool(url))
+        return None
+
+    # Location
+    location_raw = item.get("location", "")
+    location = parse_location_to_city_state(location_raw)
+
+    # Work arrangement from detected_extensions
+    extensions = item.get("detected_extensions", {})
+    if extensions.get("work_from_home"):
+        arrangement = "remote"
+    else:
+        arrangement = _parse_arrangement(f"{title} {item.get('description', '')}")
+
+    # Description
+    description_raw = item.get("description", "")
+    description = strip_html_and_normalize(description_raw)
+    if len(description) > 500:
+        description = description[:497] + "..."
+
+    # Employment type
+    emp_type = extensions.get("schedule_type", "")
+
+    # Salary (SerpAPI rarely includes salary)
+    salary = "Not specified"
+
+    # Date posted
+    date_posted = extensions.get("posted_at", "")
+
+    return JobResult(
+        title=_clean_field(title, _MAX_TITLE),
+        company=_clean_field(company, _MAX_COMPANY),
+        location=_clean_field(location, _MAX_LOCATION),
+        arrangement=arrangement,
+        salary=salary,
+        date_posted=date_posted,
+        description=description,
+        url=url,
+        source="serpapi",
+        employment_type=emp_type,
+        parse_confidence="high",
+    )
+
+
+def map_jobicy_to_job_result(item: dict) -> JobResult | None:
+    """Map Jobicy API response item to JobResult.
+
+    Validates required fields (jobTitle, companyName, url). Cleans HTML
+    from jobDescription using strip_html_and_normalize(). Jobicy jobs are
+    always remote by definition.
+    """
+    title = item.get("jobTitle", "").strip()
+    company = item.get("companyName", "").strip()
+    url = item.get("url", "").strip()
+
+    if not title or not company or not url:
+        log.debug("[Jobicy] Skipping job with missing required fields: title=%s, company=%s, url=%s",
+                 bool(title), bool(company), bool(url))
+        return None
+
+    # Location (Jobicy's jobGeo is region, not city/state)
+    location_raw = item.get("jobGeo", "")
+    location = location_raw if location_raw else "Remote"
+
+    # All Jobicy jobs are remote by definition
+    arrangement = "remote"
+
+    # Description: HTML content, must be cleaned
+    description_raw = item.get("jobDescription", "")
+    if not description_raw:
+        description_raw = item.get("jobExcerpt", "")
+    description = strip_html_and_normalize(description_raw)
+    if len(description) > 500:
+        description = description[:497] + "..."
+
+    # Skip jobs with empty description after cleaning (required for scoring)
+    if not description:
+        log.debug("[Jobicy] Skipping job with empty description: %s at %s", title, company)
+        return None
+
+    # Employment type
+    emp_type = item.get("jobType", "")
+
+    # Salary
+    salary_min_str = item.get("annualSalaryMin", "")
+    salary_max_str = item.get("annualSalaryMax", "")
+    salary_currency = item.get("salaryCurrency", "USD")
+    salary_min = None
+    salary_max = None
+
+    if salary_min_str and salary_max_str:
+        try:
+            salary_min = float(salary_min_str)
+            salary_max = float(salary_max_str)
+            salary = f"{salary_currency} {int(salary_min):,}-{int(salary_max):,}/yr"
+        except (ValueError, TypeError):
+            salary = "Not specified"
+    elif salary_min_str:
+        try:
+            salary_min = float(salary_min_str)
+            salary = f"{salary_currency} {int(salary_min):,}+/yr"
+        except (ValueError, TypeError):
+            salary = "Not specified"
+    else:
+        salary = "Not specified"
+
+    # Date posted
+    date_posted = item.get("pubDate", "")
+
+    return JobResult(
+        title=_clean_field(title, _MAX_TITLE),
+        company=_clean_field(company, _MAX_COMPANY),
+        location=_clean_field(location, _MAX_LOCATION),
+        arrangement=arrangement,
+        salary=salary,
+        date_posted=date_posted,
+        description=description,
+        url=url,
+        source="jobicy",
+        employment_type=emp_type,
+        parse_confidence="high",
+        salary_min=salary_min,
+        salary_max=salary_max,
+        salary_currency=salary_currency,
+    )
+
+
+def fetch_serpapi(query: str, location: str = "", verbose: bool = False) -> list[JobResult]:
+    """Fetch job listings from SerpAPI Google Jobs API."""
+    results = []
+
+    # Check credentials
+    api_key = get_api_key("SERPAPI_API_KEY", "SerpAPI")
+    if not api_key:
+        return results
+
+    # Check rate limit
+    if not check_rate_limit("serpapi", verbose=verbose):
+        return results
+
+    # Build API URL
+    params = {
+        "engine": "google_jobs",
+        "q": query,
+        "api_key": api_key,
+    }
+    if location:
+        params["location"] = location
+
+    url = "https://serpapi.com/search?" + urllib.parse.urlencode(params)
+
+    # Fetch with retry
+    try:
+        body = fetch_with_retry(url, headers=HEADERS, use_cache=True)
+        if body is None:
+            log.debug("[SerpAPI] Fetch failed for '%s'", query)
+            return results
+
+        data = _json.loads(body)
+        items = data.get("jobs_results", [])
+
+        for item in items:
+            job = map_serpapi_to_job_result(item)
+            if job:
+                results.append(job)
+
+    except _json.JSONDecodeError as e:
+        log.debug("[SerpAPI] JSON parse error: %s", e)
+    except Exception as e:
+        error_str = str(e).lower()
+        if "401" in error_str or "403" in error_str or "unauthorized" in error_str:
+            log.error("[SerpAPI] Authentication failed - run 'job-radar --setup-apis' to reconfigure")
+        else:
+            log.debug("[SerpAPI] Request failed: %s", e)
+
+    log.info("[SerpAPI] Found %d results for '%s'", len(results), query)
+    return results
+
+
+def fetch_jobicy(query: str, location: str = "", verbose: bool = False) -> list[JobResult]:
+    """Fetch remote job listings from Jobicy API.
+
+    Jobicy is a public API (no key required) but rate limited to 1 request/hour.
+    Returns remote-focused job listings with HTML descriptions cleaned.
+    """
+    results = []
+
+    # Check rate limit (no API key needed, but strict rate limit)
+    if not check_rate_limit("jobicy", verbose=verbose):
+        return results
+
+    # Build API URL
+    params = {"count": "20"}
+
+    # Map location to Jobicy geo filter if applicable
+    if location:
+        location_lower = location.lower()
+        if any(term in location_lower for term in ["usa", "united states", "us"]):
+            params["geo"] = "usa"
+        elif any(term in location_lower for term in ["uk", "united kingdom", "britain"]):
+            params["geo"] = "uk"
+        elif any(term in location_lower for term in ["canada"]):
+            params["geo"] = "canada"
+        elif any(term in location_lower for term in ["europe"]):
+            params["geo"] = "europe"
+        # For specific cities/states, skip geo filter (Jobicy uses broad regions)
+
+    # Use query as tag parameter for filtering
+    if query:
+        params["tag"] = query.lower().replace(" ", "-")
+
+    url = "https://jobicy.com/api/v2/remote-jobs?" + urllib.parse.urlencode(params)
+
+    # Fetch with retry
+    try:
+        body = fetch_with_retry(url, headers=HEADERS, use_cache=True)
+        if body is None:
+            log.debug("[Jobicy] Fetch failed for '%s'", query)
+            return results
+
+        data = _json.loads(body)
+        # Jobicy returns {"jobs": [...]} wrapper
+        items = data.get("jobs", [])
+        if not isinstance(items, list):
+            items = []
+
+        for item in items:
+            job = map_jobicy_to_job_result(item)
+            if job:
+                results.append(job)
+
+    except _json.JSONDecodeError as e:
+        log.debug("[Jobicy] JSON parse error: %s", e)
+    except Exception as e:
+        log.debug("[Jobicy] Request failed: %s", e)
+
+    log.info("[Jobicy] Found %d results for '%s'", len(results), query)
+    return results
+
+
+# ---------------------------------------------------------------------------
 # Manual-check URL generators
 # ---------------------------------------------------------------------------
 
@@ -1523,6 +1789,21 @@ def build_search_queries(profile: dict) -> list[dict]:
             usajobs_query["location"] = location
         queries.append(usajobs_query)
 
+    # SerpAPI queries: each target title (alternative Google Jobs aggregator)
+    for title in titles:
+        serpapi_query = {"source": "serpapi", "query": title}
+        if location:
+            serpapi_query["location"] = location
+        queries.append(serpapi_query)
+
+    # Jobicy queries: top 2 target titles (remote-focused, limited rate)
+    for title in titles[:2]:
+        queries.append({
+            "source": "jobicy",
+            "query": title,
+            "location": location,
+        })
+
     return queries
 
 
@@ -1545,8 +1826,8 @@ def fetch_all(profile: dict, on_progress=None, on_source_progress=None) -> list[
 
     # Split queries into three phases: native source wins over aggregator
     SCRAPER_SOURCES = {"dice", "hn_hiring", "remoteok", "weworkremotely"}
-    API_SOURCES = {"adzuna", "authentic_jobs", "usajobs"}  # USAJobs is native federal source
-    AGGREGATOR_SOURCES = {"jsearch"}  # JSearch is aggregator — runs LAST
+    API_SOURCES = {"adzuna", "authentic_jobs", "usajobs", "jobicy"}  # USAJobs and Jobicy are native sources
+    AGGREGATOR_SOURCES = {"jsearch", "serpapi"}  # JSearch and SerpAPI are aggregators — run LAST
 
     scraper_queries = [q for q in queries if q["source"] in SCRAPER_SOURCES]
     api_queries = [q for q in queries if q["source"] in API_SOURCES]
@@ -1604,6 +1885,10 @@ def fetch_all(profile: dict, on_progress=None, on_source_progress=None) -> list[
             return fetch_jsearch(q["query"], q.get("location", ""))
         elif q["source"] == "usajobs":
             return fetch_usajobs(q["query"], q.get("location", ""), profile=profile)
+        elif q["source"] == "serpapi":
+            return fetch_serpapi(q["query"], q.get("location", ""))
+        elif q["source"] == "jobicy":
+            return fetch_jobicy(q["query"], q.get("location", ""))
         return []
 
     def _run_queries_parallel(query_list, phase_name):
