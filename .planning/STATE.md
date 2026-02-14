@@ -1,6 +1,6 @@
 # Project State: Job Radar
 
-**Last Updated:** 2026-02-13T22:01:33Z
+**Last Updated:** 2026-02-14T02:15:47Z
 
 ## Project Reference
 
@@ -12,13 +12,13 @@
 
 ## Current Position
 
-**Phase:** 33 - Scoring Configuration Backend
-**Current Plan:** 3/3
-**Status:** Complete
+**Phase:** 34 - GUI Scoring Configuration
+**Current Plan:** 1/2
+**Status:** In progress
 
-**Progress:** [██████████] 100%
+**Progress:** [██████████░] 50% (of phase 34)
 
-**Next Action:** Begin Phase 34 (or next milestone phase as defined in ROADMAP.md)
+**Next Action:** Continue Phase 34 Plan 02 (Settings tab integration)
 
 ## Performance Metrics
 
@@ -43,10 +43,10 @@
 
 | Plan | Duration (sec) | Tasks | Files | Date |
 |------|---------------|-------|-------|------|
+| 34-01 | 182 | 2 | 1 | 2026-02-13 |
 | 33-03 | 923 | 2 | 2 | 2026-02-13 |
 | 33-02 | 408 | 2 | 2 | 2026-02-13 |
 | 33-01 | 165 | 2 | 2 | 2026-02-13 |
-| 32-04 | 426 | 2 | 3 | 2026-02-13 |
 
 ### Quality Indicators
 
@@ -55,9 +55,9 @@
 - All passing (v2.1.0 in progress)
 - Coverage areas: scoring, config, tracker, wizard, report, UX, API, PDF, dedup, accessibility, profile management, GUI, rate limiting, JSearch, USAJobs, schema migration
 
-**Code Stats (v2.0.0):**
-- ~19,000 LOC Python (source + tests + GUI)
-- 7 GUI modules (2,665 LOC)
+**Code Stats (v2.1.0 in progress):**
+- ~19,600 LOC Python (source + tests + GUI)
+- 8 GUI modules (3,265 LOC)
 - Zero regressions across milestone transitions
 
 **CI/CD:**
@@ -102,6 +102,11 @@
 | Wizard custom weights with retry loop | Collect all 6 weights, validate sum-to-1.0, offer retry on failure for good UX | 2026-02-13 |
 | Centralized staffing firm handling in score_job | Removed duplicate logic from _score_response_likelihood to prevent double-boost bug | 2026-02-13 |
 | Boost capped at 5.0, penalize floored at 1.0 | Preserves score scale integrity (1.0-5.0 range) | 2026-02-13 |
+| Sliders organized into semantic groups (Skills & Fit, Context) | Improves discoverability and understanding of scoring components | 2026-02-13 |
+| Proportional normalization on weights | Normalize button preserves relative ratios (0.30/0.40 → 0.43/0.57) more intuitive than equal distribution | 2026-02-13 |
+| Collapsible section pattern with triangle indicators | Uses ▶/▼ unicode (not emoji) for expand/collapse, standard pattern for Settings sections | 2026-02-13 |
+| Live preview with hardcoded sample job | "Senior Python Developer" with consistent scores provides stable demonstration of weight impact | 2026-02-13 |
+| Two-tier validation for scoring weights | Inline orange warning during editing (non-blocking) + error dialog on save (blocking) balances UX and correctness | 2026-02-13 |
 
 ### Active Constraints
 
@@ -130,51 +135,43 @@ None.
 
 ### What Just Happened
 
-Completed Phase 33 Plan 03: Wizard Integration for Scoring Configuration (PLAN 3 OF 3) - Phase 33 Complete
+Completed Phase 34 Plan 01: ScoringConfigWidget Implementation (PLAN 1 OF 2)
 
-**Executed:** Updated setup wizard to configure scoring_weights and staffing_preference for new profiles
+**Executed:** Created self-contained CustomTkinter widget for scoring configuration UI
 
 **Key accomplishments:**
-- Task 1: Added scoring weight and staffing preference questions to wizard
-- Imported DEFAULT_SCORING_WEIGHTS from profile_manager
-- Added staffing_preference select question with 3 descriptive choices (Neutral/Boost/Penalize)
-- Added customize_weights confirm question (defaults to False for most users)
-- Implemented _prompt_custom_weights helper with interactive validation and retry
-- Added select question type handling to wizard prompt loop
-- Switched section headers from index-based to key-based for stability
-- Added "Scoring Preferences" section between Profile Information and Search Preferences
-- Built profile_data with scoring_weights and staffing_preference v2 fields
-- Updated summary to display scoring configuration (Default vs Custom, staffing preference)
-- Added edit loop support for Scoring Weights and Staffing Firms
-- Task 2: Added 5 new tests for wizard v2 schema field output
-- test_wizard_profile_has_scoring_weights: verify DEFAULT_SCORING_WEIGHTS used
-- test_wizard_profile_has_staffing_preference_neutral/boost/penalize: verify all 3 choices
-- test_wizard_default_weights_used_when_not_customized: verify defaults
-- All 5 new tests passing, zero regressions
+- Created 600-line ScoringConfigWidget class in job_radar/gui/scoring_config.py
+- Implemented 6 weight sliders (0.05-1.0 range, 0.05 increments) organized into Skills & Fit and Context groups
+- Built staffing preference dropdown with 3 options (Boost/Neutral/Penalize)
+- Added live preview panel showing sample job score calculation with component breakdown
+- Integrated with profile_manager for loading and saving scoring configuration
+- Implemented normalize button (proportionally adjusts weights to sum to 1.0)
+- Implemented reset button (restores defaults with confirmation dialog)
+- Added two-tier validation: inline orange warning during editing, blocking error on save
+- Widget includes collapsible header with triangle indicators (▶/▼)
+- Combined Task 1 and Task 2 into single implementation (profile integration essential to design)
 
 **Commits:**
-- 5992765 - feat(33-03): add scoring weights and staffing preference to setup wizard
-- d3ab652 - test(33-03): add tests for wizard v2 schema field output
+- b0962b8 - feat(34-01): create ScoringConfigWidget with sliders, dropdown, and collapsible section
 
-**Duration:** 923 seconds (15min 23s)
+**Duration:** 182 seconds (3min 2s)
 
 ### What's Next
 
-Phase 33 complete (3/3 plans done). Ready for next phase as defined in ROADMAP.md.
+Phase 34 Plan 02: Embed ScoringConfigWidget in Settings tab of main_window.py
 
 ### Files Changed This Session
 
-- `/home/corye/Claude/Job-Radar/job_radar/wizard.py` - Added scoring configuration questions and handlers (+220 lines)
-- `/home/corye/Claude/Job-Radar/tests/test_wizard.py` - Added 5 new v2 schema tests (+274 lines)
-- `/home/corye/Claude/Job-Radar/.planning/phases/33-scoring-configuration-backend/33-03-SUMMARY.md` - Created
-- `/home/corye/Claude/Job-Radar/.planning/STATE.md` - Updated position, decisions, metrics, marked phase complete
+- `/Users/coryebert/Job-Radar/job_radar/gui/scoring_config.py` - Created ScoringConfigWidget class (+600 lines)
+- `/Users/coryebert/Job-Radar/.planning/phases/34-gui-scoring-configuration/34-01-SUMMARY.md` - Created
+- `/Users/coryebert/Job-Radar/.planning/STATE.md` - Updated position, decisions, metrics
 
 ### Context for Next Session
 
-**If continuing:** Phase 33 complete (all 3 plans done) - profile schema v2 with auto-migration, scoring engine using configurable weights, wizard integration complete. Ready for next phase.
+**If continuing:** Phase 34 Plan 01 complete - ScoringConfigWidget ready for integration. Next step: embed widget in Settings tab with proper layout and initialization.
 
-**If resuming later:** Read STATE.md for current position, check .planning/phases/33-scoring-configuration-backend/ for summaries. Terminal users can now configure scoring via wizard, scoring engine uses profile weights.
+**If resuming later:** Read STATE.md for current position, check .planning/phases/34-gui-scoring-configuration/ for summaries. Widget is self-contained and ready to integrate.
 
 ---
 *State initialized: 2026-02-13*
-*Phase 33 complete - scoring configuration backend ready (schema v2, scoring engine, wizard)*
+*Phase 34 in progress - GUI scoring configuration widget complete, Settings integration next*
