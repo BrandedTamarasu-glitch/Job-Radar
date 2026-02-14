@@ -1,6 +1,6 @@
 # Project State: Job Radar
 
-**Last Updated:** 2026-02-14T17:53:23Z
+**Last Updated:** 2026-02-14T19:25:42Z
 
 ## Project Reference
 
@@ -12,13 +12,13 @@
 
 ## Current Position
 
-**Phase:** 36 - GUI Uninstall Feature
-**Current Plan:** 2/2 (PHASE COMPLETE)
-**Status:** Phase complete
+**Phase:** 37 - Platform-Native Installers
+**Current Plan:** 1 of ? (IN PROGRESS)
+**Status:** In progress
 
-**Progress:** [███████████] 100% (phase 36: 2/2 plans complete)
+**Progress:** [███████████░] 91% (phases 31-36 complete, 37 in progress)
 
-**Next Action:** Phase 36 complete - ready for Phase 37 (Platform-Native Installers)
+**Next Action:** Continue Phase 37 - Next plan in phase or move to Phase 38
 
 ## Performance Metrics
 
@@ -43,11 +43,11 @@
 
 | Plan | Duration (sec) | Tasks | Files | Date |
 |------|---------------|-------|-------|------|
+| 37-01 | 116 | 2 | 4 | 2026-02-14 |
 | 36-02 | 213 | 2 | 3 | 2026-02-14 |
 | 36-01 | 225 | 2 | 2 | 2026-02-14 |
 | 35-02 | 410 | 3 | 4 | 2026-02-14 |
 | 35-01 | 230 | 2 | 2 | 2026-02-14 |
-| 34-02 | 89 | 3 | 2 | 2026-02-14 |
 
 ### Quality Indicators
 
@@ -125,6 +125,12 @@
 | Threading for deletion | Run delete_app_data() in background thread with polling to prevent GUI freeze during uninstall | 2026-02-14 |
 | Checkbox-gated red button | Red "Uninstall" button starts disabled until "I understand" checkbox checked - prevents accidental clicks | 2026-02-14 |
 | Three-step confirmation for uninstall | Path preview -> Final confirmation with checkbox -> Progress provides transparency and multiple escape hatches | 2026-02-14 |
+| DMG window size 800x500 | Larger than standard 600x400 for better visibility on modern displays, accounts for macOS 11.0+ title bar intrusion | 2026-02-14 |
+| App icon at (200,190), Applications at (600,190) | Horizontally aligned drag targets with clear visual flow for DMG installation | 2026-02-14 |
+| Conditional code signing for DMG | Check MACOS_CERT_BASE64 env var, skip if not set, log Gatekeeper bypass instructions | 2026-02-14 |
+| Pillow-generated DMG backgrounds | Programmatic generation using system fonts with fallback ensures consistent branding across builds | 2026-02-14 |
+| .jobprofile file association via CFBundleDocumentTypes | Register Job Radar as Owner (default handler) for .jobprofile files in macOS | 2026-02-14 |
+| LSHandlerRank 'Owner' for .jobprofile | Job Radar is the primary/default application for .jobprofile files | 2026-02-14 |
 
 ### Active Constraints
 
@@ -153,52 +159,54 @@ None.
 
 ### What Just Happened
 
-Completed Phase 36 Plan 02: GUI Uninstall Dialogs
+Completed Phase 37 Plan 01: macOS DMG Installer Infrastructure
 
-**Executed:** Complete GUI uninstall flow with dialogs and orchestration
+**Executed:** Create DMG build script, background generator, and file association
 
 **Key accomplishments:**
-- Created job_radar/gui/uninstall_dialog.py with 4 dialog classes (413 lines):
-  - BackupOfferDialog: backup offer with native file picker
-  - PathPreviewDialog: scrollable path list with descriptions
-  - FinalConfirmationDialog: checkbox-gated red button
-  - DeletionProgressDialog: indeterminate progress during deletion
-- Wired uninstall button into Settings tab with Danger Zone section
-- Implemented _start_uninstall() orchestration method (156 lines):
-  - Backup offer -> path preview -> final confirmation
-  - Threaded deletion with progress dialog
-  - Partial failure reporting with error list
-  - Binary cleanup script generation for frozen apps
-  - Auto-quit after completion
-- Added 4 integration tests (144 lines)
-- Total test suite: 566 tests, all passing with zero regressions
+- Created installers/macos/build-dmg.sh (create-dmg automation script):
+  - Validates PyInstaller .app bundle exists
+  - Auto-generates background if missing
+  - Configures DMG window (800x500) and icon positions (200,190 and 600,190)
+  - Conditional code signing (skips if MACOS_CERT_BASE64 not set)
+  - Logs Gatekeeper bypass instructions for unsigned DMG
+- Created installers/macos/generate-background.py (Pillow-based generator):
+  - Dark navy branded background with Job Radar logo and tagline
+  - White arrow pointing from app icon to Applications folder
+  - Version text and branding at bottom (800x500 PNG)
+- Updated job-radar.spec BUNDLE info_plist:
+  - CFBundleDocumentTypes for .jobprofile file association
+  - LSHandlerRank 'Owner' (default handler)
+  - CFBundleShortVersionString and CFBundleVersion (2.1.0)
+- Total: 4 files created/modified (159+ lines installer infrastructure)
 
 **Commits:**
-- d1ef217 - feat(36-02): create uninstall dialog classes
-- fd026bd - feat(36-02): wire uninstall button and orchestration to Settings tab
+- ba0a641 - feat(37-01): create DMG build infrastructure for macOS
+- b225785 - feat(37-01): add .jobprofile file association to macOS app bundle
 
-**Duration:** 213 seconds (3.55 min)
+**Duration:** 116 seconds (1.93 min)
 
-**Phase 36 Complete:** GUI uninstall feature fully delivered (PKG-01, PKG-02, PKG-03, PKG-06)
+**Phase 37 Plan 01 Complete:** macOS DMG installer infrastructure ready
 
 ### What's Next
 
-Phase 36 complete - Ready for next milestone phase
+Continue Phase 37 - Next plan in platform-native installers phase
 
 ### Files Changed This Session
 
-- `job_radar/gui/uninstall_dialog.py` - Created 4 dialog classes (+413 lines)
-- `job_radar/gui/main_window.py` - Added Danger Zone section, uninstall button, orchestration method (+158 lines)
-- `tests/test_uninstaller.py` - Added 4 integration tests (+144 lines)
-- `.planning/phases/36-gui-uninstall-feature/36-02-SUMMARY.md` - Created
+- `installers/macos/build-dmg.sh` - Created DMG automation script with conditional signing (+67 lines)
+- `installers/macos/generate-background.py` - Created Pillow-based background generator (+85 lines)
+- `installers/macos/dmg-background.png` - Generated 800x500 branded background image
+- `job-radar.spec` - Updated BUNDLE info_plist with CFBundleDocumentTypes (+10 lines)
+- `.planning/phases/37-platform-native-installers/37-01-SUMMARY.md` - Created
 - `.planning/STATE.md` - Updated position, decisions, metrics
 
 ### Context for Next Session
 
-**If continuing:** Phase 36 complete. GUI uninstall feature delivered with full backup-preview-confirm-delete-quit flow. Settings tab has red "Uninstall Job Radar" button in Danger Zone section.
+**If continuing:** Phase 37 Plan 01 complete. macOS DMG installer infrastructure ready with create-dmg automation, Pillow-generated branded background (800x500), .jobprofile file association, and conditional code signing. Next plan: Windows NSIS installer (37-02) or installer documentation.
 
-**If resuming later:** Read STATE.md for current position. Phase 36 delivered complete user-facing uninstall experience with three-step confirmation, optional backup, progress feedback, and automatic quit.
+**If resuming later:** Read STATE.md for current position. Phase 37-01 delivered DMG build infrastructure for professional macOS distribution. build-dmg.sh script in installers/macos/ ready for manual testing and CI/CD integration.
 
 ---
 *State initialized: 2026-02-13*
-*Phase 35 Plan 01 complete - SerpAPI and Jobicy backend integration delivered*
+*Last activity: 2026-02-14T19:25:42Z - Completed 37-01-PLAN.md*
