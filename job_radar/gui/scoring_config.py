@@ -283,6 +283,7 @@ class ScoringConfigWidget(ctk.CTkFrame):
             button_frame,
             text="Reset to Defaults",
             command=self._reset_to_defaults,
+            width=150,
         )
         reset_btn.grid(row=0, column=1, padx=5)
 
