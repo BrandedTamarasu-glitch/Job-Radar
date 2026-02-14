@@ -90,6 +90,11 @@ ADZUNA_APP_KEY=
 # Authentic Jobs API Key
 # Sign up at: https://authenticjobs.com/api/
 AUTHENTIC_JOBS_API_KEY=
+
+# SerpAPI (Google Jobs)
+# Sign up at: https://serpapi.com/
+# Free tier: 100 searches/month
+SERPAPI_API_KEY=
 """
 
     try:

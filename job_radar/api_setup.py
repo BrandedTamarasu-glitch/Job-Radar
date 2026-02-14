@@ -218,6 +218,58 @@ def setup_apis():
         print("\nSetup cancelled.")
         return
 
+    # Section 5 - SerpAPI
+    print("\n" + "=" * 60)
+    print("SerpAPI (Google Jobs)")
+    print("=" * 60)
+    print("Sign up at: https://serpapi.com/")
+    print("Note: Free tier limited to 100 searches/month\n")
+
+    try:
+        serpapi_key = questionary.text(
+            "SERPAPI_API_KEY (press Enter to skip):",
+            style=custom_style
+        ).ask()
+
+        if serpapi_key is None:  # Ctrl+C
+            print("\nSetup cancelled.")
+            return
+
+        if serpapi_key.strip():
+            # Validate key with test request
+            print("  Testing...", end=" ", flush=True)
+            try:
+                test_url = "https://serpapi.com/search?engine=google_jobs&q=test&api_key=" + serpapi_key.strip()
+                response = requests.get(test_url, timeout=10)
+
+                if response.status_code == 200:
+                    print("✓ Key is valid")
+                    credentials["SERPAPI_API_KEY"] = serpapi_key.strip()
+                elif response.status_code in (401, 403):
+                    print(f"✗ Invalid key (HTTP {response.status_code})")
+                    credentials["SERPAPI_API_KEY"] = serpapi_key.strip()
+                else:
+                    print(f"⚠ Could not validate (HTTP {response.status_code}) — key saved anyway")
+                    credentials["SERPAPI_API_KEY"] = serpapi_key.strip()
+            except requests.Timeout:
+                print("⚠ Could not validate (timeout) — key saved anyway")
+                credentials["SERPAPI_API_KEY"] = serpapi_key.strip()
+            except requests.RequestException:
+                print("⚠ Could not validate (network error) — key saved anyway")
+                credentials["SERPAPI_API_KEY"] = serpapi_key.strip()
+
+    except KeyboardInterrupt:
+        print("\nSetup cancelled.")
+        return
+
+    # Section 6 - Jobicy (informational, no key required)
+    print("\n" + "=" * 60)
+    print("Jobicy (Remote Jobs)")
+    print("=" * 60)
+    print("No API key required - remote job listings are public")
+    print("Rate limited to 1 request per hour")
+    print("Jobicy will be automatically included in searches\n")
+
     # Summary
     print("\n" + "=" * 60)
     print("Summary")
@@ -233,8 +285,12 @@ def setup_apis():
             print("  ✓ JSearch (LinkedIn, Indeed, Glassdoor)")
         if "USAJOBS_API_KEY" in credentials:
             print("  ✓ USAJobs (Federal)")
+        if "SERPAPI_API_KEY" in credentials:
+            print("  ✓ SerpAPI (Google Jobs)")
+        print("  ✓ Jobicy (Remote Jobs) - no key required")
     else:
         print("\nNo sources configured (all skipped)")
+        print("  ✓ Jobicy (Remote Jobs) - no key required")
 
     # Show tip for JSearch if not configured
     if "JSEARCH_API_KEY" not in credentials:
@@ -277,6 +333,10 @@ def setup_apis():
         env_lines.append("# USAJobs API Credentials\n")
         env_lines.append(f"USAJOBS_API_KEY={credentials['USAJOBS_API_KEY']}\n")
         env_lines.append(f"USAJOBS_EMAIL={credentials['USAJOBS_EMAIL']}\n\n")
+
+    if "SERPAPI_API_KEY" in credentials:
+        env_lines.append("# SerpAPI (Google Jobs)\n")
+        env_lines.append(f"SERPAPI_API_KEY={credentials['SERPAPI_API_KEY']}\n\n")
 
     env_content = "".join(env_lines)
 
@@ -480,6 +540,40 @@ def test_apis():
         except requests.RequestException as e:
             print(f"  ✗ Error: Network error ({e})\n")
             results["usajobs"] = "error"
+
+    # Test SerpAPI
+    print("SerpAPI (Google Jobs):")
+    serpapi_key = os.getenv("SERPAPI_API_KEY")
+
+    if not serpapi_key:
+        print("  ✗ Not configured (skipped)\n")
+        results["serpapi"] = "skipped"
+    else:
+        try:
+            url = f"https://serpapi.com/search?engine=google_jobs&q=test&api_key={serpapi_key}"
+            response = requests.get(url, timeout=10)
+
+            if response.status_code == 200:
+                print("  ✓ Pass\n")
+                results["serpapi"] = "pass"
+            elif response.status_code in (401, 403):
+                print("  ✗ Fail: Invalid credentials\n")
+                results["serpapi"] = "fail"
+            else:
+                print(f"  ✗ Error: HTTP {response.status_code}\n")
+                results["serpapi"] = "error"
+
+        except requests.Timeout:
+            print("  ✗ Error: Request timeout\n")
+            results["serpapi"] = "error"
+        except requests.RequestException as e:
+            print(f"  ✗ Error: Network error ({e})\n")
+            results["serpapi"] = "error"
+
+    # Jobicy - always available, no key needed
+    print("Jobicy (Remote Jobs):")
+    print("  ✓ Public API - always available (rate limited to 1/hour)\n")
+    results["jobicy"] = "pass"
 
     # Summary
     print("=" * 60)
