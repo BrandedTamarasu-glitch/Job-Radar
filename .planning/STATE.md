@@ -1,6 +1,6 @@
 # Project State: Job Radar
 
-**Last Updated:** 2026-02-14T19:26:53Z
+**Last Updated:** 2026-02-14T19:30:39Z
 
 ## Project Reference
 
@@ -13,11 +13,11 @@
 ## Current Position
 
 **Phase:** 37 - Platform-Native Installers
-**Current Plan:** 2 of 3 in current phase
-**Status:** In progress
-**Last activity:** 2026-02-14 - Completed 37-02-PLAN.md
+**Current Plan:** 3 of 3 in current phase
+**Status:** Phase complete
+**Last activity:** 2026-02-14 - Completed 37-03-PLAN.md
 
-**Progress:** [███████████░] 93% (phases 31-36 complete, 37 in progress: 2/3 plans complete)
+**Progress:** [████████████] 100% (phases 31-37 complete)
 
 ## Performance Metrics
 
@@ -42,11 +42,11 @@
 
 | Plan | Duration (sec) | Tasks | Files | Date |
 |------|---------------|-------|-------|------|
+| 37-03 | 121 | 2 | 3 | 2026-02-14 |
 | 37-02 | 176 | 2 | 7 | 2026-02-14 |
 | 37-01 | 116 | 2 | 4 | 2026-02-14 |
 | 36-02 | 213 | 2 | 3 | 2026-02-14 |
 | 36-01 | 225 | 2 | 2 | 2026-02-14 |
-| 35-02 | 410 | 3 | 4 | 2026-02-14 |
 
 ### Quality Indicators
 
@@ -168,64 +168,57 @@ None.
 
 ### What Just Happened
 
-Completed Phase 37 Plan 02: Windows NSIS Installer with Modern UI
+Completed Phase 37 Plan 03: CI/CD Installer Integration, Documentation, and Auto-Update Config
 
-**Executed:** Create NSIS installer script and Windows build automation
+**Executed:** Extended GitHub Actions release workflow with automated installer builds, created installer documentation, and prepared auto-update infrastructure
 
 **Key accomplishments:**
-- Created installers/windows/installer.nsi (NSIS Modern UI 2 script, 177 lines):
-  - Wizard flow: welcome, license, directory, custom shortcuts page, install, finish
-  - Dual uninstall: UninstallString launches job-radar-gui.exe --uninstall (GUI with backup), QuietUninstallString uses Uninstall.exe /S (NSIS direct)
-  - Custom shortcuts page with Desktop and Quick Launch checkboxes (both default checked)
-  - Start Menu shortcuts always created (GUI, CLI, uninstaller)
-  - .jobprofile file association with SHChangeNotify shell refresh
-  - Full Add/Remove Programs registry integration (DisplayName, UninstallString, QuietUninstallString, DisplayVersion, Publisher, URLInfoAbout, DisplayIcon, EstimatedSize, NoModify, NoRepair)
-  - SetCompressor /SOLID lzma for best compression
-  - Conditional version injection via /DVERSION= compile flag
-- Created installers/windows/build-installer.bat (Windows batch build script):
-  - Pre-flight checks (NSIS, PyInstaller output)
-  - Generates branding assets if not present
-  - Compiles NSIS installer with version injection
-  - Conditional code signing with signtool if WINDOWS_CERT_BASE64 env var set
-  - Shows warning if unsigned (SmartScreen bypass instructions in README)
-- Created installers/windows/generate-assets.py (Pillow-based branding generator):
-  - header.bmp (150x57): Dark navy background, right-aligned "Job Radar" text, target icon
-  - sidebar.bmp (164x314): Dark navy gradient, centered logo, version text
-  - icon.ico: Multi-size ICO (16, 32, 48, 256) converted from icon.png
-- Created installers/windows/license.txt (MIT License from project LICENSE)
-- Generated branding assets: header.bmp, sidebar.bmp, icon.ico
-- Total: 7 files created (395+ lines installer infrastructure)
+- Extended .github/workflows/release.yml with build-installers job:
+  - Matrix builds DMG on macOS-latest and NSIS installer on windows-latest (parallel execution)
+  - Downloads PyInstaller artifacts from build job, extracts to dist/
+  - Installs create-dmg (macOS) and NSIS (Windows) via package managers
+  - Runs installers/macos/build-dmg.sh and installers/windows/build-installer.bat
+  - Conditional code signing via GitHub Secrets (MACOS_CERT_BASE64, WINDOWS_CERT_BASE64)
+  - Uploads installer artifacts (installer-macos/*.dmg, installer-windows/*.exe)
+  - Release job depends on both build and build-installers, includes installers in GitHub Release
+- Created installers/README.md:
+  - macOS Gatekeeper bypass instructions (right-click → Open, or System Settings → Privacy & Security)
+  - Windows SmartScreen bypass instructions (More info → Run anyway)
+  - Local build instructions for both platforms
+  - CI/CD code signing secrets documentation
+- Created job_radar/update_config.py:
+  - UPDATE_CHECK_URL constant for future GitHub Pages hosting
+  - Version comparison utilities (parse_version, is_update_available, is_version_supported)
+  - Update manifest JSON schema documented in comments
+  - get_update_config() returns disabled-by-default config (enabled: False)
+- Total: 3 files created/modified (145+ lines CI/CD and auto-update infrastructure)
 
 **Commits:**
-- aff0b73 - feat(37-02): create NSIS installer script with Modern UI
-- be5af20 - feat(37-02): create Windows build script and branding asset generator
+- 1e28d64 - feat(37-03): extend release workflow with installer builds
+- cf6178b - feat(37-03): create installer README and auto-update config
 
-**Duration:** 176 seconds (2.9 min)
+**Duration:** 121 seconds (2.0 min)
 
-**Phase 37 Plan 02 Complete:** Windows NSIS installer infrastructure ready
+**Phase 37 Complete:** Platform-native installers infrastructure finished. CI/CD builds DMG and NSIS installers automatically on tagged releases with clear unsigned installer bypass documentation.
 
 ### What's Next
 
-Continue Phase 37 - Plan 03 (CI/CD integration, installer README, auto-update config)
+Phase 37 complete. v2.1.0 milestone complete. Ready to tag v2.1.0 release.
 
 ### Files Changed This Session
 
-- `installers/windows/installer.nsi` - Created NSIS Modern UI 2 installer script (+177 lines)
-- `installers/windows/build-installer.bat` - Created Windows build script with conditional signing (+82 lines)
-- `installers/windows/generate-assets.py` - Created Pillow-based asset generator (+136 lines)
-- `installers/windows/license.txt` - Created MIT license text from project LICENSE (+21 lines)
-- `installers/windows/header.bmp` - Generated 150x57 NSIS header image
-- `installers/windows/sidebar.bmp` - Generated 164x314 NSIS sidebar image
-- `installers/windows/icon.ico` - Generated multi-size Windows icon (16, 32, 48, 256)
-- `.planning/phases/37-platform-native-installers/37-02-SUMMARY.md` - Created
+- `.github/workflows/release.yml` - Extended with build-installers job (+89 lines)
+- `installers/README.md` - Created installer documentation (+86 lines)
+- `job_radar/update_config.py` - Created auto-update config module (+59 lines)
+- `.planning/phases/37-platform-native-installers/37-03-SUMMARY.md` - Created
 - `.planning/STATE.md` - Updated position, decisions, metrics
 
 ### Context for Next Session
 
-**If continuing:** Phase 37 Plan 02 complete. Windows NSIS installer infrastructure ready with Modern UI wizard, dual uninstall (GUI with backup + NSIS quick remove), Add/Remove Programs integration, .jobprofile file association, conditional code signing, and programmatic branding asset generation. Next plan: CI/CD integration for automated installer builds (37-03).
+**If continuing:** Phase 37 complete. v2.1.0 milestone complete (source expansion, staffing firm control, scoring customization, uninstall, installers). CI/CD pipeline builds DMG and NSIS installers automatically on tagged releases. Ready to tag v2.1.0 release after manual installer testing.
 
-**If resuming later:** Read STATE.md for current position. Phase 37-02 delivered Windows NSIS installer infrastructure for professional Windows distribution. build-installer.bat script in installers/windows/ ready for manual testing and CI/CD integration.
+**If resuming later:** Read STATE.md for current position. Phase 37 delivered complete platform-native installer infrastructure with CI/CD automation, unsigned installer bypass documentation, and auto-update config foundation. v2.1.0 milestone ready for release tagging.
 
 ---
 *State initialized: 2026-02-13*
-*Last activity: 2026-02-14T19:26:53Z - Completed 37-02-PLAN.md*
+*Last activity: 2026-02-14T19:30:39Z - Completed 37-03-PLAN.md*
