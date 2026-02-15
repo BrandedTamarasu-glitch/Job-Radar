@@ -150,6 +150,7 @@ if sys.platform == 'darwin':
         bundle_identifier='com.jobradar.app',
         entitlements_file='entitlements.plist',
         info_plist={
+            'CFBundleExecutable': 'job-radar-gui',  # Launch GUI by default (not CLI wrapper)
             'NSHighResolutionCapable': 'True',
             'LSBackgroundOnly': 'False',    # Locked decision: show in dock
             'CFBundleDocumentTypes': [
