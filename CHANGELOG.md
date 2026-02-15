@@ -1,5 +1,17 @@
 # Changelog
 
+## v2.1.3 — 2026-02-14
+
+### Performance Fixes
+- **Eliminated 20-30 second lag** on app startup and tab switches by replacing expensive filesystem search (`find_dotenv(usecwd=True)`) with direct `.env` path check
+- **Lazy tab loading** - Only builds Profile tab on startup; Search and Settings tabs load instantly when first accessed
+- **Startup time** reduced from 30 seconds to under 1 second
+- **Tab switching** now instant after first access (was 20+ seconds)
+
+### Bug Fixes
+- **Tag chip click blocking** - Fixed chips container expanding and blocking mouse clicks to form fields and chip remove (×) buttons
+- **Form navigation** - Can now click between input fields without having to use Tab key
+
 ## v2.1.2 — 2026-02-14
 
 ### Bug Fixes
