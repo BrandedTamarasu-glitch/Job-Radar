@@ -53,13 +53,17 @@ class TagChipWidget(ctk.CTkFrame):
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
 
-        # Chips container - scrollable frame for vertical stacking
-        self._chips_container = ctk.CTkScrollableFrame(
+        # Chips container - regular frame with wrapping support
+        self._chips_container = ctk.CTkFrame(
             self,
-            fg_color="transparent",
-            height=100
+            fg_color="transparent"
         )
         self._chips_container.grid(row=0, column=0, sticky="nsew", padx=5, pady=(5, 0))
+        self._chips_container.grid_columnconfigure(0, weight=1)
+
+        # Row tracking for wrapping
+        self._current_row = None
+        self._row_count = 0
 
         # Entry field at bottom
         self._entry = ctk.CTkEntry(
@@ -111,9 +115,18 @@ class TagChipWidget(ctk.CTkFrame):
         value : str
             The chip value to add
         """
+        # Create a new row for every 5 chips (horizontal wrapping)
+        if self._current_row is None or len(self._current_row.winfo_children()) >= 5:
+            self._current_row = ctk.CTkFrame(
+                self._chips_container,
+                fg_color="transparent"
+            )
+            self._current_row.grid(row=self._row_count, column=0, sticky="w", pady=2)
+            self._row_count += 1
+
         # Create chip frame
         chip_frame = ctk.CTkFrame(
-            self._chips_container,
+            self._current_row,
             fg_color=("gray80", "gray30"),
             corner_radius=15,
             height=30
@@ -192,5 +205,11 @@ class TagChipWidget(ctk.CTkFrame):
         for chip in self._chips[:]:  # Use slice to avoid modification during iteration
             chip["frame"].destroy()
 
-        # Clear internal list
+        # Destroy all row containers
+        for widget in self._chips_container.winfo_children():
+            widget.destroy()
+
+        # Clear internal list and reset row tracking
         self._chips.clear()
+        self._current_row = None
+        self._row_count = 0
