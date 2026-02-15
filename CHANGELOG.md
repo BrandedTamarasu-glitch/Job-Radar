@@ -1,5 +1,20 @@
 # Changelog
 
+## v2.1.2 — 2026-02-14
+
+### Bug Fixes
+- **Tag chip wrapping** — Skills/titles in Profile tab now wrap to multiple rows (max 5 per row) instead of overflowing horizontally
+- **Results directory fix** — Fixed "Errno 30 Read-only file system /results" error by using platform-specific user data directories instead of hardcoded relative paths:
+  - Windows: `%APPDATA%\JobRadar\results`
+  - macOS: `~/Library/Application Support/JobRadar/results`
+  - Linux: `~/.local/share/JobRadar/results`
+- **Cross-platform compatibility** — Reports now write to user-writable locations regardless of how the app is launched (Finder, terminal, etc.)
+
+## v2.1.1 — 2026-02-14
+
+### Bug Fixes
+- **macOS launcher** — Fixed .app bundle launching CLI instead of GUI by setting `CFBundleExecutable` to `job-radar-gui`
+
 ## v2.1.0 — 2026-02-14
 
 ### Source Expansion
