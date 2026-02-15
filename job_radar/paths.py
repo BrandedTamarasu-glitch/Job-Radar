@@ -46,6 +46,20 @@ def get_backup_dir() -> Path:
     return backup_dir
 
 
+def get_results_dir() -> Path:
+    """Get results directory for generated reports. Creates it if missing.
+
+    Returns:
+        Path to results directory in user data dir:
+        - Windows: %APPDATA%\\JobRadar\\results
+        - macOS:   ~/Library/Application Support/JobRadar/results
+        - Linux:   ~/.local/share/JobRadar/results
+    """
+    results_dir = get_data_dir() / "results"
+    results_dir.mkdir(parents=True, exist_ok=True)
+    return results_dir
+
+
 def get_log_file() -> Path:
     """Get error log path: ~/job-radar-error.log."""
     return Path.home() / 'job-radar-error.log'

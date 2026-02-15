@@ -204,6 +204,7 @@ class SearchWorker:
             from job_radar.report import generate_report
             from job_radar.tracker import mark_seen, get_stats
             from job_radar.search import filter_by_date
+            from job_radar.paths import get_results_dir
 
             # Step 1: Load API credentials
             load_api_credentials()
@@ -290,7 +291,7 @@ class SearchWorker:
                 sources_searched=sources_searched,
                 from_date=from_date or "",
                 to_date=to_date or "",
-                output_dir="results",
+                output_dir=str(get_results_dir()),
                 tracker_stats=tracker_stats,
                 min_score=min_score
             )

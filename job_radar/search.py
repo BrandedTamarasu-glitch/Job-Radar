@@ -34,6 +34,7 @@ from .scoring import score_job
 from .report import generate_report
 from .tracker import mark_seen, get_stats
 from .browser import open_report_in_browser
+from .paths import get_results_dir
 
 log = logging.getLogger("search")
 
@@ -245,8 +246,8 @@ def parse_args(config: dict | None = None):
     output_group = parser.add_argument_group('Output Options')
     output_group.add_argument(
         "--output",
-        default="results",
-        help="Output directory for reports (default: results/)",
+        default=str(get_results_dir()),
+        help="Output directory for reports (default: platform-specific user data dir)",
     )
     output_group.add_argument(
         "--no-open",
