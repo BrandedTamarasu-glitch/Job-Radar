@@ -164,7 +164,8 @@ class ProfileForm(ctk.CTkFrame):
         # Container for current view (upload choice or form)
         self._content_container = ctk.CTkFrame(self, fg_color="transparent")
         self._content_container.grid(row=0, column=0, sticky="nsew")
-        # Allow horizontal expansion only (no row weight - prevents click blocking)
+        # Allow full expansion for content (fix applied: content uses place/pack, not grid)
+        self._content_container.grid_rowconfigure(0, weight=1)
         self._content_container.grid_columnconfigure(0, weight=1)
 
         # Determine initial view

@@ -121,15 +121,9 @@ class MainWindow(ctk.CTk):
         for widget in self.grid_slaves(row=1):
             widget.destroy()
 
-        # Container frame for centered content
-        container = ctk.CTkFrame(self, fg_color="transparent")
-        container.grid(row=1, column=0, sticky="nsew", padx=20, pady=(0, 20))
-        # Center content without expanding (no weight - prevents click blocking)
-        container.grid_columnconfigure(0, weight=1)
-
-        # Content frame (centered)
-        content_frame = ctk.CTkFrame(container, fg_color="transparent")
-        content_frame.grid(row=0, column=0)
+        # Content frame (centered using place - avoids grid overlay issues)
+        content_frame = ctk.CTkFrame(self, fg_color="transparent")
+        content_frame.place(in_=self, relx=0.5, rely=0.5, anchor="center")
 
         # Title
         title = ctk.CTkLabel(
@@ -173,20 +167,14 @@ class MainWindow(ctk.CTk):
         for widget in self.grid_slaves(row=1):
             widget.destroy()
 
-        # Create container frame
-        container = ctk.CTkFrame(self, fg_color="transparent")
-        container.grid(row=1, column=0, sticky="nsew", padx=20, pady=(0, 20))
-        # Allow horizontal expansion only (no row weight - prevents click blocking)
-        container.grid_columnconfigure(0, weight=1)
-
-        # Create ProfileForm in create mode
+        # Create ProfileForm in create mode (directly in row 1, no container)
         form = ProfileForm(
-            parent=container,
+            parent=self,
             on_save_callback=self._on_profile_created,
             on_cancel_callback=self._show_welcome_screen,
             existing_profile=None
         )
-        form.grid(row=0, column=0, sticky="nsew")
+        form.grid(row=1, column=0, sticky="nsew", padx=20, pady=(0, 20))
 
     def _on_profile_created(self, profile_data: dict):
         """Handle successful profile creation.
