@@ -124,7 +124,7 @@ class MainWindow(ctk.CTk):
         # Container frame for centered content
         container = ctk.CTkFrame(self, fg_color="transparent")
         container.grid(row=1, column=0, sticky="nsew", padx=20, pady=(0, 20))
-        container.grid_rowconfigure(0, weight=1)
+        # Center content without expanding (no weight - prevents click blocking)
         container.grid_columnconfigure(0, weight=1)
 
         # Content frame (centered)
@@ -176,7 +176,7 @@ class MainWindow(ctk.CTk):
         # Create container frame
         container = ctk.CTkFrame(self, fg_color="transparent")
         container.grid(row=1, column=0, sticky="nsew", padx=20, pady=(0, 20))
-        container.grid_rowconfigure(0, weight=1)
+        # Allow horizontal expansion only (no row weight - prevents click blocking)
         container.grid_columnconfigure(0, weight=1)
 
         # Create ProfileForm in create mode
