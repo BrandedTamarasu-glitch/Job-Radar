@@ -257,7 +257,7 @@ class MainWindow(ctk.CTk):
             widget.destroy()
 
         # Create tabview
-        self._tabview = ctk.CTkTabview(self)
+        self._tabview = ctk.CTkTabview(self, command=self._on_tab_change)
         self._tabview.grid(row=1, column=0, sticky="nsew", padx=20, pady=(0, 20))
 
         # Add tabs
@@ -265,13 +265,27 @@ class MainWindow(ctk.CTk):
         self._tabview.add("Search")
         self._tabview.add("Settings")
 
+        # Track which tabs have been built (lazy loading)
+        self._tabs_built = set()
+
         # Set default to Profile tab
         self._tabview.set("Profile")
 
-        # Build tab contents
+        # Build only the Profile tab initially (lazy-load others on first access)
         self._build_profile_tab(self._tabview.tab("Profile"))
-        self._build_search_tab(self._tabview.tab("Search"))
-        self._build_settings_tab(self._tabview.tab("Settings"))
+        self._tabs_built.add("Profile")
+
+    def _on_tab_change(self):
+        """Handle tab change - lazy-build tabs on first access."""
+        current_tab = self._tabview.get()
+
+        # Build tab if not already built
+        if current_tab not in self._tabs_built:
+            if current_tab == "Search":
+                self._build_search_tab(self._tabview.tab("Search"))
+            elif current_tab == "Settings":
+                self._build_settings_tab(self._tabview.tab("Settings"))
+            self._tabs_built.add(current_tab)
 
     def _build_profile_tab(self, parent):
         """Build Profile tab with profile summary display and Edit button.
@@ -814,10 +828,10 @@ class MainWindow(ctk.CTk):
         )
         desc_label.pack(pady=(0, 20))
 
-        # Load current env values
-        dotenv_path = find_dotenv(usecwd=True)
-        if dotenv_path:
-            load_dotenv(dotenv_path, override=False)
+        # Load current env values from CWD .env (don't search filesystem)
+        env_path = Path.cwd() / ".env"
+        if env_path.exists():
+            load_dotenv(env_path, override=False)
 
         # Store API field references for saving
         self._api_fields = {}
