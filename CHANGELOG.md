@@ -1,5 +1,11 @@
 # Changelog
 
+## v2.1.6 — 2026-02-14
+
+### Bug Fixes
+- **Search tab loading** - Fixed blank Search tab after saving profile. Tab now builds properly before programmatic switch.
+- **Root cause** - Lazy loading only triggered on user clicks, not when code called `_tabview.set("Search")`
+
 ## v2.1.5 — 2026-02-14
 
 ### Bug Fixes
