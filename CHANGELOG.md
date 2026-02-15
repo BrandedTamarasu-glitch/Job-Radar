@@ -1,5 +1,13 @@
 # Changelog
 
+## v2.1.4 — 2026-02-14
+
+### Critical Bug Fix
+- **Mouse clicks now work instantly** - Fixed transparent containers with `grid_rowconfigure(0, weight=1)` blocking mouse events
+- **Root cause:** Expanded transparent frames were capturing all mouse clicks before they reached buttons/widgets
+- **Impact:** Eliminated 20+ second delays when clicking buttons throughout the app (Get Started, Fill Manually, form fields, etc.)
+- **Note:** Keyboard navigation (Tab) was unaffected and continued working - this was purely a mouse event handling issue
+
 ## v2.1.3 — 2026-02-14
 
 ### Performance Fixes
