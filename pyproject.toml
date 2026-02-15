@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "job-radar"
-version = "1.1.4"
+version = "2.1.1"
 description = "CLI job search tool that scores listings against your profile"
 requires-python = ">=3.10"
 license = "MIT"

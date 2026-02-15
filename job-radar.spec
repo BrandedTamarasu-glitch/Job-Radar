@@ -161,7 +161,7 @@ if sys.platform == 'darwin':
                     'LSHandlerRank': 'Owner',
                 },
             ],
-            'CFBundleShortVersionString': '2.1.0',
-            'CFBundleVersion': '2.1.0',
+            'CFBundleShortVersionString': '2.1.1',
+            'CFBundleVersion': '2.1.1',
         },
     )
