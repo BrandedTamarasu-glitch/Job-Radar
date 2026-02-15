@@ -117,8 +117,11 @@ class MainWindow(ctk.CTk):
 
     def _show_welcome_screen(self):
         """Display welcome screen for first-time users."""
-        # Clear row 1 content
-        for widget in self.grid_slaves(row=1):
+        # Clear ALL content (grid, place, pack) except header
+        for widget in list(self.winfo_children()):
+            # Keep only header (row 0 grid widget)
+            if widget.winfo_manager() == 'grid' and widget.grid_info().get('row') == 0:
+                continue
             widget.destroy()
 
         # Content frame (centered using place - avoids grid overlay issues)
@@ -163,8 +166,11 @@ class MainWindow(ctk.CTk):
 
     def _on_get_started(self):
         """Handle Get Started button click - show profile form in create mode."""
-        # Clear row 1 content
-        for widget in self.grid_slaves(row=1):
+        # Clear ALL content (grid, place, pack) except header
+        for widget in list(self.winfo_children()):
+            # Keep only header (row 0 grid widget)
+            if widget.winfo_manager() == 'grid' and widget.grid_info().get('row') == 0:
+                continue
             widget.destroy()
 
         # Create ProfileForm in create mode (directly in row 1, no container)
@@ -248,8 +254,11 @@ class MainWindow(ctk.CTk):
 
     def _show_main_tabs(self):
         """Display tabbed interface for users with existing profiles."""
-        # Clear row 1 content
-        for widget in self.grid_slaves(row=1):
+        # Clear ALL content (grid, place, pack) except header
+        for widget in list(self.winfo_children()):
+            # Keep only header (row 0 grid widget)
+            if widget.winfo_manager() == 'grid' and widget.grid_info().get('row') == 0:
+                continue
             widget.destroy()
 
         # Create tabview
