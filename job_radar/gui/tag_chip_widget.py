@@ -50,7 +50,8 @@ class TagChipWidget(ctk.CTkFrame):
         self._chips: list[dict] = []
 
         # Layout: chips container at top, entry at bottom
-        self.grid_rowconfigure(0, weight=1)
+        # Row 0 (chips) has no weight - only takes space it needs
+        # Row 1 (entry) is fixed height
         self.grid_columnconfigure(0, weight=1)
 
         # Chips container - regular frame with wrapping support
