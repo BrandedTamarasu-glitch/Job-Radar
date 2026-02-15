@@ -189,6 +189,10 @@ class MainWindow(ctk.CTk):
 
         # Show main tabs and navigate to Search tab with success message
         self._show_main_tabs()
+        # Manually trigger tab build before programmatic switch (lazy loading workaround)
+        if "Search" not in self._tabs_built:
+            self._build_search_tab(self._tabview.tab("Search"))
+            self._tabs_built.add("Search")
         self._tabview.set("Search")
         self._show_success_message("Profile created successfully!")
 
@@ -204,6 +208,10 @@ class MainWindow(ctk.CTk):
         self._build_profile_tab(self._tabview.tab("Profile"))
 
         # Navigate to Search tab with success message
+        # Manually trigger tab build before programmatic switch (lazy loading workaround)
+        if "Search" not in self._tabs_built:
+            self._build_search_tab(self._tabview.tab("Search"))
+            self._tabs_built.add("Search")
         self._tabview.set("Search")
         self._show_success_message("Profile updated successfully!")
 
