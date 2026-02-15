@@ -1,5 +1,12 @@
 # Changelog
 
+## v2.1.5 — 2026-02-14
+
+### Bug Fixes
+- **Full button clickability** - Fixed grid container overlay that made only the left edge of buttons clickable
+- **Proper form sizing** - ProfileForm now fills window correctly (was shrunk to 40%)
+- **Centered content** - Welcome screen uses `place()` positioning to avoid transparent frame overlays
+
 ## v2.1.4 — 2026-02-14
 
 ### Critical Bug Fix
