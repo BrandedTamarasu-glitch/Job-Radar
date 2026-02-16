@@ -21,7 +21,7 @@ from job_radar.paths import get_data_dir
 log = logging.getLogger(__name__)
 
 # GitHub API constants
-GITHUB_API_URL = "https://api.github.com/repos/coryebert/Job-Radar/releases/latest"
+GITHUB_API_URL = "https://api.github.com/repos/BrandedTamarasu-glitch/Job-Radar/releases/latest"
 CHECK_INTERVAL_HOURS = 24
 REQUEST_TIMEOUT = 10
 
