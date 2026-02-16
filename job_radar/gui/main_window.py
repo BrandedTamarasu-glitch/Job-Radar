@@ -795,6 +795,84 @@ class MainWindow(ctk.CTk):
         status_text = f"v{__version__} -- Last checked: {relative_time} -- {status}"
         self._update_status_label.configure(text=status_text, text_color=status_color)
 
+    def _refresh_update_status_initial(self, parent):
+        """Create and populate the initial update status label in Settings tab.
+
+        Parameters
+        ----------
+        parent
+            Parent widget (scroll_frame)
+        """
+        status_info = self._update_checker.get_update_status()
+        last_check = status_info.get("last_check")
+        check_success = status_info.get("check_success")
+
+        # Format relative time
+        if last_check:
+            try:
+                from datetime import datetime, timezone
+                last_check_dt = datetime.fromisoformat(last_check)
+                now = datetime.now(timezone.utc)
+                elapsed = now - last_check_dt
+
+                if elapsed.total_seconds() < 300:  # < 5 minutes
+                    relative_time = "Just now"
+                elif elapsed.total_seconds() < 3600:  # < 1 hour
+                    minutes = int(elapsed.total_seconds() / 60)
+                    relative_time = f"{minutes}m ago"
+                elif elapsed.total_seconds() < 86400:  # < 1 day
+                    hours = int(elapsed.total_seconds() / 3600)
+                    relative_time = f"{hours}h ago"
+                else:
+                    days = int(elapsed.total_seconds() / 86400)
+                    relative_time = f"{days}d ago"
+            except Exception:
+                relative_time = "Unknown"
+        else:
+            relative_time = "Never"
+
+        # Determine status
+        if relative_time == "Never":
+            status = "Never checked"
+            status_color = "gray"
+        elif check_success:
+            status = "Up to date"
+            status_color = "green"
+        elif check_success is False:
+            status = "Check failed"
+            status_color = "orange"
+        else:
+            status = "Unknown"
+            status_color = "gray"
+
+        # Create status label
+        status_text = f"v{__version__} -- Last checked: {relative_time} -- {status}"
+        self._update_status_label = ctk.CTkLabel(
+            parent,
+            text=status_text,
+            text_color=status_color,
+            font=ctk.CTkFont(size=12)
+        )
+        self._update_status_label.pack(pady=(0, 5), anchor="w", padx=10)
+
+    def _on_manual_check_click(self):
+        """Handle manual Check for Updates button click in Settings tab."""
+        # Disable button and show "Checking..." state
+        self._manual_check_button.configure(text="Checking...", state="disabled")
+        self._manual_check_pending = True
+
+        # Start background check
+        def check_thread():
+            self._update_checker.check_for_updates()
+
+        thread = threading.Thread(target=check_thread, daemon=True)
+        thread.start()
+
+    def _on_auto_check_toggle(self):
+        """Handle auto-check toggle switch change in Settings tab."""
+        enabled = self._auto_check_var.get()
+        self._update_checker.set_auto_check(enabled)
+
     def _start_real_search(self):
         """Start real search operation with full pipeline execution."""
         # Validate search controls
@@ -967,7 +1045,7 @@ class MainWindow(ctk.CTk):
         ok_btn.pack(pady=(0, 20))
 
     def _build_settings_tab(self, parent):
-        """Build Settings tab with API key configuration.
+        """Build Settings tab with Updates section and API key configuration.
 
         Parameters
         ----------
@@ -978,6 +1056,45 @@ class MainWindow(ctk.CTk):
         scroll_frame = ctk.CTkScrollableFrame(parent)
         scroll_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
+        # === Updates Section ===
+        updates_title = ctk.CTkLabel(
+            scroll_frame,
+            text="Updates",
+            font=ctk.CTkFont(size=18, weight="bold")
+        )
+        updates_title.pack(pady=(0, 10), anchor="w", padx=10)
+
+        # Status info line
+        self._refresh_update_status_initial(scroll_frame)
+
+        # Check for Updates button
+        self._manual_check_button = ctk.CTkButton(
+            scroll_frame,
+            text="Check for Updates",
+            width=150,
+            command=self._on_manual_check_click
+        )
+        self._manual_check_button.pack(pady=(10, 10), anchor="w", padx=10)
+
+        # Auto-check toggle
+        status_info = self._update_checker.get_update_status()
+        auto_check_enabled = status_info.get("auto_check_enabled", True)
+
+        self._auto_check_var = ctk.BooleanVar(value=auto_check_enabled)
+
+        auto_check_switch = ctk.CTkSwitch(
+            scroll_frame,
+            text="Check for updates automatically on launch",
+            variable=self._auto_check_var,
+            command=self._on_auto_check_toggle
+        )
+        auto_check_switch.pack(pady=(0, 20), anchor="w", padx=10)
+
+        # Separator between Updates and API Key Settings
+        separator = ctk.CTkFrame(scroll_frame, height=1, fg_color="gray")
+        separator.pack(fill="x", pady=(10, 20), padx=10)
+
+        # === API Key Settings Section ===
         # Title
         title_label = ctk.CTkLabel(
             scroll_frame,
