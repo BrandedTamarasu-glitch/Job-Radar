@@ -22,9 +22,9 @@ from job_radar.config import load_config
 from job_radar.update_checker import UpdateChecker
 from job_radar.gui.profile_form import ProfileForm
 from job_radar.gui.search_controls import SearchControls
-from job_radar.gui.worker_thread import create_search_worker
+from job_radar.gui.worker_thread import create_search_worker, create_download_worker
 from job_radar.gui.scoring_config import ScoringConfigWidget
-from job_radar.gui.update_banner import UpdateBanner
+from job_radar.gui.update_banner import UpdateBanner, DownloadConfirmDialog
 from job_radar.gui.uninstall_dialog import (
     BackupOfferDialog,
     PathPreviewDialog,
@@ -85,6 +85,12 @@ class MainWindow(ctk.CTk):
         self._manual_check_button = None
         self._update_status_label = None
         self._manual_check_pending = False
+        self._update_tag = None  # GitHub tag for fetching assets
+
+        # Download worker state
+        self._download_worker = None
+        self._download_thread = None
+        self._download_cancelled_this_session = False  # Session-only suppress flag
 
         # Create header
         self._create_header()
@@ -99,6 +105,15 @@ class MainWindow(ctk.CTk):
 
         # Start queue polling loop
         self._check_queue()
+
+        # Register cleanup handler for app exit
+        self.protocol("WM_DELETE_WINDOW", self._on_closing)
+
+    def _on_closing(self):
+        """Handle app closing - cancel download worker if active."""
+        if self._download_worker:
+            self._download_worker.cancel()
+        self.destroy()
 
     def _create_header(self):
         """Create header frame with app name and version."""
@@ -649,6 +664,42 @@ class MainWindow(ctk.CTk):
                         # If manual check pending, update Settings UI
                         if self._manual_check_pending:
                             self._on_manual_check_result("Check failed")
+                    # Download worker messages
+                    elif msg_type == "download_progress":
+                        _, downloaded, total = msg
+                        if self._update_banner:
+                            self._update_banner.update_progress(downloaded, total)
+                    elif msg_type == "download_complete":
+                        _, dest_path = msg
+                        if self._update_banner:
+                            self._update_banner.show_complete(dest_path)
+                        self._download_worker = None
+                        self._download_thread = None
+                    elif msg_type == "download_failed":
+                        _, error = msg
+                        if self._update_banner:
+                            self._update_banner.show_failure(error)
+                        self._download_worker = None
+                        self._download_thread = None
+                    elif msg_type == "download_cancelled":
+                        if self._update_banner:
+                            self._update_banner.destroy()
+                            self._update_banner = None
+                        self._download_worker = None
+                        self._download_thread = None
+                    elif msg_type == "asset_ready":
+                        _, asset, version = msg
+                        # Show confirmation dialog
+                        DownloadConfirmDialog(
+                            self,
+                            version,
+                            asset['size'],
+                            on_confirm=lambda: self._start_download(asset, version)
+                        )
+                    elif msg_type == "asset_failed":
+                        _, error = msg
+                        if self._update_banner:
+                            self._update_banner.show_failure(error)
                     # Backward compatibility with mock worker messages
                     elif msg_type == "progress":
                         _, source, current, total = msg
@@ -688,6 +739,10 @@ class MainWindow(ctk.CTk):
         release_url : str
             GitHub Releases URL
         """
+        # Check session suppress flag
+        if self._download_cancelled_this_session:
+            return
+
         # Destroy existing banner if any
         if self._update_banner:
             self._update_banner.destroy()
@@ -699,9 +754,13 @@ class MainWindow(ctk.CTk):
             version=version,
             release_url=release_url,
             on_dismiss=lambda v: self._dismiss_update(v, 24),
-            on_remind=lambda v: self._dismiss_update(v, 168)
+            on_remind=lambda v: self._dismiss_update(v, 168),
+            on_download=self._on_download_requested
         )
         self._update_banner.grid(row=1, column=0, sticky="ew")
+
+        # Set cancel callback
+        self._update_banner.set_cancel_callback(self._on_download_cancel)
 
     def _dismiss_update(self, version: str, hours: int):
         """Dismiss update banner for specified duration.
@@ -714,6 +773,79 @@ class MainWindow(ctk.CTk):
             Duration in hours (24 for X, 168 for Remind Later)
         """
         self._update_checker.dismiss_version(version, hours)
+
+        # Destroy banner
+        if self._update_banner:
+            self._update_banner.destroy()
+            self._update_banner = None
+
+    def _on_download_requested(self, version: str):
+        """Handle download request from banner.
+
+        Fetches release assets in background thread, then shows confirmation dialog.
+
+        Parameters
+        ----------
+        version : str
+            Version string to download
+        """
+        def fetch_asset_thread():
+            try:
+                # Use stored tag or construct from version
+                tag = self._update_tag if self._update_tag else f"v{version}"
+                assets = self._update_checker.fetch_release_assets(tag)
+                asset = self._update_checker.select_platform_asset(assets)
+
+                if asset is None:
+                    self._queue.put(("asset_failed", "No installer found for your platform"))
+                else:
+                    self._queue.put(("asset_ready", asset, version))
+            except Exception as e:
+                self._queue.put(("asset_failed", str(e)))
+
+        thread = threading.Thread(target=fetch_asset_thread, daemon=True)
+        thread.start()
+
+    def _start_download(self, asset: dict, version: str):
+        """Start download worker with asset URL and destination path.
+
+        Parameters
+        ----------
+        asset : dict
+            GitHub asset dictionary with 'browser_download_url', 'size', 'digest'
+        version : str
+            Version string
+        """
+        # Get destination path
+        dest_path = self._update_checker.get_installer_download_path(version)
+
+        # Transform banner to progress state
+        if self._update_banner:
+            self._update_banner.show_progress()
+
+        # Create download worker
+        worker, thread = create_download_worker(
+            self._queue,
+            asset['browser_download_url'],
+            asset.get('digest'),
+            str(dest_path)
+        )
+
+        # Store worker and thread
+        self._download_worker = worker
+        self._download_thread = thread
+
+        # Start download
+        thread.start()
+
+    def _on_download_cancel(self):
+        """Handle download cancellation from banner."""
+        # Cancel worker
+        if self._download_worker:
+            self._download_worker.cancel()
+
+        # Set session suppress flag
+        self._download_cancelled_this_session = True
 
         # Destroy banner
         if self._update_banner:
