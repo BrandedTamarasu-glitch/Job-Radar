@@ -1,6 +1,6 @@
 # Project State: Job Radar
 
-**Last Updated:** 2026-02-16T15:22:18Z
+**Last Updated:** 2026-02-16T18:16:49Z
 
 ## Project Reference
 
@@ -13,11 +13,11 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 
 **Milestone:** v2.2.0 Auto-Update & Source Expansion
 **Phase:** 40 of 42 (Auto-Update Installation)
-**Plan:** 1 of 2
+**Plan:** 2 of 2
 **Status:** Completed
-**Last activity:** 2026-02-16 — Completed 40-01 Installer Launch Backend & Dialogs
+**Last activity:** 2026-02-16 — Completed 40-02 Installer Launch UI Integration
 
-**Progress:** [██████████] 99%
+**Progress:** [██████████] 100%
 
 ## Performance Metrics
 
@@ -36,6 +36,7 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 
 | Plan | Duration (sec) | Tasks | Files | Date |
 |------|---------------|-------|-------|------|
+| 40-02 | 222 | 2 | 2 | 2026-02-16 |
 | 40-01 | 221 | 2 | 3 | 2026-02-16 |
 | 39-02 | ~600 | 3 | 3 | 2026-02-16 |
 | 39-01 | 356 | 2 | 5 | 2026-02-16 |
@@ -43,7 +44,6 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 | 38-01 | 187 | 1 | 2 | 2026-02-16 |
 | 37-03 | 121 | 2 | 3 | 2026-02-14 |
 | 37-02 | 176 | 2 | 7 | 2026-02-14 |
-| 37-01 | 116 | 2 | 4 | 2026-02-14 |
 
 ### Quality Indicators
 
@@ -63,6 +63,10 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 
 Recent decisions affecting v2.2.0 work:
 
+- v2.2.0 (40-02): Install callback passes dest_path to MainWindow instead of storing it internally
+- v2.2.0 (40-02): Linux uses LinuxInstallInstructionsDialog directly, no confirmation dialog
+- v2.2.0 (40-02): 1.5 second delay before app exit (allows user to see status message)
+- v2.2.0 (40-02): Download Manually button opens release_url in browser (SHA256 mismatch alternative)
 - v2.2.0 (40-01): Cleanup old installers on startup, not immediately after launch (avoid race condition)
 - v2.2.0 (40-01): Use tkinter clipboard instead of pyperclip (no external dependency)
 - v2.2.0 (40-01): macOS quarantine attribute left intact, trust notarization (per research)
@@ -109,11 +113,11 @@ None yet for v2.2.0.
 ## Session Continuity
 
 Last session: 2026-02-16
-Stopped at: Completed 40-01-PLAN.md execution (Installer Launch Backend & Dialogs)
+Stopped at: Completed 40-02-PLAN.md execution (Installer Launch UI Integration)
 Resume file: None
 
-**Next step:** Continue to Phase 40 Plan 02 (MainWindow integration).
+**Next step:** Phase 40 complete. Continue to Phase 41 or Phase 42 as needed.
 
 ---
 *State initialized: 2026-02-13*
-*Last activity: 2026-02-16 - Completed 40-01 Installer Launch Backend & Dialogs (Phase 40: 1 of 2 plans)*
+*Last activity: 2026-02-16 - Completed 40-02 Installer Launch UI Integration (Phase 40: 2 of 2 plans - PHASE COMPLETE)*
