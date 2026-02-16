@@ -37,10 +37,11 @@ Phase details available in git history.
   3. User can manually check for updates via Settings tab button
   4. User sees correct version comparison (1.10 > 1.9, not string sorting)
   5. User sees graceful error message when update check fails due to network issues
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 38-01-PLAN.md: TBD
+- [ ] 38-01-PLAN.md — TDD: UpdateChecker backend (version comparison, throttling, suppress tracking, GitHub API)
+- [ ] 38-02-PLAN.md — UpdateBanner widget, main_window integration, Settings Updates section
 
 #### Phase 39: Auto-Update Download
 **Goal**: Users can download installers automatically with visual progress feedback
@@ -109,11 +110,11 @@ Phases execute in numeric order: 38 → 39 → 40 → 41 → 42
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 38. Auto-Update Foundation | v2.2.0 | 0/TBD | Not started | - |
+| 38. Auto-Update Foundation | v2.2.0 | 0/2 | Planned | - |
 | 39. Auto-Update Download | v2.2.0 | 0/TBD | Not started | - |
 | 40. Auto-Update Installation | v2.2.0 | 0/TBD | Not started | - |
 | 41. Auto-Update Polish | v2.2.0 | 0/TBD | Not started | - |
 | 42. hiring.cafe Integration | v2.2.0 | 0/TBD | Not started | - |
 
 ---
-*Last updated: 2026-02-15*
+*Last updated: 2026-02-16*
