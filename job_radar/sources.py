@@ -1421,6 +1421,111 @@ def map_jobicy_to_job_result(item: dict) -> JobResult | None:
     )
 
 
+# ---------------------------------------------------------------------------
+# hiring.cafe helpers and mapper
+# ---------------------------------------------------------------------------
+
+def _normalize_salary_to_annual(value: float, period: str) -> float:
+    """Convert salary to annual equivalent."""
+    period_lower = period.lower()
+    if period_lower in ("hour", "hourly"):
+        return value * 2080  # 40 hrs/week x 52 weeks
+    elif period_lower in ("month", "monthly"):
+        return value * 12
+    elif period_lower in ("year", "yearly", "annual", "annually"):
+        return value
+    else:
+        # Heuristic: if < 500, likely hourly; if < 20000, likely monthly
+        if value < 500:
+            return value * 2080
+        elif value < 20000:
+            return value * 12
+        return value
+
+
+def _format_hiringcafe_salary(salary_min: float | None, salary_max: float | None) -> str:
+    """Format salary to standardized $XXXK range per user decision."""
+    if salary_min and salary_max:
+        return f"${int(salary_min / 1000)}K - ${int(salary_max / 1000)}K"
+    elif salary_min:
+        return f"${int(salary_min / 1000)}K+"
+    return "Not listed"
+
+
+def map_hiringcafe_to_job_result(item: dict) -> JobResult | None:
+    """Map hiring.cafe response item to JobResult.
+
+    Validates required fields (title, company, url) and returns None if
+    any are missing. Normalizes salary to annual range format. Skips
+    malformed entries gracefully per user decision.
+    """
+    title = item.get("title", "").strip()
+    company = item.get("company", "").strip()
+    url = item.get("url", "").strip()
+
+    if not title or not company or not url:
+        log.debug("[hiring.cafe] Skipping job with missing required fields: "
+                  "title=%s, company=%s, url=%s",
+                  bool(title), bool(company), bool(url))
+        return None
+
+    # Salary normalization: convert to annual if period specified
+    salary_min_raw = item.get("salary_min")
+    salary_max_raw = item.get("salary_max")
+    salary_period = item.get("salary_period", "yearly")
+
+    salary_min = None
+    salary_max = None
+    if salary_min_raw is not None:
+        try:
+            salary_min = _normalize_salary_to_annual(float(salary_min_raw), salary_period)
+        except (ValueError, TypeError):
+            pass
+    if salary_max_raw is not None:
+        try:
+            salary_max = _normalize_salary_to_annual(float(salary_max_raw), salary_period)
+        except (ValueError, TypeError):
+            pass
+
+    salary = _format_hiringcafe_salary(salary_min, salary_max)
+
+    # Location normalization
+    location_raw = item.get("location", "")
+    location = parse_location_to_city_state(location_raw)
+
+    # Description cleaning
+    description_raw = item.get("description", "")
+    description = strip_html_and_normalize(description_raw)
+    if len(description) > 500:
+        description = description[:497] + "..."
+
+    # Arrangement detection
+    arrangement = _parse_arrangement(f"{title} {description} {location}")
+
+    # Employment type
+    emp_type = item.get("employment_type", "")
+
+    # Date posted
+    date_posted = item.get("date_posted", "")
+
+    return JobResult(
+        title=_clean_field(title, _MAX_TITLE),
+        company=_clean_field(company, _MAX_COMPANY),
+        location=_clean_field(location, _MAX_LOCATION),
+        arrangement=arrangement,
+        salary=salary,
+        date_posted=date_posted,
+        description=description,
+        url=url,
+        source="hiringcafe",
+        employment_type=emp_type,
+        parse_confidence="high",
+        salary_min=salary_min,
+        salary_max=salary_max,
+        salary_currency="USD" if salary_min or salary_max else None,
+    )
+
+
 def fetch_serpapi(query: str, location: str = "", verbose: bool = False) -> list[JobResult]:
     """Fetch job listings from SerpAPI Google Jobs API."""
     results = []
