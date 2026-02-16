@@ -9,6 +9,7 @@ import logging
 import os
 import queue
 import re
+import subprocess
 import sys
 import tempfile
 from datetime import datetime, timedelta, timezone
@@ -406,3 +407,110 @@ class UpdateChecker:
             filename = f"job-radar-v{version}-installer"
 
         return Path(temp_dir) / filename
+
+
+def launch_installer(installer_path: Path, platform: str | None = None) -> str:
+    """Launch platform-specific installer.
+
+    Args:
+        installer_path: Path to installer file
+        platform: Platform override (for testing). If None, detect from sys.platform.
+
+    Returns:
+        Mount point path for macOS (e.g., "/Volumes/Job-Radar"), empty string for other platforms
+
+    Raises:
+        RuntimeError: If installer launch fails or platform is unsupported
+    """
+    if platform is None:
+        platform = sys.platform
+
+    try:
+        if platform == "darwin":
+            # macOS: Mount DMG and open in Finder
+            result = subprocess.run(
+                ["hdiutil", "attach", str(installer_path)],
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+
+            if result.returncode != 0:
+                raise RuntimeError(f"DMG mount failed: {result.stderr}")
+
+            # Parse mount point from hdiutil output
+            # Output format: "/dev/diskX ... /Volumes/VolumeName"
+            lines = result.stdout.strip().split("\n")
+            mount_point = None
+            for line in lines:
+                if "/Volumes/" in line:
+                    parts = line.split("\t")
+                    mount_point = parts[-1].strip()
+                    break
+
+            # Fallback: try to construct expected volume name
+            if not mount_point:
+                volume_name = installer_path.stem
+                mount_point = f"/Volumes/{volume_name}"
+                if not Path(mount_point).exists():
+                    raise RuntimeError("Could not determine DMG mount point")
+
+            # Open mounted volume in Finder
+            subprocess.Popen(["open", mount_point])
+
+            return mount_point
+
+        elif platform == "win32":
+            # Windows: Launch exe with detached process
+            # Guard creationflags behind platform check to avoid referencing undefined constants
+            subprocess.Popen(
+                [str(installer_path)],
+                creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP,
+            )
+            return ""
+
+        elif platform.startswith("linux"):
+            # Linux: Show instructions dialog instead of direct launch
+            raise RuntimeError("Linux uses instructions dialog, not direct launch")
+
+        else:
+            raise RuntimeError(f"Unsupported platform: {platform}")
+
+    except subprocess.TimeoutExpired:
+        raise RuntimeError(f"Installer launch timed out after 30 seconds")
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"Installer launch failed: {e.stderr}")
+    except FileNotFoundError:
+        raise RuntimeError(f"Installer file not found: {installer_path}")
+    except OSError as e:
+        raise RuntimeError(f"Failed to launch installer at {installer_path}: {e}")
+
+
+def cleanup_old_installers() -> int:
+    """Delete installer files from previous sessions.
+
+    Should be called on app startup to clean up temp directory.
+
+    Returns:
+        Number of files successfully deleted
+    """
+    temp_dir = Path(tempfile.gettempdir())
+    patterns = [
+        "Job-Radar-v*-installer.dmg",
+        "Job-Radar-Setup-v*.exe",
+        "job-radar-v*-installer.tar.gz",
+    ]
+
+    deleted_count = 0
+
+    for pattern in patterns:
+        for installer_file in temp_dir.glob(pattern):
+            try:
+                installer_file.unlink()
+                deleted_count += 1
+                log.debug("Deleted old installer: %s", installer_file)
+            except OSError as e:
+                # File may be in use or inaccessible, ignore
+                log.debug("Could not delete old installer %s: %s", installer_file, e)
+
+    return deleted_count
