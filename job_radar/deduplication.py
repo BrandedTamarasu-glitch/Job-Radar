@@ -7,6 +7,42 @@ from rapidfuzz import fuzz
 log = logging.getLogger(__name__)
 
 
+def _job_data_richness(job) -> int:
+    """Score how much useful data a job listing has.
+
+    Higher score = more data. Used to pick the better listing when
+    duplicates are found across sources.
+
+    Scoring:
+        - Salary (not "Not listed"): +3 points (high value)
+        - Description > 50 chars: +2 points
+        - Structured salary_min: +1 point
+        - Employment type: +1 point
+        - Apply info: +1 point
+        - Date posted (not "Unknown"/"Recent"): +1 point
+
+    Args:
+        job: JobResult object
+
+    Returns:
+        Richness score (int)
+    """
+    score = 0
+    if job.salary and job.salary not in ("Not listed", "Not specified", ""):
+        score += 3  # Salary is high value
+    if job.description and len(job.description) > 50:
+        score += 2  # Meaningful description
+    if job.salary_min is not None:
+        score += 1  # Structured salary data
+    if job.employment_type:
+        score += 1
+    if job.apply_info:
+        score += 1
+    if job.date_posted and job.date_posted not in ("Unknown", "Recent", ""):
+        score += 1
+    return score
+
+
 def deduplicate_cross_source(results: list, threshold: int = 85) -> dict:
     """Remove duplicate jobs across sources using fuzzy matching.
 
@@ -78,7 +114,20 @@ def deduplicate_cross_source(results: list, threshold: int = 85) -> dict:
             # Fast path: exact duplicate check
             key = (job.title.lower(), job.company.lower(), job.location.lower())
             if key in seen_keys:
-                log.debug(f"Exact duplicate: {job.title} at {job.company} ({job.source})")
+                # Find the existing job and compare richness
+                for i, seen_job in enumerate(seen):
+                    existing_key = (seen_job.title.lower(), seen_job.company.lower(), seen_job.location.lower())
+                    if existing_key == key:
+                        if _job_data_richness(job) > _job_data_richness(seen_job):
+                            seen[i] = job  # Replace with richer listing
+                            log.debug(
+                                "Replaced %s (%s) with richer listing from %s",
+                                job.title, seen_job.source, job.source
+                            )
+                        else:
+                            log.debug(f"Exact duplicate: {job.title} at {job.company} ({job.source})")
+                        break
+
                 # Record multi-source for exact duplicate
                 seen_key = (job.title.lower(), job.company.lower())
                 if seen_key not in multi_source_map:
@@ -93,7 +142,7 @@ def deduplicate_cross_source(results: list, threshold: int = 85) -> dict:
 
             # Fuzzy duplicate check against seen jobs in same bucket
             is_duplicate = False
-            for seen_job in seen:
+            for i, seen_job in enumerate(seen):
                 # Only compare within same bucket (optimization)
                 seen_bucket_key = seen_job.company.split()[0].lower() if seen_job.company else "unknown"
                 job_bucket_key = job.company.split()[0].lower() if job.company else "unknown"
@@ -107,10 +156,19 @@ def deduplicate_cross_source(results: list, threshold: int = 85) -> dict:
 
                 # All three must match
                 if title_sim >= threshold and company_sim >= threshold and location_sim >= 80:
-                    log.debug(
-                        f"Fuzzy duplicate: {job.title} at {job.company} ({job.source}) "
-                        f"matches {seen_job.source} (title={title_sim}, company={company_sim}, location={location_sim})"
-                    )
+                    # Compare richness - replace if new job has more data
+                    if _job_data_richness(job) > _job_data_richness(seen_job):
+                        seen[i] = job  # Replace with richer listing
+                        log.debug(
+                            f"Fuzzy duplicate: Replaced {seen_job.title} ({seen_job.source}) "
+                            f"with richer listing from {job.source} "
+                            f"(title={title_sim}, company={company_sim}, location={location_sim})"
+                        )
+                    else:
+                        log.debug(
+                            f"Fuzzy duplicate: {job.title} at {job.company} ({job.source}) "
+                            f"matches {seen_job.source} (title={title_sim}, company={company_sim}, location={location_sim})"
+                        )
                     is_duplicate = True
                     # Record multi-source for fuzzy duplicate
                     seen_key = (seen_job.title.lower(), seen_job.company.lower())

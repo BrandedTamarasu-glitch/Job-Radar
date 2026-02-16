@@ -2,7 +2,7 @@
 
 import logging
 import pytest
-from job_radar.deduplication import deduplicate_cross_source
+from job_radar.deduplication import deduplicate_cross_source, _job_data_richness
 from job_radar.sources import JobResult
 
 
@@ -370,3 +370,137 @@ def test_dedup_empty_returns_stats():
     assert dedup["stats"]["deduped_count"] == 0
     assert dedup["stats"]["duplicates_removed"] == 0
     assert dedup["stats"]["sources_involved"] == 0
+
+
+# ==============================================================================
+# Data Richness Tests
+# ==============================================================================
+
+def test_job_data_richness_scoring():
+    """Direct test of _job_data_richness scoring function."""
+    # Empty job (no data) - use JobResult directly to control all fields
+    empty_job = JobResult(
+        title="Engineer", company="Acme", location="Remote",
+        arrangement="remote", salary="Not listed", date_posted="",
+        description="", url="http://test.com/job", source="test",
+        employment_type="", apply_info=""
+    )
+    assert _job_data_richness(empty_job) == 0
+
+    # Job with salary (3 points)
+    with_salary = JobResult(
+        title="Engineer", company="Acme", location="Remote",
+        arrangement="remote", salary="$120K - $160K", date_posted="",
+        description="", url="http://test.com/job", source="test",
+        employment_type="", apply_info=""
+    )
+    assert _job_data_richness(with_salary) == 3
+
+    # Job with salary and description (3 + 2 = 5 points)
+    with_salary_desc = JobResult(
+        title="Engineer", company="Acme", location="Remote",
+        arrangement="remote", salary="$120K - $160K",
+        description="This is a long description with more than 50 characters for testing purposes",
+        date_posted="", url="http://test.com/job", source="test",
+        employment_type="", apply_info=""
+    )
+    assert _job_data_richness(with_salary_desc) == 5
+
+    # Full rich job (3 + 2 + 1 + 1 + 1 + 1 = 9 points)
+    rich_job = JobResult(
+        title="Engineer", company="Acme", location="Remote",
+        arrangement="remote", salary="$120K - $160K",
+        description="This is a long description with more than 50 characters for testing purposes",
+        employment_type="Full-time", apply_info="Apply at example.com",
+        date_posted="2026-02-15", url="http://test.com/job", source="test",
+        salary_min=120000.0
+    )
+    assert _job_data_richness(rich_job) == 9
+
+
+def test_dedup_keeps_listing_with_salary_over_not_listed():
+    """Two jobs same title+company, one with salary one without. The one with salary is kept."""
+    # First job: no salary
+    job1 = JobResult(
+        title="Software Engineer", company="Google", location="Remote",
+        arrangement="remote", salary="Not listed", date_posted="today",
+        description="desc", url="http://dice.com/job", source="Dice"
+    )
+    # Second job: has salary
+    job2 = JobResult(
+        title="Software Engineer", company="Google", location="Remote",
+        arrangement="remote", salary="$120K - $160K", date_posted="today",
+        description="desc", url="http://hiringcafe.com/job", source="hiringcafe"
+    )
+
+    # Test both orders - salary should win regardless
+    result1 = deduplicate_cross_source([job1, job2])
+    assert len(result1["results"]) == 1
+    assert result1["results"][0].salary == "$120K - $160K"
+    assert result1["results"][0].source == "hiringcafe"
+
+    result2 = deduplicate_cross_source([job2, job1])
+    assert len(result2["results"]) == 1
+    assert result2["results"][0].salary == "$120K - $160K"
+    assert result2["results"][0].source == "hiringcafe"
+
+
+def test_dedup_keeps_listing_with_longer_description():
+    """Two duplicates, one with 200-char description, one with 20-char. Longer description wins."""
+    short_desc = "Short description"
+    long_desc = "This is a much longer description that provides significantly more detail about the position, the requirements, and what the candidate will be doing. It has more than 200 characters of useful information."
+
+    job1 = JobResult(
+        title="Engineer", company="Apple", location="Cupertino, CA",
+        arrangement="onsite", salary="Not listed", date_posted="today",
+        description=short_desc, url="http://dice.com/job", source="Dice"
+    )
+    job2 = JobResult(
+        title="Engineer", company="Apple", location="Cupertino, CA",
+        arrangement="onsite", salary="Not listed", date_posted="today",
+        description=long_desc, url="http://hiringcafe.com/job", source="hiringcafe"
+    )
+
+    result = deduplicate_cross_source([job1, job2])
+    assert len(result["results"]) == 1
+    assert len(result["results"][0].description) > 200
+    assert result["results"][0].source == "hiringcafe"
+
+
+def test_dedup_keeps_richer_listing_when_duplicate_comes_second():
+    """First listing has no salary, second has salary. Second replaces first."""
+    job1 = JobResult(
+        title="Backend Developer", company="Microsoft", location="Seattle, WA",
+        arrangement="onsite", salary="Not listed", date_posted="today",
+        description="Short", url="http://remoteok.com/job", source="RemoteOK"
+    )
+    job2 = JobResult(
+        title="Backend Developer", company="Microsoft", location="Seattle, WA",
+        arrangement="onsite", salary="$140K - $180K", date_posted="today",
+        description="This is a much longer description with more than 50 characters",
+        url="http://hiringcafe.com/job", source="hiringcafe"
+    )
+
+    result = deduplicate_cross_source([job1, job2])
+    assert len(result["results"]) == 1
+    assert result["results"][0].salary == "$140K - $180K"
+    assert result["results"][0].source == "hiringcafe"
+
+
+def test_dedup_keeps_first_when_equal_richness():
+    """When richness is equal, first occurrence is kept (stability)."""
+    job1 = JobResult(
+        title="DevOps Engineer", company="Amazon", location="Remote",
+        arrangement="remote", salary="$130K - $170K", date_posted="today",
+        description="desc", url="http://dice.com/job", source="Dice"
+    )
+    job2 = JobResult(
+        title="DevOps Engineer", company="Amazon", location="Remote",
+        arrangement="remote", salary="$130K - $170K", date_posted="today",
+        description="desc", url="http://hiringcafe.com/job", source="hiringcafe"
+    )
+
+    result = deduplicate_cross_source([job1, job2])
+    assert len(result["results"]) == 1
+    # First job should be kept when richness is equal
+    assert result["results"][0].source == "Dice"
