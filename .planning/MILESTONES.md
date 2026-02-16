@@ -264,3 +264,41 @@
 
 ---
 
+
+## v2.2.0 Auto-Update & Source Expansion (Shipped: 2026-02-16)
+
+**Delivered:** Enable automatic in-app updates with download, install, and version management, plus expand job source coverage with hiring.cafe integration
+
+**Phases completed:** 38-42 (10 plans total)
+
+**Key accomplishments:**
+
+- Auto-update detection via GitHub Releases API with semantic version comparison, update notification banner, and per-version dismiss/suppress tracking
+- In-app installer download with background worker, progress bar, SHA256 verification, cancellation support, and multi-state banner UI
+- Platform-specific installer launch: macOS DMG mount+open, Windows NSIS with UAC elevation, Linux instructions dialog with copy-to-clipboard
+- Update UX polish: skip version permanently, changelog preview from GitHub release notes, dropdown menu, clickable version number, Settings management
+- hiring.cafe integration skeleton: source adapter with mapper, salary normalization (hourly/monthly/yearly), rate limiting (60/hr), and graceful failure handling
+- Cross-source dedup enhancement: richness scoring keeps listing with more data when duplicates found across all 11 sources
+
+**Stats:**
+
+- 52 commits (test/feat/docs) across 5 phases
+- ~4,669 lines of Python added (15 files modified)
+- 5 phases, 10 plans, ~15 tasks
+- 1 day (2026-02-16)
+
+**Git range:** `test(38-01)` → `docs(v2.2.0)`
+
+**Requirements:** 22/24 satisfied (14 UPDATE + 10 HIRE), 2 partial (macOS notarization needs Apple Developer account, hiring.cafe behind Vercel bot protection)
+
+**Quality metrics:**
+- Phase verification: 5/5 passed (48/48 must-haves verified)
+- Cross-phase integration: 8/8 connections verified
+- E2E flows: 4/4 complete (update, skip, changelog, hiring.cafe search)
+- Tech debt: 2 items (external dependencies, not code gaps)
+- Anti-patterns: 0
+
+**What's next:** New milestone planning
+
+---
+

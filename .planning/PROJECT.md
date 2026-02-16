@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A Python-based job search tool that searches multiple job boards (Dice, HN Hiring, RemoteOK, We Work Remotely, Adzuna, Authentic Jobs), scores listings against a candidate profile, tracks new vs. seen jobs across runs, and generates ranked HTML + Markdown reports. Available as both a desktop GUI application and a CLI for power users. Reports include one-click URL copying, application status tracking, and WCAG 2.1 Level AA accessibility compliance. Built for daily use during an active job search.
+A Python-based job search tool that searches multiple job boards (Dice, HN Hiring, RemoteOK, We Work Remotely, Adzuna, Authentic Jobs, hiring.cafe, and more), scores listings against a candidate profile, tracks new vs. seen jobs across runs, and generates ranked HTML + Markdown reports. Available as both a desktop GUI application and a CLI for power users. Features in-app auto-updates, one-click URL copying, application status tracking, and WCAG 2.1 Level AA accessibility compliance. Built for daily use during an active job search.
 
 ## Core Value
 
@@ -88,21 +88,24 @@ Accurate job-candidate scoring — if the scoring is wrong, nothing else matters
 - ✓ macOS DMG installer with custom background and .jobprofile association — v2.1.0
 - ✓ Windows NSIS installer with Modern UI and Add/Remove Programs — v2.1.0
 - ✓ CI/CD automated installer builds on tagged releases — v2.1.0
+- ✓ Auto-update detection via GitHub Releases API with semantic version comparison — v2.2.0
+- ✓ Update notification banner with Download Now, Remind Later, dismiss tracking — v2.2.0
+- ✓ Manual update check via Settings tab button — v2.2.0
+- ✓ Update state persistence (dismissed versions, last check, skipped versions) — v2.2.0
+- ✓ In-app installer download with progress bar, SHA256 verification, cancellation — v2.2.0
+- ✓ Platform-specific installer launch (macOS DMG, Windows NSIS, Linux tar.gz instructions) — v2.2.0
+- ✓ Skip version permanently with config persistence — v2.2.0
+- ✓ Changelog preview from GitHub release notes — v2.2.0
+- ✓ Download failure handling with retry option — v2.2.0
+- ✓ Network issue handling during version check (timeout, offline) — v2.2.0
+- ✓ hiring.cafe source adapter with mapper and salary normalization — v2.2.0
+- ✓ hiring.cafe rate limiting (60 req/hr) with SQLite persistence — v2.2.0
+- ✓ hiring.cafe location filtering with remote job inclusion — v2.2.0
+- ✓ Cross-source dedup enhancement: keep listing with more data (richness scoring) — v2.2.0
 
 ### Active
 
-## Current Milestone: v2.2.0 Auto-Update & Source Expansion
-
-**Goal:** Enable automatic updates and expand job source coverage with hiring.cafe
-
-**Target features:**
-- Auto-update infrastructure with launch-time version checking and update manifest
-- Cross-platform installer downloads (macOS DMG, Windows NSIS, Linux tar.gz)
-- User-initiated install workflow (download + open installer, user completes wizard)
-- GitHub releases integration for version detection and installer URLs
-- hiring.cafe job board integration with unofficial API
-- Salary extraction and location filtering for hiring.cafe
-- Rate limiting integration for hiring.cafe
+(No active milestone — run `/gsd:new-milestone` to start next)
 
 ### Out of Scope
 
@@ -119,20 +122,22 @@ Accurate job-candidate scoring — if the scoring is wrong, nothing else matters
 
 ## Context
 
-### Current State (v2.1.0 shipped)
+### Current State (v2.2.0 shipped)
 
-- v2.1.0 shipped with ~26,000 LOC Python (source + tests + GUI)
-- Tech stack: Python 3.10+, pytest, requests, BeautifulSoup, questionary, PyInstaller, pdfplumber, rapidfuzz, python-dotenv, pyrate-limiter, tabulate, customtkinter
-- Test suite: 566 tests across scoring, config, tracker, wizard, report, UX, API, PDF, dedup, accessibility, profile management, GUI, rate limiting, JSearch, USAJobs, schema migration, scoring config widget, uninstaller
-- Job sources: 10 API sources (JSearch, USAJobs, SerpAPI, Jobicy, Adzuna, Authentic Jobs, Dice, HN, RemoteOK, WWR) + 4 manual URLs (Wellfound, Indeed, LinkedIn, Glassdoor)
+- v2.2.0 shipped with ~30,000 LOC Python (source + tests + GUI)
+- Tech stack: Python 3.10+, pytest, requests, BeautifulSoup, questionary, PyInstaller, pdfplumber, rapidfuzz, python-dotenv, pyrate-limiter, tabulate, customtkinter, packaging
+- Test suite: ~593 tests across scoring, config, tracker, wizard, report, UX, API, PDF, dedup, accessibility, profile management, GUI, rate limiting, JSearch, USAJobs, hiring.cafe, schema migration, scoring config widget, uninstaller
+- Job sources: 11 API sources (JSearch, USAJobs, SerpAPI, Jobicy, Adzuna, Authentic Jobs, hiring.cafe, Dice, HN, RemoteOK, WWR) + 4 manual URLs (Wellfound, Indeed, LinkedIn, Glassdoor)
 - Desktop GUI application (CustomTkinter) + CLI — dual executables for Windows, macOS, Linux
-- GUI modules: 9 files, 3,899 LOC (main_window, profile_form, search_controls, tag_chip_widget, worker_thread, scoring_config, uninstall_dialog)
+- GUI modules: 12 files, ~5,200 LOC (main_window, profile_form, search_controls, tag_chip_widget, worker_thread, scoring_config, uninstall_dialog, update_banner, update_checker, installer_dialogs, changelog_dialog)
+- Auto-update: version detection via GitHub Releases API, in-app download with progress, platform-specific installer launch, skip version, changelog preview
 - HTML reports: Bootstrap 5 with visual hierarchy, responsive layout, status filtering, CSV export, print, WCAG 2.1 AA
 - Profile management: centralized I/O (atomic writes, backups, schema versioning), preview, interactive editor, CLI flags, GUI form
-- Current workflow: download installer (DMG/NSIS) → install → GUI setup → customize scoring → click Run Search → HTML reports in browser (CLI still available)
+- Current workflow: app auto-checks for updates on launch → download installer (DMG/NSIS) → install → GUI setup → customize scoring → click Run Search → HTML reports in browser (CLI still available)
 - Automated accessibility CI: Lighthouse (≥95%) and axe-core WCAG validation on every PR
 - Platform-native installers: macOS DMG with custom background, Windows NSIS with Modern UI
 - Uninstall: GUI button with backup option and platform-specific cleanup
+- Known tech debt: macOS notarization needs Apple Developer account; hiring.cafe behind Vercel bot protection (skeleton ready)
 
 ### Development
 
@@ -188,6 +193,18 @@ Accurate job-candidate scoring — if the scoring is wrong, nothing else matters
 | Lazy imports in SearchWorker.run() | Avoids circular dependencies, keeps module importable | ✓ Good |
 | Ad-hoc signing with entitlements | Sufficient for GitHub releases, no signing cert needed | ✓ Good |
 | CI smoke tests CLI-only (headless) | GUI tests require display server, --version is safe | ✓ Good |
+| packaging.version.Version for semantic comparison | Handles 1.10 > 1.9 correctly, standard library adjacent | ✓ Good |
+| Queue-based async for UpdateChecker | Thread-safe GUI integration, consistent with existing pattern | ✓ Good |
+| Per-version suppress tracking | New version shows even if old dismissed | ✓ Good |
+| Blue/teal accent banner color | Matches VS Code update style, non-intrusive | ✓ Good |
+| SHA256 verification before install | Integrity check catches corrupt/tampered downloads | ✓ Good |
+| Streaming download with 8KB chunks | Balances memory usage and progress responsiveness | ✓ Good |
+| Platform-specific installer launch (DMG/NSIS/tar.gz) | Matches each OS user expectation for install flow | ✓ Good |
+| None sentinel for permanent skip | Distinguishes skip from time-based dismiss in same dict | ✓ Good |
+| extract_summary() for changelog | First 5 bullets or paragraph, not full body | ✓ Good |
+| hiring.cafe limit=50 per query | Matches existing sources, avoids overwhelming report | ✓ Good |
+| Dedup richness scoring (salary +3, description +2) | Keeps best data when duplicates found across sources | ✓ Good |
+| Silent skip on hiring.cafe failure | User still gets 10 other sources, no error noise | ✓ Good |
 
 ---
-*Last updated: 2026-02-15 — v2.2.0 milestone started*
+*Last updated: 2026-02-16 after v2.2.0 milestone*

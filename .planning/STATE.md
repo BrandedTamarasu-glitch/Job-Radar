@@ -4,20 +4,18 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-15)
+See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Accurate job-candidate scoring — if the scoring is wrong, nothing else matters.
-**Current focus:** Phase 42 - hiring.cafe Integration
+**Current focus:** Planning next milestone
 
 ## Current Position
 
-**Milestone:** v2.2.0 Auto-Update & Source Expansion
-**Phase:** 42 of 42 (hiring.cafe Integration)
-**Plan:** 2 of 2
-**Status:** Complete
-**Last activity:** 2026-02-16 — Completed 42-02 hiring.cafe Pipeline Integration
+**Milestone:** v2.2.0 Auto-Update & Source Expansion — SHIPPED
+**Status:** Milestone complete, archived
+**Last activity:** 2026-02-16 — v2.2.0 milestone completed and archived
 
-**Progress:** [██████████] 100%
+**Next step:** `/gsd:new-milestone` to start next milestone
 
 ## Performance Metrics
 
