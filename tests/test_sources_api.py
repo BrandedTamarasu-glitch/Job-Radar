@@ -1018,6 +1018,264 @@ class TestMapJobicyToJobResult:
 
 
 # ==============================================================================
+# hiring.cafe Mapper Tests
+# ==============================================================================
+
+def test_map_hiringcafe_valid_job():
+    """Valid item maps to JobResult with all fields."""
+    from job_radar.sources import map_hiringcafe_to_job_result
+
+    item = {
+        "title": "Senior Backend Engineer",
+        "company": "TechCorp Inc",
+        "location": "Austin, TX",
+        "salary_min": 120000,
+        "salary_max": 160000,
+        "salary_period": "yearly",
+        "url": "https://hiring.cafe/jobs/12345",
+        "description": "<p>Build scalable <b>APIs</b> with Python &amp; Django.</p>",
+        "date_posted": "2026-02-10",
+        "employment_type": "full-time",
+    }
+
+    result = map_hiringcafe_to_job_result(item)
+
+    assert result is not None
+    assert result.title == "Senior Backend Engineer"
+    assert result.company == "TechCorp Inc"
+    assert result.location == "Austin, TX"
+    assert result.salary == "$120K - $160K"
+    assert result.salary_min == 120000
+    assert result.salary_max == 160000
+    assert result.salary_currency == "USD"
+    assert result.url == "https://hiring.cafe/jobs/12345"
+    assert result.source == "hiringcafe"
+    assert result.employment_type == "full-time"
+    assert result.parse_confidence == "high"
+    assert "Build scalable APIs with Python & Django" in result.description
+    assert "<p>" not in result.description
+    assert "&amp;" not in result.description
+
+
+def test_map_hiringcafe_missing_title_returns_none():
+    """Empty title returns None."""
+    from job_radar.sources import map_hiringcafe_to_job_result
+
+    item = {
+        "title": "",
+        "company": "TechCorp Inc",
+        "url": "https://hiring.cafe/jobs/12345",
+    }
+
+    result = map_hiringcafe_to_job_result(item)
+
+    assert result is None
+
+
+def test_map_hiringcafe_missing_company_returns_none():
+    """Empty company returns None."""
+    from job_radar.sources import map_hiringcafe_to_job_result
+
+    item = {
+        "title": "Backend Engineer",
+        "company": "",
+        "url": "https://hiring.cafe/jobs/12345",
+    }
+
+    result = map_hiringcafe_to_job_result(item)
+
+    assert result is None
+
+
+def test_map_hiringcafe_missing_url_returns_none():
+    """Empty URL returns None."""
+    from job_radar.sources import map_hiringcafe_to_job_result
+
+    item = {
+        "title": "Backend Engineer",
+        "company": "TechCorp Inc",
+        "url": "",
+    }
+
+    result = map_hiringcafe_to_job_result(item)
+
+    assert result is None
+
+
+def test_map_hiringcafe_salary_not_listed():
+    """Item with no salary_min/salary_max produces salary='Not listed'."""
+    from job_radar.sources import map_hiringcafe_to_job_result
+
+    item = {
+        "title": "Backend Engineer",
+        "company": "TechCorp Inc",
+        "url": "https://hiring.cafe/jobs/12345",
+        "description": "A great job opportunity.",
+    }
+
+    result = map_hiringcafe_to_job_result(item)
+
+    assert result is not None
+    assert result.salary == "Not listed"
+
+
+def test_map_hiringcafe_salary_min_only():
+    """Item with salary_min but no salary_max formats as '$120K+'."""
+    from job_radar.sources import map_hiringcafe_to_job_result
+
+    item = {
+        "title": "Backend Engineer",
+        "company": "TechCorp Inc",
+        "url": "https://hiring.cafe/jobs/12345",
+        "description": "A great job opportunity.",
+        "salary_min": 120000,
+    }
+
+    result = map_hiringcafe_to_job_result(item)
+
+    assert result is not None
+    assert result.salary == "$120K+"
+
+
+def test_map_hiringcafe_hourly_salary_converts_to_annual():
+    """Item with hourly salary converts to annual (75 * 2080 = 156000)."""
+    from job_radar.sources import map_hiringcafe_to_job_result
+
+    item = {
+        "title": "Backend Engineer",
+        "company": "TechCorp Inc",
+        "url": "https://hiring.cafe/jobs/12345",
+        "description": "A great job opportunity.",
+        "salary_min": 60,
+        "salary_max": 75,
+        "salary_period": "hourly",
+    }
+
+    result = map_hiringcafe_to_job_result(item)
+
+    assert result is not None
+    assert result.salary_min == 124800  # 60 * 2080
+    assert result.salary_max == 156000  # 75 * 2080
+    assert result.salary == "$124K - $156K"
+
+
+def test_map_hiringcafe_monthly_salary_converts_to_annual():
+    """Monthly salary 10000 converts to $120K (10000 * 12)."""
+    from job_radar.sources import map_hiringcafe_to_job_result
+
+    item = {
+        "title": "Backend Engineer",
+        "company": "TechCorp Inc",
+        "url": "https://hiring.cafe/jobs/12345",
+        "description": "A great job opportunity.",
+        "salary_min": 10000,
+        "salary_max": 12000,
+        "salary_period": "monthly",
+    }
+
+    result = map_hiringcafe_to_job_result(item)
+
+    assert result is not None
+    assert result.salary_min == 120000  # 10000 * 12
+    assert result.salary_max == 144000  # 12000 * 12
+    assert result.salary == "$120K - $144K"
+
+
+def test_map_hiringcafe_remote_arrangement_detected():
+    """Location containing 'remote' sets arrangement='remote'."""
+    from job_radar.sources import map_hiringcafe_to_job_result
+
+    item = {
+        "title": "Backend Engineer",
+        "company": "TechCorp Inc",
+        "url": "https://hiring.cafe/jobs/12345",
+        "description": "A great job opportunity.",
+        "location": "Remote (US)",
+    }
+
+    result = map_hiringcafe_to_job_result(item)
+
+    assert result is not None
+    assert result.arrangement == "remote"
+
+
+def test_map_hiringcafe_description_html_cleaned():
+    """HTML in description is stripped and normalized."""
+    from job_radar.sources import map_hiringcafe_to_job_result
+
+    item = {
+        "title": "Backend Engineer",
+        "company": "TechCorp Inc",
+        "url": "https://hiring.cafe/jobs/12345",
+        "description": "<h1>Title</h1><p>We need a <strong>great</strong> developer.</p><ul><li>Python</li><li>Django</li></ul>",
+    }
+
+    result = map_hiringcafe_to_job_result(item)
+
+    assert result is not None
+    assert "<h1>" not in result.description
+    assert "<p>" not in result.description
+    assert "<strong>" not in result.description
+    assert "great" in result.description
+    assert "Python" in result.description
+
+
+def test_map_hiringcafe_description_truncated():
+    """Description longer than 500 chars is truncated with '...'."""
+    from job_radar.sources import map_hiringcafe_to_job_result
+
+    long_description = "A" * 600
+    item = {
+        "title": "Backend Engineer",
+        "company": "TechCorp Inc",
+        "url": "https://hiring.cafe/jobs/12345",
+        "description": long_description,
+    }
+
+    result = map_hiringcafe_to_job_result(item)
+
+    assert result is not None
+    assert len(result.description) == 500
+    assert result.description.endswith("...")
+
+
+def test_normalize_salary_to_annual_hourly():
+    """_normalize_salary_to_annual(75, 'hourly') returns 156000."""
+    from job_radar.sources import _normalize_salary_to_annual
+
+    result = _normalize_salary_to_annual(75, "hourly")
+
+    assert result == 156000
+
+
+def test_normalize_salary_to_annual_monthly():
+    """_normalize_salary_to_annual(10000, 'monthly') returns 120000."""
+    from job_radar.sources import _normalize_salary_to_annual
+
+    result = _normalize_salary_to_annual(10000, "monthly")
+
+    assert result == 120000
+
+
+def test_normalize_salary_to_annual_yearly():
+    """_normalize_salary_to_annual(150000, 'yearly') returns 150000 unchanged."""
+    from job_radar.sources import _normalize_salary_to_annual
+
+    result = _normalize_salary_to_annual(150000, "yearly")
+
+    assert result == 150000
+
+
+def test_format_hiringcafe_salary_range():
+    """_format_hiringcafe_salary(120000, 160000) returns '$120K - $160K'."""
+    from job_radar.sources import _format_hiringcafe_salary
+
+    result = _format_hiringcafe_salary(120000, 160000)
+
+    assert result == "$120K - $160K"
+
+
+# ==============================================================================
 # Search Pipeline Integration Tests
 # ==============================================================================
 
