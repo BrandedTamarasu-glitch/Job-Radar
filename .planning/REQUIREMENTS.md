@@ -64,13 +64,34 @@
 
 ## Requirements Traceability
 
-*(Filled by roadmap creation)*
+| REQ-ID | Phase | Status |
+|--------|-------|--------|
+| UPDATE-01 | Phase 38 | Pending |
+| UPDATE-02 | Phase 38 | Pending |
+| UPDATE-03 | Phase 38 | Pending |
+| UPDATE-04 | Phase 38 | Pending |
+| UPDATE-05 | Phase 38 | Pending |
+| UPDATE-06 | Phase 39 | Pending |
+| UPDATE-07 | Phase 40 | Pending |
+| UPDATE-08 | Phase 40 | Pending |
+| UPDATE-09 | Phase 40 | Pending |
+| UPDATE-10 | Phase 39 | Pending |
+| UPDATE-11 | Phase 41 | Pending |
+| UPDATE-12 | Phase 41 | Pending |
+| UPDATE-13 | Phase 39 | Pending |
+| UPDATE-14 | Phase 38 | Pending |
+| HIRE-01 | Phase 42 | Pending |
+| HIRE-02 | Phase 42 | Pending |
+| HIRE-03 | Phase 42 | Pending |
+| HIRE-04 | Phase 42 | Pending |
+| HIRE-05 | Phase 42 | Pending |
+| HIRE-06 | Phase 42 | Pending |
+| HIRE-07 | Phase 42 | Pending |
+| HIRE-08 | Phase 42 | Pending |
+| HIRE-09 | Phase 42 | Pending |
+| HIRE-10 | Phase 42 | Pending |
 
-| REQ-ID | Phase | Plan | Status |
-|--------|-------|------|--------|
-| UPDATE-01 | TBD | TBD | Pending |
-| UPDATE-02 | TBD | TBD | Pending |
-| ... | ... | ... | ... |
+**Coverage:** 24/24 requirements mapped (100%)
 
 ---
 *Last updated: 2026-02-15*
