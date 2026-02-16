@@ -13,11 +13,11 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 
 **Milestone:** v2.2.0 Auto-Update & Source Expansion
 **Phase:** 39 of 42 (Auto-Update Download)
-**Plan:** 1 of 2
-**Status:** In progress
-**Last activity:** 2026-02-16 — Completed 39-01 DownloadWorker Backend
+**Plan:** 2 of 2
+**Status:** Verifying
+**Last activity:** 2026-02-16 — Completed 39-02 Download UI Integration
 
-**Progress:** [█████-----] 50%
+**Progress:** [██████████] 100%
 
 ## Performance Metrics
 
@@ -36,6 +36,7 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 
 | Plan | Duration (sec) | Tasks | Files | Date |
 |------|---------------|-------|-------|------|
+| 39-02 | ~600 | 3 | 3 | 2026-02-16 |
 | 39-01 | 356 | 2 | 5 | 2026-02-16 |
 | 38-02 | 1067 | 3 | 2 | 2026-02-16 |
 | 38-01 | 187 | 1 | 2 | 2026-02-16 |
@@ -61,6 +62,9 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 
 Recent decisions affecting v2.2.0 work:
 
+- v2.2.0 (39-02): Banner transforms in-place between states (no separate widgets)
+- v2.2.0 (39-02): Session-only dismiss on cancel (softer than 24h suppress)
+- v2.2.0 (39-02): "Install Now" stub — Phase 40 implements installer launch
 - v2.2.0 (39-01): SHA256 verification gracefully skips when digest is None (pre-June 2025 releases)
 - v2.2.0 (39-01): Progress updates throttled to every ~100KB (balance responsiveness vs overhead)
 - v2.2.0 (39-01): Cancellation deletes partial files immediately (avoid disk clutter)
@@ -100,11 +104,11 @@ None yet for v2.2.0.
 ## Session Continuity
 
 Last session: 2026-02-16
-Stopped at: Completed 39-01-PLAN.md execution (DownloadWorker Backend)
+Stopped at: Completed 39-02-PLAN.md execution (Download UI Integration)
 Resume file: None
 
-**Next step:** Execute 39-02-PLAN.md (Download UI Integration).
+**Next step:** Phase 39 verification, then proceed to Phase 40.
 
 ---
 *State initialized: 2026-02-13*
-*Last activity: 2026-02-16T16:49:12Z - Completed 39-01 DownloadWorker Backend (Phase 39: 1 of 2 plans)*
+*Last activity: 2026-02-16T17:30:00Z - Completed 39-02 Download UI Integration (Phase 39: 2 of 2 plans)*
