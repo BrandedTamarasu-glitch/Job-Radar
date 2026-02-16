@@ -91,7 +91,18 @@ Accurate job-candidate scoring — if the scoring is wrong, nothing else matters
 
 ### Active
 
-(No active milestone — ready to plan next)
+## Current Milestone: v2.2.0 Auto-Update & Source Expansion
+
+**Goal:** Enable automatic updates and expand job source coverage with hiring.cafe
+
+**Target features:**
+- Auto-update infrastructure with launch-time version checking and update manifest
+- Cross-platform installer downloads (macOS DMG, Windows NSIS, Linux tar.gz)
+- User-initiated install workflow (download + open installer, user completes wizard)
+- GitHub releases integration for version detection and installer URLs
+- hiring.cafe job board integration with unofficial API
+- Salary extraction and location filtering for hiring.cafe
+- Rate limiting integration for hiring.cafe
 
 ### Out of Scope
 
@@ -179,4 +190,4 @@ Accurate job-candidate scoring — if the scoring is wrong, nothing else matters
 | CI smoke tests CLI-only (headless) | GUI tests require display server, --version is safe | ✓ Good |
 
 ---
-*Last updated: 2026-02-14 after v2.1.0 milestone completion*
+*Last updated: 2026-02-15 — v2.2.0 milestone started*

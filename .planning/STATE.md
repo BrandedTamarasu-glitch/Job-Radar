@@ -11,13 +11,13 @@ See: .planning/PROJECT.md (updated 2026-02-14)
 
 ## Current Position
 
-**Milestone:** v2.1.0 complete (archived)
-**Phase:** Next milestone not yet planned
-**Plan:** Not started
-**Status:** Ready to plan next milestone
-**Last activity:** 2026-02-14 - v2.1.0 milestone archived
+**Milestone:** v2.2.0 Auto-Update & Source Expansion
+**Phase:** Not started (defining requirements)
+**Plan:** —
+**Status:** Defining requirements
+**Last activity:** 2026-02-15 — Milestone v2.2.0 started
 
-**Progress:** v2.1.0: 100% complete (7 phases, 18 plans)
+**Progress:** Requirements phase
 
 ## Performance Metrics
 
