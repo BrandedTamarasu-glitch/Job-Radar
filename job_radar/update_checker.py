@@ -183,7 +183,7 @@ class UpdateChecker:
     def should_show_banner(self, version: str) -> bool:
         """Check if update banner should be shown for a specific version.
 
-        Returns False if version is currently suppressed (expiry in future).
+        Returns False if version is currently suppressed (expiry in future or None).
         Returns True if:
         - Version not in suppressed_versions
         - Version suppress has expired
@@ -198,10 +198,16 @@ class UpdateChecker:
         if version not in suppressed:
             return True
 
+        expiry = suppressed[version]
+
+        # Permanent skip (None sentinel)
+        if expiry is None:
+            return False
+
         # Check if suppress has expired
         try:
-            expiry = datetime.fromisoformat(suppressed[version])
-            return datetime.now(timezone.utc) >= expiry
+            expiry_dt = datetime.fromisoformat(expiry)
+            return datetime.now(timezone.utc) >= expiry_dt
         except (ValueError, TypeError):
             # Invalid expiry -> show banner
             return True
@@ -222,6 +228,66 @@ class UpdateChecker:
         suppressed[version] = expiry_str
 
         self._save_config(config)
+
+    def skip_version(self, version: str) -> None:
+        """Permanently skip a version (never show update banner for it).
+
+        Stores None as expiry sentinel in suppressed_versions to distinguish
+        from time-based dismissals.
+
+        Args:
+            version: Version string to skip (e.g., "2.3.0")
+        """
+        config = self._load_config()
+        update_state = config.setdefault("update_state", {})
+        suppressed = update_state.setdefault("suppressed_versions", {})
+        suppressed[version] = None
+
+        self._save_config(config)
+
+    def is_version_skipped(self, version: str) -> bool:
+        """Check if a version is permanently skipped (not time-based dismiss).
+
+        Args:
+            version: Version string to check (e.g., "2.3.0")
+
+        Returns:
+            True if version is skipped (None expiry), False otherwise
+        """
+        state = self._get_update_state()
+        suppressed = state.get("suppressed_versions", {})
+
+        if version not in suppressed:
+            return False
+
+        return suppressed[version] is None
+
+    def clear_skipped_versions(self) -> None:
+        """Remove all permanently skipped versions from config.
+
+        Preserves time-based dismissals (non-None expiry values).
+        """
+        config = self._load_config()
+        update_state = config.setdefault("update_state", {})
+        suppressed = update_state.setdefault("suppressed_versions", {})
+
+        # Remove entries with None expiry
+        to_remove = [version for version, expiry in suppressed.items() if expiry is None]
+        for version in to_remove:
+            del suppressed[version]
+
+        self._save_config(config)
+
+    def get_skipped_versions(self) -> list[str]:
+        """Get list of permanently skipped version strings.
+
+        Returns:
+            List of version strings with None expiry (permanent skip)
+        """
+        state = self._get_update_state()
+        suppressed = state.get("suppressed_versions", {})
+
+        return [version for version, expiry in suppressed.items() if expiry is None]
 
     def check_for_updates(self) -> None:
         """Check GitHub Releases API for new version.
@@ -360,6 +426,71 @@ class UpdateChecker:
         except requests.RequestException as e:
             log.error("Failed to fetch release assets for tag %s: %s", tag, e)
             return []
+
+    def fetch_release_notes(self, tag: str) -> str:
+        """Fetch release notes body from GitHub for a specific tag.
+
+        Args:
+            tag: Release tag name (e.g., "v2.3.0")
+
+        Returns:
+            Markdown body string from release, or empty string on error
+        """
+        url = GITHUB_RELEASES_TAG_URL.format(tag=tag)
+
+        try:
+            response = requests.get(
+                url,
+                headers={"User-Agent": f"Job-Radar/{__version__}"},
+                timeout=REQUEST_TIMEOUT,
+            )
+            response.raise_for_status()
+
+            data = response.json()
+            body = data.get("body")
+
+            return body or ""
+
+        except requests.RequestException as e:
+            log.error("Failed to fetch release notes for tag %s: %s", tag, e)
+            return ""
+
+    def cache_release_notes(self, version: str, body: str) -> None:
+        """Cache release notes body for a version.
+
+        Args:
+            version: Version string (e.g., "2.3.0")
+            body: Markdown body text to cache
+        """
+        now = datetime.now(timezone.utc).isoformat()
+
+        config = self._load_config()
+        update_state = config.setdefault("update_state", {})
+        cache = update_state.setdefault("release_notes_cache", {})
+
+        cache[version] = {
+            "body": body,
+            "fetched_at": now,
+        }
+
+        self._save_config(config)
+
+    def get_cached_release_notes(self, version: str) -> str | None:
+        """Get cached release notes for a version.
+
+        Args:
+            version: Version string (e.g., "2.3.0")
+
+        Returns:
+            Cached body string, or None if not cached
+        """
+        state = self._get_update_state()
+        cache = state.get("release_notes_cache", {})
+
+        if version not in cache:
+            return None
+
+        return cache[version].get("body")
 
     def select_platform_asset(self, assets: list[dict]) -> dict | None:
         """Select the appropriate installer asset for the current platform.
@@ -514,3 +645,71 @@ def cleanup_old_installers() -> int:
                 log.debug("Could not delete old installer %s: %s", installer_file, e)
 
     return deleted_count
+
+
+def extract_summary(markdown: str, max_bullets: int = 5) -> str:
+    """Extract summary from release notes markdown.
+
+    Extracts first meaningful content:
+    - If empty/whitespace: returns fallback message
+    - Skips headings (lines starting with #) and tables (lines starting with |)
+    - If section has bullets: returns up to max_bullets formatted with •
+    - Else if text section: returns it (truncated at 400 chars if longer)
+    - Fallback: first 300 chars of raw markdown
+
+    Args:
+        markdown: Markdown content from release notes
+        max_bullets: Maximum number of bullets to extract (default 5)
+
+    Returns:
+        Extracted summary string
+    """
+    # Handle empty input
+    if not markdown or not markdown.strip():
+        return "No release notes available for this version."
+
+    # Split into sections by double newline
+    sections = markdown.split("\n\n")
+
+    for section in sections:
+        section = section.strip()
+
+        # Skip empty sections
+        if not section:
+            continue
+
+        # Skip headings
+        if section.startswith("#"):
+            continue
+
+        # Skip tables
+        if section.startswith("|"):
+            continue
+
+        # Check if section has bullets
+        lines = section.split("\n")
+        bullet_lines = [
+            line for line in lines
+            if line.strip().startswith(("-", "*", "+"))
+        ]
+
+        if bullet_lines:
+            # Extract up to max_bullets
+            bullets = []
+            for line in bullet_lines[:max_bullets]:
+                # Strip bullet marker and whitespace
+                text = line.strip().lstrip("-*+").strip()
+                bullets.append(f"• {text}")
+            return "\n".join(bullets)
+
+        # Otherwise, this is a text section
+        if section:
+            # Truncate if too long
+            if len(section) > 400:
+                return section[:400] + "..."
+            return section
+
+    # Fallback: return first 300 chars of raw markdown
+    if len(markdown) > 300:
+        return markdown[:300] + "..."
+    return markdown
