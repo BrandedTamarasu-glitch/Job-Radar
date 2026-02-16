@@ -69,10 +69,11 @@ Plans:
   3. Windows user sees NSIS installer with UAC elevation prompt
   4. Linux user sees clear instructions to extract tar.gz manually
   5. User sees error message if installer fails integrity verification (SHA256 mismatch)
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 40-01-PLAN.md: TBD
+- [ ] 40-01-PLAN.md — Installer launch backend, dialogs (InstallConfirmDialog, LinuxInstallInstructionsDialog), cleanup
+- [ ] 40-02-PLAN.md — Wire install flow into UpdateBanner and MainWindow (confirmation, launch, exit, error handling)
 
 #### Phase 41: Auto-Update Polish
 **Goal**: Update experience feels polished with version skipping and changelog preview
