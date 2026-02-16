@@ -13,11 +13,11 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 
 **Milestone:** v2.2.0 Auto-Update & Source Expansion
 **Phase:** 42 of 42 (hiring.cafe Integration)
-**Plan:** 1 of 2
-**Status:** In Progress
-**Last activity:** 2026-02-16 — Completed 42-01 hiring.cafe Mapper & Salary Normalization
+**Plan:** 2 of 2
+**Status:** Complete
+**Last activity:** 2026-02-16 — Completed 42-02 hiring.cafe Pipeline Integration
 
-**Progress:** [█████████░] 90%
+**Progress:** [██████████] 100%
 
 ## Performance Metrics
 
@@ -31,11 +31,13 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 | v1.4.0 Visual Design | 5 | 9 | 1 | 9.0 |
 
 **Average velocity:** ~5 plans/day (varies by complexity)
+| Phase 42 P02 | 348 | 2 tasks | 5 files |
 
 ### Recent Plan Executions
 
 | Plan | Duration (sec) | Tasks | Files | Date |
 |------|---------------|-------|-------|------|
+| 42-02 | 348 | 2 | 5 | 2026-02-16 |
 | 42-01 | 220 | 1 | 2 | 2026-02-16 |
 | 41-02 | 273 | 2 | 3 | 2026-02-16 |
 | 41-01 | 174 | 1 | 2 | 2026-02-16 |
@@ -44,13 +46,12 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 | 39-02 | ~600 | 3 | 3 | 2026-02-16 |
 | 39-01 | 356 | 2 | 5 | 2026-02-16 |
 | 38-02 | 1067 | 3 | 2 | 2026-02-16 |
-| 38-01 | 187 | 1 | 2 | 2026-02-16 |
 
 ### Quality Indicators
 
 **Test Coverage:**
-- 581 tests across 19 test files (added 15 for hiring.cafe mapper)
-- 656 passing, 4 pre-existing platform-specific failures (config, installer_launch)
+- 593 tests across 19 test files (added 15 for hiring.cafe mapper + 7 pipeline + 5 dedup in 42-02)
+- 672 passing, 4 pre-existing platform-specific failures (config, installer_launch)
 - Coverage areas: scoring, config, tracker, wizard, report, UX, API, PDF, dedup, accessibility, profile management, GUI, rate limiting, JSearch, USAJobs, hiring.cafe, schema migration, scoring config widget, uninstaller
 
 **Code Stats (v2.1.0 shipped):**
@@ -64,6 +65,14 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 
 Recent decisions affecting v2.2.0 work:
 
+- v2.2.0 (42-02): hiring.cafe per-query limit is 50 results (not 1000 from phase goal)
+- v2.2.0 (42-02): hiring.cafe rate limit at 60 req/hour with SQLite persistence
+- v2.2.0 (42-02): hiring.cafe no retry (retries=1) - fail fast on API errors
+- v2.2.0 (42-02): hiring.cafe silent skip on failure (empty list, debug log only)
+- v2.2.0 (42-02): hiring.cafe runs in API phase (Phase 2) so native sources win in dedup
+- v2.2.0 (42-02): Dedup enhancement keeps listing with more data when duplicates found
+- v2.2.0 (42-02): Richness scoring: salary +3, description +2, structured salary +1, employment_type +1, apply_info +1, date_posted +1
+- v2.2.0 (42-02): Remote jobs always included regardless of location preference (hiring.cafe)
 - v2.2.0 (42-01): Salary format $120K - $160K (K-format, not comma-format) for hiring.cafe
 - v2.2.0 (42-01): Missing salary displays "Not listed" (hiring.cafe convention)
 - v2.2.0 (42-01): Hourly conversion uses 2080 hours/year (40hrs/week x 52 weeks)
@@ -117,16 +126,15 @@ None yet for v2.2.0.
 
 ### Blockers/Concerns
 
-- Phase 40 (Auto-Update Installation): macOS notarization requires Apple Developer account and CI/CD integration — research needed during phase planning
-- Phase 42 (hiring.cafe Integration): Unofficial API endpoint discovery and field mapping required — execute /gsd:research-phase before planning
+None - Phase 42 (hiring.cafe Integration) complete. Milestone v2.2.0 complete.
 
 ## Session Continuity
 
 Last session: 2026-02-16
-Stopped at: Completed 42-01 hiring.cafe Mapper & Salary Normalization
+Stopped at: Completed 42-02 hiring.cafe Pipeline Integration (Phase 42 complete, v2.2.0 complete)
 Resume file: None
 
-**Next step:** Execute 42-02 (hiring.cafe API fetcher and pipeline integration)
+**Next step:** Plan next milestone or feature work
 
 ---
 *State initialized: 2026-02-13*
