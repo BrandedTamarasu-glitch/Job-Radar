@@ -19,10 +19,12 @@ from job_radar import __version__
 from job_radar.paths import get_data_dir
 from job_radar.profile_manager import load_profile
 from job_radar.config import load_config
+from job_radar.update_checker import UpdateChecker
 from job_radar.gui.profile_form import ProfileForm
 from job_radar.gui.search_controls import SearchControls
 from job_radar.gui.worker_thread import create_search_worker
 from job_radar.gui.scoring_config import ScoringConfigWidget
+from job_radar.gui.update_banner import UpdateBanner
 from job_radar.gui.uninstall_dialog import (
     BackupOfferDialog,
     PathPreviewDialog,
@@ -60,9 +62,10 @@ class MainWindow(ctk.CTk):
         self.geometry("900x600")
         self.minsize(700, 500)
 
-        # Grid layout: row 0 = header (fixed), row 1 = content (expands)
+        # Grid layout: row 0 = header (fixed), row 1 = banner (fixed), row 2 = content (expands)
         self.grid_rowconfigure(0, weight=0)
-        self.grid_rowconfigure(1, weight=1)
+        self.grid_rowconfigure(1, weight=0)
+        self.grid_rowconfigure(2, weight=1)
         self.grid_columnconfigure(0, weight=1)
 
         # Threading infrastructure
@@ -76,6 +79,13 @@ class MainWindow(ctk.CTk):
         self._tabview = None
         self._success_message_label = None
 
+        # Update checker state
+        self._update_banner = None
+        self._update_checker = UpdateChecker(self._queue)
+        self._manual_check_button = None
+        self._update_status_label = None
+        self._manual_check_pending = False
+
         # Create header
         self._create_header()
 
@@ -84,6 +94,8 @@ class MainWindow(ctk.CTk):
             self._show_welcome_screen()
         else:
             self._show_main_tabs()
+            # Start background update check if profile exists
+            self._start_update_check()
 
         # Start queue polling loop
         self._check_queue()
@@ -261,9 +273,9 @@ class MainWindow(ctk.CTk):
                 continue
             widget.destroy()
 
-        # Create tabview
+        # Create tabview (row 2 for content, row 1 reserved for banner)
         self._tabview = ctk.CTkTabview(self, command=self._on_tab_change)
-        self._tabview.grid(row=1, column=0, sticky="nsew", padx=20, pady=(0, 20))
+        self._tabview.grid(row=2, column=0, sticky="nsew", padx=20, pady=(0, 20))
 
         # Add tabs
         self._tabview.add("Profile")
@@ -618,6 +630,23 @@ class MainWindow(ctk.CTk):
                         _, error_msg = msg
                         self._show_error_dialog(error_msg)
                         self._show_search_idle()
+                    # Update checker messages
+                    elif msg_type == "update_available":
+                        _, version, release_url = msg
+                        if self._update_checker.should_show_banner(version):
+                            self._show_update_banner(version, release_url)
+                        # If manual check pending, update Settings UI
+                        if self._manual_check_pending:
+                            self._on_manual_check_result("Update available!")
+                    elif msg_type == "up_to_date":
+                        # If manual check pending, update Settings UI
+                        if self._manual_check_pending:
+                            self._on_manual_check_result("Up to date!")
+                    elif msg_type == "check_failed":
+                        _, error = msg
+                        # If manual check pending, update Settings UI
+                        if self._manual_check_pending:
+                            self._on_manual_check_result("Check failed")
                     # Backward compatibility with mock worker messages
                     elif msg_type == "progress":
                         _, source, current, total = msg
@@ -633,6 +662,138 @@ class MainWindow(ctk.CTk):
         finally:
             # Re-schedule next check
             self.after(100, self._check_queue)
+
+    def _start_update_check(self):
+        """Start background update check if conditions are met."""
+        # Only run if profile exists (already checked by caller)
+        if not self._update_checker.should_check():
+            return
+
+        # Start daemon thread for update check
+        def check_thread():
+            self._update_checker.check_for_updates()
+
+        thread = threading.Thread(target=check_thread, daemon=True)
+        thread.start()
+
+    def _show_update_banner(self, version: str, release_url: str):
+        """Display update banner at row 1.
+
+        Parameters
+        ----------
+        version : str
+            Version string of available update
+        release_url : str
+            GitHub Releases URL
+        """
+        # Destroy existing banner if any
+        if self._update_banner:
+            self._update_banner.destroy()
+            self._update_banner = None
+
+        # Create banner at row 1
+        self._update_banner = UpdateBanner(
+            self,
+            version=version,
+            release_url=release_url,
+            on_dismiss=lambda v: self._dismiss_update(v, 24),
+            on_remind=lambda v: self._dismiss_update(v, 168)
+        )
+        self._update_banner.grid(row=1, column=0, sticky="ew")
+
+    def _dismiss_update(self, version: str, hours: int):
+        """Dismiss update banner for specified duration.
+
+        Parameters
+        ----------
+        version : str
+            Version to suppress
+        hours : int
+            Duration in hours (24 for X, 168 for Remind Later)
+        """
+        self._update_checker.dismiss_version(version, hours)
+
+        # Destroy banner
+        if self._update_banner:
+            self._update_banner.destroy()
+            self._update_banner = None
+
+    def _on_manual_check_result(self, result_text: str):
+        """Handle manual check result from Settings tab.
+
+        Parameters
+        ----------
+        result_text : str
+            Result message to display in button
+        """
+        if self._manual_check_button is not None:
+            # Update button text
+            self._manual_check_button.configure(text=result_text, state="normal")
+
+            # Reset button text after 3 seconds
+            def reset_button_text():
+                if self._manual_check_button is not None:
+                    self._manual_check_button.configure(text="Check for Updates")
+
+            self.after(3000, reset_button_text)
+
+        # Update status label if exists
+        if self._update_status_label is not None:
+            self._refresh_update_status()
+
+        # Reset flag
+        self._manual_check_pending = False
+
+    def _refresh_update_status(self):
+        """Refresh the update status label in Settings tab."""
+        if self._update_status_label is None:
+            return
+
+        status_info = self._update_checker.get_update_status()
+        last_check = status_info.get("last_check")
+        check_success = status_info.get("check_success")
+
+        # Format relative time
+        if last_check:
+            try:
+                from datetime import datetime, timezone
+                last_check_dt = datetime.fromisoformat(last_check)
+                now = datetime.now(timezone.utc)
+                elapsed = now - last_check_dt
+
+                if elapsed.total_seconds() < 300:  # < 5 minutes
+                    relative_time = "Just now"
+                elif elapsed.total_seconds() < 3600:  # < 1 hour
+                    minutes = int(elapsed.total_seconds() / 60)
+                    relative_time = f"{minutes}m ago"
+                elif elapsed.total_seconds() < 86400:  # < 1 day
+                    hours = int(elapsed.total_seconds() / 3600)
+                    relative_time = f"{hours}h ago"
+                else:
+                    days = int(elapsed.total_seconds() / 86400)
+                    relative_time = f"{days}d ago"
+            except Exception:
+                relative_time = "Unknown"
+        else:
+            relative_time = "Never"
+
+        # Determine status
+        if relative_time == "Never":
+            status = "Never checked"
+            status_color = "gray"
+        elif check_success:
+            status = "Up to date"
+            status_color = "green"
+        elif check_success is False:
+            status = "Check failed"
+            status_color = "orange"
+        else:
+            status = "Unknown"
+            status_color = "gray"
+
+        # Update label
+        status_text = f"v{__version__} -- Last checked: {relative_time} -- {status}"
+        self._update_status_label.configure(text=status_text, text_color=status_color)
 
     def _start_real_search(self):
         """Start real search operation with full pipeline execution."""
