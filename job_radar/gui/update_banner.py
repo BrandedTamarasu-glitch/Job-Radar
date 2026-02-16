@@ -7,6 +7,7 @@ progress, complete, and failure.
 
 import logging
 import sys
+import tkinter
 import webbrowser
 import customtkinter as ctk
 from customtkinter import CTkFont
@@ -28,7 +29,9 @@ class UpdateBanner(ctk.CTkFrame):
         release_url: str,
         on_dismiss: callable,
         on_remind: callable,
-        on_download: callable
+        on_download: callable,
+        on_skip: callable = None,
+        on_view_changelog: callable = None
     ):
         """Initialize update banner.
 
@@ -46,6 +49,10 @@ class UpdateBanner(ctk.CTkFrame):
             Callback for Remind Later button - called with version string
         on_download : callable
             Callback when user confirms download - called with version string
+        on_skip : callable, optional
+            Callback for Skip This Version - called with version string
+        on_view_changelog : callable, optional
+            Callback when user clicks version number - called with version string
         """
         # Blue/teal accent color for light/dark mode, no corner radius (full-width banner)
         super().__init__(
@@ -59,6 +66,8 @@ class UpdateBanner(ctk.CTkFrame):
         self.on_dismiss = on_dismiss
         self.on_remind = on_remind
         self.on_download = on_download
+        self.on_skip = on_skip
+        self.on_view_changelog = on_view_changelog
 
         # Callbacks set by MainWindow
         self._on_cancel = None
@@ -70,6 +79,7 @@ class UpdateBanner(ctk.CTkFrame):
         self.grid_columnconfigure(1, weight=0)  # Progress bar or button
         self.grid_columnconfigure(2, weight=0)  # Info label or button
         self.grid_columnconfigure(3, weight=0)  # Action button
+        self.grid_columnconfigure(4, weight=0)  # X button
 
         # Create ALL state widgets upfront (not gridded yet)
         self._create_notification_widgets()
@@ -82,9 +92,42 @@ class UpdateBanner(ctk.CTkFrame):
 
     def _create_notification_widgets(self):
         """Create widgets for notification state."""
+        # Message label (used for skip confirmation)
         self.message_label = ctk.CTkLabel(
             self,
             text=f"Version {self.version} available",
+            text_color="white",
+            font=CTkFont(size=13),
+            anchor="w"
+        )
+
+        # Split message layout: "Version " + clickable version + " available"
+        self.message_frame = ctk.CTkFrame(self, fg_color="transparent")
+
+        self.msg_prefix = ctk.CTkLabel(
+            self.message_frame,
+            text="Version ",
+            text_color="white",
+            font=CTkFont(size=13),
+            anchor="w"
+        )
+
+        self.version_btn = ctk.CTkButton(
+            self.message_frame,
+            text=f"v{self.version}",
+            fg_color="transparent",
+            text_color="white",
+            hover_color=("#2980B9", "#1A5276"),
+            font=CTkFont(size=13, underline=True),
+            width=0,
+            height=20,
+            cursor="hand2",
+            command=self._on_version_click
+        )
+
+        self.msg_suffix = ctk.CTkLabel(
+            self.message_frame,
+            text=" available",
             text_color="white",
             font=CTkFont(size=13),
             anchor="w"
@@ -105,6 +148,17 @@ class UpdateBanner(ctk.CTkFrame):
             border_width=1,
             border_color="white",
             command=self._on_remind_click
+        )
+
+        # "..." more button for dropdown menu
+        self.more_btn = ctk.CTkButton(
+            self,
+            text="...",
+            width=30,
+            fg_color="transparent",
+            text_color="white",
+            hover_color=("#2980B9", "#1A5276"),
+            command=self._show_skip_menu
         )
 
         self.x_btn = ctk.CTkButton(
@@ -216,8 +270,10 @@ class UpdateBanner(ctk.CTkFrame):
         """Hide all state-specific widgets."""
         # Notification state
         self.message_label.grid_remove()
+        self.message_frame.grid_remove()
         self.download_btn.grid_remove()
         self.remind_btn.grid_remove()
+        self.more_btn.grid_remove()
         self.x_btn.grid_remove()
 
         # Progress state
@@ -240,10 +296,17 @@ class UpdateBanner(ctk.CTkFrame):
     def show_notification(self):
         """Show notification state."""
         self._hide_all()
-        self.message_label.grid(row=0, column=0, sticky="w", padx=(20, 10), pady=10)
+
+        # Layout split message frame with clickable version
+        self.message_frame.grid(row=0, column=0, sticky="w", padx=(20, 10), pady=10)
+        self.msg_prefix.pack(side="left")
+        self.version_btn.pack(side="left")
+        self.msg_suffix.pack(side="left")
+
         self.download_btn.grid(row=0, column=1, padx=(0, 10), pady=10)
         self.remind_btn.grid(row=0, column=2, padx=(0, 10), pady=10)
-        self.x_btn.grid(row=0, column=3, padx=(0, 20), pady=10)
+        self.more_btn.grid(row=0, column=3, padx=(0, 10), pady=10)
+        self.x_btn.grid(row=0, column=4, padx=(0, 20), pady=10)
 
     def show_progress(self):
         """Show progress state."""
@@ -310,6 +373,32 @@ class UpdateBanner(ctk.CTkFrame):
         self.retry_btn.grid(row=0, column=1, padx=(0, 10), pady=10)
         self.manual_download_btn.grid(row=0, column=2, padx=(0, 10), pady=10)
         self.dismiss_btn.grid(row=0, column=3, padx=(0, 20), pady=10)
+
+    def show_skip_confirmation(self):
+        """Show brief 'v{version} skipped' message before dismissing."""
+        self._hide_all()
+        self.message_label.configure(text=f"v{self.version} skipped")
+        self.message_label.grid(row=0, column=0, sticky="w", padx=(20, 10), pady=10)
+
+    def _show_skip_menu(self):
+        """Show dropdown menu with Skip This Version option."""
+        menu = tkinter.Menu(self, tearoff=0)
+        menu.add_command(label="Skip This Version", command=self._on_skip_click)
+
+        # Position below the "..." button
+        x = self.more_btn.winfo_rootx()
+        y = self.more_btn.winfo_rooty() + self.more_btn.winfo_height()
+        menu.tk_popup(x, y)
+
+    def _on_skip_click(self):
+        """Handle Skip This Version click."""
+        if self.on_skip:
+            self.on_skip(self.version)
+
+    def _on_version_click(self):
+        """Handle version number click - open changelog."""
+        if self.on_view_changelog:
+            self.on_view_changelog(self.version)
 
     def _on_download_click(self):
         """Handle Download button click - show confirmation dialog."""
