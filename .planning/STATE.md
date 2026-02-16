@@ -13,11 +13,11 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 
 **Milestone:** v2.2.0 Auto-Update & Source Expansion
 **Phase:** 41 of 42 (Auto-Update Polish)
-**Plan:** 1 of 2
-**Status:** In Progress
-**Last activity:** 2026-02-16 — Completed 41-01 Skip Version and Release Notes Backend
+**Plan:** 2 of 2
+**Status:** Phase Complete
+**Last activity:** 2026-02-16 — Completed 41-02 Update Banner Skip & Changelog UI
 
-**Progress:** [█████████░] 50%
+**Progress:** [██████████] 100%
 
 ## Performance Metrics
 
@@ -36,6 +36,7 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 
 | Plan | Duration (sec) | Tasks | Files | Date |
 |------|---------------|-------|-------|------|
+| 41-02 | 273 | 2 | 3 | 2026-02-16 |
 | 41-01 | 174 | 1 | 2 | 2026-02-16 |
 | 40-02 | 222 | 2 | 2 | 2026-02-16 |
 | 40-01 | 221 | 2 | 3 | 2026-02-16 |
@@ -44,7 +45,6 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 | 38-02 | 1067 | 3 | 2 | 2026-02-16 |
 | 38-01 | 187 | 1 | 2 | 2026-02-16 |
 | 37-03 | 121 | 2 | 3 | 2026-02-14 |
-| 37-02 | 176 | 2 | 7 | 2026-02-14 |
 
 ### Quality Indicators
 
@@ -64,6 +64,9 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 
 Recent decisions affecting v2.2.0 work:
 
+- v2.2.0 (41-02): Use tkinter.Menu for dropdown instead of CTkOptionMenu (popup behavior)
+- v2.2.0 (41-02): Clickable version uses CTkButton with underline and transparent fg_color
+- v2.2.0 (41-02): Conditional packing for Settings widgets based on state
 - v2.2.0 (41-01): None sentinel in suppressed_versions distinguishes permanent skip from time-based dismiss
 - v2.2.0 (41-01): extract_summary() returns first 5 bullets or paragraph (not full body)
 - v2.2.0 (40-02): Install callback passes dest_path to MainWindow instead of storing it internally
@@ -116,11 +119,11 @@ None yet for v2.2.0.
 ## Session Continuity
 
 Last session: 2026-02-16
-Stopped at: Completed 41-01-PLAN.md execution (Skip Version and Release Notes Backend)
+Stopped at: Completed Phase 41 (Auto-Update Polish) - both plans complete
 Resume file: None
 
-**Next step:** Continue to 41-02-PLAN.md (Update Banner "Skip This Version" and "What's New" UI)
+**Next step:** Phase 42 (hiring.cafe Integration) - requires research before planning
 
 ---
 *State initialized: 2026-02-13*
-*Last activity: 2026-02-16 - Completed 41-01 Skip Version and Release Notes Backend (Phase 41: 1 of 2 plans)*
+*Last activity: 2026-02-16 - Completed Phase 41 Auto-Update Polish (2 of 2 plans complete)*
