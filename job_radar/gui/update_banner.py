@@ -6,6 +6,8 @@ progress, complete, and failure.
 """
 
 import logging
+import sys
+import webbrowser
 import customtkinter as ctk
 from customtkinter import CTkFont
 
@@ -157,9 +159,11 @@ class UpdateBanner(ctk.CTkFrame):
             anchor="w"
         )
 
+        # Platform-specific button text
+        button_text = "Open Download" if sys.platform.startswith("linux") else "Install Now"
         self.install_btn = ctk.CTkButton(
             self,
-            text="Install Now",
+            text=button_text,
             width=100,
             command=self._on_install_click
         )
@@ -186,6 +190,16 @@ class UpdateBanner(ctk.CTkFrame):
             text="Retry",
             width=80,
             command=self._on_retry_click
+        )
+
+        self.manual_download_btn = ctk.CTkButton(
+            self,
+            text="Download Manually",
+            width=140,
+            fg_color="transparent",
+            border_width=1,
+            border_color="white",
+            command=self._on_manual_download_click
         )
 
         self.dismiss_btn = ctk.CTkButton(
@@ -220,6 +234,7 @@ class UpdateBanner(ctk.CTkFrame):
         # Failure state
         self.failure_message.grid_remove()
         self.retry_btn.grid_remove()
+        self.manual_download_btn.grid_remove()
         self.dismiss_btn.grid_remove()
 
     def show_notification(self):
@@ -293,7 +308,8 @@ class UpdateBanner(ctk.CTkFrame):
         self.failure_message.configure(text=f"Download failed: {error_display}")
         self.failure_message.grid(row=0, column=0, sticky="w", padx=(20, 10), pady=10)
         self.retry_btn.grid(row=0, column=1, padx=(0, 10), pady=10)
-        self.dismiss_btn.grid(row=0, column=2, padx=(0, 20), pady=10)
+        self.manual_download_btn.grid(row=0, column=2, padx=(0, 10), pady=10)
+        self.dismiss_btn.grid(row=0, column=3, padx=(0, 20), pady=10)
 
     def _on_download_click(self):
         """Handle Download button click - show confirmation dialog."""
@@ -317,15 +333,18 @@ class UpdateBanner(ctk.CTkFrame):
         """Handle Retry button click - restart download from scratch."""
         self.on_download(self.version)
 
+    def _on_manual_download_click(self):
+        """Handle Download Manually button click - open GitHub releases in browser."""
+        webbrowser.open(self.release_url)
+
     def _on_dismiss_click(self):
         """Handle Dismiss button click - same as X button."""
         self.on_dismiss(self.version)
 
     def _on_install_click(self):
-        """Handle Install Now button click - stub for Phase 40."""
-        logger.info("Install clicked - will be implemented in Phase 40")
+        """Handle Install Now / Open Download button click."""
         if self._on_install:
-            self._on_install()
+            self._on_install(self._dest_path)
 
     def _on_complete_dismiss(self):
         """Handle X button click in complete state - remove banner."""
@@ -347,7 +366,8 @@ class UpdateBanner(ctk.CTkFrame):
         Parameters
         ----------
         callback : callable
-            Callback to invoke when install button clicked
+            Callback to invoke when install button clicked.
+            Signature: callback(dest_path: str)
         """
         self._on_install = callback
 
