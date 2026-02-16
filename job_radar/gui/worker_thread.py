@@ -7,9 +7,13 @@ main GUI thread via queue messages — worker threads never touch widgets.
 Provides both mock workers (for testing) and real SearchWorker (for production).
 """
 
+import hashlib
 import queue
 import threading
 import time
+from pathlib import Path
+
+import requests
 
 
 class MockSearchWorker:
@@ -327,5 +331,160 @@ def create_search_worker(result_queue: queue.Queue, profile: dict, search_config
     """
     stop_event = threading.Event()
     worker = SearchWorker(result_queue, stop_event, profile, search_config)
+    thread = threading.Thread(target=worker.run, daemon=True)
+    return worker, thread
+
+
+class DownloadWorker:
+    """Downloads installer file with streaming, progress updates, and SHA256 verification.
+
+    Communicates with GUI via queue.Queue. Supports cooperative cancellation via
+    threading.Event. Deletes partial files on cancellation. Verifies SHA256 digest
+    after download (gracefully skips if digest is None).
+
+    Queue message protocol:
+        - ("download_progress", downloaded: int, total_size: int)
+        - ("download_complete", dest_path: str)
+        - ("download_cancelled",)
+        - ("download_failed", error_message: str)
+    """
+
+    def __init__(
+        self,
+        result_queue: queue.Queue,
+        stop_event: threading.Event,
+        asset_url: str,
+        asset_digest: str | None,
+        dest_path: str
+    ):
+        """Initialize download worker.
+
+        Args:
+            result_queue: Queue for sending messages to GUI thread
+            stop_event: Event for cooperative cancellation
+            asset_url: URL of the installer file to download
+            asset_digest: SHA256 digest (with optional "sha256:" prefix) or None
+            dest_path: Destination file path for downloaded installer
+        """
+        self._queue = result_queue
+        self._stop_event = stop_event
+        self._asset_url = asset_url
+        self._asset_digest = asset_digest
+        self._dest_path = dest_path
+
+    def run(self):
+        """Execute the download operation (runs in worker thread).
+
+        Downloads file in 8KB chunks with progress updates every ~100KB.
+        Checks stop_event for cancellation and deletes partial file if cancelled.
+        Verifies SHA256 digest after download (skips if digest is None).
+        """
+        try:
+            # Step 1: Start streaming download
+            response = requests.get(
+                self._asset_url,
+                stream=True,
+                timeout=30,
+                headers={"User-Agent": "Job-Radar/auto-update"}
+            )
+            response.raise_for_status()
+
+            # Step 2: Get total size
+            total_size = int(response.headers.get('content-length', 0))
+
+            # Step 3: Download file in chunks
+            downloaded = 0
+            with open(self._dest_path, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    # Check for cancellation before writing
+                    if self._stop_event.is_set():
+                        # Delete partial file
+                        Path(self._dest_path).unlink(missing_ok=True)
+                        self._queue.put(("download_cancelled",))
+                        return
+
+                    # Write chunk
+                    f.write(chunk)
+                    downloaded += len(chunk)
+
+                    # Send progress update every ~100KB
+                    if downloaded % (100 * 1024) < 8192:
+                        self._queue.put(("download_progress", downloaded, total_size))
+
+            # Send final 100% progress
+            self._queue.put(("download_progress", total_size, total_size))
+
+            # Step 4: Verify SHA256 if digest provided
+            if self._asset_digest:
+                computed_hash = self._compute_sha256(self._dest_path)
+
+                # Extract expected hash (strip "sha256:" prefix if present)
+                expected_hash = self._asset_digest
+                if expected_hash.startswith("sha256:"):
+                    expected_hash = expected_hash[7:]
+
+                if computed_hash.lower() != expected_hash.lower():
+                    # Hash mismatch - delete file
+                    Path(self._dest_path).unlink(missing_ok=True)
+                    self._queue.put((
+                        "download_failed",
+                        "Hash verification failed — file may be corrupted"
+                    ))
+                    return
+            else:
+                # No digest available - skip verification
+                import logging
+                log = logging.getLogger(__name__)
+                log.warning("Asset has no digest field - skipping verification")
+
+            # Step 5: Download complete
+            self._queue.put(("download_complete", self._dest_path))
+
+        except Exception as e:
+            # Send error to GUI
+            self._queue.put(("download_failed", str(e)))
+
+    def _compute_sha256(self, filepath: str) -> str:
+        """Compute SHA256 hash of a file.
+
+        Args:
+            filepath: Path to file to hash
+
+        Returns:
+            Hexadecimal SHA256 digest string
+        """
+        sha256_hash = hashlib.sha256()
+        with open(filepath, "rb") as f:
+            for chunk in iter(lambda: f.read(4096), b""):
+                sha256_hash.update(chunk)
+        return sha256_hash.hexdigest()
+
+    def cancel(self):
+        """Request cancellation of the download operation."""
+        self._stop_event.set()
+
+
+def create_download_worker(
+    result_queue: queue.Queue,
+    asset_url: str,
+    asset_digest: str | None,
+    dest_path: str
+) -> tuple:
+    """Create a download worker with thread.
+
+    Convenience function that sets up the worker and thread with
+    proper configuration (daemon=True for clean exit).
+
+    Args:
+        result_queue: Queue for worker to send messages to GUI
+        asset_url: URL of the installer file to download
+        asset_digest: SHA256 digest or None
+        dest_path: Destination file path for downloaded installer
+
+    Returns:
+        Tuple of (worker, thread). Caller must call thread.start().
+    """
+    stop_event = threading.Event()
+    worker = DownloadWorker(result_queue, stop_event, asset_url, asset_digest, dest_path)
     thread = threading.Thread(target=worker.run, daemon=True)
     return worker, thread
