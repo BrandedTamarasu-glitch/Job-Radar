@@ -20,12 +20,13 @@ from job_radar import __version__
 from job_radar.paths import get_data_dir
 from job_radar.profile_manager import load_profile
 from job_radar.config import load_config
-from job_radar.update_checker import UpdateChecker, launch_installer, cleanup_old_installers
+from job_radar.update_checker import UpdateChecker, launch_installer, cleanup_old_installers, extract_summary
 from job_radar.gui.profile_form import ProfileForm
 from job_radar.gui.search_controls import SearchControls
 from job_radar.gui.worker_thread import create_search_worker, create_download_worker
 from job_radar.gui.scoring_config import ScoringConfigWidget
 from job_radar.gui.update_banner import UpdateBanner, DownloadConfirmDialog
+from job_radar.gui.changelog_dialog import ChangelogDialog
 from job_radar.gui.installer_dialogs import InstallConfirmDialog, LinuxInstallInstructionsDialog
 from job_radar.gui.uninstall_dialog import (
     BackupOfferDialog,
@@ -91,6 +92,11 @@ class MainWindow(ctk.CTk):
         self._update_status_label = None
         self._manual_check_pending = False
         self._update_tag = None  # GitHub tag for fetching assets
+        self._update_version = None  # Track available update version for Settings display
+        self._update_release_url = None  # Track release URL for Settings link
+        self._release_notes_label = None  # Settings "View release notes" link reference
+        self._clear_skipped_btn = None  # Settings "Clear skipped versions" button reference
+        self._skipped_status_label = None  # Settings skipped version status label reference
 
         # Download worker state
         self._download_worker = None
@@ -654,13 +660,23 @@ class MainWindow(ctk.CTk):
                     # Update checker messages
                     elif msg_type == "update_available":
                         _, version, release_url, tag_name = msg
-                        # Store tag for later asset fetching
+                        # Store tag and version info for later use
                         self._update_tag = tag_name
+                        self._update_version = version
+                        self._update_release_url = release_url
                         if self._update_checker.should_show_banner(version):
                             self._show_update_banner(version, release_url)
+                        else:
+                            # Banner not shown but update available - refresh Settings if exists
+                            if self._update_status_label:
+                                self._refresh_update_status()
                         # If manual check pending, update Settings UI
                         if self._manual_check_pending:
-                            self._on_manual_check_result("Update available!")
+                            # Check if version is skipped for status display
+                            if self._update_checker.is_version_skipped(version):
+                                self._on_manual_check_result("Update available! (skipped)")
+                            else:
+                                self._on_manual_check_result("Update available!")
                     elif msg_type == "up_to_date":
                         # If manual check pending, update Settings UI
                         if self._manual_check_pending:
@@ -706,6 +722,9 @@ class MainWindow(ctk.CTk):
                         _, error = msg
                         if self._update_banner:
                             self._update_banner.show_failure(error)
+                    elif msg_type == "release_notes_ready":
+                        _, version, body = msg
+                        self._show_changelog_dialog(version, body)
                     # Backward compatibility with mock worker messages
                     elif msg_type == "progress":
                         _, source, current, total = msg
@@ -749,6 +768,10 @@ class MainWindow(ctk.CTk):
         if self._download_cancelled_this_session:
             return
 
+        # Store version and release URL for Settings display
+        self._update_version = version
+        self._update_release_url = release_url
+
         # Destroy existing banner if any
         if self._update_banner:
             self._update_banner.destroy()
@@ -761,7 +784,9 @@ class MainWindow(ctk.CTk):
             release_url=release_url,
             on_dismiss=lambda v: self._dismiss_update(v, 24),
             on_remind=lambda v: self._dismiss_update(v, 168),
-            on_download=self._on_download_requested
+            on_download=self._on_download_requested,
+            on_skip=self._on_skip_version,
+            on_view_changelog=self._on_view_changelog
         )
         self._update_banner.grid(row=1, column=0, sticky="ew")
 
@@ -785,6 +810,75 @@ class MainWindow(ctk.CTk):
         if self._update_banner:
             self._update_banner.destroy()
             self._update_banner = None
+
+    def _on_skip_version(self, version: str):
+        """Handle Skip This Version click from banner dropdown.
+
+        Parameters
+        ----------
+        version : str
+            Version to skip permanently
+        """
+        # Skip version permanently
+        self._update_checker.skip_version(version)
+
+        # Show skip confirmation in banner
+        if self._update_banner:
+            self._update_banner.show_skip_confirmation()
+
+        # Schedule banner dismiss after 1.5 seconds
+        def _dismiss_after_skip():
+            if self._update_banner:
+                self._update_banner.destroy()
+                self._update_banner = None
+
+        self.after(1500, _dismiss_after_skip)
+
+        # Refresh Settings status if label exists
+        if self._update_status_label:
+            self._refresh_update_status()
+
+    def _on_view_changelog(self, version: str):
+        """Handle version number click from banner - show changelog dialog.
+
+        Parameters
+        ----------
+        version : str
+            Version to view release notes for
+        """
+        # Check cache first
+        cached = self._update_checker.get_cached_release_notes(version)
+
+        if cached:
+            # Show dialog immediately with cached notes
+            self._show_changelog_dialog(version, cached)
+        else:
+            # Fetch in background thread
+            def fetch_thread():
+                tag = self._update_tag if self._update_tag else f"v{version}"
+                body = self._update_checker.fetch_release_notes(tag)
+                self._update_checker.cache_release_notes(version, body)
+                self._queue.put(("release_notes_ready", version, body))
+
+            threading.Thread(target=fetch_thread, daemon=True).start()
+
+    def _show_changelog_dialog(self, version: str, body: str):
+        """Show ChangelogDialog with extracted summary.
+
+        Parameters
+        ----------
+        version : str
+            Version string
+        body : str
+            Full release notes markdown body
+        """
+        summary = extract_summary(body)
+
+        # Use stored release_url if available, otherwise construct
+        github_url = self._update_release_url if self._update_release_url else \
+            f"https://github.com/BrandedTamarasu-glitch/Job-Radar/releases/tag/v{version}"
+
+        ChangelogDialog(self, version, summary, github_url)
 
     def _on_download_requested(self, version: str):
         """Handle download request from banner.
@@ -1035,6 +1129,14 @@ class MainWindow(ctk.CTk):
             status = "Unknown"
             status_color = "gray"
 
+        # Check for skipped version or available update
+        if self._update_version and self._update_checker.is_version_skipped(self._update_version):
+            status = f"v{self._update_version} available (skipped)"
+            status_color = "gray"
+        elif self._update_version:
+            status = f"v{self._update_version} available"
+            status_color = "orange"
+
         # Update label
         status_text = f"v{__version__} -- Last checked: {relative_time} -- {status}"
         self._update_status_label.configure(text=status_text, text_color=status_color)
@@ -1116,6 +1218,39 @@ class MainWindow(ctk.CTk):
         """Handle auto-check toggle switch change in Settings tab."""
         enabled = self._auto_check_var.get()
         self._update_checker.set_auto_check(enabled)
+
+    def _refresh_skipped_status(self):
+        """Refresh skipped versions status label in Settings tab."""
+        if not self._skipped_status_label:
+            return
+
+        skipped = self._update_checker.get_skipped_versions()
+        if skipped:
+            self._skipped_status_label.configure(
+                text=f"Skipped: {', '.join('v' + v for v in skipped)}"
+            )
+        else:
+            self._skipped_status_label.configure(text="")
+
+    def _on_settings_view_notes(self):
+        """Handle 'View release notes' link click in Settings tab."""
+        if self._update_version:
+            self._on_view_changelog(self._update_version)
+
+    def _on_clear_skipped(self):
+        """Handle 'Clear skipped versions' button click in Settings tab."""
+        self._update_checker.clear_skipped_versions()
+
+        # Refresh skipped status label
+        self._refresh_skipped_status()
+
+        # Hide clear button
+        if self._clear_skipped_btn:
+            self._clear_skipped_btn.pack_forget()
+
+        # Refresh update status label
+        if self._update_status_label:
+            self._refresh_update_status()
 
     def _start_real_search(self):
         """Start real search operation with full pipeline execution."""
@@ -1332,7 +1467,48 @@ class MainWindow(ctk.CTk):
             variable=self._auto_check_var,
             command=self._on_auto_check_toggle
         )
-        auto_check_switch.pack(pady=(0, 20), anchor="w", padx=10)
+        auto_check_switch.pack(pady=(0, 10), anchor="w", padx=10)
+
+        # "View release notes" link (only when update available)
+        self._release_notes_label = ctk.CTkButton(
+            scroll_frame,
+            text="View release notes",
+            fg_color="transparent",
+            text_color=("#3498DB", "#5DADE2"),
+            hover_color=("gray90", "gray20"),
+            font=ctk.CTkFont(size=12, underline=True),
+            anchor="w",
+            width=150,
+            height=25,
+            cursor="hand2",
+            command=self._on_settings_view_notes
+        )
+        # Only pack if update available
+        if self._update_version:
+            self._release_notes_label.pack(anchor="w", padx=10)
+
+        # Skipped versions status label
+        self._skipped_status_label = ctk.CTkLabel(
+            scroll_frame,
+            text="",
+            font=ctk.CTkFont(size=12),
+            text_color="gray"
+        )
+        self._skipped_status_label.pack(anchor="w", padx=10)
+        self._refresh_skipped_status()
+
+        # "Clear skipped versions" button
+        self._clear_skipped_btn = ctk.CTkButton(
+            scroll_frame,
+            text="Clear skipped versions",
+            width=180,
+            fg_color="transparent",
+            border_width=1,
+            command=self._on_clear_skipped
+        )
+        # Only pack if there are skipped versions
+        if self._update_checker.get_skipped_versions():
+            self._clear_skipped_btn.pack(anchor="w", padx=10, pady=(5, 10))
 
         # Separator between Updates and API Key Settings
         separator = ctk.CTkFrame(scroll_frame, height=1, fg_color="gray")
