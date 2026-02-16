@@ -8,6 +8,8 @@ import json
 import logging
 import os
 import queue
+import re
+import sys
 import tempfile
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -22,8 +24,28 @@ log = logging.getLogger(__name__)
 
 # GitHub API constants
 GITHUB_API_URL = "https://api.github.com/repos/BrandedTamarasu-glitch/Job-Radar/releases/latest"
+GITHUB_RELEASES_TAG_URL = "https://api.github.com/repos/BrandedTamarasu-glitch/Job-Radar/releases/tags/{tag}"
 CHECK_INTERVAL_HOURS = 24
 REQUEST_TIMEOUT = 10
+
+
+def get_platform_asset_pattern() -> str:
+    """Get regex pattern for installer filename based on platform.
+
+    Returns:
+        Regex pattern string for matching installer filenames
+
+    Raises:
+        RuntimeError: If platform is not supported
+    """
+    if sys.platform == "darwin":
+        return r"\.dmg$"
+    elif sys.platform == "win32":
+        return r"\.exe$"
+    elif sys.platform.startswith("linux"):
+        return r"\.tar\.gz$"
+    else:
+        raise RuntimeError(f"Unsupported platform: {sys.platform}")
 
 
 class UpdateChecker:
@@ -211,7 +233,7 @@ class UpdateChecker:
         - check_success: True if API call succeeded, False on error
 
         Queue messages:
-        - ("update_available", version, url) if newer version found
+        - ("update_available", version, url, tag_name) if newer version found
         - ("up_to_date",) if no update needed
         - ("check_failed", error_message) on network error
         """
@@ -241,7 +263,7 @@ class UpdateChecker:
             # Compare versions
             if self.is_newer_version(__version__, latest_version):
                 if self.result_queue:
-                    self.result_queue.put(("update_available", latest_version, html_url))
+                    self.result_queue.put(("update_available", latest_version, html_url, tag_name))
             else:
                 if self.result_queue:
                     self.result_queue.put(("up_to_date",))
@@ -298,3 +320,89 @@ class UpdateChecker:
             enabled: True to enable auto-check, False to disable
         """
         self._update_state({"auto_check_enabled": enabled})
+
+    def fetch_release_assets(self, tag: str) -> list[dict]:
+        """Fetch release assets from GitHub for a specific tag.
+
+        Args:
+            tag: Release tag name (e.g., "v2.2.0")
+
+        Returns:
+            List of asset dicts with keys: name, browser_download_url, digest, size.
+            Returns empty list on any error.
+        """
+        url = GITHUB_RELEASES_TAG_URL.format(tag=tag)
+
+        try:
+            response = requests.get(
+                url,
+                headers={"User-Agent": f"Job-Radar/{__version__}"},
+                timeout=REQUEST_TIMEOUT,
+            )
+            response.raise_for_status()
+
+            data = response.json()
+            assets_raw = data.get("assets", [])
+
+            # Extract relevant fields from each asset
+            assets = []
+            for asset in assets_raw:
+                assets.append({
+                    "name": asset.get("name", ""),
+                    "browser_download_url": asset.get("browser_download_url", ""),
+                    "digest": asset.get("digest"),  # May be None
+                    "size": asset.get("size", 0),
+                })
+
+            return assets
+
+        except requests.RequestException as e:
+            log.error("Failed to fetch release assets for tag %s: %s", tag, e)
+            return []
+
+    def select_platform_asset(self, assets: list[dict]) -> dict | None:
+        """Select the appropriate installer asset for the current platform.
+
+        Args:
+            assets: List of asset dicts (from fetch_release_assets)
+
+        Returns:
+            Asset dict for current platform, or None if no match found
+        """
+        try:
+            pattern = get_platform_asset_pattern()
+        except RuntimeError as e:
+            log.error("Cannot select asset: %s", e)
+            return None
+
+        for asset in assets:
+            if re.search(pattern, asset["name"], re.IGNORECASE):
+                return asset
+
+        return None
+
+    def get_installer_download_path(self, version: str) -> Path:
+        """Get the destination path for downloaded installer.
+
+        Uses system temp directory with version-stamped filename.
+
+        Args:
+            version: Version string (e.g., "2.2.0")
+
+        Returns:
+            Path to destination file
+        """
+        temp_dir = tempfile.gettempdir()
+
+        # Determine filename based on platform
+        if sys.platform == "darwin":
+            filename = f"Job-Radar-v{version}-installer.dmg"
+        elif sys.platform == "win32":
+            filename = f"Job-Radar-Setup-v{version}.exe"
+        elif sys.platform.startswith("linux"):
+            filename = f"job-radar-v{version}-installer.tar.gz"
+        else:
+            # Fallback
+            filename = f"job-radar-v{version}-installer"
+
+        return Path(temp_dir) / filename

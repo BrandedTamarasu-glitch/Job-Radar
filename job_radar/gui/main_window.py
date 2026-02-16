@@ -632,7 +632,9 @@ class MainWindow(ctk.CTk):
                         self._show_search_idle()
                     # Update checker messages
                     elif msg_type == "update_available":
-                        _, version, release_url = msg
+                        _, version, release_url, tag_name = msg
+                        # Store tag for later asset fetching
+                        self._update_tag = tag_name
                         if self._update_checker.should_show_banner(version):
                             self._show_update_banner(version, release_url)
                         # If manual check pending, update Settings UI

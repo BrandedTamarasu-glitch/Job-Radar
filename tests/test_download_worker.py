@@ -368,3 +368,155 @@ def test_download_sha256_success_without_prefix(mock_get, result_queue, stop_eve
 
     assert any(msg[0] == "download_complete" for msg in messages)
     assert not any(msg[0] == "download_failed" for msg in messages)
+
+
+# ---------------------------------------------------------------------------
+# UpdateChecker asset fetching tests
+# ---------------------------------------------------------------------------
+
+
+from job_radar.update_checker import UpdateChecker, get_platform_asset_pattern
+
+
+@patch("job_radar.update_checker.sys")
+def test_get_platform_asset_pattern_darwin(mock_sys):
+    """get_platform_asset_pattern returns .dmg pattern for macOS."""
+    mock_sys.platform = "darwin"
+    pattern = get_platform_asset_pattern()
+    assert pattern == r"\.dmg$"
+
+
+@patch("job_radar.update_checker.sys")
+def test_get_platform_asset_pattern_win32(mock_sys):
+    """get_platform_asset_pattern returns .exe pattern for Windows."""
+    mock_sys.platform = "win32"
+    pattern = get_platform_asset_pattern()
+    assert pattern == r"\.exe$"
+
+
+@patch("job_radar.update_checker.sys")
+def test_get_platform_asset_pattern_linux(mock_sys):
+    """get_platform_asset_pattern returns .tar.gz pattern for Linux."""
+    mock_sys.platform = "linux"
+    pattern = get_platform_asset_pattern()
+    assert pattern == r"\.tar\.gz$"
+
+
+@patch("job_radar.update_checker.sys")
+def test_get_platform_asset_pattern_unsupported(mock_sys):
+    """get_platform_asset_pattern raises RuntimeError for unsupported platform."""
+    mock_sys.platform = "freebsd"
+    try:
+        get_platform_asset_pattern()
+        assert False, "Should have raised RuntimeError"
+    except RuntimeError as e:
+        assert "Unsupported platform" in str(e)
+
+
+def test_select_platform_asset_picks_correct():
+    """select_platform_asset picks correct asset from mixed list."""
+    assets = [
+        {"name": "job-radar-v2.2.0-linux.tar.gz", "browser_download_url": "http://example.com/linux"},
+        {"name": "Job-Radar-Setup-v2.2.0.exe", "browser_download_url": "http://example.com/win"},
+        {"name": "Job-Radar-v2.2.0-installer.dmg", "browser_download_url": "http://example.com/mac"},
+    ]
+
+    with patch("job_radar.update_checker.sys.platform", "darwin"):
+        checker = UpdateChecker()
+        selected = checker.select_platform_asset(assets)
+        assert selected is not None
+        assert ".dmg" in selected["name"]
+
+    with patch("job_radar.update_checker.sys.platform", "win32"):
+        checker = UpdateChecker()
+        selected = checker.select_platform_asset(assets)
+        assert selected is not None
+        assert ".exe" in selected["name"]
+
+    with patch("job_radar.update_checker.sys.platform", "linux"):
+        checker = UpdateChecker()
+        selected = checker.select_platform_asset(assets)
+        assert selected is not None
+        assert ".tar.gz" in selected["name"]
+
+
+def test_select_platform_asset_returns_none_when_no_match():
+    """select_platform_asset returns None when no match found."""
+    assets = [
+        {"name": "README.md", "browser_download_url": "http://example.com/readme"},
+        {"name": "source.zip", "browser_download_url": "http://example.com/source"},
+    ]
+
+    with patch("job_radar.update_checker.sys.platform", "darwin"):
+        checker = UpdateChecker()
+        selected = checker.select_platform_asset(assets)
+        assert selected is None
+
+
+def test_get_installer_download_path():
+    """get_installer_download_path returns Path in temp directory with correct extension."""
+    version = "2.2.0"
+
+    with patch("job_radar.update_checker.sys.platform", "darwin"):
+        checker = UpdateChecker()
+        path = checker.get_installer_download_path(version)
+        assert path.parent == Path(tempfile.gettempdir())
+        assert path.name == f"Job-Radar-v{version}-installer.dmg"
+
+    with patch("job_radar.update_checker.sys.platform", "win32"):
+        checker = UpdateChecker()
+        path = checker.get_installer_download_path(version)
+        assert path.parent == Path(tempfile.gettempdir())
+        assert path.name == f"Job-Radar-Setup-v{version}.exe"
+
+    with patch("job_radar.update_checker.sys.platform", "linux"):
+        checker = UpdateChecker()
+        path = checker.get_installer_download_path(version)
+        assert path.parent == Path(tempfile.gettempdir())
+        assert path.name == f"job-radar-v{version}-installer.tar.gz"
+
+
+@patch("job_radar.update_checker.requests.get")
+def test_fetch_release_assets_success(mock_get):
+    """fetch_release_assets returns list of dicts with correct keys."""
+    mock_response = Mock()
+    mock_response.json.return_value = {
+        "assets": [
+            {
+                "name": "installer.exe",
+                "browser_download_url": "http://example.com/installer.exe",
+                "digest": "sha256:abcd1234",
+                "size": 1024,
+            },
+            {
+                "name": "installer.dmg",
+                "browser_download_url": "http://example.com/installer.dmg",
+                "digest": None,
+                "size": 2048,
+            }
+        ]
+    }
+    mock_response.raise_for_status = Mock()
+    mock_get.return_value = mock_response
+
+    checker = UpdateChecker()
+    assets = checker.fetch_release_assets("v2.2.0")
+
+    assert len(assets) == 2
+    assert assets[0]["name"] == "installer.exe"
+    assert assets[0]["browser_download_url"] == "http://example.com/installer.exe"
+    assert assets[0]["digest"] == "sha256:abcd1234"
+    assert assets[0]["size"] == 1024
+    assert assets[1]["digest"] is None
+
+
+@patch("job_radar.update_checker.requests.get")
+def test_fetch_release_assets_network_error(mock_get):
+    """fetch_release_assets returns empty list on network error."""
+    import requests
+    mock_get.side_effect = requests.ConnectionError("Connection refused")
+
+    checker = UpdateChecker()
+    assets = checker.fetch_release_assets("v2.2.0")
+
+    assert assets == []

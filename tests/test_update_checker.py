@@ -240,11 +240,12 @@ def test_check_for_updates_newer_version(mock_get, checker_with_queue, temp_conf
 
     checker.check_for_updates()
 
-    # Check queue message
+    # Check queue message (now includes tag_name)
     result = result_queue.get(timeout=1)
     assert result[0] == "update_available"
     assert result[1] == "2.2.0"
     assert "releases/tag/v2.2.0" in result[2]
+    assert result[3] == "v2.2.0"  # tag_name
 
     # Check config updated
     config = json.loads(temp_config_path.read_text(encoding="utf-8"))
