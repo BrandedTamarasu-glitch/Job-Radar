@@ -7,17 +7,17 @@
 See: .planning/PROJECT.md (updated 2026-02-15)
 
 **Core value:** Accurate job-candidate scoring — if the scoring is wrong, nothing else matters.
-**Current focus:** Phase 39 - Auto-Update Download
+**Current focus:** Phase 40 - Auto-Update Installation
 
 ## Current Position
 
 **Milestone:** v2.2.0 Auto-Update & Source Expansion
-**Phase:** 39 of 42 (Auto-Update Download)
-**Plan:** 2 of 2
-**Status:** Verifying
-**Last activity:** 2026-02-16 — Completed 39-02 Download UI Integration
+**Phase:** 40 of 42 (Auto-Update Installation)
+**Plan:** 1 of 2
+**Status:** Completed
+**Last activity:** 2026-02-16 — Completed 40-01 Installer Launch Backend & Dialogs
 
-**Progress:** [██████████] 100%
+**Progress:** [██████████] 99%
 
 ## Performance Metrics
 
@@ -36,6 +36,7 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 
 | Plan | Duration (sec) | Tasks | Files | Date |
 |------|---------------|-------|-------|------|
+| 40-01 | 221 | 2 | 3 | 2026-02-16 |
 | 39-02 | ~600 | 3 | 3 | 2026-02-16 |
 | 39-01 | 356 | 2 | 5 | 2026-02-16 |
 | 38-02 | 1067 | 3 | 2 | 2026-02-16 |
@@ -62,6 +63,10 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 
 Recent decisions affecting v2.2.0 work:
 
+- v2.2.0 (40-01): Cleanup old installers on startup, not immediately after launch (avoid race condition)
+- v2.2.0 (40-01): Use tkinter clipboard instead of pyperclip (no external dependency)
+- v2.2.0 (40-01): macOS quarantine attribute left intact, trust notarization (per research)
+- v2.2.0 (40-01): Windows uses DETACHED_PROCESS and CREATE_NEW_PROCESS_GROUP flags
 - v2.2.0 (39-02): Banner transforms in-place between states (no separate widgets)
 - v2.2.0 (39-02): Session-only dismiss on cancel (softer than 24h suppress)
 - v2.2.0 (39-02): "Install Now" stub — Phase 40 implements installer launch
@@ -104,11 +109,11 @@ None yet for v2.2.0.
 ## Session Continuity
 
 Last session: 2026-02-16
-Stopped at: Completed 39-02-PLAN.md execution (Download UI Integration)
+Stopped at: Completed 40-01-PLAN.md execution (Installer Launch Backend & Dialogs)
 Resume file: None
 
-**Next step:** Phase 39 verification, then proceed to Phase 40.
+**Next step:** Continue to Phase 40 Plan 02 (MainWindow integration).
 
 ---
 *State initialized: 2026-02-13*
-*Last activity: 2026-02-16T17:30:00Z - Completed 39-02 Download UI Integration (Phase 39: 2 of 2 plans)*
+*Last activity: 2026-02-16 - Completed 40-01 Installer Launch Backend & Dialogs (Phase 40: 1 of 2 plans)*
