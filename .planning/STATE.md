@@ -7,17 +7,17 @@
 See: .planning/PROJECT.md (updated 2026-02-15)
 
 **Core value:** Accurate job-candidate scoring — if the scoring is wrong, nothing else matters.
-**Current focus:** Phase 38 - Auto-Update Foundation (Version Detection)
+**Current focus:** Phase 39 - Auto-Update Download
 
 ## Current Position
 
 **Milestone:** v2.2.0 Auto-Update & Source Expansion
-**Phase:** 38 of 42 (Auto-Update Foundation)
-**Plan:** 2 of 2
-**Status:** Phase complete
-**Last activity:** 2026-02-16 — Completed 38-02 Update Notification UI
+**Phase:** 39 of 42 (Auto-Update Download)
+**Plan:** 1 of 2
+**Status:** In progress
+**Last activity:** 2026-02-16 — Completed 39-01 DownloadWorker Backend
 
-**Progress:** [██████████] 100%
+**Progress:** [█████-----] 50%
 
 ## Performance Metrics
 
@@ -36,12 +36,12 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 
 | Plan | Duration (sec) | Tasks | Files | Date |
 |------|---------------|-------|-------|------|
+| 39-01 | 356 | 2 | 5 | 2026-02-16 |
 | 38-02 | 1067 | 3 | 2 | 2026-02-16 |
 | 38-01 | 187 | 1 | 2 | 2026-02-16 |
 | 37-03 | 121 | 2 | 3 | 2026-02-14 |
 | 37-02 | 176 | 2 | 7 | 2026-02-14 |
 | 37-01 | 116 | 2 | 4 | 2026-02-14 |
-| 36-02 | 213 | 2 | 3 | 2026-02-14 |
 
 ### Quality Indicators
 
@@ -61,6 +61,10 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 
 Recent decisions affecting v2.2.0 work:
 
+- v2.2.0 (39-01): SHA256 verification gracefully skips when digest is None (pre-June 2025 releases)
+- v2.2.0 (39-01): Progress updates throttled to every ~100KB (balance responsiveness vs overhead)
+- v2.2.0 (39-01): Cancellation deletes partial files immediately (avoid disk clutter)
+- v2.2.0 (39-01): Asset selection uses regex pattern matching (handles naming variations)
 - v2.2.0 (38-02): Blue/teal accent banner color matches VS Code update style
 - v2.2.0 (38-02): Updates section placed before API Key Settings in Settings tab
 - v2.2.0 (38-02): Manual check shows inline feedback instead of banner
@@ -96,11 +100,11 @@ None yet for v2.2.0.
 ## Session Continuity
 
 Last session: 2026-02-16
-Stopped at: Completed 38-02-PLAN.md execution (Update Notification UI)
+Stopped at: Completed 39-01-PLAN.md execution (DownloadWorker Backend)
 Resume file: None
 
-**Next step:** Phase 38 complete. Ready for Phase 39 or 40.
+**Next step:** Execute 39-02-PLAN.md (Download UI Integration).
 
 ---
 *State initialized: 2026-02-13*
-*Last activity: 2026-02-16T15:22:18Z - Completed Phase 38 Auto-Update Foundation (2 plans)*
+*Last activity: 2026-02-16T16:49:12Z - Completed 39-01 DownloadWorker Backend (Phase 39: 1 of 2 plans)*
