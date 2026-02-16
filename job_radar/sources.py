@@ -598,6 +598,7 @@ _SOURCE_DISPLAY_NAMES = {
     "usajobs": "USAJobs (Federal)",
     "serpapi": "SerpAPI (Google Jobs)",
     "jobicy": "Jobicy (Remote)",
+    "hiringcafe": "hiring.cafe",
 }
 
 
@@ -1526,6 +1527,109 @@ def map_hiringcafe_to_job_result(item: dict) -> JobResult | None:
     )
 
 
+# hiring.cafe fetcher configuration constants
+_HIRINGCAFE_API_URL = "https://hiring.cafe/api/jobs/search"  # Discovered endpoint
+_HIRINGCAFE_PER_QUERY_LIMIT = 50  # Per user decision (overrides phase goal max of 1000)
+
+
+def fetch_hiringcafe(query: str, location: str = "", verbose: bool = False) -> list[JobResult]:
+    """Fetch job listings from hiring.cafe.
+
+    hiring.cafe is an AI-powered job search platform with remote-focused positions
+    and transparent salary information. Uses discovered internal API endpoint.
+
+    Args:
+        query: Job title search query
+        location: Optional location filter (remote jobs always included)
+        verbose: Enable verbose logging
+
+    Returns:
+        List of JobResult objects, empty list on failure (silent skip)
+    """
+    results = []
+
+    # Check rate limit (60 req/hour)
+    if not check_rate_limit("hiringcafe", verbose=verbose):
+        return results
+
+    # Build request URL with query parameters
+    params = {
+        "q": query,
+        "limit": _HIRINGCAFE_PER_QUERY_LIMIT,
+    }
+    if location:
+        params["location"] = location
+
+    url = _HIRINGCAFE_API_URL + "?" + urllib.parse.urlencode(params)
+
+    # Fetch with retry (retries=1 per user decision "No retry -- fail fast")
+    try:
+        body = fetch_with_retry(url, headers=HEADERS, use_cache=True, retries=1)
+        if body is None:
+            log.debug("[hiring.cafe] Fetch failed for '%s'", query)
+            return results
+
+        # Try parsing as JSON first (API endpoint)
+        try:
+            data = _json.loads(body)
+            items = data.get("jobs", []) or data.get("data", []) or data.get("results", [])
+        except _json.JSONDecodeError:
+            # If JSON parsing fails, might be HTML - try BeautifulSoup fallback
+            log.debug("[hiring.cafe] Response is not JSON, attempting HTML parsing")
+            soup = BeautifulSoup(body, "html.parser")
+            # NOTE: HTML parsing pattern would go here if needed
+            # For now, return empty list since we expect JSON
+            return results
+
+        # Parse each item with individual error handling
+        for item in items:
+            try:
+                job = map_hiringcafe_to_job_result(item)
+                if job:
+                    # Location filtering: include if location matches OR arrangement is remote
+                    if location:
+                        # Remote jobs always included regardless of location preference
+                        if job.arrangement == "remote":
+                            results.append(job)
+                        # Local jobs: check if location matches target
+                        elif _location_matches(job.location, location):
+                            results.append(job)
+                    else:
+                        # No location filter: include all
+                        results.append(job)
+            except Exception as e:
+                # Skip malformed individual job, keep processing others
+                log.debug("[hiring.cafe] Skipping malformed job: %s", e)
+                continue
+
+    except Exception as e:
+        # Silent skip on any failure (per user decision)
+        log.debug("[hiring.cafe] Request failed: %s", e)
+
+    log.info("[hiring.cafe] Found %d results for '%s'", len(results), query)
+    return results
+
+
+def _location_matches(job_location: str, target_location: str) -> bool:
+    """Check if job location matches target (city, state, or abbreviation).
+
+    Args:
+        job_location: Job location string (e.g., "San Francisco, CA")
+        target_location: Target location string (e.g., "California" or "CA")
+
+    Returns:
+        True if locations match, False otherwise
+    """
+    if not job_location or not target_location:
+        return False
+
+    job_parts = job_location.lower().replace(",", " ").split()
+    target_parts = target_location.lower().replace(",", " ").split()
+
+    # Check if any target part appears in job location
+    return any(part in job_parts for part in target_parts if len(part) > 1)
+
+
 def fetch_serpapi(query: str, location: str = "", verbose: bool = False) -> list[JobResult]:
     """Fetch job listings from SerpAPI Google Jobs API."""
     results = []
@@ -1909,6 +2013,13 @@ def build_search_queries(profile: dict) -> list[dict]:
             "location": location,
         })
 
+    # hiring.cafe queries: each target title
+    for title in titles:
+        hiringcafe_query = {"source": "hiringcafe", "query": title}
+        if location:
+            hiringcafe_query["location"] = location
+        queries.append(hiringcafe_query)
+
     return queries
 
 
@@ -1931,7 +2042,7 @@ def fetch_all(profile: dict, on_progress=None, on_source_progress=None) -> list[
 
     # Split queries into three phases: native source wins over aggregator
     SCRAPER_SOURCES = {"dice", "hn_hiring", "remoteok", "weworkremotely"}
-    API_SOURCES = {"adzuna", "authentic_jobs", "usajobs", "jobicy"}  # USAJobs and Jobicy are native sources
+    API_SOURCES = {"adzuna", "authentic_jobs", "usajobs", "jobicy", "hiringcafe"}  # USAJobs, Jobicy, and hiring.cafe are native sources
     AGGREGATOR_SOURCES = {"jsearch", "serpapi"}  # JSearch and SerpAPI are aggregators — run LAST
 
     scraper_queries = [q for q in queries if q["source"] in SCRAPER_SOURCES]
@@ -1994,6 +2105,8 @@ def fetch_all(profile: dict, on_progress=None, on_source_progress=None) -> list[
             return fetch_serpapi(q["query"], q.get("location", ""))
         elif q["source"] == "jobicy":
             return fetch_jobicy(q["query"], q.get("location", ""))
+        elif q["source"] == "hiringcafe":
+            return fetch_hiringcafe(q["query"], q.get("location", ""))
         return []
 
     def _run_queries_parallel(query_list, phase_name):

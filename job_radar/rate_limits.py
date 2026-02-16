@@ -60,6 +60,7 @@ def _load_rate_limits() -> dict:
         "usajobs": [Rate(60, Duration.MINUTE)],        # 60 req/min (conservative for gov API)
         "serpapi": [Rate(50, Duration.MINUTE)],        # Conservative for free tier (100 searches/month cap)
         "jobicy": [Rate(1, Duration.HOUR)],            # Per docs: "once per hour"
+        "hiringcafe": [Rate(60, Duration.HOUR)],       # 60 req/hour per HIRE-04
     }
 
     # Load config file
@@ -123,6 +124,8 @@ BACKEND_API_MAP = {
     "serpapi": "serpapi",
     # Jobicy — single source (no API key required, but rate limited)
     "jobicy": "jobicy",
+    # hiring.cafe — single source
+    "hiringcafe": "hiringcafe",
 }
 
 # Cache limiters to avoid re-creating objects

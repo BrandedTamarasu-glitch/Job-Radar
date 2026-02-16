@@ -1,6 +1,7 @@
 """Tests for API source integration covering mappers, text utilities, fetchers, and pipeline."""
 
 import pytest
+from unittest.mock import patch, MagicMock
 from job_radar.sources import (
     map_adzuna_to_job_result,
     map_authenticjobs_to_job_result,
@@ -8,6 +9,8 @@ from job_radar.sources import (
     map_usajobs_to_job_result,
     map_serpapi_to_job_result,
     map_jobicy_to_job_result,
+    map_hiringcafe_to_job_result,
+    fetch_hiringcafe,
     strip_html_and_normalize,
     parse_location_to_city_state,
     fetch_adzuna,
@@ -1346,3 +1349,122 @@ class TestRateLimitConfigSerpAPIJobicy:
         """Jobicy is in BACKEND_API_MAP."""
         assert "jobicy" in BACKEND_API_MAP
         assert BACKEND_API_MAP["jobicy"] == "jobicy"
+
+
+# ==============================================================================
+# hiring.cafe Integration Tests
+# ==============================================================================
+
+class TestHiringCafePipelineIntegration:
+    """Tests for hiring.cafe pipeline integration and fetcher."""
+
+    def test_build_search_queries_includes_hiringcafe(self):
+        """Verify hiring.cafe queries generated for each target title."""
+        profile = {
+            "target_titles": ["Software Engineer", "Backend Developer"],
+            "core_skills": ["python"],
+            "target_market": "San Francisco, CA",
+        }
+        queries = build_search_queries(profile)
+        hiringcafe_queries = [q for q in queries if q["source"] == "hiringcafe"]
+
+        # Should have one query per target title
+        assert len(hiringcafe_queries) == 2
+        assert hiringcafe_queries[0]["query"] == "Software Engineer"
+        assert hiringcafe_queries[0]["location"] == "San Francisco, CA"
+        assert hiringcafe_queries[1]["query"] == "Backend Developer"
+        assert hiringcafe_queries[1]["location"] == "San Francisco, CA"
+
+    def test_hiringcafe_rate_limit_configured(self):
+        """Assert hiringcafe in RATE_LIMITS with 60/hour."""
+        assert "hiringcafe" in RATE_LIMITS
+        rates = RATE_LIMITS["hiringcafe"]
+        assert len(rates) >= 1
+        # Should have 60 req/hour rate limit
+        assert any(rate.limit == 60 for rate in rates)
+
+    def test_hiringcafe_backend_api_map(self):
+        """Assert hiringcafe in BACKEND_API_MAP."""
+        assert "hiringcafe" in BACKEND_API_MAP
+        assert BACKEND_API_MAP["hiringcafe"] == "hiringcafe"
+
+    @patch("job_radar.sources.fetch_with_retry")
+    @patch("job_radar.sources.check_rate_limit")
+    def test_fetch_hiringcafe_returns_empty_on_failure(self, mock_rate_limit, mock_fetch):
+        """Mock fetch_with_retry to return None, verify empty list returned (no crash)."""
+        mock_rate_limit.return_value = True  # Allow rate limit
+        mock_fetch.return_value = None  # Simulate fetch failure
+
+        results = fetch_hiringcafe("Python Developer", "Remote")
+
+        assert results == []
+        assert mock_fetch.called
+
+    @patch("job_radar.sources.fetch_with_retry")
+    @patch("job_radar.sources.check_rate_limit")
+    @patch("job_radar.sources.map_hiringcafe_to_job_result")
+    def test_fetch_hiringcafe_skips_malformed_entries(self, mock_mapper, mock_rate_limit, mock_fetch):
+        """Mock response with mix of valid and malformed items, verify only valid items returned."""
+        mock_rate_limit.return_value = True
+
+        # Mock JSON response with 3 items: 2 valid, 1 malformed (returns None)
+        mock_fetch.return_value = '{"jobs": [{}, {}, {}]}'
+
+        # First and third calls return valid jobs, second returns None
+        valid_job1 = JobResult(
+            title="Engineer", company="CompanyA", location="Remote",
+            arrangement="remote", salary="$120K - $160K", date_posted="2026-02-01",
+            description="Job 1", url="https://example.com/1", source="hiringcafe"
+        )
+        valid_job2 = JobResult(
+            title="Developer", company="CompanyB", location="SF",
+            arrangement="onsite", salary="$100K - $140K", date_posted="2026-02-01",
+            description="Job 2", url="https://example.com/2", source="hiringcafe"
+        )
+        mock_mapper.side_effect = [valid_job1, None, valid_job2]
+
+        results = fetch_hiringcafe("Python Developer")
+
+        # Should skip the None entry but keep valid ones
+        assert len(results) == 2
+        assert results[0].title == "Engineer"
+        assert results[1].title == "Developer"
+
+    @patch("job_radar.sources.fetch_with_retry")
+    @patch("job_radar.sources.check_rate_limit")
+    @patch("job_radar.sources.map_hiringcafe_to_job_result")
+    def test_fetch_hiringcafe_uses_mapper(self, mock_mapper, mock_rate_limit, mock_fetch):
+        """Mock fetch_with_retry to return valid JSON, verify map_hiringcafe_to_job_result called."""
+        mock_rate_limit.return_value = True
+        mock_fetch.return_value = '{"jobs": [{"title": "Job1"}, {"title": "Job2"}]}'
+
+        # Mock mapper returns valid jobs
+        job1 = JobResult(
+            title="Job1", company="Co1", location="Remote",
+            arrangement="remote", salary="Not listed", date_posted="",
+            description="", url="https://example.com/1", source="hiringcafe"
+        )
+        job2 = JobResult(
+            title="Job2", company="Co2", location="NYC",
+            arrangement="onsite", salary="Not listed", date_posted="",
+            description="", url="https://example.com/2", source="hiringcafe"
+        )
+        mock_mapper.side_effect = [job1, job2]
+
+        results = fetch_hiringcafe("Engineer")
+
+        # Verify mapper was called twice (once per item)
+        assert mock_mapper.call_count == 2
+        assert len(results) == 2
+        assert results[0].title == "Job1"
+        assert results[1].title == "Job2"
+
+    @patch("job_radar.sources.check_rate_limit")
+    def test_fetch_hiringcafe_respects_rate_limit(self, mock_rate_limit):
+        """Verify fetch returns empty list when rate limited."""
+        mock_rate_limit.return_value = False  # Rate limited
+
+        results = fetch_hiringcafe("Python Developer")
+
+        assert results == []
+        assert mock_rate_limit.called
