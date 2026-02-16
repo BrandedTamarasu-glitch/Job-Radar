@@ -101,10 +101,11 @@ Plans:
   4. User sees hiring.cafe jobs deduplicated with existing sources (no duplicate titles/companies)
   5. User sees graceful continuation when hiring.cafe API fails (other 10 sources still work)
   6. User sees up to 1,000 jobs from hiring.cafe when search criteria match broadly
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 42-01-PLAN.md: TBD
+- [ ] 42-01-PLAN.md — TDD: hiring.cafe mapper and salary normalization (hourly/monthly/yearly conversion)
+- [ ] 42-02-PLAN.md — Pipeline integration (fetcher, rate limits, query generation, dedup keep-best enhancement)
 
 ## Progress
 
@@ -117,7 +118,7 @@ Phases execute in numeric order: 38 → 39 → 40 → 41 → 42
 | 39. Auto-Update Download | v2.2.0 | 2/2 | ✓ Complete | 2026-02-16 |
 | 40. Auto-Update Installation | v2.2.0 | 2/2 | ✓ Complete | 2026-02-16 |
 | 41. Auto-Update Polish | v2.2.0 | 2/2 | ✓ Complete | 2026-02-16 |
-| 42. hiring.cafe Integration | v2.2.0 | 0/TBD | Not started | - |
+| 42. hiring.cafe Integration | v2.2.0 | 0/2 | Not started | - |
 
 ---
 *Last updated: 2026-02-16*
