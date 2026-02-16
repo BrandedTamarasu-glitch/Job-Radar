@@ -7,6 +7,7 @@ navigation, progress display, and report opening.
 
 import os
 import queue
+import sys
 import tempfile
 import threading
 import webbrowser
@@ -19,12 +20,13 @@ from job_radar import __version__
 from job_radar.paths import get_data_dir
 from job_radar.profile_manager import load_profile
 from job_radar.config import load_config
-from job_radar.update_checker import UpdateChecker
+from job_radar.update_checker import UpdateChecker, launch_installer, cleanup_old_installers
 from job_radar.gui.profile_form import ProfileForm
 from job_radar.gui.search_controls import SearchControls
 from job_radar.gui.worker_thread import create_search_worker, create_download_worker
 from job_radar.gui.scoring_config import ScoringConfigWidget
 from job_radar.gui.update_banner import UpdateBanner, DownloadConfirmDialog
+from job_radar.gui.installer_dialogs import InstallConfirmDialog, LinuxInstallInstructionsDialog
 from job_radar.gui.uninstall_dialog import (
     BackupOfferDialog,
     PathPreviewDialog,
@@ -52,6 +54,9 @@ class MainWindow(ctk.CTk):
 
     def __init__(self):
         super().__init__()
+
+        # Clean up old installer files from previous sessions
+        cleanup_old_installers()
 
         # Set appearance and theme
         ctk.set_appearance_mode("system")
@@ -91,6 +96,7 @@ class MainWindow(ctk.CTk):
         self._download_worker = None
         self._download_thread = None
         self._download_cancelled_this_session = False  # Session-only suppress flag
+        self._installer_path = None  # Path to downloaded installer file
 
         # Create header
         self._create_header()
@@ -759,8 +765,9 @@ class MainWindow(ctk.CTk):
         )
         self._update_banner.grid(row=1, column=0, sticky="ew")
 
-        # Set cancel callback
+        # Set cancel and install callbacks
         self._update_banner.set_cancel_callback(self._on_download_cancel)
+        self._update_banner.set_install_callback(self._on_install_now)
 
     def _dismiss_update(self, version: str, hours: int):
         """Dismiss update banner for specified duration.
@@ -851,6 +858,109 @@ class MainWindow(ctk.CTk):
         if self._update_banner:
             self._update_banner.destroy()
             self._update_banner = None
+
+    def _on_install_now(self, dest_path: str):
+        """Handle Install Now / Open Download button click from banner.
+
+        Parameters
+        ----------
+        dest_path : str
+            Path to downloaded installer file
+        """
+        # Store installer path
+        self._installer_path = Path(dest_path)
+
+        # Check if file exists
+        if not self._installer_path.exists():
+            # Show error dialog with re-download option
+            from tkinter import messagebox
+            result = messagebox.askyesno(
+                "Installer Not Found",
+                f"Installer file not found. Download again?\n\n{dest_path}",
+                parent=self
+            )
+            if result and self._update_banner:
+                # Reset banner to notification state so user can re-download
+                self._update_banner.show_notification()
+            return
+
+        # Platform-specific handling
+        if sys.platform.startswith("linux"):
+            # Linux: Show instructions dialog (no confirmation, no app close)
+            LinuxInstallInstructionsDialog(
+                self,
+                self._installer_path,
+                self._update_banner.version
+            )
+            return
+
+        # macOS/Windows: Show confirmation dialog with platform-specific message
+        if sys.platform == "darwin":
+            platform_message = "Opening installer DMG..."
+        elif sys.platform == "win32":
+            platform_message = "Launching installer... Windows may show a security prompt."
+        else:
+            platform_message = "Launching installer..."
+
+        # Show confirmation dialog
+        InstallConfirmDialog(
+            self,
+            self._update_banner.version,
+            platform_message,
+            on_confirm=self._execute_install
+        )
+
+    def _execute_install(self):
+        """Execute installer launch after user confirmation."""
+        # Determine platform message for status
+        if sys.platform == "darwin":
+            platform_message = "Opening installer DMG..."
+        elif sys.platform == "win32":
+            platform_message = "Launching installer..."
+        else:
+            platform_message = "Launching installer..."
+
+        # Update banner to show status
+        if self._update_banner:
+            self._update_banner.complete_message.configure(text=platform_message)
+
+        # Try to launch installer
+        try:
+            launch_installer(self._installer_path)
+        except RuntimeError as e:
+            error_msg = f"Couldn't launch installer. File saved at: {self._installer_path}\n\n{e}"
+            self._show_install_error(error_msg)
+            return
+        except Exception as e:
+            error_msg = f"Couldn't launch installer. File saved at: {self._installer_path}\n\n{e}"
+            self._show_install_error(error_msg)
+            return
+
+        # On success: Update banner message
+        if self._update_banner:
+            self._update_banner.complete_message.configure(text="Installer launched. Closing app...")
+
+        # Schedule app exit after 1.5 seconds
+        self.after(1500, self.destroy)
+
+    def _show_install_error(self, error_msg: str):
+        """Show install error dialog and reset banner to complete state.
+
+        Parameters
+        ----------
+        error_msg : str
+            Error message including file path
+        """
+        from tkinter import messagebox
+        messagebox.showerror(
+            "Installer Launch Failed",
+            error_msg,
+            parent=self
+        )
+
+        # Reset banner to complete state so user can retry
+        if self._update_banner and self._installer_path:
+            self._update_banner.show_complete(str(self._installer_path))
 
     def _on_manual_check_result(self, result_text: str):
         """Handle manual check result from Settings tab.
