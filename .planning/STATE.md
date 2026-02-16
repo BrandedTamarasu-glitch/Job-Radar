@@ -1,23 +1,23 @@
 # Project State: Job Radar
 
-**Last Updated:** 2026-02-16T19:40:56Z
+**Last Updated:** 2026-02-16T20:48:44Z
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-02-15)
 
 **Core value:** Accurate job-candidate scoring — if the scoring is wrong, nothing else matters.
-**Current focus:** Phase 41 - Auto-Update Polish
+**Current focus:** Phase 42 - hiring.cafe Integration
 
 ## Current Position
 
 **Milestone:** v2.2.0 Auto-Update & Source Expansion
-**Phase:** 41 of 42 (Auto-Update Polish)
-**Plan:** 2 of 2
-**Status:** Phase Complete
-**Last activity:** 2026-02-16 — Completed 41-02 Update Banner Skip & Changelog UI
+**Phase:** 42 of 42 (hiring.cafe Integration)
+**Plan:** 1 of 2
+**Status:** In Progress
+**Last activity:** 2026-02-16 — Completed 42-01 hiring.cafe Mapper & Salary Normalization
 
-**Progress:** [██████████] 100%
+**Progress:** [█████████░] 90%
 
 ## Performance Metrics
 
@@ -36,6 +36,7 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 
 | Plan | Duration (sec) | Tasks | Files | Date |
 |------|---------------|-------|-------|------|
+| 42-01 | 220 | 1 | 2 | 2026-02-16 |
 | 41-02 | 273 | 2 | 3 | 2026-02-16 |
 | 41-01 | 174 | 1 | 2 | 2026-02-16 |
 | 40-02 | 222 | 2 | 2 | 2026-02-16 |
@@ -44,14 +45,13 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 | 39-01 | 356 | 2 | 5 | 2026-02-16 |
 | 38-02 | 1067 | 3 | 2 | 2026-02-16 |
 | 38-01 | 187 | 1 | 2 | 2026-02-16 |
-| 37-03 | 121 | 2 | 3 | 2026-02-14 |
 
 ### Quality Indicators
 
 **Test Coverage:**
-- 566 tests across 19 test files
-- All passing (v2.1.0 shipped)
-- Coverage areas: scoring, config, tracker, wizard, report, UX, API, PDF, dedup, accessibility, profile management, GUI, rate limiting, JSearch, USAJobs, schema migration, scoring config widget, uninstaller
+- 581 tests across 19 test files (added 15 for hiring.cafe mapper)
+- 656 passing, 4 pre-existing platform-specific failures (config, installer_launch)
+- Coverage areas: scoring, config, tracker, wizard, report, UX, API, PDF, dedup, accessibility, profile management, GUI, rate limiting, JSearch, USAJobs, hiring.cafe, schema migration, scoring config widget, uninstaller
 
 **Code Stats (v2.1.0 shipped):**
 - ~26,000 LOC Python (source + tests + GUI)
@@ -64,6 +64,10 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 
 Recent decisions affecting v2.2.0 work:
 
+- v2.2.0 (42-01): Salary format $120K - $160K (K-format, not comma-format) for hiring.cafe
+- v2.2.0 (42-01): Missing salary displays "Not listed" (hiring.cafe convention)
+- v2.2.0 (42-01): Hourly conversion uses 2080 hours/year (40hrs/week x 52 weeks)
+- v2.2.0 (42-01): Salary period fallback heuristics: <500 = hourly, <20000 = monthly, else yearly
 - v2.2.0 (41-02): Use tkinter.Menu for dropdown instead of CTkOptionMenu (popup behavior)
 - v2.2.0 (41-02): Clickable version uses CTkButton with underline and transparent fg_color
 - v2.2.0 (41-02): Conditional packing for Settings widgets based on state
@@ -119,11 +123,11 @@ None yet for v2.2.0.
 ## Session Continuity
 
 Last session: 2026-02-16
-Stopped at: Completed Phase 41 (Auto-Update Polish) - both plans complete
+Stopped at: Completed 42-01 hiring.cafe Mapper & Salary Normalization
 Resume file: None
 
-**Next step:** Phase 42 (hiring.cafe Integration) - requires research before planning
+**Next step:** Execute 42-02 (hiring.cafe API fetcher and pipeline integration)
 
 ---
 *State initialized: 2026-02-13*
-*Last activity: 2026-02-16 - Completed Phase 41 Auto-Update Polish (2 of 2 plans complete)*
+*Last activity: 2026-02-16 - Completed 42-01 hiring.cafe Mapper & Salary Normalization*
