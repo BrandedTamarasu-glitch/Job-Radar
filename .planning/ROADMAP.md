@@ -72,8 +72,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 40-01-PLAN.md — Installer launch backend, dialogs (InstallConfirmDialog, LinuxInstallInstructionsDialog), cleanup
-- [ ] 40-02-PLAN.md — Wire install flow into UpdateBanner and MainWindow (confirmation, launch, exit, error handling)
+- [x] 40-01-PLAN.md — Installer launch backend, dialogs (InstallConfirmDialog, LinuxInstallInstructionsDialog), cleanup
+- [x] 40-02-PLAN.md — Wire install flow into UpdateBanner and MainWindow (confirmation, launch, exit, error handling)
 
 #### Phase 41: Auto-Update Polish
 **Goal**: Update experience feels polished with version skipping and changelog preview
@@ -114,7 +114,7 @@ Phases execute in numeric order: 38 → 39 → 40 → 41 → 42
 |-------|-----------|----------------|--------|-----------|
 | 38. Auto-Update Foundation | v2.2.0 | 2/2 | ✓ Complete | 2026-02-16 |
 | 39. Auto-Update Download | v2.2.0 | 2/2 | ✓ Complete | 2026-02-16 |
-| 40. Auto-Update Installation | v2.2.0 | 0/TBD | Not started | - |
+| 40. Auto-Update Installation | v2.2.0 | 2/2 | ✓ Complete | 2026-02-16 |
 | 41. Auto-Update Polish | v2.2.0 | 0/TBD | Not started | - |
 | 42. hiring.cafe Integration | v2.2.0 | 0/TBD | Not started | - |
 
