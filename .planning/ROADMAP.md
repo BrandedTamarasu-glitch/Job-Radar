@@ -84,10 +84,11 @@ Plans:
   2. User sees "What's new?" section in update dialog with changelog preview
   3. User sees formatted release notes from GitHub Releases API
   4. Skipped versions persist across app restarts in update state file
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 41-01-PLAN.md: TBD
+- [ ] 41-01-PLAN.md — TDD: Skip version backend, release notes fetch/cache, summary extraction
+- [ ] 41-02-PLAN.md — ChangelogDialog, UpdateBanner dropdown + clickable version, MainWindow wiring + Settings
 
 #### Phase 42: hiring.cafe Integration
 **Goal**: Users receive job listings from hiring.cafe with salary data and location filtering
@@ -115,7 +116,7 @@ Phases execute in numeric order: 38 → 39 → 40 → 41 → 42
 | 38. Auto-Update Foundation | v2.2.0 | 2/2 | ✓ Complete | 2026-02-16 |
 | 39. Auto-Update Download | v2.2.0 | 2/2 | ✓ Complete | 2026-02-16 |
 | 40. Auto-Update Installation | v2.2.0 | 2/2 | ✓ Complete | 2026-02-16 |
-| 41. Auto-Update Polish | v2.2.0 | 0/TBD | Not started | - |
+| 41. Auto-Update Polish | v2.2.0 | 0/2 | Planning complete | - |
 | 42. hiring.cafe Integration | v2.2.0 | 0/TBD | Not started | - |
 
 ---
