@@ -1,35 +1,65 @@
-# Feature Research: v2.1.0 Source Expansion & Polish
+# Feature Research: v2.2.0 Auto-Update & hiring.cafe
 
-**Domain:** Job Search Aggregator - Desktop Application (v2.1.0 milestone)
-**Researched:** 2026-02-13
-**Confidence:** MEDIUM-HIGH
+**Domain:** Desktop Application Auto-Update & Job Board Integration
+**Researched:** 2026-02-15
+**Confidence:** MEDIUM
 
 ## Feature Landscape
+
+This research covers two distinct feature domains for the Job Radar v2.2.0 milestone:
+1. **Auto-update infrastructure** for desktop applications
+2. **hiring.cafe integration** as a new job source
 
 ### Table Stakes (Users Expect These)
 
 Features users assume exist. Missing these = product feels incomplete.
 
+#### Auto-Update Features
+
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| **Duplicate Detection** | Users hate seeing same job 5+ times from different aggregators; 50-80% of job postings are duplicates | MEDIUM-HIGH | Must handle exact matches (job_id, URL) AND fuzzy matches (similar title + company + location). Job boards that don't deduplicate get user complaints about "refresh spam" |
-| **Source Attribution** | Users need to know if job is from LinkedIn, Indeed, or obscure board they've never heard of | LOW | Display "via [source]" on each listing; aggregators like SerpAPI return this as "via" field |
-| **Rate Limit Handling** | Free API tiers have strict limits; app must gracefully handle 429 errors without crashing | MEDIUM | JSearch offers free tier but limits unclear; SerpAPI ~2.5s per request; USAJobs requires API key with documented rate limits. Cache results, show warnings |
-| **Expired Listing Filtering** | Aggregators suffer from "aggregator lag" - jobs filled weeks ago still appear | MEDIUM | Track posting date, allow user to filter by recency (24h, 7d, 30d). LinkUp found this is #1 complaint about aggregators |
-| **Uninstall without Residue** | Desktop apps leave cache/logs/config scattered across system; users expect clean removal | LOW-MEDIUM | Platform installers provide uninstall hooks. Self-uninstaller in GUI must delete ~/.config, cache dirs, logs. Leave user data ONLY if explicitly saved |
-| **Platform-Native Install UX** | Windows users expect .exe installer; Mac users expect .dmg with drag-to-Applications; Linux users tolerate .tar.gz | MEDIUM | PyInstaller onedir is just bundled files. Users expect: Windows=NSIS/Inno Setup wizard, Mac=signed .pkg or .dmg, not zip files |
+| Launch-time version check | Industry standard for desktop apps; users expect to know about updates when they start the app | MEDIUM | Requires network call to GitHub Releases API, version comparison logic, and error handling for offline scenarios |
+| Visual update notification | Silent checks are invisible; users need clear indication that an update exists | LOW | Dialog or banner with version number, release date, and action buttons |
+| Download progress indicator | Users expect feedback during long-running operations; downloads can be 30-100MB | MEDIUM | Progress bar with percentage, transfer speed, and cancellation option |
+| "Remind me later" option | Forced updates frustrate users; they need control over timing | LOW | Dismiss dialog without disabling future notifications |
+| Manual update check | Users want to check for updates on demand, not just at launch | LOW | Menu item or Settings button that triggers version check |
+| HTTPS-only downloads | Security baseline for 2026; unencrypted downloads are unacceptable | LOW | GitHub Releases serves over HTTPS by default |
+| Release notes display | Users want to know what changed before downloading 50MB | LOW | Fetch and display CHANGELOG.md or release description from GitHub |
+
+#### hiring.cafe Integration Features
+
+| Feature | Why Expected | Complexity | Notes |
+|---------|--------------|------------|-------|
+| Job title, company, location extraction | Core job listing data; already expected for existing 10 sources | MEDIUM | Requires API endpoint discovery or HTML parsing; hiring.cafe has official API endpoints per scraper evidence |
+| Salary data extraction | hiring.cafe's key differentiator is transparent salary info; users will expect Job Radar to surface this | MEDIUM | Salary parsing with min/max range extraction; format varies (hourly vs annual, USD vs other currencies) |
+| Remote/hybrid/onsite filtering | Job Radar already filters by arrangement; users expect parity across sources | LOW | hiring.cafe supports this natively per search results |
+| Direct apply URL | Job Radar generates "apply" links for all sources; table stakes | LOW | hiring.cafe provides `apply_url` field per scraper data structure |
+| Deduplication with existing sources | Job Radar already does cross-source fuzzy dedup; users expect it to work with hiring.cafe | MEDIUM | Reuse existing rapidfuzz deduplication (85% threshold) from v1.2.0 |
+| Rate limiting integration | Job Radar has SQLite-backed rate limiting for all API sources; users expect no crashes from API throttling | MEDIUM | Integrate with existing `rate_limits.py` and `.rate_limits/` SQLite database |
 
 ### Differentiators (Competitive Advantage)
 
 Features that set the product apart. Not required, but valuable.
 
+#### Auto-Update Features
+
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| **User-Customizable Scoring Weights** | Power users want to prioritize location (remote) over seniority, or title_relevance over skill_match | MEDIUM | UI: 6 sliders (skill_match 25% → 0-50%), live preview of score changes on current results. Weighted scoring models are standard in 2026 product/risk tools; users expect customizable weights + visualization |
-| **Staffing Firm Penalty Dial** | Real user feedback: "want more direct company jobs." Current 4.5/5.0 boost is hardcoded; let users control -2.0 (penalty) to +2.0 (boost) | LOW-MEDIUM | Depends on customizable scoring weights. Could default to -0.5 (slight penalty) instead of +4.5 boost, with slider for user override |
-| **Cross-Source Smart Deduplication** | Instead of just showing 5 copies, pick "best" source (direct employer > LinkedIn > staffing firm > aggregator) | HIGH | Prioritization logic: Direct company URL > LinkedIn/Indeed > ZipRecruiter > staffing firms. Show "also posted on: [3 other sites]" collapsed detail |
-| **API Cost Transparency** | Show user "15 JSearch credits used today (85 remaining)" so they understand why results are slower/limited | LOW | Display quota usage in status bar. JSearch/SerpAPI have free tiers; users on free plan need visibility into limits |
-| **Local-First with Refresh** | Aggregators are slow (2.5s/request). Cache last 7 days of results, only hit APIs for new queries or explicit refresh | MEDIUM | Privacy-focused (fits existing "all local" ethos). Fast initial load from SQLite, background refresh for new postings |
+| Skip version option | Users can permanently dismiss a specific version if they have compatibility concerns or prefer current version | MEDIUM | Requires persistent storage of skipped versions; check against skip list during version check |
+| Changelog preview before download | Informed decision-making; users see what's new before committing to 50MB download | MEDIUM | Fetch CHANGELOG.md or GitHub release notes via API; parse and display in readable format |
+| Differential updates (NOT RECOMMENDED) | Reduces download size from 50MB to 5-10MB by downloading only changed files | HIGH | electron-updater supports this, but PyInstaller bundles are not structured for differential updates; would require major refactoring |
+| Staged rollouts (NOT RECOMMENDED) | Gradual release to subset of users reduces impact of critical bugs | HIGH | Requires server-side infrastructure or complex manifest editing; overkill for single-developer open-source tool |
+| Automatic background downloads | Download happens silently while user works; notify when ready to install | MEDIUM | Threading for background download; risk of consuming bandwidth without user consent |
+| Update channels (stable/beta) | Power users can opt into beta releases for early access | MEDIUM | Requires separate release tags (v2.2.0 vs v2.2.0-beta.1) and channel selection in Settings |
+
+#### hiring.cafe Integration Features
+
+| Feature | Value Proposition | Complexity | Notes |
+|---------|-------------------|------------|-------|
+| Engagement metrics (views/applied/saved) | hiring.cafe tracks `viewed_count`, `applied_count`, `saved_count`, `hidden_count`; unique insight into job popularity | LOW | Exposed in API per scraper data structure; display in report as social proof |
+| Pagination support for large result sets | hiring.cafe API supports pagination with page size up to 1,000 jobs per request | LOW | Implement pagination loop to fetch all results for broad searches |
+| Education/company size filters | Scraper evidence shows these fields are available; Job Radar doesn't currently filter by these | MEDIUM | Extend search form with optional filters; integrate into hiring.cafe API query |
+| Geolocation coordinates | hiring.cafe exposes lat/long for map-based visualization | HIGH | Would require map UI component; defer unless user requests geographic analysis |
 
 ### Anti-Features (Commonly Requested, Often Problematic)
 
@@ -37,390 +67,228 @@ Features that seem good but create problems.
 
 | Feature | Why Requested | Why Problematic | Alternative |
 |---------|---------------|-----------------|-------------|
-| **Real-Time Aggregator Polling** | "Keep results always fresh" | JSearch/SerpAPI: ~2.5s per request. Polling 5 sources every 10min = 720 API calls/day. Free tiers exhausted in hours; paid tiers = $$$ | Cache-first with manual refresh button. Show "last updated: 2h ago" with refresh icon. User pulls when needed |
-| **Aggregate ALL Sources Simultaneously** | "Show me everything" | JSearch returns 500 results max. If user has 6 automated sources active, that's 3000 jobs before deduplication. UI becomes unusable | Default to 2-3 sources per search. Let user enable more via checkboxes. Warn "this will take 30+ seconds" |
-| **Automatic App Updates** | "Just update me in background" | Desktop security: self-updating requires code signing + admin privileges on Windows/Mac. PyInstaller apps can't easily self-update without installer framework | Show "Update available: v2.2.0" notification with download link. Or: built-in updater that downloads new installer and launches it |
-| **Embed Web Browser for Applications** | "Let me apply without leaving app" | Each job board has different application flow (Indeed: modal, LinkedIn: redirect, company site: ATS iframe). Embedding Chromium = +100MB app size | Keep existing URL generator approach. User clicks "Apply" → opens default browser to application page |
-| **Scrape Salary Data from Aggregators** | "Tell me the pay range" | SerpAPI returns salary when available, but 70%+ of postings don't include it. Scraping is unreliable; users expect data that isn't there | Show salary when API provides it. Display "Salary: Not disclosed" for others. Don't scrape/guess |
+| Silent auto-install | "Just update automatically, I trust you" - users want zero-friction updates | **Security risk:** Silent installs bypass user review of changes; installer requires elevated permissions on macOS/Windows; user loses control. **UX risk:** Breaking changes or bugs surprise users mid-workflow. **Best practice violation:** [Desktop app best practices 2026](https://www.todesktop.com/features/auto-updates) emphasize user control | **Download + notify:** Download installer in background, show notification "Update ready. Restart to install" with "Install Now" button. User clicks through native installer wizard. |
+| Force update (no dismiss) | Developers want to ensure users are on latest version for support purposes | **User hostile:** Blocks access to app until update completes; frustrating if user has urgent task. **Backfire risk:** User may uninstall entirely rather than wait for forced update. | **Persistent reminder:** Show notification on every launch until updated. For critical security patches, use prominent red banner instead of dismissible dialog. |
+| Auto-update ON by default | "Most users want updates, make it opt-out" | **Bandwidth concerns:** Users on metered connections or slow internet don't want surprise 50MB downloads. **Regression risk:** Auto-updates can introduce bugs; users lose ability to stay on known-good version. **Trust issue:** First-run auto-update feels invasive for privacy-focused tool. | **Opt-in on first launch:** Wizard asks "Check for updates automatically?" with default to YES but user makes explicit choice. Manual "Check for updates" always available. |
+| Multiple concurrent downloads | "Download all platform installers so user can share with friends" | **Storage waste:** Job Radar users only need one platform installer. 3 installers = 150MB+ wasted disk space. **Bandwidth waste:** Downloading unused installers consumes user's bandwidth quota. | **Single platform detection:** Auto-detect user's OS (macOS/Windows/Linux) and download only relevant installer. |
+| Web-based updater UI | "Modern apps use web UI for rich update experience" | **Complexity:** Requires embedding web view or launching browser; breaks single-file portability. **Security:** Opens attack vector via web content injection. **Overkill:** Update notifications don't need rich UI; native dialogs are clearer. | **Native CustomTkinter dialog:** Reuse existing GUI framework for update notifications. Simple, secure, consistent with Job Radar's desktop-native philosophy. |
+| Rollback to previous version | "What if update breaks something? Let user go back." | **Storage cost:** Requires keeping old versions on disk; 50MB per version adds up. **Complexity:** Version management, cleanup logic, testing matrix expands. **Low value:** Job Radar has 566 tests and careful release process; regression risk is low. If update breaks, users can download previous release from GitHub. | **GitHub Releases history:** All versions remain available at https://github.com/.../releases. Users can manually download and reinstall previous version if needed. Document this in FAQ. |
+| Scrape hiring.cafe HTML | "Why use unofficial API? Just parse the website." | **Fragility:** Website HTML changes break scraper; hiring.cafe could restructure anytime. **Rate limiting:** Aggressive scraping gets IP banned. **Ethical:** hiring.cafe likely doesn't want bots; unofficial API is reverse-engineered but at least uses their endpoints. **Legal risk:** ToS may prohibit scraping. | **Use hiring.cafe API endpoints:** Scrapers on GitHub/Apify demonstrate official API exists. Use structured JSON endpoints, respect rate limits, and monitor for API changes. |
+| Real-time hiring.cafe sync | "Check hiring.cafe every hour for new jobs" | **Bandwidth waste:** Job Radar is a batch daily search tool, not real-time monitoring. Polling hiring.cafe hourly consumes API quota unnecessarily. **UX mismatch:** Users don't want interruptions; they want one comprehensive report per day. | **Single search per run:** Include hiring.cafe in normal search workflow. User clicks "Run Search" once daily, gets all sources including hiring.cafe in one report. |
 
 ## Feature Dependencies
 
 ```
-[Platform-Native Installers]
-    └──requires──> [Uninstall Button in GUI]
-                       └──requires──> [Uninstaller Script]
+Auto-Update Flow:
+[Launch-time version check]
+    └──requires──> [GitHub Releases API integration]
+    └──triggers──> [Update notification dialog]
+                       ├──user clicks "Download"──> [Download progress indicator]
+                       │                                └──on complete──> [Install notification]
+                       ├──user clicks "Remind me later"──> [Dismiss, check again next launch]
+                       └──user clicks "Skip this version"──> [Persistent skip list]
 
-[User-Customizable Scoring Weights]
-    └──enables──> [Staffing Firm Penalty Dial]
-    └──requires──> [Score Recalculation Engine]
-    └──enhances──> [Existing Scoring System]
-
-[Duplicate Detection]
-    └──requires──> [Job Unique Identifier Strategy]
-                       └──uses──> [job_id OR url OR fuzzy(title+company+location)]
-    └──enhances──> [All Aggregator APIs]
-    └──conflicts──> [Show All Results Mode] (if user wants to see duplicates for debugging)
-
-[Job Aggregator APIs]
-    └──requires──> [Rate Limit Handling]
-    └──requires──> [API Key Management UI]
-    └──requires──> [Duplicate Detection]
-    └──enhances──> [Existing 6 Automated Sources]
-
-[Free Job Board APIs]
-    └──requires──> [Same as Aggregator APIs]
-    └──increases──> [Duplicate Detection Importance] (more sources = more dupes)
-
-[Local-First Caching]
-    └──requires──> [SQLite Schema Extension]
-    └──requires──> [Cache Expiry Logic]
-    └──reduces-need-for──> [Real-Time Polling]
+hiring.cafe Flow:
+[API endpoint discovery]
+    └──requires──> [Unofficial API documentation research]
+    └──enables──> [Job fetching]
+                      ├──requires──> [Rate limiting integration]
+                      ├──requires──> [Salary parsing]
+                      ├──requires──> [Location filtering]
+                      └──feeds──> [Deduplication with existing sources]
+                                     └──feeds──> [Scoring & report generation]
 ```
 
 ### Dependency Notes
 
-- **Platform-Native Installers → Uninstall Button:** NSIS/Inno Setup/pkg installers register uninstall entries with OS. GUI uninstall button invokes this registered uninstaller OR runs custom cleanup script if OS uninstaller not available.
-- **Customizable Scoring → Staffing Firm Dial:** Staffing firm boost is currently hardcoded at +4.5 to response_likelihood. Making it user-adjustable requires exposing all scoring weights. Can't do one without the other.
-- **Duplicate Detection → Aggregator APIs:** Aggregators like JSearch pull from Google Jobs, LinkedIn, Indeed simultaneously. Without deduplication, user sees 10 copies of same Software Engineer role. MUST have before adding aggregators or user experience degrades.
-- **Caching → API Rate Limits:** Local-first caching reduces API calls by 80%+. User refreshes once/day instead of every search. Critical for free tier viability.
+- **Auto-update depends on GitHub Releases:** Job Radar already publishes releases to GitHub with DMG/NSIS installers. Auto-update reuses this infrastructure; no new hosting needed.
+- **hiring.cafe requires unofficial API reverse-engineering:** No official public API documentation found. Must reverse-engineer endpoints from [hiring-cafe-job-scraper](https://github.com/umur957/hiring-cafe-job-scraper) and [Apify scrapers](https://apify.com/memo23/apify-hiring-cafe-scraper/api).
+- **Salary parsing enhances scoring:** Job Radar's scoring weights include salary range matching. hiring.cafe's transparent salary data improves scoring accuracy.
+- **Download progress conflicts with GUI thread blocking:** CustomTkinter GUI must use worker threads for downloads to avoid freezing UI. Job Radar already has `worker_thread.py` pattern from v2.0.0.
+- **Skip version list conflicts with update channels:** If user skips v2.3.0 but wants v2.4.0, skip list must be version-specific, not binary on/off flag.
 
-## MVP Definition for v2.1.0
+## MVP Definition for v2.2.0
 
-### Launch With (v2.1.0)
+### Launch With (v2.2.0)
 
-Minimum viable increment to existing app — what's needed to deliver milestone value.
+Minimum viable auto-update and hiring.cafe integration.
 
-- [x] **JSearch API Integration** — Aggregator that pulls Google Jobs + LinkedIn + Indeed. Gives "more LinkedIn postings" per user feedback. 500 results/query, free tier available.
-- [x] **Basic Duplicate Detection (Exact Match)** — Check job_id and URL before inserting. Prevents showing identical posting from 3 sources. Start with exact match; fuzzy matching is v2.2+.
-- [x] **Rate Limit Handling** — Catch 429 errors, show user-friendly "Daily limit reached for JSearch (resets tomorrow)" message instead of crash.
-- [x] **User-Customizable Scoring Weights** — 6 sliders for skill_match, response_likelihood, title_relevance, seniority, location, domain. Live score preview. Addresses "I care more about remote than seniority" feedback.
-- [x] **Staffing Firm Penalty Dial** — Slider for staffing firm score adjustment (-2.0 to +2.0). Default to -0.5 (slight penalty). Addresses "want more direct company jobs" feedback. Requires customizable weights.
-- [x] **GUI Uninstall Button** — Settings tab: "Uninstall Job Radar" button that runs cleanup script (delete cache, logs, config) then invokes OS uninstaller if available.
-- [x] **Platform-Native Installers** — Windows: NSIS .exe installer with wizard. macOS: signed .pkg or .dmg with Applications folder shortcut. Linux: keep .tar.gz (acceptable for Linux users).
+**Auto-Update:**
+- [ ] Launch-time version check against GitHub Releases API
+- [ ] Update notification dialog (CustomTkinter) with version number, release date, and action buttons
+- [ ] "Download Now" button opens browser to GitHub Releases page (user downloads manually)
+- [ ] "Remind Me Later" button dismisses dialog; check again next launch
+- [ ] Manual "Check for Updates" in Settings tab
+- [ ] Store last-checked timestamp to avoid redundant API calls on rapid restarts
 
-### Add After Validation (v2.2+)
+**Rationale:** This is the **simplest viable auto-update**. No download automation, no installer launching, no background threads. User sees notification, clicks through to GitHub, downloads installer, runs it. Familiar workflow (same as initial install), zero risk of silent installs or permission escalation bugs.
 
-Features to add once core aggregator integration is working and users provide feedback.
+**hiring.cafe:**
+- [ ] API endpoint integration using endpoints from [hiring-cafe-job-scraper](https://github.com/umur957/hiring-cafe-job-scraper)
+- [ ] Extract job title, company, location, arrangement (remote/hybrid/onsite), salary, apply URL
+- [ ] Salary parsing with min/max range extraction (annual and hourly formats)
+- [ ] Location filtering (US states, remote)
+- [ ] Rate limiting with SQLite integration (reuse existing `rate_limits.py`)
+- [ ] Deduplication with existing 10 sources (reuse rapidfuzz 85% threshold)
+- [ ] Pagination support (fetch up to 1,000 jobs per request, loop for more if needed)
 
-- [ ] **SerpAPI Google Jobs** — Alternative to JSearch if free tier limits too restrictive. ~2.5s per request, cached searches free.
-- [ ] **ZipRecruiter API** — Free job board. Requires developer API key. Adds more US-based postings.
-- [ ] **USAJobs API** — Free federal jobs API. Requires API key (free via developer.usajobs.gov). Niche but valuable for users seeking government roles.
-- [ ] **Jobicy RSS Feed** — Free remote jobs feed. 100 results/query, no auth. Easy integration, low value-add (duplicates with RemoteOK/WWR).
-- [ ] **Fuzzy Duplicate Detection** — Detect near-duplicates: "Senior Software Engineer" vs "Sr. Software Eng" at same company/location. Use Levenshtein distance on (title + company + location). Catches 80% more duplicates than exact match.
-- [ ] **Smart Source Prioritization** — When duplicates detected, show "best" version: Direct employer site > LinkedIn > Indeed > staffing firm. Collapse others as "also posted on: [3 sites]."
-- [ ] **API Cost Dashboard** — Show quota usage: "JSearch: 45/100 daily searches used. Resets in 6h." Help users understand why some sources disabled.
-- [ ] **Local-First Caching** — Cache job results for 7 days in SQLite. Only hit APIs for new searches or explicit refresh. Reduces API calls by 80%+.
+**Rationale:** Brings hiring.cafe to parity with existing Job Radar sources. Salary data is key differentiator; must parse correctly. Rate limiting prevents bans. Deduplication avoids duplicate jobs from JSearch/Indeed overlap with hiring.cafe.
+
+### Add After Validation (v2.3+)
+
+Features to add once core is working.
+
+**Auto-Update:**
+- [ ] **Automated installer download** — Download DMG/NSIS/tar.gz in background using `requests` with progress callback; save to `~/Downloads/`. Show "Download complete. Open installer?" dialog.
+  - **Trigger:** User feedback requests fewer clicks. If 80%+ users click "Download Now" within a week of notification, automate the download step.
+- [ ] **Skip version option** — "Don't remind me about v2.3.0" checkbox in update dialog. Store skipped versions in `config.json`.
+  - **Trigger:** User feedback about notification fatigue for minor updates they don't want.
+- [ ] **Changelog preview in dialog** — Fetch GitHub release notes via API, display in scrollable text area below version info.
+  - **Trigger:** User feedback asking "What's new?" before downloading.
+
+**hiring.cafe:**
+- [ ] **Engagement metrics display** — Show `viewed_count`, `applied_count`, `saved_count` in HTML report as badge next to job title ("500 applied").
+  - **Trigger:** User feedback that this data would be useful for prioritization.
+- [ ] **Education requirement filtering** — Add optional "Education" filter to search form; pass to hiring.cafe API.
+  - **Trigger:** User feedback requesting education-based filtering (unlikely for Job Radar's audience of experienced developers).
 
 ### Future Consideration (v3+)
 
-Features to defer until product-market fit for aggregators is established.
+Features to defer until product-market fit is established.
 
-- [ ] **Additional Aggregators (TheJobAPI, Adzuna Jobs)** — More sources = more duplicates = diminishing returns. Wait for user demand.
-- [ ] **Application Tracking** — Track which jobs user applied to. Requires schema changes + UI. Separate feature area from sourcing.
-- [ ] **Salary Data Collection** — JSearch/SerpAPI return salary when available. Low coverage (30% of postings). Wait for user complaints before prioritizing.
-- [ ] **Auto-Refresh Background Service** — Desktop daemon that refreshes results every 4h. Complex (OS service registration) + battery drain on laptops. User can manually refresh.
+**Auto-Update:**
+- [ ] **Update channels (stable/beta)** — Opt into beta releases via Settings toggle.
+  - **Why defer:** No beta program exists yet. Single-developer project doesn't have bandwidth for parallel release tracks.
+- [ ] **Staged rollouts** — Release to 10% of users, monitor for crashes, then 100%.
+  - **Why defer:** Requires server-side infrastructure or complex GitHub Releases manifest editing. Overkill for open-source tool with 566-test suite.
+- [ ] **Differential updates** — Download only changed files instead of full installer.
+  - **Why defer:** PyInstaller onedir bundles are not structured for differential updates. Would require switching to Electron (huge tech stack change) or custom update format.
+
+**hiring.cafe:**
+- [ ] **Geolocation-based search** — Map UI showing jobs by location.
+  - **Why defer:** Job Radar is report-focused, not map-focused. Geographic analysis is out of scope.
+- [ ] **hiring.cafe-specific filters** — Company size, industry, tech stack tags.
+  - **Why defer:** Requires understanding hiring.cafe's full filter taxonomy. Wait for user requests for specific filters.
 
 ## Feature Prioritization Matrix
 
 | Feature | User Value | Implementation Cost | Priority |
 |---------|------------|---------------------|----------|
-| JSearch API Integration | HIGH (more LinkedIn/Indeed) | MEDIUM (API client, data mapping) | P1 |
-| Basic Duplicate Detection (Exact) | HIGH (prevents 50% of dupes) | LOW (dict lookup by job_id/url) | P1 |
-| Rate Limit Handling | HIGH (prevents crashes) | LOW (try/catch + user message) | P1 |
-| User-Customizable Scoring Weights | HIGH (power user request) | MEDIUM (UI + recalc engine) | P1 |
-| Staffing Firm Penalty Dial | HIGH (user feedback: "more direct jobs") | LOW (depends on scoring weights) | P1 |
-| GUI Uninstall Button | MEDIUM (polish/professionalism) | LOW (cleanup script + button) | P1 |
-| Platform-Native Installers | HIGH (Windows/Mac UX expectation) | MEDIUM (NSIS/pkg setup + signing) | P1 |
-| SerpAPI Google Jobs | MEDIUM (alternative to JSearch) | MEDIUM (similar to JSearch) | P2 |
-| USAJobs API | MEDIUM (niche: gov jobs) | LOW (API client, good docs) | P2 |
-| ZipRecruiter API | MEDIUM (more US postings) | LOW (API client) | P2 |
-| Fuzzy Duplicate Detection | MEDIUM (catches 30% more dupes) | HIGH (NLP/similarity algorithms) | P2 |
-| Smart Source Prioritization | MEDIUM (reduces clutter) | MEDIUM (ranking logic) | P2 |
-| API Cost Dashboard | LOW (transparency nice-to-have) | LOW (display quota data) | P2 |
-| Local-First Caching | HIGH (speed + API savings) | MEDIUM (SQLite schema + expiry) | P2 |
-| Jobicy RSS Feed | LOW (duplicates existing sources) | LOW (RSS parsing) | P3 |
-| Additional Aggregators | LOW (diminishing returns) | MEDIUM | P3 |
-| Application Tracking | MEDIUM (different problem space) | HIGH (schema + UI) | P3 |
-| Salary Data Collection | LOW (30% coverage) | LOW (already in API responses) | P3 |
-| Auto-Refresh Background Service | LOW (battery drain, complexity) | HIGH (OS service registration) | P3 |
+| Launch-time version check | HIGH | MEDIUM | P1 |
+| Update notification dialog | HIGH | LOW | P1 |
+| "Remind me later" button | HIGH | LOW | P1 |
+| Manual update check | MEDIUM | LOW | P1 |
+| hiring.cafe job fetching | HIGH | MEDIUM | P1 |
+| hiring.cafe salary extraction | HIGH | MEDIUM | P1 |
+| hiring.cafe rate limiting | HIGH | MEDIUM | P1 |
+| Automated installer download | MEDIUM | MEDIUM | P2 |
+| Skip version option | MEDIUM | LOW | P2 |
+| Changelog preview | MEDIUM | LOW | P2 |
+| hiring.cafe engagement metrics | LOW | LOW | P2 |
+| Update channels (beta) | LOW | HIGH | P3 |
+| Staged rollouts | LOW | HIGH | P3 |
+| Differential updates | MEDIUM | HIGH | P3 |
+| Geolocation search | LOW | HIGH | P3 |
 
 **Priority key:**
-- **P1: Must have for v2.1.0** — Core value delivery: aggregators, user control, professional packaging
-- **P2: Should have for v2.2** — Enhancements once P1 validated: more sources, better deduplication
-- **P3: Nice to have for v3+** — Future consideration after product-market fit
+- **P1:** Must have for v2.2.0 launch (table stakes)
+- **P2:** Should have, add when user feedback validates need
+- **P3:** Nice to have, future consideration
 
 ## Competitor Feature Analysis
 
-| Feature | Indeed (Aggregator) | LinkedIn Job Search | ZipRecruiter | Our Approach (v2.1.0) |
-|---------|---------------------|---------------------|--------------|------------------------|
-| **Duplicate Detection** | Partial (same job_id) | None visible (shows all) | Good (company+title) | Exact match v2.1; fuzzy v2.2 |
-| **Source Attribution** | "via [source]" on each job | Direct + "via [source]" | Direct + syndicated | "via [source]" from API response |
-| **Scoring Customization** | None (black box) | None (relevance hidden) | None (match % opaque) | Full control: 6 weight sliders |
-| **Staffing Firm Handling** | Mixed (shows all) | Mixed (shows all) | Promotes staffing heavily | User-configurable penalty/boost |
-| **Installation** | Web-only | Web-only | Web-only | Desktop: NSIS (Win), .pkg (Mac) |
-| **Uninstall** | N/A (web) | N/A (web) | N/A (web) | GUI button + OS uninstaller |
-| **API Access** | $$ (enterprise only) | None (web scraping ToS violation) | $$ (not documented publicly) | Free tiers (JSearch, USAJobs) |
-| **Local/Privacy** | Cloud-based, ad-tracked | Cloud-based, LinkedIn profile linked | Cloud-based, email-gated | Fully local, no accounts |
+| Feature | VS Code Updates | Electron Apps (Slack, Discord) | Job Radar v2.2.0 |
+|---------|----------------|-------------------------------|------------------|
+| Launch-time check | Yes, every startup | Yes, background check every 4hrs | Yes, every startup |
+| Auto-download | Yes, silent in background | Yes, silent in background | No (P2 future), user clicks to GitHub |
+| Progress indicator | Yes, status bar | Yes, notification | Yes (P2 future), CustomTkinter progress bar |
+| "Remind me later" | Yes | Yes | Yes |
+| "Skip version" | No (auto-updates are forced) | No | Yes (P2 future) |
+| Staged rollouts | Yes (Insiders ring) | Yes (via electron-updater) | No (P3, overkill) |
+| Differential updates | Yes (reduces 50MB to 5MB) | Yes (electron-updater feature) | No (P3, PyInstaller limitation) |
+| Update channels | Yes (Stable/Insiders) | Yes (Stable/Canary/PTB) | No (P3, single-dev project) |
 
-### Key Differentiators vs Competitors
+**Our Approach:**
+- **Start simpler than competitors:** "Click to download" workflow for v2.2.0. Competitors have dedicated teams and infrastructure for auto-updates; Job Radar is single-developer open-source.
+- **Progressive enhancement:** If 80%+ users click "Download Now" immediately, automate it in v2.3. Let user behavior guide feature investment.
+- **Platform-native installers already exist:** v2.1.0 ships DMG (macOS) and NSIS (Windows). Auto-update reuses this; no new build pipeline needed.
 
-1. **Transparency:** Competitors use black-box scoring. We show exactly how scores are calculated AND let users adjust weights.
-2. **Control:** Users explicitly choose staffing firm preference (penalty/neutral/boost) instead of getting whatever algorithm decides.
-3. **Privacy:** Fully local desktop app. No accounts, no tracking, no "sign up to see more results."
-4. **Multi-Source:** Indeed/LinkedIn/ZipRecruiter are siloed. We aggregate across all of them + free boards + direct scrapers.
+## Confidence Assessment
 
-## Real-World User Expectations (2026)
+### Auto-Update Features: MEDIUM-HIGH Confidence
 
-### Job Aggregators
+**HIGH confidence (verified with official docs):**
+- [Launch-time version check patterns](https://www.electronjs.org/docs/latest/api/auto-updater) — Electron auto-updater checks on launch and every 10 minutes
+- [Download progress UX](https://www.electron.build/auto-update.html) — `download-progress` event with bytesPerSecond, percent, total, transferred
+- [GitHub Releases API structure](https://github.com/VioletGiraffe/github-releases-autoupdater) — Standard JSON with tag_name, assets[], browser_download_url
 
-**What users expect:**
-- Results from Google Jobs, LinkedIn, Indeed (JSearch ✅, SerpAPI ✅)
-- No duplicate listings (50-80% of aggregator results are dupes)
-- Source transparency ("via LinkedIn" on each result)
-- Fresh postings (filter out jobs older than 30 days)
-- Fast results (<5 seconds for 100 jobs)
+**MEDIUM confidence (verified with community sources):**
+- Skip version behavior — [Android update patterns](https://forums.androidcentral.com/threads/can-i-skip-an-apps-update-on-an-app-with-auto-update-disabled.1056866/) and [Windows update skip](https://www.tenforums.com/windows-updates-activation/200189-how-disable-updates-available-popup.html) show user demand
+- "Remind me later" as table stakes — [Desktop app best practices](https://www.todesktop.com/features/auto-updates) emphasize user control
+- PyUpdater and Updater4pyi libraries — [PyUpdater](https://github.com/Digital-Sapphire/PyUpdater) and [Updater4pyi](https://updater4pyi.readthedocs.io/en/latest/quickstart/) exist but both appear unmaintained (last commit 2-3 years ago); rolling custom solution with `requests` + GitHub API is safer
 
-**What frustrates users:**
-- "Same job posted 10 times" (top complaint per LinkUp research)
-- Expired listings still showing weeks later ("aggregator lag")
-- Staffing firms dominating results (user feedback: "want direct companies")
-- Fake/spam postings (Indeed specific, less common in aggregators)
+**LOW confidence (need validation):**
+- Update frequency (every launch vs every 4 hours vs daily) — Varies widely across apps; will A/B test based on user feedback
+- Changelog format preferences — Don't know if users want full CHANGELOG.md or just bullet points; start with GitHub release description
 
-### Customizable Scoring
+### hiring.cafe Integration: MEDIUM Confidence
 
-**What users expect:**
-- Sliders or percentage inputs for each scoring factor
-- Live preview of how changes affect current results
-- Presets: "Prioritize Remote," "Prioritize Salary," "Prioritize Experience Match"
-- Defaults that work for 80% of users
+**MEDIUM confidence (verified with scraper source code):**
+- [Job data structure](https://github.com/umur957/hiring-cafe-job-scraper) — `id`, `board_token`, `source`, `apply_url`, `title`, `description_clean`, `description_raw`, `viewed_count`, `applied_count`, `saved_count`, `hidden_count`
+- [Pagination support](https://apify.com/memo23/apify-hiring-cafe-scraper/api) — "Automatically handles multiple pages of results" with page size up to 1,000 jobs per request
+- [Unofficial API endpoints](https://github.com/umur957/hiring-cafe-job-scraper) — Scraper uses "hiring.cafe's official API endpoints" (not HTML scraping)
 
-**Pattern from 2026 tools:** Weighted scoring models are standard in product management, risk assessment, and applicant tracking systems. Users expect:
-1. Clear criteria labels (not "Factor A")
-2. Adjustable weights (sliders 0-100% or ratio inputs)
-3. Visual feedback (scores update immediately)
-4. Ability to reset to defaults
+**LOW confidence (need validation):**
+- **Rate limiting policy** — No official documentation found. Will implement conservative rate limiting (10 requests/minute) and monitor for 429 errors.
+- **API stability** — Unofficial API; hiring.cafe could change endpoints anytime. Will add error handling and fallback to scraping if API breaks.
+- **Salary format variations** — Scraper shows salary data exists, but format examples not in documentation. Will parse common patterns ($100k-$150k, $50/hr) and log unparseable formats for improvement.
+- **Location filter parameters** — Assume standard filters (remote, US states) but need to test API to confirm parameter names and values.
+- **Education/company size field reliability** — [Scraper docs](https://automatio.ai/templates/en/hiringcafe-web-scraper) mention these fields, but unclear if they're always populated. Will make them optional.
 
-### Desktop Installers
+### Open Questions (Require Implementation Research)
 
-**What users expect:**
-
-**Windows:**
-- Double-click .exe → wizard with Next/Install/Finish
-- Option to create desktop shortcut
-- Option to add to Start Menu
-- Registered in "Add/Remove Programs"
-- Signed installer (avoids SmartScreen warnings)
-
-**macOS:**
-- .dmg file that opens to show app icon + Applications folder
-- Drag app to Applications to install
-- OR .pkg installer for apps that need system-level access
-- Signed + notarized (avoids Gatekeeper "unidentified developer")
-- Uninstaller: drag app to Trash OR in-app uninstall button
-
-**Linux:**
-- .tar.gz or .deb/.rpm for distro-specific
-- AppImage for universal binary (single file, no install)
-- Uninstaller: rm -rf or package manager (apt remove)
-
-**What frustrates users:**
-- .zip file with no instructions (PyInstaller onedir is this)
-- No uninstaller (leftover configs in ~/.config, cache in ~/.cache)
-- Unsigned binaries (OS warnings scare users away)
-
-### GUI Uninstall
-
-**What users expect:**
-- Button in Settings or Help menu: "Uninstall Job Radar"
-- Confirmation dialog: "This will remove the app and delete cached data. User profiles will be preserved. Uninstall?"
-- Progress indicator during cleanup
-- Final dialog: "Job Radar has been uninstalled. Click OK to exit."
-- App closes itself after cleanup
-
-**What must be deleted:**
-- Application binary (OS uninstaller handles this)
-- Cache directories (~/.cache/job-radar)
-- Logs (~/.local/share/job-radar/logs)
-- Temp files
-
-**What must be preserved (unless user chooses "Delete All Data"):**
-- User profiles (~/.config/job-radar/profiles.json)
-- Search history (if user opted in)
-- Custom scoring weights
-
-**Anti-pattern:** Apps that "uninstall" but leave 50MB of cache/logs scattered across system. Users discover this weeks later and feel betrayed.
-
-## Technical Feasibility Notes
-
-### Job Aggregator APIs
-
-**JSearch (RapidAPI):**
-- **Access:** Free tier available (no credit card for testing)
-- **Rate Limits:** Not publicly documented; likely 100-500 requests/month on free tier
-- **Data:** 30+ fields per job, 500 results max per query
-- **Sources:** Google Jobs, LinkedIn, Indeed, Glassdoor
-- **Cost:** Contact for custom pricing; free tier sufficient for testing
-- **Confidence:** HIGH (actively maintained, GitHub examples, 2026 references)
-
-**SerpAPI Google Jobs:**
-- **Access:** API key required (free tier available)
-- **Rate Limits:** 100 searches/month free; cached searches free
-- **Performance:** ~2.5s per request (or ~1.2s with Ludicrous speed)
-- **Data:** title, company, location, via, description, highlights, apply_options
-- **Pagination:** next_page_token for up to 10 results/page
-- **Cost:** $50/month for 5000 searches
-- **Confidence:** HIGH (official docs, active 2026)
-
-**USAJobs:**
-- **Access:** Free API key via developer.usajobs.gov
-- **Rate Limits:** Documented in guides (need to visit /guides/rate-limiting)
-- **Data:** Federal job postings only (niche use case)
-- **Auth:** Requires Authorization header with API key
-- **Confidence:** HIGH (official government API, comprehensive docs)
-
-**ZipRecruiter:**
-- **Access:** API exists but not publicly documented
-- **Free Tier:** Unclear; may require partner agreement
-- **Confidence:** LOW (no official public API docs found)
-
-**Jobicy:**
-- **Access:** Free RSS feed/API (100 results/query, no auth)
-- **Rate Limits:** "Don't poll excessively; a few times/day is sufficient"
-- **Data:** Remote jobs only
-- **Filters:** count, geo, industry, tag
-- **Restrictions:** Don't redistribute to external job platforms (Google Jobs, LinkedIn, etc.)
-- **Confidence:** MEDIUM (official GitHub repo, 2026 docs, but restrictive ToS)
-
-### Duplicate Detection
-
-**Exact Match (Easy):**
-- Check `job_id` (if provided by API) OR `url` (application link)
-- Python: `seen_ids = set()` → O(1) lookup
-- Catches: Same job from JSearch and Adzuna (both pull from Google Jobs)
-
-**Fuzzy Match (Hard):**
-- Normalize: lowercase, strip whitespace, remove punctuation
-- Compare: `(title, company, location)` tuple
-- Levenshtein distance < 3 = probable duplicate
-- Python: `fuzzywuzzy` or `RapidFuzz` library
-- Catches: "Senior Software Engineer" vs "Sr. Software Eng" at "Google" vs "Google Inc."
-
-**Complexity:** Exact match is LOW (already have URL deduplication logic for scrapers). Fuzzy match is MEDIUM-HIGH (requires NLP library, tuning threshold, handling edge cases).
-
-**Recommendation:** Ship exact match in v2.1.0. Add fuzzy in v2.2 after gathering user feedback on duplicate rate.
-
-### Customizable Scoring Weights
-
-**UI Implementation (CustomTkinter):**
-- 6 `CTkSlider` widgets (0.0 to 1.0 range)
-- 6 `CTkLabel` widgets showing current percentage (e.g., "25%")
-- "Reset to Defaults" button
-- "Apply" button → recalculate scores for all current results
-- Live preview: update one job's score as user drags slider (performance test needed)
-
-**Backend Changes:**
-- Current: weights hardcoded in scoring function
-- New: weights stored in `config.json` or user profile
-- Scoring function accepts `weights` dict parameter
-- Batch recalculation: iterate through all jobs, recalc score, re-sort
-
-**Complexity:** MEDIUM. UI is straightforward (sliders exist in CustomTkinter). Backend requires refactoring scoring function to accept weights as parameters instead of hardcoded constants.
-
-**Dependency:** Staffing firm penalty dial requires this. Can't make staffing boost customizable without exposing all other weights (inconsistent UX).
-
-### Platform-Native Installers
-
-**Windows (NSIS):**
-- Tool: NSIS (free, scriptable) or Inno Setup (free, GUI-based)
-- Input: PyInstaller onedir output
-- Output: `Job-Radar-Setup-v2.1.0.exe`
-- Features: Wizard, desktop shortcut, Start Menu entry, uninstaller registry entry
-- Signing: Requires code signing certificate ($100/year for EV cert to avoid SmartScreen)
-- Complexity: MEDIUM (NSIS script learning curve, certificate procurement)
-
-**macOS (.pkg):**
-- Tool: `pkgbuild` (built into macOS) + `productbuild` for signed installer
-- Input: PyInstaller onedir output
-- Output: `Job-Radar-v2.1.0.pkg` or `.dmg` with drag-to-Applications
-- Features: Installs to /Applications, uninstaller via drag-to-Trash or in-app button
-- Signing: Requires Apple Developer ID ($99/year)
-- Notarization: Required for Gatekeeper (automated via `xcrun notarytool`)
-- Complexity: MEDIUM (signing + notarization setup, PKG file structure)
-
-**Linux:**
-- Keep current: .tar.gz (acceptable for Linux users)
-- Optional: AppImage (single-file executable, no install required)
-- Complexity: LOW (no change) or LOW-MEDIUM (AppImage via `appimagetool`)
-
-**Critical Note:** PyInstaller creates onedir bundles (folder with executable + dependencies). This is NOT an installer. Users expect:
-- Windows: One .exe to download and run
-- macOS: One .dmg or .pkg to download and open
-- Linux: One .tar.gz or .AppImage to download (current state OK)
-
-Without platform-native installers, app feels "hobbyist." With them, app feels "professional."
-
-### GUI Uninstall Button
-
-**Implementation:**
-1. Add button to Settings tab: "Uninstall Job Radar"
-2. Confirm dialog: "This will remove Job Radar and cached data. Continue?"
-3. Run cleanup script:
-   - Windows: `uninstall.bat` (delete cache, logs, invoke `uninstall.exe` from NSIS)
-   - macOS: `uninstall.sh` (delete cache, logs, delete app from /Applications)
-   - Linux: `uninstall.sh` (delete cache, logs, binary)
-4. Exit app
-
-**What to Delete:**
-- Application binary and dependencies (OS uninstaller handles on Windows/Mac)
-- `~/.cache/job-radar/` (or `%APPDATA%\Local\Job-Radar\Cache` on Windows)
-- `~/.local/share/job-radar/logs/`
-- `~/.config/job-radar/*.log`
-
-**What to Preserve:**
-- `~/.config/job-radar/profiles.json` (user data)
-- `~/.config/job-radar/config.json` (settings, API keys)
-- UNLESS user checks "Delete all data including profiles"
-
-**Complexity:** LOW. Shell script + button + dialog. Most complex part is handling OS-specific cleanup on Windows (delete registry entries).
+1. **hiring.cafe API authentication** — Do endpoints require API key? Or open like RemoteOK? Scraper code will reveal.
+2. **hiring.cafe request headers** — Does API check User-Agent? Scraper uses custom headers; may need to match.
+3. **hiring.cafe job freshness** — Are jobs timestamped? Can we filter by date_posted to avoid re-processing old jobs?
+4. **Installer download security** — Should we verify SHA256 checksum of downloaded installer? GitHub Releases doesn't auto-generate checksums; would need to add to release workflow.
+5. **Update frequency configuration** — Should users be able to disable auto-check? Or just skip individual versions?
 
 ## Sources
 
-**Job Aggregator APIs:**
-- [JSearch API — OpenWeb Ninja](https://www.openwebninja.com/api/jsearch) (MEDIUM confidence)
-- [SerpAPI Google Jobs API](https://serpapi.com/google-jobs-api) (HIGH confidence)
-- [USAJobs Developer Portal](https://developer.usajobs.gov/) (HIGH confidence)
-- [Jobicy Remote Jobs API/RSS](https://jobicy.com/jobs-rss-feed) (MEDIUM confidence)
-- [Jobicy GitHub Repository](https://github.com/Jobicy/remote-jobs-api) (MEDIUM confidence)
-- [Best Job Posting APIs 2026](https://theirstack.com/en/blog/best-job-posting-apis) (MEDIUM confidence)
+### Auto-Update Research
 
-**Duplicate Detection:**
-- [Job Board Duplicate Problem](https://www.linkup.com/insights/blog/job-board-data-pollution-duplicate-jobs-part-2) (HIGH confidence - 15x increase in duplicates from programmatic ads)
-- [How to Detect Non-Exact Duplicates](https://www.textkernel.com/learn-support/blog/online-job-postings-have-many-duplicates-but-how-can-you-detect-them-if-they-are-not-exact-copies-of-each-other/) (HIGH confidence - technical approach)
-- [Duplicate Job Listings on LinkedIn](https://medium.com/@mp5718/how-many-companies-post-duplicate-jobs-on-linkedin-ee620dfe4133) (MEDIUM confidence)
-- [Job Aggregator Deduplication Best Practices](https://www.goproxy.com/blog/web-scraping-job-postings/) (MEDIUM confidence)
+**Official Documentation (HIGH confidence):**
+- [Electron autoUpdater API](https://www.electronjs.org/docs/latest/api/auto-updater) — Update checking patterns
+- [electron-builder Auto Update](https://www.electron.build/auto-update.html) — Download progress, notifications
+- [Updating Applications | Electron](https://www.electronjs.org/docs/latest/tutorial/updates) — Update strategies
+- [Updater4pyi Quickstart](https://updater4pyi.readthedocs.io/en/latest/quickstart/) — Python update library
 
-**User Expectations:**
-- [Job Board User Complaints](https://www.whatjobs.com/news/joblookup-review-2026-legit-job-board-or-just-another-aggregator/) (MEDIUM confidence - 2026 user reviews)
-- [Staffing Agency vs Direct Employer Preferences](https://talentbridge.com/direct-hire-vs-contract-staffing-whats-really-working-for-smart-businesses-in-2026/) (HIGH confidence - job seekers prefer direct hire)
-- [Fuzzy Matching Best Practices](https://dataladder.com/fuzzy-matching-101/) (HIGH confidence)
+**Community Resources (MEDIUM confidence):**
+- [ToDesktop Auto-Updates Feature](https://www.todesktop.com/features/auto-updates) — Best practices
+- [Auto-Updates in Electron Guide](https://www.emadibrahim.com/electron-guide/auto-updates) — UX patterns
+- [PyUpdater GitHub](https://github.com/Digital-Sapphire/PyUpdater) — PyInstaller auto-update library (unmaintained)
+- [GitHub Releases Auto-Updater (C++)](https://github.com/VioletGiraffe/github-releases-autoupdater) — Version checking patterns
+- [Desktop App Update Best Practices | PDQ](https://www.pdq.com/blog/deploying-software-best-practices/) — Testing, rollout strategies
+- [Code Signing Best Practices | DigiCert](https://www.digicert.com/faq/code-signing-trust/what-are-code-signing-best-practices) — Security considerations
 
-**Customizable Scoring:**
-- [Weighted Scoring Models 2026](https://productschool.com/blog/product-fundamentals/weighted-scoring-model) (HIGH confidence)
-- [Weighted Scoring in Applications](https://www.6sigma.us/six-sigma-in-focus/weighted-scoring-prioritization/) (MEDIUM confidence)
-- [Best AI Job Search Tools 2026](https://aijourn.com/the-best-ai-job-search-tools-in-2026/) (MEDIUM confidence)
+**User Behavior Research (MEDIUM confidence):**
+- [Skip version patterns | Android Central](https://forums.androidcentral.com/threads/can-i-skip-an-apps-update-on-an-app-with-auto-update-disabled.1056866/)
+- [Windows update notification disable | TenForums](https://www.tenforums.com/windows-updates-activation/200189-how-disable-updates-available-popup.html)
+- [Update cancellation | EaseUS](https://www.easeus.com/computer-instruction/how-to-stop-windows-10-update-in-progress.html)
 
-**Desktop Installers:**
-- [NSIS vs Inno Setup Comparison](https://www.advancedinstaller.com/choosing-the-right-windows-packaging-tool-as-developer.html) (HIGH confidence)
-- [macOS PKG Packaging](https://apptimized.com/en/news/application-packaging-and-deploying-for-macos-in-simple-words/) (MEDIUM confidence)
-- [PyInstaller Cross-Platform Deployment](https://github.com/orgs/pyinstaller/discussions/9026) (HIGH confidence - official repo)
+### hiring.cafe Research
 
-**Uninstaller:**
-- [Mac App Uninstall Best Practices](https://support.apple.com/en-us/102610) (HIGH confidence - official Apple docs)
-- [Windows Uninstall Programs](https://support.microsoft.com/en-us/windows/uninstall-or-remove-apps-and-programs-in-windows-4b55f974-2cc6-2d2b-d092-5905080eaf98) (HIGH confidence - official Microsoft docs)
-- [Best Mac Uninstallers 2026](https://macpaw.com/reviews/best-uninstallers-for-mac) (MEDIUM confidence)
+**Scraper Source Code (MEDIUM-HIGH confidence):**
+- [hiring-cafe-job-scraper GitHub](https://github.com/umur957/hiring-cafe-job-scraper) — Python scraper using official API endpoints
+- [Apify hiring.cafe Scraper API](https://apify.com/memo23/apify-hiring-cafe-scraper/api) — Pagination support, data structure
+- [HiringCafe Web Scraper | Automatio.ai](https://automatio.ai/templates/en/hiringcafe-web-scraper) — Education, company size fields
+
+**Platform Reviews (MEDIUM confidence):**
+- [HiringCafe Review 2026 | Jobright](https://jobright.ai/blog/hiringcafe-review-2026-features-pros-cons-and-alternatives/) — Features, filters, pros/cons
+- [HiringCafe: The Latest in Job Search | Bridged](https://www.getbridged.co/resource/hiringcafe-the-latest-in-job-search) — Overview, differentiators
+- [Is HiringCafe Legit? | Remote100k](https://remote100k.com/blog/is-hiringcafe-legit) — Safety, legitimacy
 
 ---
-
-*Feature research for: Job Radar v2.1.0 - Source Expansion & Polish*
-*Researched: 2026-02-13*
-*Next: Use this to inform milestone phase breakdown and task prioritization*
+*Feature research for: Job Radar v2.2.0 Auto-Update & hiring.cafe Integration*
+*Researched: 2026-02-15*
+*Confidence: MEDIUM — Auto-update patterns verified with official docs; hiring.cafe API reverse-engineered from scrapers (no official docs)*

@@ -1,389 +1,623 @@
 # Pitfalls Research
 
-**Domain:** Adding job aggregator APIs, configurable scoring, GUI uninstall, and platform-native installers to existing Python desktop app
-**Researched:** 2026-02-13
-**Confidence:** HIGH
+**Domain:** Auto-Update and hiring.cafe Integration for Python Desktop App
+**Researched:** 2026-02-15
+**Confidence:** MEDIUM
 
 ## Critical Pitfalls
 
-### Pitfall 1: Scoring Weight Migration Without Schema Version Bump
+### Pitfall 1: Version Comparison with String Sorting
 
 **What goes wrong:**
-Users who upgrade from v2.0 to v2.1 suddenly see all their job results re-scored with different weights. Old reports become incomparable to new ones. Worse, if a user configured custom weights but the schema didn't increment, old profiles lack the new weights structure, causing KeyError crashes when scoring.py expects `profile["scoring_weights"]["skill_match"]` but finds only hardcoded floats.
+Version strings compared lexicographically produce incorrect results. "1.9" sorts after "1.10" in string comparison, causing the app to think 1.9 is newer than 1.10. This breaks update detection entirely. Users on v1.10+ receive prompts to "update" to v1.9, breaking the update mechanism.
 
 **Why it happens:**
-Developers think "it's just adding optional fields" and don't bump `CURRENT_SCHEMA_VERSION` from 1 to 2. The existing auto-migration code (profile_manager.py:267-271) only handles v0→v1. Adding configurable weights is a **breaking schema change** because scoring.py changes from reading hardcoded values (0.25, 0.15, etc.) to reading `profile.get("scoring_weights", {}).get("skill_match", 0.25)`. Without migration, old profiles missing this structure break.
+Python's default string comparison treats version numbers as text, not semantic versions. Developers reach for simple `if new_version > current_version` without considering that "1.10.0" < "1.9.0" lexicographically. Electron's auto-updater had this exact bug when `allowPrerelease` reverted to lexical sort instead of semantic version sort.
 
 **How to avoid:**
-1. Bump `CURRENT_SCHEMA_VERSION = 2` in profile_manager.py
-2. Add v1→v2 migration in `load_profile()`:
-   ```python
-   if schema_version == 1:
-       # Add default scoring weights if missing
-       profile.setdefault("scoring_weights", {
-           "skill_match": 0.25,
-           "title_relevance": 0.15,
-           "seniority": 0.15,
-           "location": 0.15,
-           "domain": 0.10,
-           "response_likelihood": 0.20,
-       })
-       profile["schema_version"] = 2
-       save_profile(profile, profile_path)  # Auto-migrate and save
-   ```
-3. Update _template.json to include `scoring_weights` for new users
-4. Add test: `test_load_v1_profile_auto_migrates_to_v2()` mirroring test_profile_manager.py:226
+Use the `packaging` module's `Version` class for all version comparisons:
+```python
+from packaging.version import Version
+
+if Version(remote_version) > Version(current_version):
+    # Update available
+```
+
+Each version segment is compared numerically: `2.10 > 2.1` and `1.10 > 1.9`. The `packaging` module handles pre-release versions, dev tags, and epoch correctly per PEP 440.
 
 **Warning signs:**
-- Tests pass but GUI crashes on "Search" with `KeyError: 'scoring_weights'`
-- Old profiles load fine but scoring.py fails with AttributeError
-- Reports generated before/after upgrade show different scores for identical jobs
+- Tests that check "1.9" vs "1.10" comparisons pass with wrong results
+- Users on v1.10+ see update prompts for v1.9
+- Update logic uses string operators (`>`, `<`, `==`) directly on version strings
 
 **Phase to address:**
-Phase 1 (Configurable Scoring Architecture) — migration MUST ship atomically with the feature
+Phase 1 (Version Detection Infrastructure) — implement version comparison correctly from the start, include explicit test cases for 1.9 vs 1.10 comparison.
 
 ---
 
-### Pitfall 2: Rate Limiter State Corruption Across New API Sources
+### Pitfall 2: macOS Gatekeeper Quarantine Blocks Downloaded Installers
 
 **What goes wrong:**
-Adding 4 new job aggregator APIs means 4 new SQLite databases in `.rate_limits/`. If two sources share an API backend (e.g., "JobAPI" and "JobAPI Premium" both hit `api.jobapi.com`), they create separate rate limit databases (`jobapi.db` and `jobapi_premium.db`) but hit the same rate limit pool. User burns through quota twice as fast, gets 429s, and both sources fail silently because `check_rate_limit()` returns False but doesn't explain WHY.
-
-Worse: SQLite connections in `_connections` dict (rate_limits.py:39) aren't closed on exit. Adding 4 sources means 10 total SQLite connections staying open. On Windows, this causes "database is locked" errors if user tries to manually inspect `.rate_limits/*.db` while app runs.
+Downloaded DMG files receive the `com.apple.quarantine` extended attribute. When the user double-clicks the downloaded installer, macOS Gatekeeper blocks it with "cannot be opened because the developer cannot be verified" unless the app is notarized. Auto-downloaded installers appear broken to users.
 
 **Why it happens:**
-Current rate_limits.py was designed for 2 API sources (Adzuna, Authentic Jobs). Scaling to 6+ sources surfaces architectural flaws:
-- No connection pooling or cleanup
-- No shared rate limiter for sources using same backend API
-- `RATE_LIMITS` dict (rate_limits.py:27) hardcodes source names, making dynamic aggregator addition brittle
+Browser downloads automatically tag files with quarantine attributes. Python's `urllib` or `requests` downloads also trigger quarantine. Without Apple notarization, Gatekeeper refuses to open quarantined files even if they're code-signed. The quarantine attribute is inherited by all files within the DMG.
 
 **How to avoid:**
-1. **Connection cleanup**: Add `atexit` handler to close all SQLite connections:
+1. **Notarize releases:** Submit DMG to Apple's notarization service during CI/CD. Ad-hoc signing is insufficient for quarantined downloads.
+2. **Inform users:** If notarization isn't feasible, provide clear instructions: "Right-click → Open" bypasses Gatekeeper for first launch.
+3. **Test quarantine behavior:** Download installer via Python `requests` (not direct file copy) to verify quarantine attribute handling.
+4. **Verify notarization:** Use `spctl --assess --verbose JobRadar.app` on clean macOS to ensure Gatekeeper accepts it.
+
+**Warning signs:**
+- Installer works when copied locally but fails when downloaded via browser
+- `xattr -l installer.dmg` shows `com.apple.quarantine` attribute
+- macOS users report "unidentified developer" errors despite valid code signature
+- `codesign --verify` passes but app still won't open
+
+**Phase to address:**
+Phase 2 (Cross-Platform Download) and Phase 4 (Security & Verification) — notarization must be part of the release pipeline, test quarantine scenarios before shipping.
+
+---
+
+### Pitfall 3: Race Condition During Application Shutdown
+
+**What goes wrong:**
+User closes the app while update download is in progress. Download thread continues after main app exits, leaving partial installer files or corrupted downloads. Next launch detects partial installer, tries to run it, and fails. Or: download thread blocks on network I/O, preventing clean shutdown for 30+ seconds.
+
+**Why it happens:**
+Non-daemon threads continue running after `sys.exit()` unless explicitly joined. Download operations don't check cancellation flags during long network transfers. Python's `requests` library blocks without timeout, making graceful cancellation difficult. Job Radar already uses cooperative cancellation with `threading.Event` for search workers, but adding auto-update introduces a new thread.
+
+**How to avoid:**
+1. **Cooperative cancellation:** Use `threading.Event` to signal download thread to stop. Check flag frequently during download (per-chunk in streaming downloads):
    ```python
-   import atexit
+   cancel_event = threading.Event()
 
-   def _cleanup_connections():
-       for conn in _connections.values():
-           conn.close()
-
-   atexit.register(_cleanup_connections)
+   response = requests.get(url, stream=True, timeout=30)
+   with open(tmp_file, 'wb') as f:
+       for chunk in response.iter_content(chunk_size=8192):
+           if cancel_event.is_set():
+               break
+           f.write(chunk)
    ```
-2. **Shared rate limiters**: Map sources to API backends in api_config.py:
+
+2. **Cleanup on exit:** Register `atexit` handler to cancel downloads and delete partial files.
+
+3. **Atomic downloads:** Download to `.tmp` file, rename only on completion. Verify file hash before rename.
+
+4. **Short timeouts:** Use `requests` with `timeout=30` to prevent infinite hangs during cancellation.
+
+**Warning signs:**
+- Partial `.dmg`, `.exe`, or `.tar.gz` files in downloads folder after app crash
+- App hangs for 30+ seconds on quit when download is active
+- Download thread doesn't stop when main window closes
+- `.tmp` files accumulate in download directory
+
+**Phase to address:**
+Phase 2 (Cross-Platform Download) — build cancellation from the start, add explicit shutdown tests that kill the app mid-download.
+
+---
+
+### Pitfall 4: Update Loop from Bad Manifest or Failed Installs
+
+**What goes wrong:**
+App downloads installer, tries to launch it, launch fails (permissions, wrong path, etc.), but update state is marked "installed." Next launch checks version, sees same version, re-downloads installer, infinite loop. Or: manifest on GitHub has malformed JSON, version check fails, app retries immediately, hits GitHub API rate limit (60 req/hour unauthenticated). Users report update notification won't go away.
+
+**Why it happens:**
+State tracking doesn't distinguish "downloaded" from "user completed install." Transient failures (network timeout, rate limit) trigger immediate retry without backoff. Manifest parsing exceptions aren't caught, crash the update check, and get retried next launch. Real-world examples show update loops from unsatisfiable dependencies and manifest errors.
+
+**How to avoid:**
+1. **State machine:** Track `pending_download`, `downloaded`, `user_dismissed`. Don't re-prompt for same version after dismissal:
    ```python
-   API_BACKEND_MAP = {
-       "jobapi": ["jobapi", "jobapi_premium"],  # Share rate limiter
-       "careerjet": ["careerjet"],
+   update_state = {
+       "version": "1.10.0",
+       "status": "user_dismissed",  # or "pending", "downloaded"
+       "last_check": "2026-02-15T10:00:00Z",
+       "retry_after": "2026-02-15T16:00:00Z"  # exponential backoff
    }
    ```
-   Modify `get_rate_limiter(source)` to use backend key instead of source name
-3. **Dynamic rate limit configs**: Move `RATE_LIMITS` to .env or config.json so new sources don't require code changes
-4. **Better error messages**: When rate limited, log the backend API and ALL sources affected
+
+2. **Exponential backoff:** After failed manifest fetch, wait 1 hour → 6 hours → 24 hours before retry.
+
+3. **Manifest validation:** Wrap JSON parsing in try/except, validate schema (version field exists, assets are URLs). Reject malformed manifests without retrying.
+
+4. **Rate limit headers:** Check `X-RateLimit-Remaining` from GitHub API, stop checking when <5 requests remain.
+
+5. **Never retry on 4xx errors:** HTTP 404, 401 are not transient. Log and stop checking.
 
 **Warning signs:**
-- `.rate_limits/` directory grows to 10+ databases
-- "Database is locked" errors in logs
-- User reports "some APIs randomly stop working"
-- 429 errors appearing despite conservative rate limits
+- Same version downloaded multiple times in logs
+- High frequency of GitHub API calls (multiple per minute)
+- Users report "update available" notification won't go away
+- Manifest fetch returns 403 rate limit error
+- Update state file grows with repeated failed attempts
 
 **Phase to address:**
-Phase 2 (API Source Infrastructure) — BEFORE adding actual API integrations in Phase 3
+Phase 1 (Version Detection Infrastructure) — implement state machine and backoff immediately. Phase 3 (Update Workflow) — track user dismissal state.
 
 ---
 
-### Pitfall 3: macOS Code Signing Breaks PyInstaller Executables
+### Pitfall 5: Certificate Validation Failures Behind Corporate Proxies
 
 **What goes wrong:**
-Adding DMG installer requires code signing for Gatekeeper. Developers sign `JobRadar.app` with `codesign --deep -s "Developer ID" JobRadar.app`, but macOS refuses to open it: "JobRadar is damaged and can't be opened." Running `codesign --verify --verbose JobRadar.app` shows "bundle format unrecognized."
-
-Root cause: PyInstaller appends Python bytecode to the end of the executable, breaking Mach-O format. The `--deep` flag signs all binaries in one pass, but LINKEDIT segment must be last. PyInstaller expects a magic number at EOF. Signing breaks this.
-
-On Windows, NSIS installer built with default settings triggers Windows Defender SmartScreen: "Windows protected your PC" because .exe isn't signed. Signing requires $400/year code signing certificate + hardware token.
+Enterprise users behind SSL-intercepting proxies get `SSLCertificateError` when downloading updates. Python's `requests` validates against system CA bundle, but proxy uses self-signed cert. Update fails silently or shows cryptic SSL error "certificate verify failed: unable to get local issuer certificate." Users assume app is broken.
 
 **Why it happens:**
-Current job-radar.spec sets `codesign_identity=None` and `entitlements_file='entitlements.plist'` (line 108) but doesn't actually sign. Adding DMG/MSI installers exposes this gap. Per PyInstaller docs and GitHub issues (#7937, #2198), signing PyInstaller apps requires:
-- Sign each binary separately, inside-out (dependencies first, main executable last)
-- Use BUNDLE build type, not COLLECT (job-radar.spec uses BUNDLE for macOS already, good)
-- Apply hardened runtime entitlements
-- Notarize with `notarytool` (not deprecated `altool`)
+Corporate proxies intercept HTTPS, decrypt, inspect, and re-encrypt with their own certificate. Python's default CA bundle doesn't include corporate root certs. Windows uses system cert store, but Python doesn't unless explicitly configured. TLS 1.2 support is required but may not be negotiated correctly through proxy.
 
 **How to avoid:**
-1. **macOS signing script** (post-build step in CI):
-   ```bash
-   # Sign all .dylib and .so files first
-   find dist/JobRadar.app -name "*.dylib" -o -name "*.so" | xargs -I {} codesign -s "Developer ID" --options runtime --entitlements entitlements.plist {}
+1. **Use system certs on Windows:** Set `requests.get(..., verify=True)` — Python 3.10+ automatically uses Windows cert store via `certifi` fallback.
 
-   # Sign main executables
-   codesign -s "Developer ID" --options runtime --entitlements entitlements.plist dist/JobRadar.app/Contents/MacOS/job-radar-cli
-   codesign -s "Developer ID" --options runtime --entitlements entitlements.plist dist/JobRadar.app/Contents/MacOS/job-radar
+2. **Provide escape hatch:** Add `JOBRADAR_NO_SSL_VERIFY=1` env var to disable validation (document as insecure, last resort).
 
-   # Sign app bundle (not --deep!)
-   codesign -s "Developer ID" --options runtime --entitlements entitlements.plist dist/JobRadar.app
-
-   # Verify
-   codesign --verify --verbose dist/JobRadar.app
-   ```
-2. **Notarization**: Submit to Apple for scanning:
-   ```bash
-   xcrun notarytool submit job-radar.dmg --keychain-profile "notarization" --wait
-   xcrun stapler staple dist/JobRadar.app
-   ```
-3. **Windows**: Document that unsigned installer shows SmartScreen warning. Add "How to bypass" instructions for users. Enterprise signing ($400/year) deferred to future milestone.
-4. **Test on CLEAN machine**: CI builds succeed but real users have Gatekeeper. GitHub Actions can't test this fully.
-
-**Warning signs:**
-- "codesign --verify" fails with "bundle format unrecognized"
-- Users report "App is damaged" on macOS 10.15+
-- Windows installer triggers SmartScreen on every download
-- Entitlements file exists but isn't applied (`codesign -d --entitlements - JobRadar.app` shows none)
-
-**Phase to address:**
-Phase 5 (Platform Installers) — signing MUST be tested on real hardware, not just CI
-
----
-
-### Pitfall 4: GUI Uninstall Deletes Running App Files (Windows)
-
-**What goes wrong:**
-User clicks "Uninstall" button in GUI → confirmation dialog → app runs `shutil.rmtree()` on its own install directory → Windows locks error: "The process cannot access the file because it is being used by another process." On macOS, `rm -rf JobRadar.app` succeeds but app keeps running from memory, completing the uninstall but leaving zombie process.
-
-Worse case: Uninstall succeeds in deleting `~/.local/share/JobRadar/` (all user data, reports, tracker) but FAILS to delete app itself. User thinks uninstall completed, but binary remains. Partial state.
-
-**Why it happens:**
-GUI uninstall runs IN THE SAME PROCESS that needs to be deleted. On Windows, you can't delete a running .exe. On macOS, you can delete the .app bundle but the process stays in memory. The current codebase uses CustomTkinter (job_radar/gui/main_window.py) but has no uninstall feature yet — developers won't discover this until testing Phase 6.
-
-**How to avoid:**
-1. **Two-stage uninstall**:
-   - Stage 1 (running app): Delete user data (`~/.local/share/JobRadar/`, `~/.job-radar/`), create uninstall script, schedule script to run after exit
-   - Stage 2 (external script): Wait for process to exit, delete app bundle, delete self
-
+3. **Informative errors:** Catch `requests.exceptions.SSLError`, show user-friendly message:
    ```python
-   # In GUI uninstall handler
-   def uninstall_and_exit():
-       # Delete user data
-       shutil.rmtree(get_data_dir())
-       shutil.rmtree(Path.home() / ".job-radar")
-
-       # Create platform-specific cleanup script
-       if sys.platform == "darwin":
-           script = Path("/tmp/job-radar-cleanup.sh")
-           script.write_text(f"""#!/bin/bash
-   sleep 2
-   rm -rf {sys.executable.parent.parent.parent}  # JobRadar.app
-   rm -f /tmp/job-radar-cleanup.sh
-   """)
-           os.chmod(script, 0o755)
-           subprocess.Popen(["/bin/bash", str(script)])
-       elif sys.platform == "win32":
-           script = Path(tempfile.gettempdir()) / "job-radar-cleanup.bat"
-           exe_path = Path(sys.executable).parent.parent  # onedir root
-           script.write_text(f"""timeout /t 2
-   rmdir /s /q "{exe_path}"
-   del "%~f0"
-   """)
-           subprocess.Popen([str(script)], creationflags=subprocess.CREATE_NO_WINDOW)
-
-       # Exit immediately
-       sys.exit(0)
+   try:
+       response = requests.get(url, timeout=30)
+   except requests.exceptions.SSLError as e:
+       show_error("Update check failed: SSL certificate verification failed. "
+                  "Are you behind a corporate proxy? "
+                  "See docs/proxy-setup.md for workarounds.")
    ```
 
-2. **Detect running app before uninstall**: Check if another Job Radar process is running (find PIDs, compare to current), warn user to close it first
-
-3. **Uninstall confirmation shows EXACTLY what will be deleted**:
-   - App binary: /Applications/JobRadar.app
-   - User data: ~/Library/Application Support/JobRadar (X MB)
-   - Profiles: ~/.job-radar/
-   - Reports: ~/job-radar-output/
-
-4. **Backup before uninstall**: Auto-create `.job-radar-backup.zip` on Desktop before deletion (escape hatch)
+4. **Test with mitmproxy:** Simulate corporate proxy during testing to catch cert validation issues.
 
 **Warning signs:**
-- Windows uninstall fails with "file in use" error
-- User data deleted but app still launchable
-- Uninstall completes but old reports remain in `~/job-radar-output/`
-- macOS app bundle deleted but process still visible in Activity Monitor
+- Update check works on home wifi but fails on corporate network
+- `SSLCertificateError: certificate verify failed` in logs
+- Windows users report failures, macOS users don't (Windows cert store integration missing)
+- Error message shows "unable to get local issuer certificate"
 
 **Phase to address:**
-Phase 6 (GUI Uninstall Feature) — requires cross-platform testing on real installs, not dev mode
+Phase 2 (Cross-Platform Download) — handle SSL errors gracefully from the start, test with proxy simulator.
 
 ---
 
-### Pitfall 5: GitHub Actions Matrix Explodes CI Time with Multiple Installers
+### Pitfall 6: Installer Launch Permissions on Windows (UAC Elevation)
 
 **What goes wrong:**
-Current .github/workflows/release.yml builds 3 platforms (Linux, Windows, macOS) serially in ~15 minutes. Adding DMG (macOS), MSI (Windows), DEB (Linux), AppImage (Linux) means:
-- macOS job now runs: PyInstaller build → sign binaries → create DMG → sign DMG → notarize → wait 5-10min for Apple → staple
-- Windows job now runs: PyInstaller build → create MSI → create NSIS installer → sign both (if cert available)
-
-Total CI time balloons to 45+ minutes. GitHub Actions free tier = 2000 min/month. Current 15min × 2 releases/month = 30min. New 45min × 2 = 90min. Still fine, BUT... if signing fails, entire matrix re-runs. One bad notarization = 45min wasted.
-
-Worse: macOS runners are 10× more expensive than Linux (GitHub pricing). Building DMG on macOS-latest burns through quota fast.
+Downloaded `.exe` installer requires admin privileges (NSIS installs to Program Files). App launches installer via `subprocess.run(['installer.exe'])`, but UAC blocks it or shows "access denied." Silent installs (`/S` flag) write to wrong registry hive (HKCU instead of HKLM) when not elevated, breaking uninstaller lookup.
 
 **Why it happens:**
-Current release.yml uses simple matrix strategy (lines 14-52). Each OS builds once. Adding multiple installer formats per OS without refactoring makes jobs sequential. Notarization is SLOW (Apple's servers, not GitHub's) and can't be parallelized.
-
-Per web research, "distributing platform-specific builds across multiple runners using a matrix strategy can drastically reduce build durations." But Job Radar already uses matrix — the issue is DEPTH (multiple artifacts per platform) not WIDTH (multiple platforms).
+NSIS installers for "all users" require UAC elevation. Python `subprocess` doesn't auto-elevate on Windows. `ShellExecute` with `runas` verb is needed, but not available in `subprocess` module. User runs Job Radar as non-admin, so child process inherits non-admin token. When elevated, `HKCU` points to administrator's registry, not the original user's.
 
 **How to avoid:**
-1. **Separate signing from building**:
-   - Build job: PyInstaller only, upload unsigned artifacts
-   - Sign job (macOS only): Download artifact, sign, notarize, upload signed DMG
-   - This allows build failures to fail fast without burning notarization quota
-
-2. **Conditional installer types**:
-   - DMG: Required (macOS default)
-   - MSI: Optional (defer to future milestone, ship ZIP only for v2.1)
-   - DEB/AppImage: Optional (defer, ship .tar.gz only)
-   - Document: "Installing from ZIP is supported, native installers coming in v2.2"
-
-3. **Cache notarization credentials**:
-   ```yaml
-   - name: Restore notarization cache
-     uses: actions/cache@v4
-     with:
-       path: ~/Library/MobileDevice/Provisioning Profiles
-       key: ${{ runner.os }}-notarization-${{ hashFiles('entitlements.plist') }}
+1. **Use `os.startfile()` instead of `subprocess`:** On Windows, `os.startfile('installer.exe')` triggers UAC prompt automatically if installer has `requestedExecutionLevel` manifest:
+   ```python
+   if sys.platform == "win32":
+       os.startfile(str(installer_path))
+   elif sys.platform == "darwin":
+       subprocess.run(["open", str(installer_path)])
+   else:  # Linux
+       subprocess.run(["xdg-open", str(installer_path)])
    ```
 
-4. **Smoke test BEFORE signing**:
-   Current smoke test (release.yml:75-94) runs AFTER build but could catch PyInstaller issues before wasting 10min on notarization
+2. **Don't auto-install:** Let user click through installer wizard. Silent installs (`/S`) are fragile with UAC — registry goes to wrong hive, shortcuts break.
 
-5. **Local testing script**:
-   ```bash
-   # scripts/test-installers.sh
-   # Builds all formats locally to catch issues pre-commit
-   pyinstaller job-radar.spec --clean
-   cd dist && zip -r job-radar-test.zip JobRadar.app
-   ```
+3. **Verify installer manifest:** NSIS script must include `RequestExecutionLevel admin` to trigger UAC.
+
+4. **Test as non-admin user:** Run Job Radar from non-admin account, verify UAC prompt appears when clicking "Install Update."
 
 **Warning signs:**
-- Release workflow takes >30 minutes
-- Notarization step times out (10min default GitHub timeout)
-- "macOS runner minutes depleted" email from GitHub
-- Release fails at signing step, whole matrix re-runs from scratch
+- Installer launches but fails with "access denied" or silent errors
+- Uninstaller can't find installation (written to HKCU, expected in HKLM)
+- Windows users report "nothing happens" when clicking install button
+- Installer runs but doesn't appear in Add/Remove Programs
 
 **Phase to address:**
-Phase 5 (Platform Installers) — optimize workflow BEFORE adding all formats, not after
+Phase 3 (Update Workflow) — implement correct installer launch method per platform, test as non-admin user.
+
+---
+
+### Pitfall 7: hiring.cafe Unofficial API Brittleness (HTML Structure Changes)
+
+**What goes wrong:**
+If hiring.cafe provides an unofficial API or requires scraping, HTML structure changes break parsing. Job title selector `.job-title` renamed to `.listing-title`, scraper returns empty results. No jobs from hiring.cafe, no error message, user assumes source is down. Or: unofficial API changes response schema, adding fields or renaming keys.
+
+**Why it happens:**
+Unofficial APIs and web scraping are inherently fragile. Sites change markup without notice. CSS class names, div nesting, and JSON response schemas evolve. No SLA or versioning like official APIs. hiring.cafe is an aggregator that scales to 1M+ users, so they iterate on frontend frequently.
+
+**How to avoid:**
+1. **Graceful degradation:** If hiring.cafe returns 0 jobs, log warning but don't crash. Show message in GUI: "hiring.cafe returned no results (site may have changed)."
+
+2. **Validate structure:** After fetching, check if expected fields exist before parsing. Fail fast with clear error if structure changed:
+   ```python
+   def parse_hiring_cafe_job(job_data):
+       required_fields = ["title", "company", "url"]
+       missing = [f for f in required_fields if f not in job_data]
+       if missing:
+           logger.error(f"hiring.cafe schema changed: missing {missing}")
+           return None
+       # Continue parsing...
+   ```
+
+3. **Monitor for breakage:** Log success rate per source. Alert if hiring.cafe success rate drops from 90% to 0% (indicates site change).
+
+4. **Fallback selectors:** Try multiple selectors: `[class*="title"]` as fallback if `.job-title` missing. Brittle, but buys time.
+
+5. **Version scraper logic:** Treat scraper as versioned code, include `hiring_cafe_scraper_v1.py`. When site changes, ship `v2` quickly.
+
+**Warning signs:**
+- hiring.cafe returns 0 jobs across multiple searches
+- Logs show HTTP 200 but parsing fails
+- HTML response structure doesn't match expected schema
+- Users report "hiring.cafe never works"
+- Sudden 100% failure rate for source
+
+**Phase to address:**
+Phase 5 (hiring.cafe Integration) — build validation and fallback logic upfront, add monitoring/alerting for parsing success rate.
+
+---
+
+### Pitfall 8: Inconsistent or Missing Salary Data from hiring.cafe
+
+**What goes wrong:**
+Job listings have salary in different formats: "$100k-$120k", "$100000 - $120000", "100-120k", "Competitive", or missing entirely. Parser extracts wrong values, displays "$100 - $120" instead of "$100k - $120k". Or salary field is `null` for 60% of jobs, breaking HTML report rendering if template assumes salary exists.
+
+**Why it happens:**
+hiring.cafe aggregates from multiple sources with inconsistent compensation formats. Manual job posts use freeform text. Some employers never disclose salary. No standardized schema for salary representation across the job ecosystem. Survey data shows equity, benefits, and compensation bands are inconsistently reported.
+
+**How to avoid:**
+1. **Normalize during parsing:** Regex patterns for `$100k`, `$100000`, `100-120k`. Convert to standard format `$X - $Y` or `null`:
+   ```python
+   import re
+
+   def parse_salary(salary_text):
+       if not salary_text or salary_text.lower() in ["competitive", "not specified"]:
+           return None
+
+       # Match patterns like "100k-120k", "$100,000 - $120,000"
+       pattern = r'(\d+)(?:,(\d+))?k?'
+       matches = re.findall(pattern, salary_text, re.IGNORECASE)
+       if len(matches) >= 2:
+           min_sal = int(matches[0][0]) * (1000 if 'k' in salary_text else 1)
+           max_sal = int(matches[1][0]) * (1000 if 'k' in salary_text else 1)
+           return f"${min_sal:,} - ${max_sal:,}"
+       return None
+   ```
+
+2. **Handle missing data:** Make salary field optional in job schema. Display "Not specified" in HTML report if `null`.
+
+3. **Don't break scoring:** If salary is a scoring factor, treat missing salary as neutral (0 points), not penalty. Don't crash if salary parse fails.
+
+4. **Log unparseable formats:** Collect examples of salary text that doesn't match regex. Iterate on patterns over time.
+
+5. **Test with real data:** Scrape 100 hiring.cafe jobs during development, verify salary parsing coverage before shipping.
+
+**Warning signs:**
+- Salary displayed as "$1" or "$100" (off by 1000x)
+- HTML report rendering fails when salary is `null`
+- 80%+ of hiring.cafe jobs show "Not specified" (parser is too strict or field doesn't exist)
+- Salary ranges are backwards: "$120k - $100k"
+
+**Phase to address:**
+Phase 5 (hiring.cafe Integration) — implement flexible salary parsing with fallback, test against real scraped data before merging.
+
+---
+
+### Pitfall 9: Location Parsing Edge Cases (Remote/Hybrid/Multiple Locations)
+
+**What goes wrong:**
+Job location is "Remote (US)", "San Francisco or New York", "Hybrid - Seattle", or "Multiple Locations". Parser expects "City, State" format, fails to extract, stores `null` or first word ("Remote"). User filters for "Seattle" but hybrid Seattle jobs are missing because location is "Hybrid". Deduplication fails because same job has different location formats across sources.
+
+**Why it happens:**
+No standardized location schema across job boards. Remote work explosion introduced "Remote", "Remote (US)", "Remote - EST timezone" formats. Hybrid means "sometimes in office" but location field still needed. Multiple-office companies list all locations in one field. JobSpy library handles this with structured fields (`is_remote`, `country`, `city`).
+
+**How to avoid:**
+1. **Regex patterns for common formats:**
+   ```python
+   def parse_location(location_text):
+       if not location_text:
+           return {"cities": [], "remote": False, "hybrid": False, "raw": None}
+
+       remote = bool(re.search(r'\bremote\b', location_text, re.I))
+       hybrid = bool(re.search(r'\bhybrid\b', location_text, re.I))
+
+       # Extract cities
+       city_pattern = r'(?:Hybrid\s*-\s*)?([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)'
+       cities = re.findall(city_pattern, location_text)
+
+       # Handle "City1 or City2"
+       if ' or ' in location_text:
+           cities = re.split(r'\s+or\s+', location_text.replace('Hybrid - ', ''))
+
+       return {
+           "cities": [c.strip() for c in cities],
+           "remote": remote,
+           "hybrid": hybrid,
+           "raw": location_text
+       }
+   ```
+
+2. **Store structured location:** JSON field: `{"cities": ["Seattle"], "remote": false, "hybrid": true}` instead of string.
+
+3. **Fuzzy search:** User filters for "Seattle", match jobs with Seattle in `cities` array regardless of hybrid/remote flags.
+
+4. **Fall back to raw text:** If parsing fails, store original location string. Better to show "Remote (US)" than `null`.
+
+5. **Test against real data:** Scrape 100 jobs, catalog unique location formats, write tests for each.
+
+**Warning signs:**
+- Location field is `null` or "Remote" for most jobs
+- User filters for city, gets 0 results despite jobs existing
+- Location displayed as "Hybrid" with no city info
+- Deduplication fails because same job has different location formats across sources
+
+**Phase to address:**
+Phase 5 (hiring.cafe Integration) — implement structured location parsing with fallback, test against diverse real-world location formats.
+
+---
+
+### Pitfall 10: Deduplication Failures Across hiring.cafe and Existing Sources
+
+**What goes wrong:**
+Same job appears in hiring.cafe and JSearch (both aggregators). Fuzzy dedup uses 85% title+company similarity, but hiring.cafe formats title as "Senior Engineer - Company" while JSearch uses "Senior Engineer at Company". Similarity is 82%, dedup fails, duplicate jobs in report. User marks job as "Applied" but sees it again as "New" from different source.
+
+**Why it happens:**
+Different sources format job titles inconsistently. Aggregators like JSearch and hiring.cafe may pull from same upstream source (LinkedIn) but transform data differently. Existing 85% threshold in Job Radar was tuned for current sources, may not work for hiring.cafe. Common pattern: same job appears on dozens of different sites.
+
+**How to avoid:**
+1. **Normalize before comparison:** Strip " - Company", " at Company", " | Company" suffixes before fuzzy matching. Compare just title:
+   ```python
+   def normalize_title(title, company):
+       # Remove company name from title
+       title = re.sub(rf'\s*[-|@]\s*{re.escape(company)}', '', title, flags=re.I)
+       # Normalize whitespace
+       title = ' '.join(title.split())
+       return title.lower()
+   ```
+
+2. **Multi-field dedup:** Use title + company + location as dedup key. Two "Senior Engineer" jobs at different companies are not duplicates.
+
+3. **URL-based dedup:** If hiring.cafe provides `apply_url`, check if URL matches existing job. Many aggregators preserve original URL:
+   ```python
+   # Exact URL match = definitely duplicate
+   if new_job["url"] == existing_job["url"]:
+       return True
+   ```
+
+4. **Tune threshold per source:** Lower threshold to 80% for hiring.cafe if it's consistently formatted differently.
+
+5. **Log near-duplicates:** Record pairs with 80-84% similarity to analyze missed dedup cases. Iterate on normalization.
+
+**Warning signs:**
+- Same job appears twice in report with different sources
+- User marks job as "Applied" but sees it again as "New" (different source)
+- Dedup logs show many 82-84% matches (just under threshold)
+- hiring.cafe jobs never deduplicate with other sources
+
+**Phase to address:**
+Phase 5 (hiring.cafe Integration) — test dedup against real hiring.cafe + existing sources, log near-misses, tune threshold and normalization.
+
+---
+
+### Pitfall 11: hiring.cafe Rate Limiting Without Backoff
+
+**What goes wrong:**
+Unofficial API or scraping has strict rate limits (1 req/sec). App fetches all job pages rapidly, gets IP banned or 429 errors. Next search fails silently because rate limiter assumes "no rate limit = unlimited." Or: no respect for `robots.txt`, violates site's terms of service.
+
+**Why it happens:**
+hiring.cafe scales to 1M+ users, so aggressive anti-scraping measures are likely. Unofficial tools need to be "respectful of servers" per scraper documentation. Job Radar has SQLite-backed rate limiting, but adding hiring.cafe means new rate limit configuration.
+
+**How to avoid:**
+1. **Conservative rate limits:** Start with 1 request per 2 seconds, monitor for 429 errors:
+   ```python
+   RATE_LIMITS = {
+       "hiring_cafe": (30, 60),  # 30 requests per 60 seconds
+   }
+   ```
+
+2. **Exponential backoff on 429:** If rate limited, wait 60s → 120s → 240s before retry.
+
+3. **Respect robots.txt:** Check `https://hiring.cafe/robots.txt` before scraping, honor crawl delays.
+
+4. **User-agent header:** Identify as Job Radar with contact: `Job-Radar/2.2.0 (+https://github.com/user/job-radar)`.
+
+5. **Monitor for bans:** If hiring.cafe returns 403 errors consistently, log warning and disable source for 24 hours.
+
+**Warning signs:**
+- hiring.cafe returns 429 or 403 errors
+- All hiring.cafe requests fail after first few succeed
+- IP-based blocking (works on one network, fails on another)
+- `robots.txt` disallows the user-agent or path
+
+**Phase to address:**
+Phase 5 (hiring.cafe Integration) — implement rate limiting from the start, test with realistic usage patterns.
 
 ---
 
 ## Technical Debt Patterns
 
+Shortcuts that seem reasonable but create long-term problems.
+
 | Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
 |----------|-------------------|----------------|-----------------|
-| Skip schema version bump for "optional" scoring weights | No migration code needed, ships faster | KeyError crashes for old profiles, incomparable reports, data corruption | Never — scoring weights ARE breaking change |
-| Use `--deep` for macOS code signing | One command signs everything | App won't open on user machines, "damaged" error | Never — official PyInstaller docs say don't use --deep |
-| Hardcode new API rate limits in Python code | No config migration needed | Every new source requires code deploy, can't adjust limits without release | Early prototyping only, not production |
-| Store scoring weights in config.json instead of profile.json | Easier to edit, no schema migration | Breaks multi-profile workflows, user can't have different weights per profile | Only if single-profile assumption is acceptable (unlikely for job search) |
-| Ship unsigned Windows installer | Saves $400/year certificate cost | Users see SmartScreen warning, enterprise firewalls block | Acceptable for v2.1 if documented, mandatory for v3.0 |
-| Delete user data synchronously in GUI thread | Simple implementation, less code | GUI freezes during `rmtree()` on large directories, appears hung | Never — deleting 1GB of reports takes 10+ seconds |
+| Skip signature verification for GitHub releases | Faster to implement, works for official releases | Vulnerable to MITM attacks, compromised GitHub account could distribute malware | Never — signature verification is security-critical |
+| Use simple string comparison for versions | 1 line of code, no dependencies | Breaks when version reaches 1.10+, requires rewrite | Never — `packaging` module is stdlib |
+| Download installers to user-writable temp dir | Avoids permission issues | Race condition risk (other process modifies file), harder to debug failed downloads | Only if atomic rename used and temp file is random |
+| Retry failed manifest fetch immediately | User sees update faster if transient error | GitHub API rate limit, battery drain from polling | Only with exponential backoff (1 retry max) |
+| Store update state in memory only | No file I/O, simpler code | User dismisses update, sees prompt again next launch | Only for MVP — persist to disk by v1.0 |
+| Hardcode hiring.cafe selectors in main code | Faster to ship | Site change breaks production, requires hotfix release | Only if selector patterns are abstracted to config dict |
+| Ignore missing salary data (don't display field) | Avoids "Not specified" clutter | Users can't filter by "has salary", data loss | Only if salary is truly rare (<10% of jobs have it) |
+| Store location as plain text string | Simple schema, easy to search | Can't filter by remote/hybrid, city extraction fails | Never — structured location needed for filtering |
+| Skip notarization for macOS DMG | Saves time in CI/CD (10 min wait) | Users get Gatekeeper warnings, app appears "damaged" | Only for internal testing builds, never releases |
+| Silent install with NSIS `/S` flag | No user interaction, faster | UAC issues, registry in wrong hive, hard to debug | Never — let user click through installer |
 
 ## Integration Gotchas
 
+Common mistakes when connecting to external services.
+
 | Integration | Common Mistake | Correct Approach |
 |-------------|----------------|------------------|
-| Job aggregator APIs | Treating each API as independent source, creating separate rate limiters | Map multiple sources to shared backend API, pool rate limits |
-| PyInstaller + new dependencies | Adding `requests` variant library (httpx, aiohttp) without hidden import | Add to `hidden_imports` in job-radar.spec, test frozen build |
-| SQLite rate limiters | Opening connection per API call, not closing | Cache connections in module-level dict, close with atexit |
-| Platform-specific installers | Building DMG/MSI in same job as PyInstaller | Separate build job from signing/packaging job for faster failures |
-| Schema migration | Loading old profile, modifying in-place, not saving | Auto-save after migration so next load is fast (current code does this, KEEP IT) |
-| GUI uninstall | Deleting app directory from within running app | Two-stage: delete data + schedule cleanup script, then exit |
+| GitHub Releases API | Poll every app launch, hit rate limit (60/hour) | Cache version check result for 6+ hours, check `X-RateLimit-Remaining` header |
+| GitHub Releases API | Use unauthenticated requests (60/hour limit) | Provide optional `GITHUB_TOKEN` env var for 5000/hour limit (power users) |
+| hiring.cafe scraping | Assume HTML structure is stable | Validate structure on every fetch, fail gracefully if changed |
+| hiring.cafe scraping | No rate limiting because it's unofficial | Respect `robots.txt`, add delays (1 req/2sec), or risk IP ban |
+| HTTPS downloads | Trust all certificates if SSL error occurs | Catch `SSLError`, log helpful message, fail secure (don't disable verification) |
+| Installer downloads | Assume content-type header is accurate | Verify downloaded file is valid (DMG magic bytes, EXE MZ header) before saving |
+| Cross-platform installers | Launch installer with `subprocess.run()` on all platforms | Use `os.startfile()` on Windows (triggers UAC), `open` command on macOS |
+| macOS DMG installers | Code sign with ad-hoc signature (`-`) | Notarize with Apple or users get Gatekeeper warnings on downloaded DMGs |
+| Windows NSIS installers | Silent install with `/S` flag for auto-update | Let user click through wizard — silent install UAC issues are complex |
+| Salary parsing | Regex assumes `$100,000` format | Handle `100k`, `$100-120k`, `Competitive`, and `null` gracefully |
+| Version manifest | Parse JSON without error handling | Wrap in try/except, validate schema, log parse failures |
 
 ## Performance Traps
 
+Patterns that work at small scale but fail as usage grows.
+
 | Trap | Symptoms | Prevention | When It Breaks |
 |------|----------|------------|----------------|
-| Opening 10 SQLite connections for rate limiters without closing | "Database is locked" errors, high file descriptor count | Connection pooling + atexit cleanup | >6 simultaneous API sources |
-| Synchronous DELETE of large user data directory in GUI thread | GUI freezes for 10-30 seconds during uninstall | Background thread with progress dialog OR fast exit + cleanup script | User has >1GB of cached reports |
-| Notarization blocking GitHub Actions workflow | Release workflow times out at 10 minutes | Submit to Apple, poll asynchronously, fail fast if rejected | Every macOS release (Apple's servers, not our code) |
-| Recomputing all scores after weight change without cache invalidation | Changing skill_match weight from 0.25→0.30 doesn't update old reports | Bump schema version, mark old reports as "scored with v1 weights" | Reports with 100+ jobs |
-| Loading all API credentials from .env on every search | Redundant file I/O, slow startup | Load once at module import, cache in memory (current code does this, KEEP IT) | Not a trap with current implementation |
+| Download full installer into memory | Works for 50MB DMG | High RAM usage, OOM crash | 200MB+ Windows installer |
+| Check for updates on every search | Fast with 6h cache | Slow app start if GitHub API is slow | API latency >2 seconds |
+| Parse all hiring.cafe jobs in main thread | Responsive for 10 jobs | GUI freezes during parse | 500+ jobs in single fetch |
+| Store all update state in JSON file | Simple, works fine | Corrupted JSON loses all state | User manually edits file |
+| Retry manifest fetch on every error | Recovers from transient network blips | Battery drain, API rate limit | Network is flaky (mobile hotspot) |
+| Download installer to user's `Downloads/` folder | Easy to find for user | Folder full of old installers | User never cleans up |
+| Load entire DMG to verify checksum | Simple hashlib API | Slow on large files, high I/O | 500MB+ installer |
+| No backoff for hiring.cafe rate limit | Works at low volume | IP ban after 1000 requests | Daily heavy use |
+| Synchronous download in GUI thread | Simple implementation | GUI freezes during 200MB download | Large installers, slow connections |
 
 ## Security Mistakes
 
+Domain-specific security issues beyond general web security.
+
 | Mistake | Risk | Prevention |
 |---------|------|------------|
-| Storing API keys in profile.json instead of .env | Keys committed to git, exposed in reports | Keep existing .env pattern, never serialize keys to user-visible files |
-| Uninstall script doesn't verify paths before deletion | Malicious profile could set data_dir to "/", deletes entire system | Whitelist allowed deletion paths, require paths contain "JobRadar" or ".job-radar" |
-| Downloading installer scripts from CDN without hash verification | MITM attack injects malicious code | Pin installer dependencies, use subresource integrity (SRI) if fetching from web |
-| macOS uninstall script with sudo without user prompt | Privilege escalation vulnerability | Never require sudo for uninstall, app data is user-owned |
-| Exposing internal API keys in error messages | User screenshots leak credentials | Redact API keys in logs: `ADZUNA_APP_ID=abc***xyz` |
+| Skip HTTPS for update manifest | MITM attacker serves malicious version | Always use `https://` for GitHub releases, reject HTTP redirects |
+| Trust installer without signature check | Malware distributed as fake update | Verify code signature on macOS (codesign -v), Authenticode on Windows |
+| Download installer to predictable path | Local privilege escalation (attacker swaps file) | Use `tempfile.mkdtemp()` for random download dir, verify hash before launch |
+| No timeout on installer download | Slowloris attack causes infinite hang | Set `timeout=60` on all requests, show progress bar to user |
+| Accept any certificate if system cert fails | MITM in corporate environment | Fail secure — show error message, don't disable verification |
+| Run installer automatically after download | User doesn't consent, malicious installer runs | Always require user click "Install Now" button |
+| Store GitHub token in code for higher rate limit | Token leaks in version control | Only accept token via env var, never commit |
+| Disable Windows UAC for installer | Installs malware without user knowledge | Embrace UAC — use `os.startfile()` to trigger prompt |
+| Parse hiring.cafe HTML with `eval()` or `exec()` | Code injection if site is compromised | Use BeautifulSoup or JSON parsing only, never dynamic code execution |
+| Display raw job URLs without validation | Open redirect, XSS in HTML report | Validate URLs start with `http://` or `https://`, sanitize for HTML |
+| Skip hash verification for downloaded installer | Corrupted or malicious installer runs | Verify SHA256 hash from release manifest before launching |
 
 ## UX Pitfalls
 
+Common user experience mistakes in this domain.
+
 | Pitfall | User Impact | Better Approach |
 |---------|-------------|-----------------|
-| No feedback when configurable scoring weight validation fails | User sets skill_match=2.0, weights sum to >1.0, app silently clamps or crashes | Real-time validation in CustomTkinter form: show error tooltip, disable Save button |
-| Uninstall button deletes data immediately without confirmation | Accidental click destroys 6 months of job tracking | Two-step confirmation: "This will delete X profiles, Y reports. Type DELETE to confirm." |
-| Old reports show different scores than current for same job | User confused why "Python Developer @ Acme" was 4.2 last week, now 3.8 | Display scoring weights version in report header: "Scored with v1 weights (skill:0.25)" |
-| API rate limit errors show technical "429 Too Many Requests" | User doesn't know if it's temporary or permanent | User-friendly: "JobAPI is rate limiting requests. Retrying at 2:35pm. Try fewer sources or wait." |
-| macOS installer warns "damaged app" if unsigned | User thinks download is corrupted, deletes and re-downloads | Pre-release instructions: "Right-click → Open" to bypass Gatekeeper, or sign properly |
-| GUI uninstall doesn't offer backup option | Users uninstall to "start fresh", lose valuable data | "Uninstalling? Export your data first" with one-click backup to Desktop |
+| Show "Update available" on every launch | Notification fatigue, user ignores it | Show once per version, persist dismissal state |
+| No progress indicator during download | User thinks app is frozen, force-quits | Show progress bar with MB downloaded / total MB |
+| Auto-download 200MB installer on metered connection | User's mobile hotspot data is exhausted | Prompt "Download 200MB update?" with Yes/No |
+| Show cryptic error "SSLError: [SSL: CERTIFICATE_VERIFY_FAILED]" | User has no idea what to do | "Update check failed. Are you behind a corporate proxy? See help.md" |
+| No way to skip version | User on stable v1.5 sees v1.6 beta prompt forever | "Remind me later" and "Skip this version" buttons |
+| Installer download fails silently | User clicks "Install", nothing happens, no error | Show error dialog: "Download failed: network timeout. Retry?" |
+| Update check blocks GUI thread | App unresponsive for 5 seconds on launch | Run version check in background thread, show notification when done |
+| Downloaded installer auto-deletes after install | User wants to share installer with colleague, it's gone | Keep installer in `~/Downloads` or prompt "Delete installer?" |
+| No indication of what's new in update | User doesn't know if update is worth installing | Fetch release notes from GitHub, show in update dialog |
+| hiring.cafe jobs have no source attribution | User can't tell which jobs are from hiring.cafe | Show source badge: "via hiring.cafe" in job listing |
+| Salary "Not specified" shown for all hiring.cafe jobs | User thinks hiring.cafe is useless | Only show salary field if >30% of jobs have data, otherwise hide column |
+| Location shows "Hybrid" with no city | User has no idea where job is located | Always show raw location text if structured parsing fails |
 
 ## "Looks Done But Isn't" Checklist
 
-- [ ] **Configurable scoring weights:** Often missing validation that weights sum to 1.0 — verify edge cases like all zeros, negative numbers, weights > 1.0
-- [ ] **API source integration:** Often missing rate limit exhaustion handling — verify behavior when 429 persists for hours (should skip source gracefully)
-- [ ] **Schema migration:** Often missing backward compatibility test — verify v1 profile loads in v2 code, auto-migrates, and saves successfully
-- [ ] **macOS code signing:** Often missing notarization step — verify `spctl --assess --verbose JobRadar.app` passes on clean macOS 13+ machine
-- [ ] **GUI uninstall:** Often missing check for running processes — verify uninstall detects and warns about other Job Radar instances
-- [ ] **Platform installers:** Often missing smoke test on REAL installs — verify DMG/MSI install on clean VM, app launches, search works, uninstall completes
-- [ ] **Multi-platform CI:** Often missing failure isolation — verify single platform failure doesn't block other platforms from releasing
-- [ ] **Rate limiter cleanup:** Often missing connection closure — verify `.rate_limits/*.db` files aren't locked after app exit
+Things that appear complete but are missing critical pieces.
+
+- [ ] **Auto-update:** Version comparison works — verify with test case for "1.9" vs "1.10" comparison
+- [ ] **Auto-update:** Installer downloads — verify downloaded file has correct magic bytes (MZ header for EXE, EDFE for Mach-O)
+- [ ] **Auto-update:** Works on corporate network — verify with mitmproxy simulating SSL-intercepting proxy
+- [ ] **Auto-update:** UAC prompt appears on Windows — verify by testing as non-admin user
+- [ ] **Auto-update:** Gatekeeper allows DMG on macOS — verify by downloading via browser (quarantine attribute set)
+- [ ] **Auto-update:** No update loop — verify app doesn't re-download after user dismisses
+- [ ] **Auto-update:** Graceful shutdown during download — verify app quits cleanly if user closes mid-download
+- [ ] **Auto-update:** Rate limit handling — verify app doesn't hit GitHub API >60 times/hour
+- [ ] **Auto-update:** Downloaded installer is executable — verify on clean VM, not just dev machine
+- [ ] **Auto-update:** Hash verification before launch — verify corrupted download is rejected
+- [ ] **hiring.cafe:** HTML parsing resilient — verify with mock HTML response that has structure changes
+- [ ] **hiring.cafe:** Salary parsing handles missing data — verify `null` salary doesn't crash report rendering
+- [ ] **hiring.cafe:** Location parsing handles remote/hybrid — verify "Remote (US)" and "Hybrid - Seattle" extract correctly
+- [ ] **hiring.cafe:** Deduplication works across sources — verify same job from hiring.cafe + JSearch is deduplicated
+- [ ] **hiring.cafe:** Rate limiting respects site — verify no more than 1 request/2 seconds to hiring.cafe
+- [ ] **hiring.cafe:** Graceful degradation — verify app doesn't crash if hiring.cafe returns 0 jobs
+- [ ] **hiring.cafe:** Source attribution — verify jobs show "via hiring.cafe" badge in report
 
 ## Recovery Strategies
 
+When pitfalls occur despite prevention, how to recover.
+
 | Pitfall | Recovery Cost | Recovery Steps |
 |---------|---------------|----------------|
-| Released v2.1 without schema version bump, users get KeyError | HIGH — requires hotfix release | 1. Hotfix: Bump schema to v2, add migration. 2. Add fallback: `profile.get("scoring_weights", DEFAULT_WEIGHTS)` in scoring.py. 3. Docs: "v2.1.0 users, re-run setup wizard to fix crashes." |
-| macOS app signed with `--deep`, users can't open it | HIGH — requires re-release | 1. Pull release from GitHub. 2. Re-sign correctly (inside-out, no --deep). 3. Re-notarize. 4. Re-release as v2.1.1 with "Fixed macOS installation" notes. |
-| SQLite rate limiter connections not closed, database locked | LOW — restart fixes it | 1. Add atexit handler in patch release. 2. Docs: "If you see 'database is locked', restart Job Radar." |
-| GUI uninstall deleted data but failed to delete app | MEDIUM — manual cleanup required | 1. User Instructions: "Delete app manually from /Applications or Program Files." 2. Next release: Add two-stage uninstall. |
-| GitHub Actions times out during notarization | LOW — re-run workflow | 1. Cancel workflow. 2. Re-trigger. 3. If persists, skip notarization for this release (ship ZIP only). 4. Fix: Separate signing into dedicated job. |
-| User sets scoring weights that sum to 0.8, all scores skewed low | LOW — user can re-adjust | 1. Detect in validation, show warning. 2. Offer "Normalize weights to sum to 1.0?" button. 3. Save normalized version. |
+| Update loop from bad state | LOW | Delete persistent state file (`~/.job-radar/update_state.json`), restart app, re-check for updates |
+| Corrupted installer download | LOW | Delete partial file, retry download with checksum verification |
+| Version comparison bug shipped | MEDIUM | Hotfix release with correct comparison, bump to 1.10.1, notify users manually |
+| Gatekeeper blocks DMG | MEDIUM | Document workaround (right-click → Open), submit to notarization, re-release |
+| GitHub API rate limit hit | LOW | Wait 1 hour for limit reset, cache version check result for 24h in next release |
+| hiring.cafe HTML structure changed | HIGH | Update scraper selectors, test against new HTML, release patch quickly (same day) |
+| Salary parsing breaks reports | MEDIUM | Make salary field optional in next patch, display "Not specified" for unparsed values |
+| Location parsing fails | MEDIUM | Fall back to raw location string, ship fix with updated regex patterns |
+| Deduplication fails | LOW | Adjust threshold or normalization in config, re-run search to regenerate report |
+| UAC elevation fails on Windows | MEDIUM | Document manual install process, switch from `subprocess` to `os.startfile()` in next release |
+| Certificate validation fails for corporate users | LOW | Document `JOBRADAR_NO_SSL_VERIFY=1` workaround, investigate system cert store integration |
+| hiring.cafe IP ban | HIGH | Wait 24 hours, reduce rate limits, add exponential backoff, contact site admin if persistent |
 
 ## Pitfall-to-Phase Mapping
 
+How roadmap phases should address these pitfalls.
+
 | Pitfall | Prevention Phase | Verification |
 |---------|------------------|--------------|
-| Scoring weight migration without schema bump | Phase 1: Configurable Scoring Architecture | Test: Load v1 profile, verify auto-migration to v2, compare scores |
-| Rate limiter state corruption across new sources | Phase 2: API Source Infrastructure | Test: Add 6 sources, check `.rate_limits/` has <6 databases, no locked errors |
-| macOS code signing breaks executables | Phase 5: Platform Installers | Test: `codesign --verify JobRadar.app` + `spctl --assess` on clean macOS |
-| GUI uninstall deletes running app files | Phase 6: GUI Uninstall Feature | Test: Click uninstall, verify data deleted + app exits + binary removed |
-| GitHub Actions matrix explodes CI time | Phase 5: Platform Installers | Test: Measure workflow duration pre/post installer additions, optimize if >30min |
+| Version string comparison | Phase 1: Version Detection Infrastructure | Test case: assert Version("1.10") > Version("1.9") |
+| macOS Gatekeeper quarantine | Phase 2: Cross-Platform Download + Phase 4: Security | Download via `requests` on macOS, verify quarantine attribute, launch DMG |
+| Race condition on shutdown | Phase 2: Cross-Platform Download | Kill app mid-download, verify no partial files, next launch works |
+| Update loop from bad state | Phase 1: Version Detection + Phase 3: Update Workflow | Dismiss update, restart app, verify no re-prompt for same version |
+| Certificate validation failures | Phase 2: Cross-Platform Download | Test with mitmproxy, verify helpful error message shown |
+| UAC elevation on Windows | Phase 3: Update Workflow | Test as non-admin user, verify UAC prompt appears, installer runs |
+| hiring.cafe HTML brittleness | Phase 5: hiring.cafe Integration | Change mock HTML structure, verify graceful failure + helpful log |
+| Inconsistent salary data | Phase 5: hiring.cafe Integration | Test with null/unparseable salary, verify report renders |
+| Location parsing edge cases | Phase 5: hiring.cafe Integration | Test with "Remote (US)", "Hybrid - Seattle", verify extraction |
+| Deduplication failures | Phase 5: hiring.cafe Integration | Same job from hiring.cafe + JSearch, verify only one in report |
+| hiring.cafe rate limiting | Phase 5: hiring.cafe Integration | Make 100 requests, verify backoff on 429, no IP ban |
 
 ## Sources
 
-### macOS Code Signing & Notarization
-- [OS X Code Signing Pyinstaller.md · GitHub](https://gist.github.com/txoof/0636835d3cc65245c6288b2374799c43)
-- [Recipe OSX Code Signing · pyinstaller/pyinstaller Wiki](https://github.com/pyinstaller/pyinstaller/wiki/Recipe-OSX-Code-Signing)
-- [Pyinstaller exe fails when signed following apple notarization process · Issue #7937](https://github.com/pyinstaller/pyinstaller/issues/7937)
+**Auto-Update Research:**
+- [Automatic updates for desktop apps - ToDesktop](https://www.todesktop.com/features/auto-updates)
+- [Auto Update Desktop Applications - Harshith Gowda (Medium)](https://medium.com/whatfix-techblog/auto-update-desktop-applications-db8fd4cf4936)
+- [Version comparison issues in electron-updater - GitHub Issue #1488](https://github.com/electron-userland/electron-builder/issues/1488)
+- [AutoUpdater doesn't follow semantic version ordering - GitHub Issue #1625](https://github.com/electron-userland/electron-builder/issues/1625)
+- [Semantic versioning in Python - PEP 440](https://peps.python.org/pep-0440/)
+- [Python semantic version comparison - semver docs](https://python-semver.readthedocs.io/en/latest/usage/compare-versions.html)
+- [Signature validation bypass in Electron-Updater - Doyensec](https://blog.doyensec.com/2020/02/24/electron-updater-update-signature-bypass.html)
+- [Notepad++ 8.8.9 auto-update vulnerability patch - CyberSecureFox](https://cybersecurefox.com/en/notepad-plus-plus-auto-update-vulnerability-8-8-9/)
+- [Secure, Proven Auto-Updates for Windows Applications - Advanced Installer](https://www.advancedinstaller.com/user-guide/secure-proven-auto-updates.html)
+- [macOS Gatekeeper quarantine - Apple Support](https://support.apple.com/guide/security/gatekeeper-and-runtime-protection-sec5599b66df/web)
+- [macOS Gatekeeper Bypass - Cedric Owens (Medium)](https://cedowens.medium.com/macos-gatekeeper-bypass-2021-edition-5256a2955508)
+- [Windows NSIS UAC elevation - NSIS UAC plug-in](https://nsis.sourceforge.io/UAC_plug-in)
+- [NSIS all users installation auto-update - GitHub Issue #2363](https://github.com/electron-userland/electron-builder/issues/2363)
+- [GitHub API rate limits - GitHub Docs](https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api)
+- [Tips for avoiding GitHub API rate limit - GitHub Discussion #77255](https://github.com/orgs/community/discussions/77255)
+- [PyUpdater - PyInstaller auto-update library - GitHub](https://github.com/Digital-Sapphire/PyUpdater)
+- [Updater4Pyi documentation - ReadTheDocs](https://updater4pyi.readthedocs.io/en/latest/quickstart/)
+- [SSL certificate verification with proxies - Microsoft Docs](https://learn.microsoft.com/en-us/azure/active-directory/app-proxy/application-proxy-connector-installation-problem)
+- [Certificate Verification Error with proxy - GitHub Issue #1608](https://github.com/mitmproxy/mitmproxy/issues/1608)
+- [Threading shutdown race conditions - Victor Stinner](https://vstinner.github.io/threading-shutdown-race-condition.html)
+- [Infinite update loops - Munki Issue #346](https://github.com/munki/munki/issues/346)
+- [Update loop - Visual Studio Issue #434144](https://developercommunity.visualstudio.com/content/problem/434144/update-loop.html)
 
-### API Rate Limiting
-- [API Rate Limit Exceeded: Complete Guide to Fix 429 Errors](https://dataprixa.com/api-rate-limit-exceeded/)
-- [Rate Limiting Without the Rage: A 2026 Guide | Zuplo Learning Center](https://zuplo.com/learning-center/rate-limiting-without-the-rage-a-2026-guide)
+**hiring.cafe Research:**
+- [hiring.cafe job scraper - GitHub](https://github.com/umur957/hiring-cafe-job-scraper)
+- [Scaling HiringCafe from 0 to 1M+ users - Ali Mir](https://blog.hiring.cafe/p/scaling-hiringcafe-from-0-to-1m-users)
+- [JobSpy library for job scraping - GitHub](https://github.com/speedyapply/JobSpy)
+- [Job board scraping guide - ScrapingBee](https://www.scrapingbee.com/blog/build-job-board-web-scraping/)
+- [How to Scrape Job Postings in 2025 - Oxylabs](https://oxylabs.io/blog/web-scraping-job-postings)
+- [Web scraping rate limit bypass - Scrape.do](https://scrape.do/blog/web-scraping-rate-limit/)
+- [Rate Limit in Web Scraping - Scrape.do](https://scrape.do/blog/web-scraping-rate-limit/)
+- [API Rate Limiting 2026 - Levo.ai](https://www.levo.ai/resources/blogs/api-rate-limiting-guide-2026)
+- [Salary survey data unreliability - Ravio](https://ravio.com/blog/why-salary-surveys-are-an-unreliable-source-for-competitive-pay)
+- [13 best free salary data sources in 2026 - Ravio](https://ravio.com/blog/free-salary-data)
+- [Job scraping deduplication techniques - Octoparse](https://www.octoparse.com/blog/web-scraping-job-postings)
 
-### NSIS Windows Installers
-- [pynsist · PyPI](https://pypi.org/project/pynsist/)
-- [NSIS vs Python Experience | ISD](https://isd-soft.com/tech_blog/nsis-vs-python-experience/)
-
-### Configuration Migration
-- [What's the best way to do backwards compatibility for existing configs? · Issue #479](https://github.com/omni-us/jsonargparse/issues/479)
-- [GitHub - dreverri/evolve: JSON based schema migration tool](https://github.com/dreverri/evolve)
-
-### GitHub Actions Multi-Platform Builds
-- [GitHub Actions: Complete CI/CD Guide for Developers](https://dasroot.net/posts/2026/01/github-actions-complete-ci-cd-guide/)
-- [Cross-platform release builds with Github Actions - Electric UI](https://electricui.com/blog/github-actions)
-
-### PyInstaller Hidden Imports
-- [When Things Go Wrong — PyInstaller 6.18.0 documentation](https://pyinstaller.org/en/stable/when-things-go-wrong.html)
-- [how to include multiple hidden imports in pyinstaller inside spec file · Issue #4588](https://github.com/pyinstaller/pyinstaller/issues/4588)
-
-### Desktop App Uninstallation
-- [How to Uninstall Software Using Python (Windows, macOS, Linux) – TheLinuxCode](https://thelinuxcode.com/how-to-uninstall-software-using-python-windows-macos-linux/)
-
-### Python Configuration Patterns
-- [Python Constants in 2026: Practical Patterns – TheLinuxCode](https://thelinuxcode.com/python-constants-in-2026-practical-patterns-immutability-and-realworld-usage/)
+**Confidence Assessment:**
+- **Auto-update pitfalls:** MEDIUM confidence — based on documented Electron/desktop app issues, Python-specific details extrapolated from web search + PyUpdater docs
+- **hiring.cafe pitfalls:** MEDIUM-LOW confidence — limited information about unofficial API, extrapolated from general job scraping challenges and similar aggregators
+- **Security pitfalls:** HIGH confidence — well-documented in Gatekeeper, UAC, SSL, and signature verification literature
+- **Integration pitfalls:** MEDIUM confidence — based on GitHub API docs and common scraping anti-patterns
 
 ---
-*Pitfalls research for: Job Radar v2.1.0 Source Expansion & Polish*
-*Researched: 2026-02-13*
+*Pitfalls research for: Job Radar v2.2.0 (Auto-Update & hiring.cafe Integration)*
+*Researched: 2026-02-15*

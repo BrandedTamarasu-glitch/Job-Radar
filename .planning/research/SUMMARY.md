@@ -1,277 +1,280 @@
 # Project Research Summary
 
-**Project:** Job Radar v2.1.0 - Source Expansion & Polish
-**Domain:** Desktop job aggregation application
-**Researched:** 2026-02-13
+**Project:** Job Radar v2.2.0 - Auto-Update & hiring.cafe Integration
+**Domain:** Desktop Application Auto-Update Infrastructure + Job Board Integration
+**Researched:** 2026-02-15
 **Confidence:** HIGH
 
 ## Executive Summary
 
-Job Radar v2.1.0 is a feature expansion milestone for an existing Python desktop application that aggregates job postings. The research reveals this is a well-architected layered pipeline system (interface → orchestration → processing → infrastructure) that successfully uses PyInstaller, CustomTkinter GUI, and established patterns for API rate limiting and caching. The core architecture is solid and can support the planned enhancements without major refactoring.
+This research covers two independent feature domains for Job Radar v2.2.0: auto-update infrastructure for desktop applications and integration with hiring.cafe as a new job source. The recommended approach leverages Job Radar's existing Python stack with minimal new dependencies—only `packaging>=26.0` is required for semantic version comparison, with optional `tqdm` for download progress UX. No external dependencies are needed for hiring.cafe integration; the existing requests + BeautifulSoup stack handles the unofficial API endpoints.
 
-The recommended approach is to add job aggregator APIs (JSearch, SerpAPI Google Jobs, USAJobs, Jobicy) alongside user-configurable scoring weights and professional packaging (platform-native installers with GUI uninstall). The existing stack requires minimal additions: `serpapi` SDK for Google Jobs access, `dmgbuild` for macOS DMG creation, and `pynsist` for Windows installers. All other features leverage existing dependencies (`requests`, standard library modules) and established patterns already proven in the codebase.
+The auto-update implementation should prioritize user control over automation. Instead of silent installs (which introduce security risks with unsigned binaries and UAC/Gatekeeper complexity), the MVP should implement version checking with user-initiated downloads. GitHub Releases API provides the version manifest, Python stdlib handles downloads and installer launching, and existing CustomTkinter GUI shows notifications. This "progressive enhancement" approach validates user demand before investing in automated download workflows.
 
-The primary risks are: (1) schema migration without version bumping will cause KeyError crashes for existing users, (2) macOS code signing using `--deep` flag will create "damaged app" errors, and (3) GUI uninstall attempting to delete the running application binary will fail on Windows. These are all addressable with proper migration logic, correct signing procedures, and two-stage uninstall scripts. The research provides specific prevention strategies for each pitfall with concrete code examples.
+Critical risks center on platform-specific installer handling and unofficial API brittleness. macOS Gatekeeper requires notarization for downloaded DMGs (not just code signing), Windows NSIS installers need proper UAC elevation via `os.startfile()` rather than subprocess, and version comparison must use semantic versioning to avoid "1.10 < 1.9" bugs. For hiring.cafe, the unofficial API may change without notice, requiring graceful degradation, conservative rate limiting (start at 60 requests/hour), and robust salary/location parsing with fallback to raw text when structured extraction fails.
 
 ## Key Findings
 
 ### Recommended Stack
 
-The existing stack (Python 3.10+, PyInstaller, CustomTkinter, requests, pyrate-limiter) requires only targeted additions for v2.1.0. No major dependencies need replacement or major version upgrades.
+Job Radar's existing stack handles 95% of requirements with zero new dependencies. The only required addition is `packaging>=26.0` for PEP 440-compliant semantic version comparison—3x faster than alternatives and handles edge cases (pre-releases, epochs) that naive string comparison misses. Optional `tqdm>=4.67.3` provides download progress visualization with 60ns overhead.
 
 **Core technologies:**
-- `serpapi` (0.1.5+): Official Python SDK for SerpAPI Google Jobs access — returns structured JSON with 40+ data points per job, integrates with existing `requests` + `python-dotenv` pattern
-- `dmgbuild` (1.6.7+): macOS DMG creation — actively maintained (Jan 2026 release), requires Python 3.10+ to match project requirements
-- `pynsist` (2.8+): Windows NSIS installer creation — bundles Python runtime, better than manual PyInstaller + NSIS workflow
-- Standard library modules: `json`, `subprocess`, `platform`, `shutil` for scoring config, uninstall, and OS detection — no new runtime dependencies
+- **packaging 26.0**: Semantic version comparison for update detection—Python stdlib-adjacent (PyPA official), prevents "1.10 < 1.9" lexicographic comparison bugs
+- **urllib.request (stdlib)**: Download installers from GitHub Releases with progress hooks—no extra dependencies needed
+- **subprocess + platform (stdlib)**: Cross-platform installer launching—macOS `open`, Windows `start`, Linux `xdg-open`
+- **requests (existing)**: GitHub Releases API calls and hiring.cafe POST requests with JSON payloads
+- **pyrate-limiter (existing)**: Rate limiting for hiring.cafe using SQLiteBucket infrastructure
+- **beautifulsoup4 (existing)**: Fallback if hiring.cafe API changes to HTML rendering
 
-**What NOT to use:**
-- `cx_Freeze` for MSI: Would require rewriting entire validated build pipeline; marginal startup improvements don't justify migration risk
-- ZipRecruiter official API: No confirmed public API exists; third-party scrapers cost $50+/month (defer or use manual URL pattern)
-- RapidAPI SDK/wrappers: Adds dependency for minimal benefit; `requests` handles standard HTTP headers natively
-
-**Critical version note:** Python 3.10 reaches EOL October 2026. Project should plan migration to Python 3.11+ by Q4 2026.
+**Critical stack decision:** Avoid PyUpdater, Esky, and tufup libraries—all are either unmaintained, Python 2-only, or overkill for "download installer and launch" workflow. Python stdlib + requests handles everything with greater simplicity and maintainability.
 
 ### Expected Features
 
-Research identifies clear feature priorities based on user expectations for job aggregators and desktop applications in 2026.
+Auto-update and hiring.cafe have distinct feature expectations based on industry standards and competitor analysis.
 
 **Must have (table stakes):**
-- Duplicate detection (50-80% of aggregator results are dupes) — users hate seeing same job 5+ times
-- Source attribution ("via LinkedIn") — users need to know where job came from
-- Rate limit handling — free API tiers have strict limits; app must handle 429 errors gracefully
-- Platform-native installers — Windows users expect .exe wizard, Mac users expect .dmg, not raw zip files
-- Uninstall without residue — desktop apps must clean up cache/logs/config on removal
+- **Auto-update:** Launch-time version check, visual update notification with version number, "Remind me later" dismissal, manual update check in Settings, HTTPS-only downloads, release notes display
+- **hiring.cafe:** Job title/company/location extraction, salary data extraction (hiring.cafe's key differentiator), remote/hybrid/onsite filtering, direct apply URLs, deduplication with existing 10 sources, rate limiting integration
 
-**Should have (competitive advantage):**
-- User-customizable scoring weights (6 sliders for skill_match, response, title, seniority, location, domain) — power users want control over prioritization
-- Staffing firm penalty dial — user feedback: "want more direct company jobs" (current +4.5 boost is too high)
-- Cross-source smart deduplication — when duplicates found, show "best" source (direct employer > LinkedIn > staffing firm)
-- API cost transparency — show "15/100 daily searches used" so users understand limits
+**Should have (competitive):**
+- **Auto-update:** Skip version option (persistent dismissal of specific versions), changelog preview before download, automated installer download with progress bar (after MVP validation)
+- **hiring.cafe:** Engagement metrics display (viewed_count, applied_count, saved_count as social proof), pagination support for large result sets (API supports up to 1,000 jobs/request)
 
 **Defer (v2+):**
-- Fuzzy duplicate detection (Levenshtein distance) — catches 30% more dupes but high complexity (NLP algorithms)
-- Additional aggregators beyond JSearch/SerpAPI — diminishing returns, wait for user demand
-- Application tracking — different problem space, requires schema changes
-- Auto-refresh background service — complex OS service registration, battery drain concerns
+- **Auto-update:** Update channels (stable/beta)—no beta program exists yet; differential updates—PyInstaller bundles not structured for this; staged rollouts—requires server infrastructure
+- **hiring.cafe:** Geolocation-based map UI, education/company size filters (wait for user requests)
+
+**Anti-features (commonly requested but problematic):**
+- Silent auto-install: Security risk with unsigned binaries, bypasses user consent, requires elevated permissions
+- Force update (no dismiss): User hostile, blocks app access, backfires with uninstalls
+- Auto-update ON by default: Bandwidth concerns on metered connections, regression risk
+- Scrape hiring.cafe HTML: Fragile to site changes, rate limiting risks, ethical concerns—use API endpoints instead
 
 ### Architecture Approach
 
-Job Radar follows a proven layered pipeline architecture that cleanly separates concerns and supports the v2.1.0 enhancements without refactoring.
+Both features integrate cleanly into existing Job Radar architecture with minimal refactoring. Auto-update adds a new `updater.py` module and `UpdateBanner` widget that reuses the proven worker thread pattern from `SearchWorker`. hiring.cafe follows the existing source registry pattern—same function signature (`fetch_hiringcafe(query, location, verbose)`), returns `list[JobResult]`, integrates with existing rate limiting and deduplication.
 
 **Major components:**
-1. **Interface Layer** (CLI entry, GUI window) — add Settings tab for uninstall button
-2. **Orchestration Layer** (search pipeline coordinator: fetch → filter → score → track → report) — remains unchanged
-3. **Processing Layer** (sources, scoring, tracker, report) — extend sources with aggregator_sources.py, modify scoring.py to read profile weights
-4. **Infrastructure Layer** (HTTP cache, config loader, profile manager, API config, rate limits) — add API keys for new sources, bump profile schema to v2
 
-**Integration pattern for new features:**
-- Job aggregator APIs plug into existing sources.py pattern (reuse caching, rate limiting, threading)
-- Configurable scoring extends profile.json schema with optional `scoring_weights` object (backward compatible with defaults)
-- GUI uninstall adds new module (uninstall.py) with platform detection, doesn't touch core pipeline
-- Platform installers are post-build step after PyInstaller (no spec file changes needed)
+1. **updater.py module** — Version checking (GitHub Releases API), installer download (urllib with progress callbacks), platform-specific launching (subprocess + platform detection)
 
-**Suggested build order:** Phase 1 (source expansion) → Phase 2 (configurable scoring) → Phase 3 (GUI uninstall) → Phase 4 (platform installers). This order reuses existing infrastructure first, then touches core profile/scoring coupling, then adds self-contained GUI feature, then addresses packaging last.
+2. **UpdateBanner GUI widget** — Non-blocking notification between header and tabs, dismissible per session, Download/Remind Later buttons, progress bar during download using queue-based messaging
+
+3. **DownloadWorker thread** — Background installer download following existing `SearchWorker` pattern, cooperative cancellation via threading.Event, queue-based progress updates to avoid GUI thread blocking
+
+4. **hiring.cafe source** — New `fetch_hiringcafe()` function in sources.py, structured salary fields (min/max/currency), rate limiting via existing SQLiteBucket, mapper function for API response to JobResult schema
+
+**Key patterns:**
+- Threaded operations with queue messaging (prevent GUI blocking)
+- Source registry with unified interface (hiring.cafe is another source)
+- Graceful API failures (missing keys, rate limits return empty list, no crashes)
+
+**Integration points:**
+- Main window startup: Check for updates in background thread, show banner if available
+- Settings tab: Manual "Check for Updates" button, optional API key for hiring.cafe if needed
+- Rate limits: Add hiring.cafe configuration to existing RATE_LIMITS dict and BACKEND_API_MAP
+- Deduplication: hiring.cafe jobs flow through existing rapidfuzz 85% threshold logic
 
 ### Critical Pitfalls
 
-Research identified 5 critical pitfalls that will break the release if not addressed. Each has concrete prevention strategies.
+1. **Version comparison with string sorting** — Lexicographic comparison causes "1.10 < 1.9" bug, breaking update detection entirely. **Solution:** Use `packaging.version.Version` for all comparisons, test explicitly with 1.9 vs 1.10.
 
-1. **Scoring weight migration without schema version bump** — Adding configurable weights to profile without bumping `CURRENT_SCHEMA_VERSION` from 1 to 2 causes KeyError crashes when scoring.py expects `profile["scoring_weights"]` but old profiles lack this key. Prevention: Bump to v2, add v1→v2 migration that sets default weights, update _template.json, test with old profiles.
+2. **macOS Gatekeeper quarantine blocks downloaded installers** — Downloaded DMGs receive `com.apple.quarantine` attribute, Gatekeeper blocks unsigned/unnotarized apps. Ad-hoc signing insufficient. **Solution:** Submit DMG to Apple notarization service in CI/CD, test with actual downloads (not local files), verify with `spctl --assess`.
 
-2. **Rate limiter SQLite connection leaks** — Adding 4 new APIs creates 10 total SQLite connections that aren't closed on exit, causing "database is locked" errors. Worse, sources sharing backend API (e.g., JobAPI and JobAPI Premium both hit api.jobapi.com) create separate rate limit databases but hit same pool, burning quota twice as fast. Prevention: Add `atexit` handler to close connections, map sources to shared backend APIs, add dynamic rate limit configs.
+3. **Race condition during app shutdown** — Download thread continues after main app exits, leaving partial installers or blocking shutdown. **Solution:** Cooperative cancellation with threading.Event, check flag per-chunk during streaming download, atexit handler to cleanup, atomic downloads to .tmp + rename on completion.
 
-3. **macOS code signing with --deep flag** — PyInstaller appends Python bytecode to executable; `--deep` signing breaks Mach-O format causing "app is damaged" errors. Prevention: Sign binaries inside-out (dependencies → executables → bundle), use `--options runtime` with entitlements, notarize with `notarytool`, test on clean macOS machine with Gatekeeper enabled.
+4. **Update loop from bad manifest or failed installs** — App re-downloads same version after failure, hits GitHub rate limits, notification won't dismiss. **Solution:** State machine tracking "pending_download", "downloaded", "user_dismissed", exponential backoff (1h → 6h → 24h), manifest validation with try/except, never retry on 4xx errors.
 
-4. **GUI uninstall deleting running app** — Windows locks error: "process cannot access file"; macOS allows deletion but leaves zombie process. Prevention: Two-stage uninstall (delete user data + create cleanup script → schedule script to run after exit → exit immediately), wait 2 seconds for process exit, delete app binary, delete cleanup script.
+5. **Certificate validation failures behind corporate proxies** — SSL-intercepting proxies cause "certificate verify failed" errors, silent failures confuse users. **Solution:** Use system certs on Windows (Python 3.10+), provide `JOBRADAR_NO_SSL_VERIFY=1` escape hatch (documented as insecure), informative error messages, test with mitmproxy.
 
-5. **GitHub Actions CI time explosion** — Adding DMG/MSI/DEB installers balloons CI from 15min to 45+ min, with macOS notarization waiting 5-10min for Apple servers. Prevention: Separate signing from building (build → upload unsigned → sign job downloads, signs, uploads), defer optional formats (MSI, DEB), add smoke test before signing to catch PyInstaller issues early.
+6. **Installer launch permissions on Windows (UAC)** — NSIS requires admin privileges, subprocess doesn't auto-elevate, silent installs write to wrong registry hive. **Solution:** Use `os.startfile()` on Windows (triggers UAC automatically), let user click through wizard (no silent installs), verify installer manifest has `RequestExecutionLevel admin`.
+
+7. **hiring.cafe unofficial API brittleness** — HTML structure or API schema changes break parsing without warning. **Solution:** Validate required fields before parsing, graceful degradation (log warning, return empty list), monitor success rate per source, fallback selectors for HTML scraping if needed.
+
+8. **Inconsistent salary data from hiring.cafe** — Different formats ("$100k-$120k", "$100000", "Competitive", null) break parsing and display. **Solution:** Regex patterns for common formats, normalize to standard range, handle null gracefully (display "Not specified"), log unparseable formats for iteration, test against real scraped data.
 
 ## Implications for Roadmap
 
-Based on research, the recommended phase structure follows dependency order and risk mitigation strategies.
+Based on research, suggested phase structure prioritizes independence and risk mitigation:
 
-### Phase 1: API Source Infrastructure
-**Rationale:** Foundation work that all new sources depend on. Fixes rate limiter connection leaks and API backend mapping BEFORE adding actual APIs. Low risk because it enhances existing infrastructure without changing user-facing behavior.
+### Phase 1: Auto-Update Infrastructure (Version Detection)
+**Rationale:** Independent of hiring.cafe, establishes foundation, immediate user value. Version checking is low-risk and can be shipped quickly to validate demand.
 
-**Delivers:**
-- SQLite connection cleanup with `atexit` handler
-- Shared rate limiters for sources using same backend API
-- Dynamic rate limit configs from .env/config.json
-- Better error messages for rate limit failures
+**Delivers:** Launch-time version check against GitHub Releases API, update notification banner in GUI with version number and release date, "Download Now" button opens browser to GitHub Releases page (manual download), "Remind Me Later" dismissal, manual "Check for Updates" in Settings tab, last-checked timestamp caching (avoid redundant API calls).
 
-**Addresses:**
-- Pitfall #2 (rate limiter state corruption)
-- Table stakes: rate limit handling
+**Addresses Features:**
+- Must-have: Launch-time check, visual notification, "Remind me later", manual check, HTTPS downloads
+- Stack: packaging.version for semantic comparison, requests for GitHub API, CustomTkinter for banner widget
 
-**Avoids:** Technical debt pattern of hardcoding rate limits, connection leak performance trap
+**Avoids Pitfalls:**
+- Version string comparison: Implement packaging.version from start, test 1.9 vs 1.10
+- Update loop: State machine with user_dismissed tracking, exponential backoff on failures
+- Certificate validation: Handle SSLError gracefully, show informative messages
 
-### Phase 2: Job Aggregator APIs (JSearch, USAJobs)
-**Rationale:** Delivers immediate user value (more job sources) by reusing the infrastructure from Phase 1. Start with 2 well-documented APIs (JSearch for LinkedIn/Indeed/Google Jobs, USAJobs for federal jobs) before adding others. This validates the infrastructure changes.
+**Research Flag:** Standard pattern—no additional research needed. GitHub Releases API is well-documented.
 
-**Delivers:**
-- `aggregator_sources.py` with fetch_jsearch() and fetch_usajobs()
-- Integration with existing build_search_queries() and fetch_all() orchestration
-- API key management in .env for RAPIDAPI_KEY, USAJOBS_API_KEY, USAJOBS_EMAIL
-- Basic duplicate detection (exact match by job_id/URL)
+---
 
-**Addresses:**
-- Must-have: source attribution (APIs return "via" field)
-- Must-have: duplicate detection (50-80% of aggregator results)
-- Should-have: API cost transparency (display quota usage)
+### Phase 2: Auto-Update Infrastructure (Automated Download)
+**Rationale:** Builds on Phase 1 after validating user demand. If 80%+ users click "Download Now" immediately, automate the download step. More complex due to threading and platform differences.
 
-**Uses:** serpapi SDK, requests library, existing cache.py and rate_limits.py patterns
+**Delivers:** Automated installer download in background thread using urllib with progress callbacks, UpdateBanner shows download progress (percentage, transfer speed), DownloadWorker thread with cooperative cancellation, downloaded installer saved to temp directory with atomic rename, progress bar integration with CustomTkinter.
 
-### Phase 3: Configurable Scoring Architecture
-**Rationale:** Requires careful profile schema migration (Pitfall #1). Do after sources are working to avoid conflating bugs. Touches core profile/scoring coupling which needs thorough validation.
+**Uses Stack:**
+- urllib.request (stdlib) with reporthook for progress
+- Optional tqdm for progress visualization
+- threading.Event for cancellation
+- tempfile for secure download location
 
-**Delivers:**
-- Profile schema v2 with optional `scoring_weights` object
-- v1→v2 migration logic with default weights
-- scoring.py refactored to accept weights parameter
-- Backward compatibility: old profiles auto-migrate, new profiles have weights in _template.json
+**Avoids Pitfalls:**
+- Race condition on shutdown: Cooperative cancellation, check flag per chunk, cleanup on exit
+- Certificate failures: Test with mitmproxy, handle SSL errors gracefully
+- GUI blocking: Worker thread pattern, queue-based messaging
 
-**Addresses:**
-- Should-have: user-customizable scoring weights (power user request)
-- Should-have: staffing firm penalty dial (depends on weight customization)
-- Pitfall #1: schema migration without version bump
+**Research Flag:** Standard pattern—reuse existing SearchWorker threading approach.
 
-**Implements:** Profile manager schema versioning (already built), atomic write pattern (already built)
+---
 
-### Phase 4: GUI Scoring Configuration
-**Rationale:** UI surface for Phase 3 backend. Can be done after backend is proven to work. Self-contained GUI work that doesn't affect CLI or core pipeline.
+### Phase 3: Auto-Update Infrastructure (Installer Launch)
+**Rationale:** Depends on Phase 2, highest platform-specific complexity, requires careful security testing.
 
-**Delivers:**
-- Advanced Scoring section in profile form with 6 sliders (CTkSlider widgets)
-- Real-time validation (weights sum to 1.0)
-- Live preview of score changes on current results
-- Reset to defaults button
+**Delivers:** Cross-platform installer launching (macOS `open`, Windows `os.startfile()`, Linux instructions), UAC elevation on Windows, Gatekeeper handling on macOS, downloaded installer verification (size, magic bytes), "Install Now" confirmation dialog after download completes, app exit after launching installer.
 
-**Addresses:**
-- Should-have: user-customizable scoring weights (GUI completion)
-- UX pitfall: no feedback on validation failure
+**Implements Architecture:**
+- Platform detection via platform.system()
+- subprocess for macOS/Linux
+- os.startfile() for Windows (triggers UAC)
+- Notarization verification for macOS
 
-**Uses:** Existing CustomTkinter widgets, profile_manager.py validation
+**Avoids Pitfalls:**
+- Gatekeeper quarantine: Notarize DMG in CI/CD, test with actual downloads, verify spctl
+- UAC elevation: Use os.startfile() not subprocess, test as non-admin user, no silent installs
+- Installer verification: Check magic bytes (MZ for EXE, EDFE for Mach-O), verify size matches manifest
 
-### Phase 5: Additional API Sources (SerpAPI, Jobicy)
-**Rationale:** Expand source coverage after core aggregator pattern validated. SerpAPI provides alternative to JSearch if rate limits problematic; Jobicy adds remote-specific jobs with no auth required.
+**Research Flag:** Needs deeper research—macOS notarization workflow, Windows code signing, NSIS installer manifest configuration.
 
-**Delivers:**
-- fetch_serpapi_google_jobs() with serpapi SDK
-- fetch_jobicy() with requests (RSS/JSON API)
-- Updated rate limit configs (SerpAPI: 100/month free, Jobicy: 1/hour recommended)
+---
 
-**Addresses:**
-- Should-have: more source coverage
-- Must-have: rate limit handling (Jobicy has usage guidelines)
+### Phase 4: Auto-Update Polish
+**Rationale:** After core functionality works, add UX improvements based on user feedback.
 
-**Defers:** ZipRecruiter (no public API), fuzzy duplicate detection (complex NLP)
+**Delivers:** "Skip this version" persistent dismissal, changelog preview in update dialog (fetch GitHub release notes via API), update check failure handling with retry button, configurable update frequency (Settings toggle).
 
-### Phase 6: GUI Uninstall Feature
-**Rationale:** Self-contained feature that doesn't affect core pipeline. Can be done in parallel with Phase 4/5. Requires platform-specific testing but low risk to existing functionality.
+**Addresses Features:**
+- Should-have: Skip version option, changelog preview
+- Deferred anti-features avoided: No forced updates, no auto-update by default, no silent installs
 
-**Delivers:**
-- Settings tab in main_window.py
-- uninstall.py module with platform detection (subprocess, platform, shutil)
-- Two-stage uninstall: delete data → schedule cleanup script → exit
-- Confirmation dialog with exact paths that will be deleted
-- Backup option (create .job-radar-backup.zip before deletion)
+**Research Flag:** Standard pattern—no additional research needed.
 
-**Addresses:**
-- Must-have: uninstall without residue
-- Pitfall #4: GUI uninstall deleting running app
+---
 
-**Avoids:** Anti-pattern of hardcoding uninstall paths, blocking GUI thread, no confirmation
+### Phase 5: hiring.cafe Integration
+**Rationale:** Independent of auto-update, can proceed in parallel. Deferred to allow auto-update validation first. Requires API research upfront.
 
-### Phase 7: Platform-Native Installers
-**Rationale:** Build on working app (all features complete and tested). Needs CI/CD tooling setup and signing/notarization which has external dependencies (Apple servers, certificate procurement). macOS easiest, Windows medium, Linux defer.
+**Delivers:** API endpoint integration using reverse-engineered endpoints from hiring-cafe-job-scraper, job fetching with title/company/location/arrangement/salary/URL extraction, structured salary parsing (min/max/currency fields), location parsing with remote/hybrid detection, rate limiting via pyrate-limiter SQLiteBucket (60 req/hour initial), deduplication with existing sources using rapidfuzz 85% threshold, pagination support (up to 1,000 jobs/request), graceful degradation if API unavailable.
 
-**Delivers:**
-- macOS: create-dmg script → .dmg file with Applications folder shortcut
-- Windows: pynsist config → .exe NSIS installer with wizard
-- CI: Separate build job from signing job for faster failures
-- Smoke test before signing to catch PyInstaller issues early
+**Uses Stack:**
+- requests (existing) for POST API calls with JSON payload
+- pyrate-limiter (existing) for conservative rate limiting
+- BeautifulSoup (existing) as fallback if API changes to HTML
+- Existing deduplication and scoring logic
 
-**Addresses:**
-- Must-have: platform-native installers (professional UX)
-- Pitfall #3: macOS code signing with --deep
-- Pitfall #5: GitHub Actions CI time explosion
+**Avoids Pitfalls:**
+- API brittleness: Validate required fields, log parsing failures, graceful fallback
+- Salary inconsistency: Regex patterns for formats, handle null/unparseable, test against real data
+- Location edge cases: Structured parsing with remote/hybrid detection, fallback to raw text
+- Deduplication failures: Normalize titles before comparison, multi-field dedup (title+company+location)
+- Rate limiting: Conservative 60/hour start, exponential backoff on 429, respect robots.txt
 
-**Defers:** Linux DEB/RPM (high complexity, .tar.gz acceptable), Windows code signing certificate ($400/year)
+**Research Flag:** Needs phase-specific research—API endpoint URL, authentication method, exact field names, query parameters, rate limit policy. Execute `/gsd:research-phase` before implementation.
+
+---
 
 ### Phase Ordering Rationale
 
-- **Phase 1 before Phase 2:** Infrastructure fixes must be in place before adding APIs that depend on rate limiting and connection management
-- **Phase 2 before Phase 3:** Validate source expansion works before touching core scoring logic; avoid conflating bugs across two major systems
-- **Phase 3 before Phase 4:** Backend schema migration must be proven before adding GUI that reads/writes new schema
-- **Phase 5 after Phase 2:** Additional sources use same pattern as initial sources; do after pattern validated
-- **Phase 6 parallel with Phase 4/5:** Uninstall is self-contained, can proceed in parallel without dependencies
-- **Phase 7 last:** Installers are packaging concern, don't block feature development; requires external dependencies (Apple notarization, certificate procurement)
+**Auto-update phases (1-4) before hiring.cafe (5):**
+- Auto-update has immediate user value (existing users want updates)
+- Phases 1-2 are low-risk, well-documented patterns
+- Phase 3 has highest complexity but is independent—can be tested in isolation
+- hiring.cafe requires API research upfront and has higher brittleness risk
+- Parallel development possible: one developer on auto-update, another researching hiring.cafe API
 
-**Dependency grouping:** Phases 1-2 are tightly coupled (infrastructure → usage). Phases 3-4 are tightly coupled (backend → frontend). Phases 5-7 are loosely coupled and can overlap.
+**Progressive auto-update approach (3 phases instead of 1):**
+- Phase 1 validates demand with minimal investment (version check + manual download)
+- Phase 2 adds automation only if users want it (avoid premature optimization)
+- Phase 3 tackles platform-specific complexity after core proven
+- Phased deployment reduces risk of shipping broken installer launch logic
 
-**Pitfall avoidance:** This ordering directly addresses all 5 critical pitfalls by ensuring prerequisites are met before dependent work begins (schema migration before GUI, infrastructure before APIs, features before installers).
+**hiring.cafe as single phase:**
+- All integration work is tightly coupled (can't ship partial API integration)
+- API research happens upfront, implementation follows standard source pattern
+- Deduplication, rate limiting, parsing are all needed for MVP
 
 ### Research Flags
 
 **Phases needing deeper research during planning:**
-- **Phase 7 (Platform Installers):** macOS notarization process changes frequently, code signing certificate procurement varies by region, Windows SmartScreen bypass documentation for unsigned apps
-- **Phase 2 (Job Aggregator APIs):** JSearch free tier limits not publicly documented (may hit quota faster than expected), USAJobs rate limits documented but need to verify actual enforcement
+- **Phase 3 (Installer Launch):** macOS notarization workflow with CI/CD, Windows Authenticode signing, NSIS manifest configuration for UAC, Gatekeeper testing on clean macOS VMs
+- **Phase 5 (hiring.cafe Integration):** API endpoint discovery (inspect network traffic or scraper source), authentication requirements (API key vs public), exact JSON field names, rate limit policy, test scraping 100 jobs for salary/location format analysis
 
 **Phases with standard patterns (skip research-phase):**
-- **Phase 1 (API Source Infrastructure):** SQLite cleanup, atexit handlers, connection pooling are well-documented Python patterns
-- **Phase 3 (Configurable Scoring Architecture):** JSON schema migration already implemented for v0→v1, same pattern applies
-- **Phase 4 (GUI Scoring Configuration):** CustomTkinter sliders and validation are straightforward GUI work with official docs
-- **Phase 6 (GUI Uninstall):** Platform detection and subprocess cleanup are standard patterns covered in research
+- **Phase 1 (Version Detection):** GitHub Releases API well-documented, packaging.version standard, CustomTkinter banner is existing pattern
+- **Phase 2 (Automated Download):** urllib with reporthook is stdlib pattern, threading.Event is existing pattern from SearchWorker
+- **Phase 4 (Auto-Update Polish):** All UX improvements follow established GUI patterns, changelog fetch uses same GitHub API as version check
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | Official docs verified for serpapi, dmgbuild, pynsist; PyInstaller already in use; version compatibility confirmed |
-| Features | HIGH | Table stakes derived from LinkUp research (duplicate problem), user feedback documented (staffing firm preference), competitor analysis clear |
-| Architecture | HIGH | Existing codebase analysis shows layered pipeline with clean integration points; pattern reuse reduces risk |
-| Pitfalls | HIGH | All critical pitfalls have concrete reproduction steps, prevention strategies, and recovery plans from official sources (PyInstaller wiki, Apple docs) |
+| Stack | HIGH | All recommendations verified against official documentation (packaging, urllib, GitHub API) or existing Job Radar codebase (pyrate-limiter, requests). No new external dependencies beyond packaging. |
+| Features | MEDIUM-HIGH | Auto-update features verified with official Electron/desktop app docs (ToDesktop, electron-builder). hiring.cafe features extrapolated from scraper source code and competitor analysis (no official API docs). |
+| Architecture | HIGH | Integration points map cleanly to existing Job Radar architecture. Threading pattern, source registry, rate limiting all proven. Platform-specific installer launch is standard subprocess pattern. |
+| Pitfalls | MEDIUM | Auto-update pitfalls verified with documented issues (Electron, PyUpdater, Gatekeeper, UAC). hiring.cafe pitfalls extrapolated from general job scraping challenges and aggregator brittleness patterns. |
 
 **Overall confidence:** HIGH
 
-The research is based on verified official sources (SerpAPI PyPI, PyInstaller wiki, Apple developer docs, USAJobs developer portal) and direct codebase analysis. The existing architecture provides proven patterns that new features can follow. The pitfalls identified are well-documented with specific prevention strategies.
+Research provides strong foundation for roadmap creation. Auto-update has clear implementation path with stdlib + GitHub Releases. hiring.cafe requires phase-specific API research but integration pattern is proven. Critical pitfalls are identified with concrete prevention strategies.
 
 ### Gaps to Address
 
-**During planning:**
-- **JSearch rate limits:** Free tier documentation is sparse. Plan to add cost tracking and quota warnings early in Phase 2 to detect limits empirically.
-- **macOS notarization timing:** Apple server response times vary (5-10min typical, but can timeout). Phase 7 should budget time for notarization retries and have fallback plan (ship unsigned ZIP if notarization repeatedly fails).
-- **Windows SmartScreen:** Unsigned installer shows "Windows protected your PC" warning. Phase 7 needs user documentation on bypass procedure OR defer code signing certificate to v2.2.
+**Auto-update gaps:**
+- **macOS notarization workflow:** Research identified need but not exact CI/CD integration steps. Address during Phase 3 planning with Apple Developer documentation.
+- **Windows code signing:** Ad-hoc signing insufficient for production, but Authenticode certificate acquisition process unclear. Address during Phase 3 with Windows Dev Center docs.
+- **GitHub rate limit optimization:** 60 req/hour may be tight for high-usage scenarios. Consider adding optional GITHUB_TOKEN env var for 5,000/hour authenticated limit.
 
-**During implementation:**
-- **Fuzzy duplicate detection algorithm tuning:** Research shows Levenshtein distance < 3 works for job titles, but threshold may need adjustment based on real data. Plan for A/B testing in Phase 5 if time allows, otherwise defer to v2.2.
-- **Profile migration testing at scale:** Research covers v1→v2 migration logic, but needs validation with diverse real profiles (100+ skills, complex dealbreakers). Add property-based test in Phase 3.
+**hiring.cafe gaps:**
+- **Exact API endpoint URL:** Scraper code references "official API" but URL not confirmed. Inspect hiring.cafe network traffic or scraper source code during Phase 5 research.
+- **Authentication requirements:** Unknown if API key required or public endpoint. Test during Phase 5 research.
+- **Field name mapping:** Scraper shows fields like `viewed_count`, `apply_url`, but exact JSON schema needs verification. Document during Phase 5 API testing.
+- **Rate limit policy:** No official docs found. Start conservative (60/hour), monitor for 429 errors, adjust based on testing.
+- **Salary format diversity:** Research shows inconsistent formats across aggregators. Collect 100 real hiring.cafe jobs during Phase 5 to build regex patterns.
 
-**Long-term considerations:**
-- **Python 3.10 EOL (Oct 2026):** Migration to Python 3.11+ should be planned for Q4 2026 before security patches end. Not blocking for v2.1.0 but needs roadmap attention.
+**Mitigation strategies:**
+- All gaps are "discover during implementation" rather than blockers
+- Auto-update gaps are platform integration details, not architectural unknowns
+- hiring.cafe gaps are API specifics that require hands-on testing
+- Conservative defaults (manual download in Phase 1, 60 req/hour for hiring.cafe) allow shipping while gaps are resolved
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- [SerpAPI Python SDK - PyPI](https://pypi.org/project/serpapi/) — Package version, Google Jobs engine capabilities
-- [USAJobs Developer Portal](https://developer.usajobs.gov/) — Official API authentication, rate limits, federal job data structure
-- [PyInstaller macOS Code Signing Wiki](https://github.com/pyinstaller/pyinstaller/wiki/Recipe-OSX-Code-Signing) — Correct signing procedure (no --deep), notarization steps
-- [PyInstaller Issue #7937](https://github.com/pyinstaller/pyinstaller/issues/7937) — Signing failure modes, LINKEDIT segment explanation
-- [dmgbuild PyPI](https://pypi.org/project/dmgbuild/) — Version 1.6.7 (Jan 2026 release), Python 3.10+ requirement
-- [pynsist PyPI and docs](https://pynsist.readthedocs.io/) — Version 2.8, NSIS installer workflow
+- **STACK.md** — Verified Python stdlib modules (urllib, subprocess, platform), packaging library PEP 440 compliance, GitHub Releases API structure, existing Job Radar stack analysis
+- **FEATURES.md** — Auto-update feature expectations from Electron docs (ToDesktop, electron-builder), hiring.cafe data structure from scraper source code analysis
+- **ARCHITECTURE.md** — Job Radar codebase patterns (worker_thread.py, sources.py, rate_limits.py), GitHub Releases integration approach
+- **PITFALLS.md** — Documented issues from Electron auto-updater (GitHub issues #1488, #1625), macOS Gatekeeper docs, Windows UAC/NSIS documentation, hiring.cafe scraper brittleness patterns
 
 ### Secondary (MEDIUM confidence)
-- [JSearch API on RapidAPI](https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch) — API capabilities (500 results/query), free tier existence (exact limits unclear)
-- [Jobicy Remote Jobs API GitHub](https://github.com/Jobicy/remote-jobs-api) — Usage guidelines (1/hour recommended), API parameters
-- [LinkUp Duplicate Job Research](https://www.linkup.com/insights/blog/job-board-data-pollution-duplicate-jobs-part-2) — 15x increase in duplicates from programmatic ads
-- [Textkernel Fuzzy Duplicate Detection](https://www.textkernel.com/learn-support/blog/online-job-postings-have-many-duplicates-but-how-can-you-detect-them-if-they-are-not-exact-copies-of-each-other/) — Levenshtein distance approach for title+company+location
-- [Product School Weighted Scoring](https://productschool.com/blog/product-fundamentals/weighted-scoring-model) — User expectations for customizable weights in 2026 tools
+- GitHub Releases API documentation — Version manifest structure, asset download URLs, rate limits
+- PyPA packaging library docs — Semantic versioning, PEP 440 compliance, version comparison performance
+- macOS Gatekeeper security guide — Quarantine attributes, notarization requirements, spctl verification
+- Windows NSIS UAC plug-in docs — Elevation manifest, registry hive behavior, silent install risks
+- hiring.cafe scraper projects — Unofficial API endpoints, data structure (umur957/hiring-cafe-job-scraper, jinijinjaney/hiringcafe-job-scraper)
 
 ### Tertiary (LOW confidence)
-- [ZipRecruiter APIs on RapidAPI](https://rapidapi.com/collection/ziprecruiter-api) — Third-party options only, no confirmed official public API
-- [PyInstaller vs cx_Freeze 2026 comparison](https://ahmedsyntax.com/2026-comparison-pyinstaller-vs-cx-freeze-vs-nui/) — Performance benchmarks (startup time differences)
+- Community auto-update patterns — PyUpdater, Updater4pyi (both appear unmaintained)
+- Job scraping best practices — ScrapingBee, Oxylabs guides (general patterns, not hiring.cafe-specific)
+- Salary data reliability — Ravio blog on survey unreliability (validates need for robust parsing)
 
 ---
-*Research completed: 2026-02-13*
+*Research completed: 2026-02-15*
 *Ready for roadmap: yes*
