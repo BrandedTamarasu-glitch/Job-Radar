@@ -1,23 +1,23 @@
 # Project State: Job Radar
 
-**Last Updated:** 2026-02-16T18:16:49Z
+**Last Updated:** 2026-02-16T19:40:56Z
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-02-15)
 
 **Core value:** Accurate job-candidate scoring — if the scoring is wrong, nothing else matters.
-**Current focus:** Phase 40 - Auto-Update Installation
+**Current focus:** Phase 41 - Auto-Update Polish
 
 ## Current Position
 
 **Milestone:** v2.2.0 Auto-Update & Source Expansion
-**Phase:** 40 of 42 (Auto-Update Installation)
-**Plan:** 2 of 2
-**Status:** Completed
-**Last activity:** 2026-02-16 — Completed 40-02 Installer Launch UI Integration
+**Phase:** 41 of 42 (Auto-Update Polish)
+**Plan:** 1 of 2
+**Status:** In Progress
+**Last activity:** 2026-02-16 — Completed 41-01 Skip Version and Release Notes Backend
 
-**Progress:** [██████████] 100%
+**Progress:** [█████████░] 50%
 
 ## Performance Metrics
 
@@ -36,6 +36,7 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 
 | Plan | Duration (sec) | Tasks | Files | Date |
 |------|---------------|-------|-------|------|
+| 41-01 | 174 | 1 | 2 | 2026-02-16 |
 | 40-02 | 222 | 2 | 2 | 2026-02-16 |
 | 40-01 | 221 | 2 | 3 | 2026-02-16 |
 | 39-02 | ~600 | 3 | 3 | 2026-02-16 |
@@ -63,6 +64,8 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 
 Recent decisions affecting v2.2.0 work:
 
+- v2.2.0 (41-01): None sentinel in suppressed_versions distinguishes permanent skip from time-based dismiss
+- v2.2.0 (41-01): extract_summary() returns first 5 bullets or paragraph (not full body)
 - v2.2.0 (40-02): Install callback passes dest_path to MainWindow instead of storing it internally
 - v2.2.0 (40-02): Linux uses LinuxInstallInstructionsDialog directly, no confirmation dialog
 - v2.2.0 (40-02): 1.5 second delay before app exit (allows user to see status message)
@@ -113,11 +116,11 @@ None yet for v2.2.0.
 ## Session Continuity
 
 Last session: 2026-02-16
-Stopped at: Completed 40-02-PLAN.md execution (Installer Launch UI Integration)
+Stopped at: Completed 41-01-PLAN.md execution (Skip Version and Release Notes Backend)
 Resume file: None
 
-**Next step:** Phase 40 complete. Continue to Phase 41 or Phase 42 as needed.
+**Next step:** Continue to 41-02-PLAN.md (Update Banner "Skip This Version" and "What's New" UI)
 
 ---
 *State initialized: 2026-02-13*
-*Last activity: 2026-02-16 - Completed 40-02 Installer Launch UI Integration (Phase 40: 2 of 2 plans - PHASE COMPLETE)*
+*Last activity: 2026-02-16 - Completed 41-01 Skip Version and Release Notes Backend (Phase 41: 1 of 2 plans)*
