@@ -40,8 +40,8 @@ Phase details available in git history.
 **Plans:** 2 plans
 
 Plans:
-- [ ] 38-01-PLAN.md — TDD: UpdateChecker backend (version comparison, throttling, suppress tracking, GitHub API)
-- [ ] 38-02-PLAN.md — UpdateBanner widget, main_window integration, Settings Updates section
+- [x] 38-01-PLAN.md — TDD: UpdateChecker backend (version comparison, throttling, suppress tracking, GitHub API)
+- [x] 38-02-PLAN.md — UpdateBanner widget, main_window integration, Settings Updates section
 
 #### Phase 39: Auto-Update Download
 **Goal**: Users can download installers automatically with visual progress feedback
@@ -110,7 +110,7 @@ Phases execute in numeric order: 38 → 39 → 40 → 41 → 42
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 38. Auto-Update Foundation | v2.2.0 | 0/2 | Planned | - |
+| 38. Auto-Update Foundation | v2.2.0 | 2/2 | ✓ Complete | 2026-02-16 |
 | 39. Auto-Update Download | v2.2.0 | 0/TBD | Not started | - |
 | 40. Auto-Update Installation | v2.2.0 | 0/TBD | Not started | - |
 | 41. Auto-Update Polish | v2.2.0 | 0/TBD | Not started | - |
