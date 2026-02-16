@@ -87,8 +87,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 41-01-PLAN.md — TDD: Skip version backend, release notes fetch/cache, summary extraction
-- [ ] 41-02-PLAN.md — ChangelogDialog, UpdateBanner dropdown + clickable version, MainWindow wiring + Settings
+- [x] 41-01-PLAN.md — TDD: Skip version backend, release notes fetch/cache, summary extraction
+- [x] 41-02-PLAN.md — ChangelogDialog, UpdateBanner dropdown + clickable version, MainWindow wiring + Settings
 
 #### Phase 42: hiring.cafe Integration
 **Goal**: Users receive job listings from hiring.cafe with salary data and location filtering
@@ -116,7 +116,7 @@ Phases execute in numeric order: 38 → 39 → 40 → 41 → 42
 | 38. Auto-Update Foundation | v2.2.0 | 2/2 | ✓ Complete | 2026-02-16 |
 | 39. Auto-Update Download | v2.2.0 | 2/2 | ✓ Complete | 2026-02-16 |
 | 40. Auto-Update Installation | v2.2.0 | 2/2 | ✓ Complete | 2026-02-16 |
-| 41. Auto-Update Polish | v2.2.0 | 0/2 | Planning complete | - |
+| 41. Auto-Update Polish | v2.2.0 | 2/2 | ✓ Complete | 2026-02-16 |
 | 42. hiring.cafe Integration | v2.2.0 | 0/TBD | Not started | - |
 
 ---
