@@ -1,0 +1,76 @@
+# Requirements: v2.2.0 Auto-Update & Source Expansion
+
+**Milestone:** v2.2.0
+**Status:** Active (in planning)
+**Created:** 2026-02-15
+
+## v1 Requirements
+
+### Auto-Update Infrastructure (UPDATE)
+
+**Core Detection & Notification:**
+- [ ] **UPDATE-01**: User can check for updates automatically on app launch (GitHub Releases API)
+- [ ] **UPDATE-02**: User receives update notification dialog with "Download Now" and "Remind Later" options
+- [ ] **UPDATE-03**: User can manually check for updates via Settings tab button
+- [ ] **UPDATE-04**: System persists update state (dismissed versions, last check time, skipped versions)
+- [ ] **UPDATE-05**: System uses semantic version comparison (1.10 > 1.9, not string sorting)
+
+**Download & Installation:**
+- [ ] **UPDATE-06**: User can download installer automatically with progress bar (background thread)
+- [ ] **UPDATE-07**: User can launch platform-specific installer (macOS: DMG, Windows: NSIS, Linux: tar.gz)
+- [ ] **UPDATE-08**: System verifies installer integrity with SHA256 hash before launch
+- [ ] **UPDATE-09**: macOS DMG installer is notarized for Gatekeeper compatibility
+- [ ] **UPDATE-10**: System downloads installer to platform temp directory with cleanup on exit
+
+**UX Enhancements:**
+- [ ] **UPDATE-11**: User can skip a specific version permanently ("Skip This Version" option)
+- [ ] **UPDATE-12**: User sees changelog preview in update dialog ("What's new?" section)
+- [ ] **UPDATE-13**: System handles download failures gracefully (retry option, error messages)
+- [ ] **UPDATE-14**: System handles network issues during version check (timeout, offline mode)
+
+### hiring.cafe Integration (HIRE)
+
+**Core Integration:**
+- [ ] **HIRE-01**: System fetches job listings from hiring.cafe API
+- [ ] **HIRE-02**: System extracts and displays salary data from hiring.cafe jobs
+- [ ] **HIRE-03**: System filters hiring.cafe jobs by location (respects profile preferences)
+- [ ] **HIRE-04**: System rate limits hiring.cafe requests (conservative 60 req/hour)
+- [ ] **HIRE-05**: System handles hiring.cafe API failures gracefully (skip source on error)
+
+**Data Quality:**
+- [ ] **HIRE-06**: System deduplicates hiring.cafe jobs across existing 10 sources
+- [ ] **HIRE-07**: System maps hiring.cafe fields to Job Radar schema (title, company, location, url, description, salary)
+- [ ] **HIRE-08**: System handles missing/inconsistent salary data (fallback to raw text)
+- [ ] **HIRE-09**: System validates hiring.cafe response structure (reject malformed jobs)
+- [ ] **HIRE-10**: System supports pagination for hiring.cafe results (up to 1000 jobs per request)
+
+## Future Requirements
+
+(Deferred to v2.3+ based on user feedback)
+
+- Background update downloads (start download silently, notify when ready)
+- Update check frequency configuration (always, daily, weekly, never)
+- hiring.cafe engagement metrics display (viewed/applied counts in report)
+- Auto-install on quit (download + install when user quits app)
+
+## Out of Scope
+
+- **Silent auto-install** — Violates user control best practices, security risk
+- **Forced updates** — User must retain ability to stay on current version
+- **Auto-update ON by default** — Respect user's choice, start opt-in
+- **hiring.cafe HTML scraping** — Unofficial API exists, scraping is brittle fallback only
+- **Windows code signing** — Expensive ($400/year + hardware token), defer until user demand
+- **Linux auto-update** — tar.gz distribution lacks auto-update infrastructure, manual install acceptable
+
+## Requirements Traceability
+
+*(Filled by roadmap creation)*
+
+| REQ-ID | Phase | Plan | Status |
+|--------|-------|------|--------|
+| UPDATE-01 | TBD | TBD | Pending |
+| UPDATE-02 | TBD | TBD | Pending |
+| ... | ... | ... | ... |
+
+---
+*Last updated: 2026-02-15*
