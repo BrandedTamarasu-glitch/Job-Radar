@@ -53,10 +53,11 @@ Plans:
   3. User can cancel download without app hanging or leaving partial files
   4. User sees retry option when download fails midway
   5. Downloaded installer appears in system temp directory and cleans up on app exit
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 39-01-PLAN.md: TBD
+- [ ] 39-01-PLAN.md — DownloadWorker backend, UpdateChecker asset fetching, platform detection, SHA256 verification
+- [ ] 39-02-PLAN.md — UpdateBanner multi-state transformation, confirmation dialog, MainWindow download lifecycle
 
 #### Phase 40: Auto-Update Installation
 **Goal**: Users can launch platform-specific installers securely from within app
@@ -111,7 +112,7 @@ Phases execute in numeric order: 38 → 39 → 40 → 41 → 42
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 38. Auto-Update Foundation | v2.2.0 | 2/2 | ✓ Complete | 2026-02-16 |
-| 39. Auto-Update Download | v2.2.0 | 0/TBD | Not started | - |
+| 39. Auto-Update Download | v2.2.0 | 0/2 | Not started | - |
 | 40. Auto-Update Installation | v2.2.0 | 0/TBD | Not started | - |
 | 41. Auto-Update Polish | v2.2.0 | 0/TBD | Not started | - |
 | 42. hiring.cafe Integration | v2.2.0 | 0/TBD | Not started | - |
