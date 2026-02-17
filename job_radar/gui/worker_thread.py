@@ -394,14 +394,13 @@ class DownloadWorker:
 
             # Step 3: Download file in chunks
             downloaded = 0
+            cancelled = False
             with open(self._dest_path, 'wb') as f:
                 for chunk in response.iter_content(chunk_size=8192):
                     # Check for cancellation before writing
                     if self._stop_event.is_set():
-                        # Delete partial file
-                        Path(self._dest_path).unlink(missing_ok=True)
-                        self._queue.put(("download_cancelled",))
-                        return
+                        cancelled = True
+                        break
 
                     # Write chunk
                     f.write(chunk)
@@ -410,6 +409,12 @@ class DownloadWorker:
                     # Send progress update every ~100KB
                     if downloaded % (100 * 1024) < 8192:
                         self._queue.put(("download_progress", downloaded, total_size))
+
+            if cancelled:
+                # Delete partial file (after closing handle for Windows compat)
+                Path(self._dest_path).unlink(missing_ok=True)
+                self._queue.put(("download_cancelled",))
+                return
 
             # Send final 100% progress
             self._queue.put(("download_progress", total_size, total_size))

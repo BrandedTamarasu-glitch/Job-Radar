@@ -61,12 +61,11 @@ class TestLaunchInstaller:
         """Test DMG mount succeeds but mount point not found."""
         mock_result = Mock()
         mock_result.returncode = 0
-        mock_result.stdout = "some output without /Volumes/ path\n"
+        mock_result.stdout = "/dev/disk4\tApple_partition_scheme\t\n"
 
-        with patch("job_radar.update_checker.subprocess.run", return_value=mock_result), patch.object(
-            Path, "exists", return_value=False
-        ):
-            installer_path = Path("/tmp/Job-Radar-v2.2.0-installer.dmg")
+        with patch("job_radar.update_checker.subprocess.run", return_value=mock_result):
+            # Use a unique name guaranteed not to exist as a mounted volume
+            installer_path = Path("/tmp/Job-Radar-v99.99.99-test-nonexistent.dmg")
 
             with pytest.raises(RuntimeError, match="Could not determine DMG mount point"):
                 launch_installer(installer_path, platform="darwin")
