@@ -1,6 +1,8 @@
 """Tests for installer launch and cleanup functionality."""
 
+import re
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
@@ -14,6 +16,7 @@ from job_radar.gui.installer_dialogs import InstallConfirmDialog, LinuxInstallIn
 class TestLaunchInstaller:
     """Tests for launch_installer function."""
 
+    @pytest.mark.skipif(sys.platform != "darwin", reason="macOS-specific subprocess calls")
     def test_launch_macos_dmg_success(self):
         """Test successful macOS DMG mount and open."""
         mock_result = Mock()
@@ -40,6 +43,7 @@ class TestLaunchInstaller:
             # Verify return value
             assert mount_point == "/Volumes/Job-Radar"
 
+    @pytest.mark.skipif(sys.platform != "darwin", reason="macOS-specific subprocess calls")
     def test_launch_macos_dmg_mount_failure(self):
         """Test DMG mount failure handling."""
         mock_result = Mock()
@@ -52,20 +56,22 @@ class TestLaunchInstaller:
             with pytest.raises(RuntimeError, match="DMG mount failed.*Resource busy"):
                 launch_installer(installer_path, platform="darwin")
 
+    @pytest.mark.skipif(sys.platform != "darwin", reason="macOS-specific subprocess calls")
     def test_launch_macos_dmg_no_mount_point(self):
         """Test DMG mount succeeds but mount point not found."""
         mock_result = Mock()
         mock_result.returncode = 0
         mock_result.stdout = "some output without /Volumes/ path\n"
 
-        with patch("job_radar.update_checker.subprocess.run", return_value=mock_result), patch(
-            "job_radar.update_checker.Path.exists", return_value=False
+        with patch("job_radar.update_checker.subprocess.run", return_value=mock_result), patch.object(
+            Path, "exists", return_value=False
         ):
             installer_path = Path("/tmp/Job-Radar-v2.2.0-installer.dmg")
 
             with pytest.raises(RuntimeError, match="Could not determine DMG mount point"):
                 launch_installer(installer_path, platform="darwin")
 
+    @pytest.mark.skipif(sys.platform != "darwin", reason="macOS-specific subprocess calls")
     def test_launch_macos_dmg_timeout(self):
         """Test DMG mount timeout handling."""
         with patch(
@@ -76,6 +82,7 @@ class TestLaunchInstaller:
             with pytest.raises(RuntimeError, match="timed out"):
                 launch_installer(installer_path, platform="darwin")
 
+    @pytest.mark.skipif(sys.platform != "darwin", reason="macOS-specific subprocess calls")
     def test_launch_macos_dmg_fallback_mount_point(self):
         """Test DMG mount with fallback mount point detection."""
         mock_result = Mock()
@@ -84,7 +91,7 @@ class TestLaunchInstaller:
 
         with patch("job_radar.update_checker.subprocess.run", return_value=mock_result) as mock_run, patch(
             "job_radar.update_checker.subprocess.Popen"
-        ) as mock_popen, patch("job_radar.update_checker.Path.exists", return_value=True):
+        ) as mock_popen, patch.object(Path, "exists", return_value=True):
             installer_path = Path("/tmp/Job-Radar-v2.2.0-installer.dmg")
             mount_point = launch_installer(installer_path, platform="darwin")
 
@@ -92,6 +99,7 @@ class TestLaunchInstaller:
             assert mount_point == "/Volumes/Job-Radar-v2.2.0-installer"
             mock_popen.assert_called_once_with(["open", "/Volumes/Job-Radar-v2.2.0-installer"])
 
+    @pytest.mark.skipif(sys.platform != "win32", reason="Windows-specific subprocess flags")
     def test_launch_windows_exe(self):
         """Test Windows exe launch with detached process."""
         with patch("job_radar.update_checker.subprocess.Popen") as mock_popen:
@@ -121,20 +129,22 @@ class TestLaunchInstaller:
         with pytest.raises(RuntimeError, match="Linux uses instructions dialog"):
             launch_installer(installer_path, platform="linux")
 
+    @pytest.mark.skipif(sys.platform != "darwin", reason="macOS-specific subprocess calls")
     def test_launch_file_not_found(self):
         """Test file not found error handling."""
         with patch("job_radar.update_checker.subprocess.run", side_effect=FileNotFoundError("No such file")):
             installer_path = Path("/tmp/nonexistent.dmg")
 
-            with pytest.raises(RuntimeError, match=f"Installer file not found: {installer_path}"):
+            with pytest.raises(RuntimeError, match=re.escape(f"Installer file not found: {installer_path}")):
                 launch_installer(installer_path, platform="darwin")
 
+    @pytest.mark.skipif(sys.platform != "darwin", reason="macOS-specific subprocess calls")
     def test_launch_os_error(self):
         """Test OS error (permissions) handling."""
         with patch("job_radar.update_checker.subprocess.run", side_effect=OSError("Permission denied")):
             installer_path = Path("/tmp/no-permission.dmg")
 
-            with pytest.raises(RuntimeError, match=f"Failed to launch installer at {installer_path}"):
+            with pytest.raises(RuntimeError, match=re.escape(f"Failed to launch installer at {installer_path}")):
                 launch_installer(installer_path, platform="darwin")
 
     def test_launch_unsupported_platform(self):

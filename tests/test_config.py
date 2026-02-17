@@ -202,8 +202,8 @@ def test_known_keys_membership(key, should_exist):
 
 
 def test_known_keys_exact_size():
-    """Test KNOWN_KEYS contains exactly 6 members."""
-    assert len(KNOWN_KEYS) == 6
+    """Test KNOWN_KEYS contains exactly 7 members."""
+    assert len(KNOWN_KEYS) == 7
 
 
 # ---------------------------------------------------------------------------
