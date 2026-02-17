@@ -1,8 +1,8 @@
 # Job Radar — Workflow
 
-**Version 2.1.0** | [Changelog](CHANGELOG.md)
+**Version 2.2.0** | [Changelog](CHANGELOG.md)
 
-A desktop job search tool that fetches listings from 10 API sources and 4 manual URLs, scores them against your customizable profile, tracks results across runs, and generates ranked HTML + Markdown reports with interactive features and WCAG 2.1 AA accessibility. Available as both a desktop GUI application and CLI for power users.
+A desktop job search tool that fetches listings from 11 API sources and 4 manual URLs, scores them against your customizable profile, tracks results across runs, and generates ranked HTML + Markdown reports with interactive features and WCAG 2.1 AA accessibility. Available as both a desktop GUI application and CLI for power users.
 
 ## Prerequisites
 
@@ -165,7 +165,7 @@ The report includes pre-built search URLs for Wellfound, Indeed, LinkedIn, and G
 
 ### 6. Optional: API Credentials
 
-Job Radar works out-of-the-box with 6 free sources (Dice, HN Hiring, RemoteOK, We Work Remotely, Jobicy, + 4 manual URLs). For additional coverage, configure API keys:
+Job Radar works out-of-the-box with 7 free sources (Dice, HN Hiring, RemoteOK, We Work Remotely, Jobicy, hiring.cafe + 4 manual URLs). For additional coverage, configure API keys:
 
 **GUI Method (Recommended):**
 1. Open the **Settings** tab in Job Radar GUI
@@ -186,6 +186,7 @@ job-radar --setup-apis
 - **USAJobs** (requires API key) — Federal government job listings
 - **SerpAPI** (requires API key) — Alternative Google Jobs aggregator
 - **Jobicy** (no key required) — Remote job listings (rate limited: 1/hour)
+- **hiring.cafe** (no key required) — Tech job aggregator (rate limited: 60/hour)
 
 API keys significantly expand job coverage but are entirely optional.
 
@@ -224,6 +225,7 @@ API keys significantly expand job coverage but are entirely optional.
 | USAJobs | REST API | Yes | Federal government job listings |
 | SerpAPI | REST API | Yes | Alternative Google Jobs aggregator |
 | Jobicy | REST API | No (rate limited) | Remote job listings (1/hour limit) |
+| hiring.cafe | REST API | No (rate limited) | Tech job aggregator (60/hour limit) |
 
 **Source Attribution:** Each job listing shows its original source (e.g., "via LinkedIn" for JSearch results) for transparency.
 
@@ -357,7 +359,7 @@ Job-Radar/
 │       ├── settings_tab.py # API config, scoring config, uninstall
 │       ├── scoring_config_widget.py # Scoring weights and staffing preference UI
 │       └── tag_chips.py    # Reusable tag chip widget for list fields
-├── tests/                  # 566 automated tests (19 test files)
+├── tests/                  # 664 automated tests (21 test files)
 ├── scripts/                # Build scripts for standalone executables
 ├── installers/             # Platform-native installers (v2.1.0+)
 │   ├── macos/             # DMG installer build scripts

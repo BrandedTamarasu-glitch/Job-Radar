@@ -1,6 +1,6 @@
 # Job Radar
 
-A desktop job search tool that searches multiple job boards, scores listings against your profile, and generates ranked reports. Available as both a **desktop GUI application** (double-click to launch) and a **CLI** for power users and scripting. Features include multi-source search (10 API sources: Dice, HN Hiring, RemoteOK, We Work Remotely, Adzuna, Authentic Jobs, JSearch, USAJobs, SerpAPI, Jobicy + 4 manual URLs: Wellfound, Indeed, LinkedIn, Glassdoor), PDF resume import, fuzzy skill matching, user-configurable scoring weights, cross-source deduplication, real-time API quota tracking, and dual-format HTML and Markdown reports with one-click URL copying, keyboard shortcuts, application status tracking, and WCAG 2.1 Level AA accessibility.
+A desktop job search tool that searches multiple job boards, scores listings against your profile, and generates ranked reports. Available as both a **desktop GUI application** (double-click to launch) and a **CLI** for power users and scripting. Features include multi-source search (11 API sources: Dice, HN Hiring, RemoteOK, We Work Remotely, Adzuna, Authentic Jobs, JSearch, USAJobs, SerpAPI, Jobicy, hiring.cafe + 4 manual URLs: Wellfound, Indeed, LinkedIn, Glassdoor), PDF resume import, fuzzy skill matching, user-configurable scoring weights, cross-source deduplication with richness scoring, real-time API quota tracking, in-app auto-updates, and dual-format HTML and Markdown reports with one-click URL copying, keyboard shortcuts, application status tracking, and WCAG 2.1 Level AA accessibility.
 
 ## Installation
 
@@ -189,7 +189,7 @@ The HTML report includes interactive features and visual hierarchy to help you s
 
 ### Optional: API Credentials
 
-Job Radar works out-of-the-box with 6 free sources (Dice, HN Hiring, RemoteOK, We Work Remotely, Jobicy, + 4 manual URLs). To expand coverage with additional API sources, configure API keys:
+Job Radar works out-of-the-box with 7 free sources (Dice, HN Hiring, RemoteOK, We Work Remotely, Jobicy, hiring.cafe + 4 manual URLs). To expand coverage with additional API sources, configure API keys:
 
 **GUI Method (Recommended):**
 1. Open the **Settings** tab in the Job Radar GUI
@@ -209,6 +209,7 @@ job-radar --setup-apis
 - **USAJobs** (requires API key) — Federal government job listings
 - **SerpAPI** (requires API key) — Alternative Google Jobs aggregator
 - **Jobicy** (no key required) — Remote job listings (rate limited: 1/hour)
+- **hiring.cafe** (no key required) — Tech job aggregator (rate limited: 60/hour)
 
 The wizard will guide you through obtaining and configuring API credentials. API keys are optional but significantly expand job coverage.
 
@@ -400,7 +401,7 @@ python -m job_radar --help
 
 ### Running Tests
 
-The project includes a comprehensive test suite with 566 automated tests:
+The project includes a comprehensive test suite with 664 automated tests:
 
 ```bash
 # Install dev dependencies
@@ -422,7 +423,7 @@ pytest tests/test_scoring.py
 - Tracker functions (11 tests) - validates deduplication and stats aggregation with tmp_path isolation
 - Config module (23 tests) - validates config file parsing, CLI override, defaults, validation
 - Wizard (38 tests) - validates setup flow, PDF integration, navigation, error handling
-- API integration (45 tests) - validates all 10 API sources, mappers, rate limiting, deduplication
+- API integration (50 tests) - validates all 11 API sources, mappers, rate limiting, deduplication
 - API config (18 tests) - validates API key storage, validation, GUI integration, quota tracking
 - Rate limits (16 tests) - validates rate limiter cleanup, shared backends, config loading, quota queries
 - PDF parser (34 tests) - validates extraction, validation, Unicode support, error handling
@@ -433,8 +434,9 @@ pytest tests/test_scoring.py
 - Profile editor (23 tests) - validates field menu, diff preview, editing, validator reuse
 - CLI update flags (40 tests) - validates validators, handlers, mutual exclusion, integration
 - Uninstaller (14 tests) - validates backup creation, path enumeration, cleanup scripts, platform detection
-- Deduplication (28 tests) - validates exact-match URL dedup, stats tracking, multi-source mapping
+- Deduplication (28 tests) - validates exact-match URL dedup, richness scoring, multi-source mapping
 - Entry integration (46 tests) - validates GUI/CLI entry points, wizard flow, error handling
+- Auto-update (42 tests) - validates detection, download, SHA256 verification, installer launch, skip version
 - Browser (12 tests) - validates report opening, platform detection, error handling
 - Paths (16 tests) - validates config directory resolution, platform compatibility
 
@@ -456,3 +458,4 @@ Build artifacts are created in the `dist/` directory.
 
 - [WORKFLOW.md](WORKFLOW.md) - Full documentation: profile field reference, scoring rubric breakdown, source details, customization options, and daily workflow tips
 - [CHANGELOG.md](CHANGELOG.md) - Version history
+- [FAQ.md](FAQ.md) - Frequently asked questions

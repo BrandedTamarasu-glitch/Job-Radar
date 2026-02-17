@@ -1,6 +1,6 @@
 # Job Radar — Frequently Asked Questions
 
-**Version 2.1.0** | [Changelog](CHANGELOG.md) | [README](README.md) | [Full Documentation](WORKFLOW.md)
+**Version 2.2.0** | [Changelog](CHANGELOG.md) | [README](README.md) | [Full Documentation](WORKFLOW.md)
 
 ## Installation & Setup
 
@@ -52,12 +52,13 @@ Rate limit databases are stored separately in:
 
 ### Can I use Job Radar without API keys?
 
-Yes! Job Radar works out-of-the-box with 6 free sources:
+Yes! Job Radar works out-of-the-box with 7 free sources:
 - Dice.com (scraper)
 - HN Hiring (scraper)
 - RemoteOK (public API)
 - We Work Remotely (scraper)
 - Jobicy (public API, rate limited to 1/hour)
+- hiring.cafe (public API, rate limited to 60/hour)
 - 4 manual URL builders (Wellfound, Indeed, LinkedIn, Glassdoor)
 
 API keys for Adzuna, Authentic Jobs, JSearch, USAJobs, and SerpAPI expand coverage but are entirely optional.
@@ -90,6 +91,7 @@ The wizard guides you through obtaining and configuring API keys for each source
 | USAJobs | No documented limit | 60/min |
 | SerpAPI | 100 searches/month | 50/min (conservative) |
 | Jobicy | 1/hour (public API) | 1/hour |
+| hiring.cafe | No documented limit | 60/hour |
 
 Job Radar automatically respects these limits using SQLite-backed rate limiting. The GUI Settings tab shows real-time quota usage with color-coded warnings.
 
@@ -301,7 +303,7 @@ Open any `.html` file in your browser. Status tracking data is embedded in track
 
 ### The search is taking a very long time
 
-Job Radar queries 10 API sources plus 4 manual URL builders. Some sources (especially scrapers) can be slow. Typical search duration: 30-90 seconds.
+Job Radar queries 11 API sources plus 4 manual URL builders. Some sources (especially scrapers) can be slow. Typical search duration: 30-90 seconds.
 
 **If it takes longer:**
 1. Check your internet connection
@@ -404,6 +406,23 @@ If you want to delete reports too, manually delete the `results/` directory.
 ### Can I reinstall Job Radar after uninstalling?
 
 Yes! Download the installer again and run it. You'll start with a fresh setup wizard. If you created a backup before uninstalling, you can restore your old profile from the ZIP file.
+
+## Auto-Update
+
+### How does auto-update work?
+
+Job Radar checks for new versions on startup. When an update is available, you'll see a notification with the changelog preview. You can:
+- **Download and install** — Downloads the update with a progress bar, verifies the SHA256 checksum, and launches the installer
+- **Skip this version** — Dismisses the update for this specific version (you'll still be notified of future versions)
+- **Remind me later** — Dismisses the notification for this session only
+
+### How do I check for updates manually?
+
+The auto-update check runs automatically on startup. If you skipped a version and want to check again, the next launch will check for any newer versions beyond the one you skipped.
+
+### Is the update download safe?
+
+Yes. Every download is verified with a SHA256 checksum before installation. If the checksum doesn't match, the download is rejected and you're notified.
 
 ## Advanced Usage
 
