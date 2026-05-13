@@ -314,6 +314,8 @@ The GUI uninstaller will:
 | `--new-only` / `--no-new-only` | Only show new (unseen) results (default: false) |
 | `--from YYYY-MM-DD` | Start date for job postings (default: 48 hours ago) |
 | `--to YYYY-MM-DD` | End date for job postings (default: today) |
+| `--preset NAME` | Apply a saved search preset for this run |
+| `--list-presets` | Show available search presets and exit |
 
 ### Output Options
 
@@ -356,6 +358,15 @@ Generate a sample report to preview the ranked report experience without API key
 
 ```bash
 job-radar --demo-report --no-open
+```
+
+Use saved presets to run common searches without editing your profile:
+
+```bash
+job-radar --list-presets
+job-radar --preset remote-backend
+job-radar --preset local-hybrid
+job-radar --preset contract
 ```
 
 ### Examples
@@ -408,7 +419,7 @@ python -m job_radar --help
 
 ### Running Tests
 
-The project includes a comprehensive test suite with 683 automated tests:
+The project includes a comprehensive test suite with 688 automated tests:
 
 ```bash
 # Install dev dependencies

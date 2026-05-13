@@ -38,6 +38,12 @@ from .sources import (
 )
 from .report import ZERO_RESULTS_TIPS, generate_report
 from .scoring import score_job
+from .search_presets import (
+    SEARCH_PRESETS,
+    apply_search_preset,
+    format_preset_list,
+    preset_choices,
+)
 from .tracker import mark_seen, get_stats
 from .browser import open_report_in_browser
 from .paths import get_results_dir
@@ -187,6 +193,8 @@ def parse_args(config: dict | None = None):
         Examples:
           job-radar                              Launch wizard (first run) or search
           job-radar --demo-report --no-open      Generate a sample report without fetching
+          job-radar --preset remote-backend      Search with a saved preset overlay
+          job-radar --list-presets               Show available search presets
           job-radar --view-profile               View current profile settings
           job-radar --min-score 3.5              Search with higher quality threshold
           job-radar --profile path/to.json       Use a specific profile file
@@ -247,6 +255,17 @@ def parse_args(config: dict | None = None):
         dest="to_date",
         default=None,
         help="End date YYYY-MM-DD (default: today)",
+    )
+    search_group.add_argument(
+        "--preset",
+        choices=preset_choices(),
+        default=None,
+        help="Apply a saved search preset for this run",
+    )
+    search_group.add_argument(
+        "--list-presets",
+        action="store_true",
+        help="List saved search presets and exit",
     )
 
     # Output Options
@@ -794,6 +813,10 @@ def main():
         run_demo_report(args, config)
         sys.exit(0)
 
+    if args.list_presets:
+        print(format_preset_list())
+        sys.exit(0)
+
     # Early exit handlers for update flags (no search)
     if args.update_skills is not None:
         handle_update_skills(args.update_skills, args.profile)
@@ -955,6 +978,9 @@ def main():
         # Normal mode - use recovery (auto-wizard on corrupt/missing)
         profile = load_profile_with_recovery(profile_path_str)
 
+    if args.preset:
+        profile = apply_search_preset(profile, args.preset)
+
     # Profile preview on startup (unless suppressed by --no-wizard)
     if not args.no_wizard:
         from .profile_display import display_profile
@@ -991,6 +1017,8 @@ def main():
     print(f"\n{C.BOLD}{'='*60}")
     print(f"  Job Search — {name}")
     print(f"  Date range: {from_date} to {to_date}")
+    if args.preset:
+        print(f"  Preset: {args.preset} — {SEARCH_PRESETS[args.preset].description}")
     _os_info = get_os_info()
     print(f"  Platform: {_os_info['os_name']} ({_os_info['arch']})")
     print(f"{'='*60}{C.RESET}\n")

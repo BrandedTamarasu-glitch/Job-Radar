@@ -102,6 +102,24 @@ class TestHelpText:
         assert "Minimum match score" in output
         assert "Output directory" in output
 
+    def test_list_presets_exits_without_profile_or_fetching(self, capsys):
+        """Preset listing does not require profile setup or network access."""
+        from job_radar.search import main
+
+        with patch.object(sys, 'argv', ['job-radar', '--list-presets']):
+            with patch('job_radar.search.load_config', return_value={}):
+                with patch('job_radar.search.load_profile_with_recovery') as mock_load_profile:
+                    with patch('job_radar.search.fetch_all') as mock_fetch:
+                        with pytest.raises(SystemExit) as exc:
+                            main()
+
+        assert exc.value.code == 0
+        output = capsys.readouterr().out
+        assert "Available search presets" in output
+        assert "remote-backend" in output
+        mock_load_profile.assert_not_called()
+        mock_fetch.assert_not_called()
+
 
 class TestCtrlCHandling:
     """Test Ctrl+C graceful exit (UX-05)."""

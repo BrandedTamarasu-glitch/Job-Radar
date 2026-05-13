@@ -87,7 +87,7 @@ Goal: improve first-run and daily-use value.
 - Improve zero-results explanations and suggested next actions.
 - Add saved search presets for common target role/market combinations.
 
-Status: in progress. Zero-result CLI output and generated reports now include concrete next actions for lowering thresholds, broadening titles/skills/location, and using manual check URLs. `--demo-report` now generates a sample report without profile setup, API keys, or live fetching. Remaining work: saved search presets.
+Status: complete. Zero-result CLI output and generated reports now include concrete next actions for lowering thresholds, broadening titles/skills/location, and using manual check URLs. `--demo-report` generates a sample report without profile setup, API keys, or live fetching. Saved presets now provide run-specific overlays for remote backend, local hybrid, and contract searches.
 
 Deliverable: smoother onboarding and better daily search workflow.
 

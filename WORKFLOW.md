@@ -126,6 +126,8 @@ On startup, Job Radar shows your profile preview (unless `--no-wizard` is set), 
 - `--to YYYY-MM-DD` — End date filter (default: today)
 - `--output DIR` — Report output directory (default: `results/`)
 - `--min-score N` — Minimum score threshold (default: 2.8)
+- `--preset NAME` — Apply a saved search preset for this run
+- `--list-presets` — Show available search presets and exit
 - `--new-only` — Only show new (unseen) results
 - `--no-open` — Don't auto-open report in browser
 - `--demo-report` — Generate a sample report without API keys, profile setup, or live fetching
@@ -133,13 +135,20 @@ On startup, Job Radar shows your profile preview (unless `--no-wizard` is set), 
 - `--verbose` / `-v` — Enable debug logging
 - `--no-cache` — Disable HTTP response caching (force fresh fetches)
 - `--no-wizard` — Skip wizard check and profile preview (quiet mode)
+- `--no-color` — Disable terminal colors (also respects `NO_COLOR` env var)
 
 Preview the report experience without configuring anything:
 
 ```bash
 job-radar --demo-report --no-open
 ```
-- `--no-color` — Disable terminal colors (also respects `NO_COLOR` env var)
+
+Run a common search mode without changing your saved profile:
+
+```bash
+job-radar --list-presets
+job-radar --preset remote-backend
+```
 
 ### 4. Review the Report
 
@@ -364,7 +373,7 @@ Job-Radar/
 │       ├── search_controls.py # Search tab controls and progress
 │       ├── scoring_config.py # Scoring weights and staffing preference UI
 │       └── tag_chip_widget.py # Reusable tag chip widget for list fields
-├── tests/                  # 683 automated tests (23 test files)
+├── tests/                  # 688 automated tests (26 test files)
 ├── scripts/                # Build scripts for standalone executables
 ├── installers/             # Platform-native installers (v2.1.0+)
 │   ├── macos/             # DMG installer build scripts
