@@ -396,6 +396,7 @@ Job-Radar/
 │   ├── update_config.py    # Auto-update infrastructure
 │   ├── deps.py             # OS detection utility
 │   ├── staffing_firms.py   # Known staffing firm list for response scoring
+│   ├── applications_export.py # Application pipeline CSV export
 │   └── gui/                # Desktop GUI modules (v2.0.0+)
 │       ├── main_window.py  # Main GUI application window
 │       ├── profile_form.py # Profile creation/editing form
@@ -403,7 +404,7 @@ Job-Radar/
 │       ├── scoring_config.py # Scoring weights and staffing preference UI
 │       ├── applications_view_model.py # Application pipeline grouping
 │       └── tag_chip_widget.py # Reusable tag chip widget for list fields
-├── tests/                  # 752 automated tests (28 test files)
+├── tests/                  # 754 automated tests (29 test files)
 ├── scripts/                # Build scripts for standalone executables
 ├── installers/             # Platform-native installers (v2.1.0+)
 │   ├── macos/             # DMG installer build scripts

@@ -62,20 +62,20 @@ Accessibility:
 
 Goal: support follow-through after discovery, not only search.
 
-Status: started. Tracker persistence now supports application notes plus next-action and next-action date metadata while preserving existing status behavior. Applications view-model grouping now surfaces status buckets for the future GUI view.
+Status: started. Tracker persistence now supports application notes plus next-action and next-action date metadata while preserving existing status behavior. Applications view-model grouping now surfaces status buckets for the future GUI view. Application pipeline CSV export helpers are available for the future view.
 
 Deliverables:
 - Add a dedicated GUI Applications view.
 - [View-model done] Surface tracker statuses: Applied, Interviewing, Rejected, Offer.
 - [Backend done] Add notes per job.
 - [Backend done] Add next-action and date fields.
-- Export application pipeline to CSV.
+- [Backend done] Export application pipeline to CSV.
 - Add a "hide rejected/skipped" setting for future reports.
 
 Validation:
 - [Done] Tracker persistence tests for notes and next actions.
 - [Done] GUI view-model tests for grouped application statuses.
-- CSV export tests.
+- [Done] CSV export tests.
 
 Accessibility:
 - Application status controls need labels and keyboard operation.
