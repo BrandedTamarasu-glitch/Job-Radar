@@ -2065,6 +2065,48 @@ def test_html_report_shortlist_javascript(sample_profile, sample_scored_results,
     assert 'showShortlistOnly' in html
 
 
+def test_html_report_keyboard_navigation_javascript(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Report supports keyboard navigation between visible job items."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_path = result["html"]
+    with open(html_path, encoding='utf-8') as f:
+        html = f.read()
+
+    assert 'function visibleJobItems' in html
+    assert 'function focusJobByOffset' in html
+    assert "key === 'j'" in html
+    assert "key === 'k'" in html
+    assert "event.key === 'ArrowDown'" in html
+    assert "event.key === 'ArrowUp'" in html
+    assert "scrollIntoView" in html
+
+
+def test_html_report_keyboard_navigation_hint(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Report shortcut hints include job navigation keys."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_path = result["html"]
+    with open(html_path, encoding='utf-8') as f:
+        html = f.read()
+
+    assert '<kbd>J</kbd>/<kbd>K</kbd> = navigate' in html
+
+
 def test_html_report_filter_aria_announcements(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
     """Filter JavaScript includes ARIA announcements for accessibility."""
     result = generate_report(

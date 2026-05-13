@@ -1207,7 +1207,36 @@ def _generate_html_report(
       }});
     }});
 
-    // Keyboard shortcuts: C = copy focused, A = copy all recommended
+    function visibleJobItems() {{
+      return Array.from(document.querySelectorAll('.job-item')).filter(function(item) {{
+        return item.style.display !== 'none' && item.getAttribute('aria-hidden') !== 'true';
+      }});
+    }}
+
+    function focusJobByOffset(offset) {{
+      var jobs = visibleJobItems();
+      if (jobs.length === 0) {{
+        const msg = 'No visible jobs to navigate';
+        notyf.error(msg);
+        announceToScreenReader(msg);
+        return;
+      }}
+
+      var currentIndex = currentFocusedJob ? jobs.indexOf(currentFocusedJob) : -1;
+      var nextIndex = currentIndex + offset;
+      if (currentIndex === -1) {{
+        nextIndex = offset > 0 ? 0 : jobs.length - 1;
+      }}
+      if (nextIndex < 0) nextIndex = jobs.length - 1;
+      if (nextIndex >= jobs.length) nextIndex = 0;
+
+      jobs[nextIndex].focus();
+      jobs[nextIndex].scrollIntoView({{ block: 'nearest', behavior: 'smooth' }});
+      announceToScreenReader('Focused job ' + (nextIndex + 1) + ' of ' + jobs.length);
+    }}
+
+    // Keyboard shortcuts: J/ArrowDown = next job, K/ArrowUp = previous job,
+    // C = copy focused, A = copy all recommended.
     document.addEventListener('keydown', function(event) {{
       // Don't interfere with form inputs
       if (event.target.matches('input, textarea, select')) return;
@@ -1216,7 +1245,13 @@ def _generate_html_report(
 
       var key = event.key.toLowerCase();
 
-      if (key === 'c') {{
+      if (key === 'j' || event.key === 'ArrowDown') {{
+        event.preventDefault();
+        focusJobByOffset(1);
+      }} else if (key === 'k' || event.key === 'ArrowUp') {{
+        event.preventDefault();
+        focusJobByOffset(-1);
+      }} else if (key === 'c') {{
         event.preventDefault();
         if (!currentFocusedJob) {{
           const msg = 'No job focused — click a job or use Tab to navigate';
@@ -2306,7 +2341,7 @@ def _html_hero_section(hero_jobs: list[dict], profile: dict) -> str:
       <button class="btn btn-primary copy-all-btn" onclick="copyAllHeroUrls(this)">
         Copy All Top Match URLs
       </button>
-      <span class="shortcut-hint ms-2">Keyboard: <kbd>C</kbd> = copy focused, <kbd>A</kbd> = copy all</span>
+      <span class="shortcut-hint ms-2">Keyboard: <kbd>J</kbd>/<kbd>K</kbd> = navigate, <kbd>C</kbd> = copy focused, <kbd>A</kbd> = copy all</span>
     </div>
     """
 
@@ -2416,7 +2451,7 @@ def _html_recommended_section(recommended: list[dict], profile: dict) -> str:
               onclick="exportPendingStatusUpdates()">
         Export Status Updates
       </button>
-      <span class="shortcut-hint ms-2">Keyboard: <kbd>C</kbd> = copy focused, <kbd>A</kbd> = copy all</span>
+      <span class="shortcut-hint ms-2">Keyboard: <kbd>J</kbd>/<kbd>K</kbd> = navigate, <kbd>C</kbd> = copy focused, <kbd>A</kbd> = copy all</span>
     </div>
     """
 
