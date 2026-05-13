@@ -62,6 +62,49 @@ def filter_by_required_skills(results: list, required_skills=None) -> list:
     ]
 
 
+def infer_job_arrangement(result) -> str:
+    """Infer normalized job arrangement from arrangement/location/description."""
+    arrangement = getattr(result, "arrangement", "") or "unknown"
+    arrangement = arrangement.strip().casefold()
+    if arrangement == "on-site":
+        arrangement = "onsite"
+    if arrangement in {"remote", "hybrid", "onsite"}:
+        return arrangement
+
+    text = " ".join([
+        getattr(result, "location", "") or "",
+        getattr(result, "description", "") or "",
+    ]).casefold()
+    if "hybrid" in text:
+        return "hybrid"
+    if "remote" in text:
+        return "remote"
+    if "on-site" in text or "onsite" in text or "in-office" in text:
+        return "onsite"
+    return "unknown"
+
+
+def filter_by_location_strictness(results: list, strictness: str | None = None) -> list:
+    """Apply hard arrangement filtering requested from GUI search controls."""
+    if not strictness or strictness == "profile":
+        return results
+
+    filtered = []
+    for result in results:
+        arrangement = infer_job_arrangement(result)
+        if strictness == "remote_only" and arrangement == "remote":
+            filtered.append(result)
+        elif strictness == "remote_or_hybrid" and arrangement in {"remote", "hybrid"}:
+            filtered.append(result)
+        elif strictness == "hybrid_only" and arrangement == "hybrid":
+            filtered.append(result)
+        elif strictness == "onsite_only" and arrangement == "onsite":
+            filtered.append(result)
+        elif strictness == "exclude_onsite" and arrangement != "onsite":
+            filtered.append(result)
+    return filtered
+
+
 class MockSearchWorker:
     """Simulates a long-running search operation for threading validation.
 
@@ -339,6 +382,10 @@ class SearchWorker:
             results = filter_by_required_skills(
                 results,
                 self._search_config.get("required_skills"),
+            )
+            results = filter_by_location_strictness(
+                results,
+                self._search_config.get("location_strictness"),
             )
 
             if self._stop_event.is_set():

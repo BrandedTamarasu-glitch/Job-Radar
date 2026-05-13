@@ -15,6 +15,7 @@ from job_radar.gui.search_summary import (
 from job_radar.gui.worker_thread import (
     SearchWorker,
     filter_by_company,
+    filter_by_location_strictness,
     filter_by_required_skills,
 )
 from job_radar.sources import JobResult
@@ -148,6 +149,56 @@ def test_filter_by_required_skills_keeps_only_jobs_with_all_required_skills():
     filtered = filter_by_required_skills(jobs, "node.js, kubernetes")
 
     assert [job.company for job in filtered] == ["Northstar Tools"]
+
+
+def test_filter_by_location_strictness_uses_arrangement_and_text_hints():
+    """Location strictness applies hard arrangement filters when requested."""
+    jobs = [
+        JobResult(
+            title="Engineer",
+            company="RemoteCo",
+            location="Anywhere",
+            arrangement="unknown",
+            salary="Not listed",
+            date_posted="Today",
+            description="Distributed remote team",
+            url="https://example.com/1",
+            source="Dice",
+        ),
+        JobResult(
+            title="Engineer",
+            company="HybridCo",
+            location="Austin, TX",
+            arrangement="hybrid",
+            salary="Not listed",
+            date_posted="Today",
+            description="Build software",
+            url="https://example.com/2",
+            source="Dice",
+        ),
+        JobResult(
+            title="Engineer",
+            company="OfficeCo",
+            location="New York, NY",
+            arrangement="on-site",
+            salary="Not listed",
+            date_posted="Today",
+            description="Build software",
+            url="https://example.com/3",
+            source="Dice",
+        ),
+    ]
+
+    assert [
+        job.company for job in filter_by_location_strictness(jobs, "remote_only")
+    ] == ["RemoteCo"]
+    assert [
+        job.company for job in filter_by_location_strictness(jobs, "remote_or_hybrid")
+    ] == ["RemoteCo", "HybridCo"]
+    assert [
+        job.company for job in filter_by_location_strictness(jobs, "exclude_onsite")
+    ] == ["RemoteCo", "HybridCo"]
+    assert filter_by_location_strictness(jobs, "profile") == jobs
 
 
 def test_clear_cache_settings_handler_updates_status_label(tmp_path):
@@ -468,3 +519,77 @@ def test_search_worker_filters_required_skills_before_scoring_and_tracking(tmp_p
 
     assert captured["tracked_companies"] == ["Northstar Tools"]
     assert captured["reported_companies"] == ["Northstar Tools"]
+
+
+def test_search_worker_filters_location_strictness_before_scoring_and_tracking(tmp_path):
+    """SearchWorker applies GUI location strictness before tracking/reporting."""
+    result_queue = queue.Queue()
+    stop_event = threading.Event()
+    captured = {}
+    profile = {
+        "name": "Test User",
+        "target_titles": ["Backend Engineer"],
+        "core_skills": ["Python"],
+    }
+    jobs = [
+        JobResult(
+            title="Backend Engineer",
+            company="RemoteCo",
+            location="Remote",
+            arrangement="remote",
+            salary="Not listed",
+            date_posted="Today",
+            description="Build Python APIs",
+            url="https://example.com/1",
+            source="Dice",
+        ),
+        JobResult(
+            title="Backend Engineer",
+            company="OfficeCo",
+            location="New York, NY",
+            arrangement="onsite",
+            salary="Not listed",
+            date_posted="Today",
+            description="Build Python APIs in office",
+            url="https://example.com/2",
+            source="Dice",
+        ),
+    ]
+
+    def fake_fetch_all(fetch_profile, on_source_progress=None, selected_sources=None):
+        return jobs, {
+            "query_failures": 0,
+            "failed_sources": [],
+            "query_failure_details": [],
+        }
+
+    def fake_mark_seen(scored):
+        captured["tracked_companies"] = [item["job"].company for item in scored]
+        return scored
+
+    def fake_generate_report(**kwargs):
+        captured["reported_companies"] = [
+            item["job"].company for item in kwargs["scored_results"]
+        ]
+        return {"html": str(tmp_path / "jobs.html")}
+
+    with patch("job_radar.api_config.load_api_credentials"):
+        with patch("job_radar.sources.fetch_all", side_effect=fake_fetch_all):
+            with patch("job_radar.sources.generate_manual_urls", return_value=[]):
+                with patch("job_radar.sources.get_automated_source_display_names", return_value=["Dice"]):
+                    with patch("job_radar.tracker.mark_seen", side_effect=fake_mark_seen):
+                        with patch("job_radar.tracker.get_stats", return_value=None):
+                            with patch("job_radar.report.generate_report", side_effect=fake_generate_report):
+                                worker = SearchWorker(
+                                    result_queue,
+                                    stop_event,
+                                    profile,
+                                    {
+                                        "min_score": 0,
+                                        "location_strictness": "remote_only",
+                                    },
+                                )
+                                worker.run()
+
+    assert captured["tracked_companies"] == ["RemoteCo"]
+    assert captured["reported_companies"] == ["RemoteCo"]

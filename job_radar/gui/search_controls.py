@@ -14,6 +14,16 @@ from job_radar.search_presets import SEARCH_PRESETS, preset_choices
 from job_radar.sources import SOURCE_PHASE_ORDER, SOURCE_REGISTRY
 
 
+LOCATION_STRICTNESS_OPTIONS = {
+    "Profile scoring only": "profile",
+    "Remote only": "remote_only",
+    "Remote or hybrid": "remote_or_hybrid",
+    "Hybrid only": "hybrid_only",
+    "On-site only": "onsite_only",
+    "Exclude on-site": "exclude_onsite",
+}
+
+
 # Try to import CTkDatePicker, fall back to manual entry if unavailable
 try:
     from tkcalendar import DateEntry
@@ -181,9 +191,29 @@ class SearchControls(ctk.CTkFrame):
         )
         self._required_skills.grid(row=1, column=1, sticky="ew", pady=4)
 
+        # Location strictness section
+        location_section = ctk.CTkFrame(self, fg_color="transparent")
+        location_section.grid(row=6, column=0, sticky="ew", padx=10, pady=10)
+        location_section.grid_columnconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            location_section,
+            text="Location Fit",
+            font=ctk.CTkFont(size=13, weight="bold"),
+        ).grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 6))
+
+        ctk.CTkLabel(location_section, text="Strictness:").grid(row=1, column=0, sticky="w", padx=(0, 10))
+        self._location_strictness_var = ctk.StringVar(value="Profile scoring only")
+        self._location_strictness_menu = ctk.CTkOptionMenu(
+            location_section,
+            values=list(LOCATION_STRICTNESS_OPTIONS.keys()),
+            variable=self._location_strictness_var,
+        )
+        self._location_strictness_menu.grid(row=1, column=1, sticky="ew")
+
         # Source selection section
         source_section = ctk.CTkFrame(self, fg_color="transparent")
-        source_section.grid(row=6, column=0, sticky="ew", padx=10, pady=10)
+        source_section.grid(row=7, column=0, sticky="ew", padx=10, pady=10)
 
         ctk.CTkLabel(
             source_section,
@@ -348,6 +378,7 @@ class SearchControls(ctk.CTkFrame):
         include_companies = self._include_companies.get().strip()
         exclude_companies = self._exclude_companies.get().strip()
         required_skills = self._required_skills.get().strip()
+        location_strictness_label = self._location_strictness_var.get()
 
         return {
             "from_date": from_date,
@@ -359,6 +390,10 @@ class SearchControls(ctk.CTkFrame):
             "include_companies": include_companies,
             "exclude_companies": exclude_companies,
             "required_skills": required_skills,
+            "location_strictness": LOCATION_STRICTNESS_OPTIONS.get(
+                location_strictness_label,
+                "profile",
+            ),
         }
 
     def set_defaults(self, config: dict):
@@ -399,6 +434,13 @@ class SearchControls(ctk.CTkFrame):
         if "required_skills" in config:
             self._required_skills.delete(0, "end")
             self._required_skills.insert(0, config["required_skills"] or "")
+
+        if "location_strictness" in config:
+            strictness = config["location_strictness"] or "profile"
+            for label, value in LOCATION_STRICTNESS_OPTIONS.items():
+                if value == strictness:
+                    self._location_strictness_var.set(label)
+                    break
 
         if "from_date" in config and config["from_date"]:
             self._date_enabled.select()

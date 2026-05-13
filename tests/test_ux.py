@@ -147,10 +147,11 @@ class TestCtrlCHandling:
         from job_radar.__main__ import main
         # Mock search_main to raise KeyboardInterrupt
         with patch('job_radar.__main__._fix_ssl_for_frozen'):
-            with patch('job_radar.search.main', side_effect=KeyboardInterrupt):
-                with pytest.raises(SystemExit) as exc_info:
-                    main()
-                assert exc_info.value.code == 0
+            with patch.object(sys, 'argv', ['job-radar', '--no-wizard']):
+                with patch('job_radar.search.main', side_effect=KeyboardInterrupt):
+                    with pytest.raises(SystemExit) as exc_info:
+                        main()
+                    assert exc_info.value.code == 0
         output = capsys.readouterr().out
         # Should have friendly message
         assert "interrupt" in output.lower() or "goodbye" in output.lower()
@@ -159,9 +160,10 @@ class TestCtrlCHandling:
         """Ctrl+C should never show a Python traceback."""
         from job_radar.__main__ import main
         with patch('job_radar.__main__._fix_ssl_for_frozen'):
-            with patch('job_radar.search.main', side_effect=KeyboardInterrupt):
-                with pytest.raises(SystemExit):
-                    main()
+            with patch.object(sys, 'argv', ['job-radar', '--no-wizard']):
+                with patch('job_radar.search.main', side_effect=KeyboardInterrupt):
+                    with pytest.raises(SystemExit):
+                        main()
         output = capsys.readouterr().out + capsys.readouterr().err
         assert "Traceback" not in output
 

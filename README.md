@@ -434,7 +434,7 @@ python -m job_radar --help
 
 ### Running Tests
 
-The project includes a comprehensive test suite with 736 automated tests:
+The project includes a comprehensive test suite with 738 automated tests:
 
 ```bash
 # Install dev dependencies
@@ -479,7 +479,7 @@ For release builds, also run the platform build script and smoke-test the genera
 - PDF parser (34 tests) - validates extraction, validation, Unicode support, error handling
 - Report generation (35 tests) - validates HTML/Markdown output, clipboard UI, status tracking, accessibility
 - UX polish (69 tests) - validates banner, help text, progress messages, maintenance commands, error handling
-- GUI search summary (13 tests) - validates search completion, source warnings, cache controls, GUI preset application, source selection, company filters, and must-have skill filters
+- GUI search summary (15 tests) - validates search completion, source warnings, cache controls, GUI preset application, source selection, company filters, must-have skill filters, and location strictness
 - Profile manager (22 tests) - validates atomic writes, backups, rotation, schema migration, validation
 - Profile display (16 tests) - validates formatted output, field filtering, NO_COLOR compliance
 - Profile editor (23 tests) - validates field menu, diff preview, editing, validator reuse
