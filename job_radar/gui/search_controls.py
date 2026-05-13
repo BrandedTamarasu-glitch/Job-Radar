@@ -199,16 +199,23 @@ class SearchControls(ctk.CTkFrame):
 
         ctk.CTkLabel(
             skills_section,
-            text="Must-Have Skills",
+            text="Skill Controls",
             font=ctk.CTkFont(size=13, weight="bold"),
         ).grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 6))
 
-        ctk.CTkLabel(skills_section, text="Require:").grid(row=1, column=0, sticky="w", padx=(0, 10))
+        ctk.CTkLabel(skills_section, text="Must-have:").grid(row=1, column=0, sticky="w", padx=(0, 10))
         self._required_skills = ctk.CTkEntry(
             skills_section,
             placeholder_text="Comma-separated skills required in listing",
         )
         self._required_skills.grid(row=1, column=1, sticky="ew", pady=4)
+
+        ctk.CTkLabel(skills_section, text="Nice-to-have:").grid(row=2, column=0, sticky="w", padx=(0, 10))
+        self._preferred_skills = ctk.CTkEntry(
+            skills_section,
+            placeholder_text="Comma-separated skills that boost matching",
+        )
+        self._preferred_skills.grid(row=2, column=1, sticky="ew", pady=4)
 
         # Location strictness section
         location_section = ctk.CTkFrame(self, fg_color="transparent")
@@ -446,6 +453,7 @@ class SearchControls(ctk.CTkFrame):
         include_companies = self._include_companies.get().strip()
         exclude_companies = self._exclude_companies.get().strip()
         required_skills = self._required_skills.get().strip()
+        preferred_skills = self._preferred_skills.get().strip()
         location_strictness_label = self._location_strictness_var.get()
         freshness_label = self._freshness_var.get()
 
@@ -461,6 +469,7 @@ class SearchControls(ctk.CTkFrame):
             "include_companies": include_companies,
             "exclude_companies": exclude_companies,
             "required_skills": required_skills,
+            "preferred_skills": preferred_skills,
             "location_strictness": LOCATION_STRICTNESS_OPTIONS.get(
                 location_strictness_label,
                 "profile",
@@ -510,6 +519,10 @@ class SearchControls(ctk.CTkFrame):
         if "required_skills" in config:
             self._required_skills.delete(0, "end")
             self._required_skills.insert(0, config["required_skills"] or "")
+
+        if "preferred_skills" in config:
+            self._preferred_skills.delete(0, "end")
+            self._preferred_skills.insert(0, config["preferred_skills"] or "")
 
         if "location_strictness" in config:
             strictness = config["location_strictness"] or "profile"

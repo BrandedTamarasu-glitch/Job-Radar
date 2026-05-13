@@ -39,6 +39,38 @@ def parse_company_filter(value: str | list[str] | None) -> list[str]:
     ]
 
 
+def parse_skill_filter(value: str | list[str] | None) -> list[str]:
+    """Parse comma-separated skill filter text while preserving display casing."""
+    if not value:
+        return []
+    if isinstance(value, str):
+        raw_items = value.split(",")
+    else:
+        raw_items = value
+    return [
+        item.strip()
+        for item in raw_items
+        if item and item.strip()
+    ]
+
+
+def apply_preferred_skills(profile: dict, preferred_skills=None) -> dict:
+    """Return a profile copy with per-search nice-to-have skills appended."""
+    parsed_skills = parse_skill_filter(preferred_skills)
+    if not parsed_skills:
+        return profile
+
+    search_profile = profile.copy()
+    secondary_skills = list(search_profile.get("secondary_skills", []))
+    seen = {skill.casefold() for skill in secondary_skills}
+    for skill in parsed_skills:
+        if skill.casefold() not in seen:
+            secondary_skills.append(skill)
+            seen.add(skill.casefold())
+    search_profile["secondary_skills"] = secondary_skills
+    return search_profile
+
+
 def filter_by_company(results: list, include=None, exclude=None) -> list:
     """Filter jobs by company include/exclude terms."""
     include_terms = parse_company_filter(include)
@@ -334,6 +366,10 @@ class SearchWorker:
             search_profile = apply_search_preset(
                 self._profile,
                 self._search_config.get("preset"),
+            )
+            search_profile = apply_preferred_skills(
+                search_profile,
+                self._search_config.get("preferred_skills"),
             )
 
             # Step 1: Load API credentials

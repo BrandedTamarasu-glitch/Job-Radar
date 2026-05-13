@@ -15,6 +15,7 @@ from job_radar.gui.search_summary import (
 )
 from job_radar.gui.worker_thread import (
     SearchWorker,
+    apply_preferred_skills,
     filter_by_company,
     filter_by_location_strictness,
     filter_by_required_skills,
@@ -151,6 +152,19 @@ def test_filter_by_required_skills_keeps_only_jobs_with_all_required_skills():
     filtered = filter_by_required_skills(jobs, "node.js, kubernetes")
 
     assert [job.company for job in filtered] == ["Northstar Tools"]
+
+
+def test_apply_preferred_skills_appends_without_mutating_profile():
+    """Nice-to-have GUI skills are added to the per-search profile only."""
+    profile = {
+        "core_skills": ["Python"],
+        "secondary_skills": ["Docker"],
+    }
+
+    search_profile = apply_preferred_skills(profile, "docker, Kubernetes, Redis")
+
+    assert search_profile["secondary_skills"] == ["Docker", "Kubernetes", "Redis"]
+    assert profile["secondary_skills"] == ["Docker"]
 
 
 def test_filter_by_location_strictness_uses_arrangement_and_text_hints():
@@ -562,6 +576,61 @@ def test_search_worker_filters_required_skills_before_scoring_and_tracking(tmp_p
 
     assert captured["tracked_companies"] == ["Northstar Tools"]
     assert captured["reported_companies"] == ["Northstar Tools"]
+
+
+def test_search_worker_applies_preferred_skills_to_search_profile(tmp_path):
+    """SearchWorker scores/reports with per-search nice-to-have skills."""
+    result_queue = queue.Queue()
+    stop_event = threading.Event()
+    captured = {}
+    profile = {
+        "name": "Test User",
+        "target_titles": ["Backend Engineer"],
+        "core_skills": ["Python"],
+        "secondary_skills": ["Docker"],
+    }
+
+    def fake_fetch_all(fetch_profile, on_source_progress=None, selected_sources=None):
+        captured["fetch_profile"] = fetch_profile
+        return [], {
+            "query_failures": 0,
+            "failed_sources": [],
+            "query_failure_details": [],
+        }
+
+    def fake_generate_report(**kwargs):
+        captured["report_profile"] = kwargs["profile"]
+        return {"html": str(tmp_path / "jobs.html")}
+
+    with patch("job_radar.api_config.load_api_credentials"):
+        with patch("job_radar.sources.fetch_all", side_effect=fake_fetch_all):
+            with patch("job_radar.sources.generate_manual_urls", return_value=[]):
+                with patch("job_radar.sources.get_automated_source_display_names", return_value=["Dice"]):
+                    with patch("job_radar.tracker.mark_seen", side_effect=lambda scored: scored):
+                        with patch("job_radar.tracker.get_stats", return_value=None):
+                            with patch("job_radar.report.generate_report", side_effect=fake_generate_report):
+                                worker = SearchWorker(
+                                    result_queue,
+                                    stop_event,
+                                    profile,
+                                    {
+                                        "min_score": 0,
+                                        "preferred_skills": "docker, Kubernetes, Redis",
+                                    },
+                                )
+                                worker.run()
+
+    assert captured["fetch_profile"]["secondary_skills"] == [
+        "Docker",
+        "Kubernetes",
+        "Redis",
+    ]
+    assert captured["report_profile"]["secondary_skills"] == [
+        "Docker",
+        "Kubernetes",
+        "Redis",
+    ]
+    assert profile["secondary_skills"] == ["Docker"]
 
 
 def test_search_worker_filters_location_strictness_before_scoring_and_tracking(tmp_path):
