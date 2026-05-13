@@ -321,6 +321,7 @@ The GUI uninstaller will:
 |---|---|
 | `--output DIR` | Output directory for reports (default: `results/`) |
 | `--no-open` | Don't auto-open report in browser after generation |
+| `--demo-report` | Generate a sample report without fetching jobs or requiring a profile |
 
 ### Profile Options
 
@@ -350,6 +351,12 @@ The GUI uninstaller will:
 | `--no-cache` | Disable HTTP response caching (force fresh fetches) |
 | `--no-wizard` | Skip setup wizard (for automated testing) |
 | `--version` | Show version number and exit |
+
+Generate a sample report to preview the ranked report experience without API keys or live job fetching:
+
+```bash
+job-radar --demo-report --no-open
+```
 
 ### Examples
 
@@ -401,7 +408,7 @@ python -m job_radar --help
 
 ### Running Tests
 
-The project includes a comprehensive test suite with 682 automated tests:
+The project includes a comprehensive test suite with 683 automated tests:
 
 ```bash
 # Install dev dependencies

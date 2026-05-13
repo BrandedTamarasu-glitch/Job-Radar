@@ -311,3 +311,24 @@ class TestFriendlyErrors:
         assert "no match" in output.lower() or "try" in output.lower() or "broaden" in output.lower()
         assert "Lower the minimum score threshold" in output
         assert "Open the manual check URLs" in output
+
+    def test_demo_report_generates_without_fetching(self, capsys, tmp_path):
+        """Demo report mode generates sample reports without loading a profile or fetching."""
+        from job_radar.search import main
+
+        with patch.object(sys, 'argv', ['job-radar', '--demo-report', '--no-open', '--output', str(tmp_path)]):
+            with patch('job_radar.search.load_config', return_value={}):
+                with patch('job_radar.search.load_profile_with_recovery') as mock_load_profile:
+                    with patch('job_radar.search.fetch_all') as mock_fetch:
+                        with pytest.raises(SystemExit) as exc:
+                            main()
+
+        assert exc.value.code == 0
+
+        output = capsys.readouterr().out
+
+        assert "Demo report generated" in output
+        assert list(tmp_path.glob("jobs_*.html"))
+        assert list(tmp_path.glob("jobs_*.md"))
+        mock_load_profile.assert_not_called()
+        mock_fetch.assert_not_called()

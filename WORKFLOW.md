@@ -128,10 +128,17 @@ On startup, Job Radar shows your profile preview (unless `--no-wizard` is set), 
 - `--min-score N` — Minimum score threshold (default: 2.8)
 - `--new-only` — Only show new (unseen) results
 - `--no-open` — Don't auto-open report in browser
+- `--demo-report` — Generate a sample report without API keys, profile setup, or live fetching
 - `--dry-run` — Show what queries would run without fetching
 - `--verbose` / `-v` — Enable debug logging
 - `--no-cache` — Disable HTTP response caching (force fresh fetches)
 - `--no-wizard` — Skip wizard check and profile preview (quiet mode)
+
+Preview the report experience without configuring anything:
+
+```bash
+job-radar --demo-report --no-open
+```
 - `--no-color` — Disable terminal colors (also respects `NO_COLOR` env var)
 
 ### 4. Review the Report
@@ -357,7 +364,7 @@ Job-Radar/
 │       ├── search_controls.py # Search tab controls and progress
 │       ├── scoring_config.py # Scoring weights and staffing preference UI
 │       └── tag_chip_widget.py # Reusable tag chip widget for list fields
-├── tests/                  # 682 automated tests (23 test files)
+├── tests/                  # 683 automated tests (23 test files)
 ├── scripts/                # Build scripts for standalone executables
 ├── installers/             # Platform-native installers (v2.1.0+)
 │   ├── macos/             # DMG installer build scripts

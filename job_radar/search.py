@@ -30,6 +30,7 @@ from .profile_manager import (
     ProfileCorruptedError,
 )
 from .sources import (
+    JobResult,
     build_search_queries,
     fetch_all,
     generate_manual_urls,
@@ -185,6 +186,7 @@ def parse_args(config: dict | None = None):
     epilog = textwrap.dedent("""\
         Examples:
           job-radar                              Launch wizard (first run) or search
+          job-radar --demo-report --no-open      Generate a sample report without fetching
           job-radar --view-profile               View current profile settings
           job-radar --min-score 3.5              Search with higher quality threshold
           job-radar --profile path/to.json       Use a specific profile file
@@ -263,6 +265,11 @@ def parse_args(config: dict | None = None):
         "--no-color",
         action="store_true",
         help="Disable colored output (also respects NO_COLOR env var)",
+    )
+    output_group.add_argument(
+        "--demo-report",
+        action="store_true",
+        help="Generate a sample report without fetching jobs or requiring a profile",
     )
 
     # Profile Options
@@ -622,6 +629,129 @@ def filter_by_date(results, from_date: str, to_date: str):
 
 
 # ---------------------------------------------------------------------------
+# Demo report
+# ---------------------------------------------------------------------------
+
+def _demo_profile() -> dict:
+    """Return a realistic sample profile for report previews."""
+    return {
+        "name": "Demo Candidate",
+        "target_titles": ["Backend Engineer", "Senior Python Developer"],
+        "core_skills": ["Python", "FastAPI", "PostgreSQL", "Docker"],
+        "secondary_skills": ["AWS", "Redis", "Kubernetes"],
+        "level": "senior",
+        "years_experience": 7,
+        "location": "Remote",
+        "target_market": "Remote",
+        "arrangement": ["remote", "hybrid"],
+        "domain_expertise": ["fintech", "developer tools"],
+        "highlights": [
+            "Built Python APIs serving 1M requests per day",
+            "Led migration from monolith to containerized services",
+        ],
+        "comp_floor": 130000,
+        "staffing_preference": "neutral",
+    }
+
+
+def _demo_jobs() -> list[JobResult]:
+    """Return sample jobs that exercise report tiers and explanations."""
+    return [
+        JobResult(
+            title="Senior Backend Engineer",
+            company="Northstar Tools",
+            location="Remote",
+            arrangement="remote",
+            salary="$155k-$180k",
+            date_posted="Today",
+            description=(
+                "Build developer tools with Python, FastAPI, PostgreSQL, Docker, "
+                "and AWS on a small remote-first team."
+            ),
+            url="https://example.com/demo/senior-backend-engineer",
+            source="Demo",
+            employment_type="Full-time",
+            parse_confidence="high",
+        ),
+        JobResult(
+            title="Backend Developer",
+            company="LedgerWorks",
+            location="Remote",
+            arrangement="remote",
+            salary="$125k-$145k",
+            date_posted="Yesterday",
+            description="Maintain fintech APIs using Python, Django, PostgreSQL, and Redis.",
+            url="https://example.com/demo/backend-developer",
+            source="Demo",
+            employment_type="Full-time",
+            parse_confidence="high",
+        ),
+        JobResult(
+            title="Platform Engineer",
+            company="ScaleOps",
+            location="Denver, CO",
+            arrangement="hybrid",
+            salary="Not listed",
+            date_posted="2d ago",
+            description="Operate Kubernetes and Docker infrastructure for enterprise services.",
+            url="https://example.com/demo/platform-engineer",
+            source="Demo",
+            employment_type="Full-time",
+            parse_confidence="high",
+        ),
+    ]
+
+
+def run_demo_report(args, config: dict) -> None:
+    """Generate a no-network sample report and optionally open it."""
+    from datetime import date as _date
+
+    profile = _demo_profile()
+    min_score = args.min_score if args.min_score is not None else 2.8
+    today = _date.today().isoformat()
+
+    scored = [
+        {"job": job, "score": score_job(job, profile), "is_new": True}
+        for job in _demo_jobs()
+    ]
+    scored = [
+        result for result in scored
+        if not result["score"].get("dealbreaker")
+        and result["score"]["overall"] >= min_score
+    ]
+    scored.sort(key=lambda x: x["score"]["overall"], reverse=True)
+
+    manual_urls = generate_manual_urls(profile)
+    report_result = generate_report(
+        profile=profile,
+        scored_results=scored,
+        manual_urls=manual_urls,
+        sources_searched=["Demo"],
+        from_date=today,
+        to_date=today,
+        output_dir=args.output,
+        tracker_stats=None,
+        min_score=min_score,
+    )
+
+    html_path = report_result["html"]
+    md_path = report_result["markdown"]
+    stats = report_result["stats"]
+
+    print(f"\n{C.BOLD}Demo report generated{C.RESET}")
+    print(f"  Total sample results: {stats['total']}")
+    print(f"  HTML:     {html_path}")
+    print(f"  Markdown: {md_path}")
+
+    auto_open = not args.no_open and config.get("auto_open_browser", True)
+    browser_result = open_report_in_browser(html_path, auto_open=auto_open)
+    if browser_result["opened"]:
+        print(f"  {C.GREEN}Report opened in default browser{C.RESET}\n")
+    else:
+        print(f"  Browser: {browser_result['reason']}. Open manually: {html_path}\n")
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -659,6 +789,10 @@ def main():
         print(f"{C.RED}Error: Update flags cannot be used with --view-profile or --edit-profile{C.RESET}")
         print(f"\n{C.YELLOW}Tip:{C.RESET} Use update flags alone to modify profile, or use --edit-profile for interactive editing.")
         sys.exit(1)
+
+    if args.demo_report:
+        run_demo_report(args, config)
+        sys.exit(0)
 
     # Early exit handlers for update flags (no search)
     if args.update_skills is not None:
