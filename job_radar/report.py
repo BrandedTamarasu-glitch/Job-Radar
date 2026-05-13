@@ -894,6 +894,68 @@ def _generate_html_report(
 
     /* Mobile: table to stacked cards */
     @media (max-width: 767px) {{
+      body {{
+        font-size: 0.95rem;
+      }}
+      .container {{
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+      }}
+      [role="region"][aria-labelledby="filter-heading"] {{
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        background: var(--bs-body-bg);
+        border-bottom: 1px solid #dee2e6;
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+      }}
+      [role="region"][aria-labelledby="filter-heading"] .btn-group,
+      [role="region"][aria-labelledby="filter-heading"] .btn {{
+        width: 100%;
+      }}
+      [role="region"][aria-labelledby="filter-heading"] .btn-group {{
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.35rem;
+      }}
+      [role="region"][aria-labelledby="filter-heading"] .btn-group > .btn {{
+        border-radius: 0.375rem !important;
+        min-height: 44px;
+      }}
+      .copy-all-btn,
+      .export-status-btn,
+      #export-csv-btn,
+      #view-mode-toggle {{
+        width: 100%;
+        margin-top: 0.35rem;
+        margin-left: 0 !important;
+        min-height: 44px;
+      }}
+      .shortcut-hint {{
+        display: block;
+        width: 100%;
+        margin-left: 0 !important;
+        margin-top: 0.5rem;
+      }}
+      .card-header h3 {{
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+        align-items: center;
+      }}
+      .status-dropdown,
+      .shortlist-btn {{
+        min-height: 44px;
+        margin-left: 0;
+      }}
+      .job-card-body {{
+        padding: 1rem;
+      }}
+      .job-detail-list > li {{
+        margin-bottom: 0.4rem;
+      }}
+
       /* Visually hide table headers (keep in DOM for ARIA) */
       thead {{
         position: absolute;
@@ -921,7 +983,7 @@ def _generate_html_report(
       /* Each row becomes a card */
       table.table tbody tr {{
         margin-bottom: 1rem;
-        padding: 1rem;
+        padding: 0.85rem;
         border: 1px solid #dee2e6;
         border-radius: 0.375rem;
         background: white;
@@ -953,7 +1015,7 @@ def _generate_html_report(
       table.table td,
       table.table th[scope="row"] {{
         display: grid;
-        grid-template-columns: 7em 1fr;
+        grid-template-columns: minmax(5.5rem, 35%) 1fr;
         gap: 0.5rem;
         padding: 0.5rem 0;
         border-bottom: 1px solid #e9ecef;
@@ -990,6 +1052,10 @@ def _generate_html_report(
         min-height: 44px;
         min-width: 44px;
       }}
+      table.table td .btn,
+      table.table td .dropdown {{
+        width: 100%;
+      }}
 
       /* Row number cell: simplify display */
       table.table th[scope="row"] {{
@@ -1002,6 +1068,9 @@ def _generate_html_report(
 
     /* Dark mode + mobile card adjustments */
     @media (prefers-color-scheme: dark) and (max-width: 767px) {{
+      [role="region"][aria-labelledby="filter-heading"] {{
+        border-bottom-color: #495057;
+      }}
       table.table tbody tr {{
         background: #212529;
         border-color: #495057;

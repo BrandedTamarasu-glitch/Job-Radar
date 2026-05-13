@@ -1900,6 +1900,54 @@ def test_responsive_touch_targets(sample_profile, sample_scored_results, sample_
             "44px touch targets should be in mobile CSS"
 
 
+def test_responsive_mobile_filter_controls_are_sticky(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Mobile report keeps filter controls reachable while reviewing jobs."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
+    mobile_section_start = html_content.find("@media (max-width: 767px)")
+    mobile_section_end = html_content.find("@media", mobile_section_start + 100)
+    if mobile_section_end == -1:
+        mobile_section_end = len(html_content)
+    mobile_section = html_content[mobile_section_start:mobile_section_end]
+
+    assert "position: sticky" in mobile_section
+    assert "top: 0" in mobile_section
+    assert "grid-template-columns: 1fr 1fr" in mobile_section
+
+
+def test_responsive_mobile_action_buttons_are_full_width(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Mobile report buttons are easier to tap and do not crowd headers."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
+    mobile_section_start = html_content.find("@media (max-width: 767px)")
+    mobile_section_end = html_content.find("@media", mobile_section_start + 100)
+    if mobile_section_end == -1:
+        mobile_section_end = len(html_content)
+    mobile_section = html_content[mobile_section_start:mobile_section_end]
+
+    assert ".copy-all-btn" in mobile_section
+    assert "#view-mode-toggle" in mobile_section
+    assert "width: 100%" in mobile_section
+    assert ".card-header h3" in mobile_section
+    assert "flex-wrap: wrap" in mobile_section
+
+
 def test_responsive_dark_mode_mobile(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
     """Test that CSS contains combined dark mode + mobile media query."""
     result = generate_report(
