@@ -562,6 +562,23 @@ def test_html_report_omits_unused_prism_assets(sample_profile, sample_scored_res
     assert "prism.css" not in html_content.lower()
 
 
+def test_html_report_payload_size_guard(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Report HTML payload should not grow unexpectedly for a small result set."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+
+    html_size = Path(result["html"]).stat().st_size
+
+    assert html_size < 90_000
+
+
 def test_html_report_contains_clipboard_javascript(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
     """Test that HTML report includes clipboard JavaScript functionality."""
     result = generate_report(
