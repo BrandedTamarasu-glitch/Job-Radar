@@ -25,8 +25,9 @@ def test_clear_cache_removes_only_json_cache_files(tmp_path, monkeypatch):
     unrelated.write_text("keep", encoding="utf-8")
     monkeypatch.setattr("job_radar.cache.get_data_dir", lambda: data_dir)
 
-    cache.clear_cache()
+    removed = cache.clear_cache()
 
+    assert removed == 1
     assert not cached.exists()
     assert unrelated.exists()
 
@@ -36,8 +37,9 @@ def test_clear_cache_ignores_missing_cache_dir(tmp_path, monkeypatch):
     data_dir = tmp_path / "data"
     monkeypatch.setattr("job_radar.cache.get_data_dir", lambda: data_dir)
 
-    cache.clear_cache()
+    removed = cache.clear_cache()
 
+    assert removed == 0
     assert not (data_dir / "cache").exists()
 
 

@@ -134,6 +134,7 @@ On startup, Job Radar shows your profile preview (unless `--no-wizard` is set), 
 - `--dry-run` — Show what queries would run without fetching
 - `--verbose` / `-v` — Enable debug logging
 - `--no-cache` — Disable HTTP response caching (force fresh fetches)
+- `--clear-cache` — Remove cached HTTP responses and exit
 - `--no-wizard` — Skip wizard check and profile preview (quiet mode)
 - `--no-color` — Disable terminal colors (also respects `NO_COLOR` env var)
 
@@ -274,7 +275,7 @@ Supported keys: `min_score`, `new_only`, `output`. CLI flags always override the
 
 ## Caching
 
-HTTP responses are cached for 4 hours in the app data `cache/` directory to avoid hammering sources during development or repeated runs. Use `--no-cache` to force fresh fetches. Stale or unreadable JSON cache files are pruned periodically during cached fetches.
+HTTP responses are cached for 4 hours in the app data `cache/` directory to avoid hammering sources during development or repeated runs. Use `--no-cache` to force fresh fetches, or `--clear-cache` to remove cached responses and exit. The GUI Settings tab also includes a Clear HTTP Cache action. Stale or unreadable JSON cache files are pruned periodically during cached fetches.
 
 ## Runtime Controls
 
@@ -388,7 +389,7 @@ Job-Radar/
 │       ├── search_controls.py # Search tab controls and progress
 │       ├── scoring_config.py # Scoring weights and staffing preference UI
 │       └── tag_chip_widget.py # Reusable tag chip widget for list fields
-├── tests/                  # 723 automated tests (27 test files)
+├── tests/                  # 725 automated tests (27 test files)
 ├── scripts/                # Build scripts for standalone executables
 ├── installers/             # Platform-native installers (v2.1.0+)
 │   ├── macos/             # DMG installer build scripts

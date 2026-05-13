@@ -181,11 +181,14 @@ def fetch_with_retry(
     return None
 
 
-def clear_cache():
-    """Remove all cached responses."""
+def clear_cache() -> int:
+    """Remove all cached responses and return the number of files removed."""
     cache_dir = get_cache_dir()
+    removed = 0
     if cache_dir.is_dir():
         for path in cache_dir.iterdir():
             if path.suffix == ".json":
                 path.unlink()
-        log.info("Cache cleared")
+                removed += 1
+        log.info("Cache cleared (%d file(s) removed)", removed)
+    return removed

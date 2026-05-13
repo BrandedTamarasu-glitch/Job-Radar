@@ -66,6 +66,29 @@ def test_interruption_messages_explain_report_state():
     assert "network down" in error_message("network down")
 
 
+def test_clear_cache_settings_handler_updates_status_label(tmp_path):
+    """Settings cache clear action reports the removed file count."""
+    from job_radar.gui.main_window import MainWindow
+
+    class StatusLabel:
+        def __init__(self):
+            self.text = ""
+
+        def configure(self, **kwargs):
+            self.text = kwargs["text"]
+
+    window = type("Window", (), {"_cache_status_label": StatusLabel()})()
+
+    with patch("job_radar.cache.get_data_dir", return_value=tmp_path):
+        cache_dir = tmp_path / "cache"
+        cache_dir.mkdir()
+        (cache_dir / "response.json").write_text("{}", encoding="utf-8")
+
+        MainWindow._on_clear_cache(window)
+
+    assert "Removed 1 cached response file" in window._cache_status_label.text
+
+
 def test_search_worker_emits_completion_summary(tmp_path):
     """SearchWorker includes source warnings and per-source counts on completion."""
     result_queue = queue.Queue()

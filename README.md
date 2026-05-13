@@ -345,6 +345,7 @@ The GUI uninstaller will:
 | `--dry-run` | Show search queries without fetching data |
 | `--verbose` / `-v` | Enable debug logging |
 | `--no-cache` | Disable HTTP response caching (force fresh fetches) |
+| `--clear-cache` | Remove cached HTTP responses and exit |
 | `--no-wizard` | Skip setup wizard (for automated testing) |
 | `--version` | Show version number and exit |
 
@@ -422,7 +423,7 @@ python -m job_radar --help
 
 ### Running Tests
 
-The project includes a comprehensive test suite with 723 automated tests:
+The project includes a comprehensive test suite with 725 automated tests:
 
 ```bash
 # Install dev dependencies
@@ -466,7 +467,7 @@ For release builds, also run the platform build script and smoke-test the genera
 - Rate limits (16 tests) - validates rate limiter cleanup, shared backends, config loading, quota queries
 - PDF parser (34 tests) - validates extraction, validation, Unicode support, error handling
 - Report generation (34 tests) - validates HTML/Markdown output, clipboard UI, status tracking, accessibility
-- UX polish (68 tests) - validates banner, help text, progress messages, error handling
+- UX polish (69 tests) - validates banner, help text, progress messages, maintenance commands, error handling
 - Profile manager (22 tests) - validates atomic writes, backups, rotation, schema migration, validation
 - Profile display (16 tests) - validates formatted output, field filtering, NO_COLOR compliance
 - Profile editor (23 tests) - validates field menu, diff preview, editing, validator reuse

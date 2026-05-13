@@ -79,12 +79,12 @@ Goal: avoid hidden performance degradation for long-running users.
 
 - [Done] Add conservative tracker pruning for old seen jobs.
 - [Done] Add cache maintenance hooks for stale files.
-- Add a visible cache clear path in CLI/GUI.
+- [Done] Add a visible cache clear path in CLI/GUI.
 - Document storage locations for cache, tracker, and rate-limit data.
 
 Validation:
 - [Done] Tracker pruning boundary tests.
-- Cache clear tests for missing and populated directories.
+- [Done] Cache clear tests for missing and populated directories.
 - Smoke test that old tracker data does not break report status hydration.
 
 ## Suggested Order

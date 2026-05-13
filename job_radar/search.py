@@ -371,6 +371,11 @@ def parse_args(config: dict | None = None):
         help="Disable HTTP response caching",
     )
     dev_group.add_argument(
+        "--clear-cache",
+        action="store_true",
+        help="Remove cached HTTP responses and exit",
+    )
+    dev_group.add_argument(
         "--no-wizard",
         action="store_true",
         help="Skip setup wizard and profile preview (quiet mode)",
@@ -815,6 +820,13 @@ def main():
 
     if args.list_presets:
         print(format_preset_list())
+        sys.exit(0)
+
+    if args.clear_cache:
+        from .cache import clear_cache, get_cache_dir
+        removed = clear_cache()
+        print(f"{C.GREEN}Cache cleared:{C.RESET} removed {removed} cached response file(s)")
+        print(f"  Cache directory: {get_cache_dir()}")
         sys.exit(0)
 
     # Early exit handlers for update flags (no search)

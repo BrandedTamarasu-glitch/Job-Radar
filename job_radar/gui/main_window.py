@@ -105,6 +105,7 @@ class MainWindow(ctk.CTk):
         self._release_notes_label = None  # Settings "View release notes" link reference
         self._clear_skipped_btn = None  # Settings "Clear skipped versions" button reference
         self._skipped_status_label = None  # Settings skipped version status label reference
+        self._cache_status_label = None  # Settings cache maintenance status label reference
 
         # Download worker state
         self._download_worker = None
@@ -1299,6 +1300,19 @@ class MainWindow(ctk.CTk):
         if self._update_status_label:
             self._refresh_update_status()
 
+    def _on_clear_cache(self):
+        """Handle 'Clear HTTP Cache' button click in Settings tab."""
+        from job_radar.cache import clear_cache, get_cache_dir
+
+        try:
+            removed = clear_cache()
+            message = f"Removed {removed} cached response file(s) from {get_cache_dir()}"
+        except OSError as e:
+            message = f"Failed to clear cache: {e}"
+
+        if self._cache_status_label:
+            self._cache_status_label.configure(text=message)
+
     def _start_real_search(self):
         """Start real search operation with full pipeline execution."""
         # Validate search controls
@@ -1765,6 +1779,45 @@ class MainWindow(ctk.CTk):
         save_btn.pack(pady=(20, 10))
 
         # Separator between API settings and scoring config
+        separator = ctk.CTkFrame(scroll_frame, height=2, fg_color="gray70")
+        separator.pack(fill="x", pady=(20, 10), padx=10)
+
+        # === Storage Maintenance Section ===
+        storage_title = ctk.CTkLabel(
+            scroll_frame,
+            text="Storage Maintenance",
+            font=ctk.CTkFont(size=18, weight="bold")
+        )
+        storage_title.pack(pady=(10, 10), anchor="w", padx=10)
+
+        storage_desc = ctk.CTkLabel(
+            scroll_frame,
+            text="Cached job-board responses are temporary and can be cleared without removing your profile, reports, or application status.",
+            wraplength=600,
+            justify="left",
+            text_color="gray"
+        )
+        storage_desc.pack(pady=(0, 10), anchor="w", padx=10)
+
+        clear_cache_btn = ctk.CTkButton(
+            scroll_frame,
+            text="Clear HTTP Cache",
+            width=180,
+            fg_color="transparent",
+            border_width=1,
+            command=self._on_clear_cache
+        )
+        clear_cache_btn.pack(pady=(0, 5), anchor="w", padx=10)
+
+        self._cache_status_label = ctk.CTkLabel(
+            scroll_frame,
+            text="",
+            font=ctk.CTkFont(size=12),
+            text_color="gray"
+        )
+        self._cache_status_label.pack(pady=(0, 10), anchor="w", padx=10)
+
+        # Separator between storage maintenance and scoring config
         separator = ctk.CTkFrame(scroll_frame, height=2, fg_color="gray70")
         separator.pack(fill="x", pady=(20, 10), padx=10)
 
