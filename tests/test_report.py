@@ -184,6 +184,32 @@ def test_generate_report_creates_both_files(sample_profile, sample_scored_result
     assert html_path.suffix == ".html"
 
 
+def test_generate_report_surfaces_source_failures(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Partial source failures are visible in both report formats."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice", "HN Hiring"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+        source_failures=[
+            {"source": "dice", "query": "Backend Engineer", "error": "timeout"}
+        ],
+    )
+
+    markdown = Path(result["markdown"]).read_text(encoding="utf-8")
+    html_report = Path(result["html"]).read_text(encoding="utf-8")
+
+    assert "Source warnings" in markdown
+    assert "Backend Engineer" in markdown
+    assert "timeout" in markdown
+    assert "Source warnings" in html_report
+    assert "Backend Engineer" in html_report
+    assert "timeout" in html_report
+
+
 def test_html_report_contains_bootstrap(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
     """Test that HTML report includes Bootstrap CDN and responsive metadata."""
     result = generate_report(

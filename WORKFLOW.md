@@ -373,7 +373,7 @@ Job-Radar/
 │       ├── search_controls.py # Search tab controls and progress
 │       ├── scoring_config.py # Scoring weights and staffing preference UI
 │       └── tag_chip_widget.py # Reusable tag chip widget for list fields
-├── tests/                  # 688 automated tests (26 test files)
+├── tests/                  # 689 automated tests (26 test files)
 ├── scripts/                # Build scripts for standalone executables
 ├── installers/             # Platform-native installers (v2.1.0+)
 │   ├── macos/             # DMG installer build scripts

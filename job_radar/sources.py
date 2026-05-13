@@ -2245,6 +2245,7 @@ def fetch_all(profile: dict, on_progress=None, on_source_progress=None) -> list[
     dedup_stats = dedup_result["stats"]
     dedup_stats["query_failures"] = len(query_failures)
     dedup_stats["failed_sources"] = sorted({f["source"] for f in query_failures})
+    dedup_stats["query_failure_details"] = query_failures
 
     log.info("Total unique results after deduplication: %d", len(all_results))
     return all_results, dedup_stats

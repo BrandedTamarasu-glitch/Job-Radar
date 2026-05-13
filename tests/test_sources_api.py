@@ -525,6 +525,9 @@ def test_fetch_all_tracks_query_failures(monkeypatch):
     assert results == []
     assert stats["query_failures"] == 1
     assert stats["failed_sources"] == ["dice"]
+    assert stats["query_failure_details"] == [
+        {"source": "dice", "query": "Software Engineer", "error": "dice down"}
+    ]
 
 
 # ==============================================================================

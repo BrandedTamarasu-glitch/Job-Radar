@@ -298,7 +298,8 @@ class SearchWorker:
                 to_date=to_date or "",
                 output_dir=str(get_results_dir()),
                 tracker_stats=tracker_stats,
-                min_score=min_score
+                min_score=min_score,
+                source_failures=dedup_stats.get("query_failure_details"),
             )
 
             report_path = report_result["html"]
