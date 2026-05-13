@@ -1,0 +1,90 @@
+"""Tests for Applications pipeline view-model helpers."""
+
+from job_radar.gui.applications_view_model import (
+    APPLICATION_STATUS_ORDER,
+    build_applications_view_model,
+    normalize_application_status,
+)
+
+
+def _group_by_status(groups):
+    return {group.status: group for group in groups}
+
+
+def test_applications_view_model_groups_pipeline_statuses():
+    """Tracker entries are grouped into stable pipeline status buckets."""
+    applications = {
+        "backend engineer||acme": {
+            "title": "Backend Engineer",
+            "company": "Acme",
+            "status": "applied",
+            "notes": "Referral submitted",
+            "next_action": "Follow up",
+            "next_action_date": "2026-05-20",
+            "updated": "2026-05-13T10:00:00",
+        },
+        "platform engineer||northstar": {
+            "title": "Platform Engineer",
+            "company": "Northstar",
+            "status": "interviewing",
+            "updated": "2026-05-14T10:00:00",
+        },
+        "frontend engineer||ledgerworks": {
+            "title": "Frontend Engineer",
+            "company": "LedgerWorks",
+            "status": "rejected",
+            "updated": "2026-05-12T10:00:00",
+        },
+        "staff engineer||scaleops": {
+            "title": "Staff Engineer",
+            "company": "ScaleOps",
+            "status": "offer",
+            "updated": "2026-05-15T10:00:00",
+        },
+    }
+
+    groups = _group_by_status(build_applications_view_model(applications))
+
+    assert [group.status for group in build_applications_view_model(applications)] == APPLICATION_STATUS_ORDER
+    assert groups["applied"].count == 1
+    assert groups["interviewing"].count == 1
+    assert groups["rejected"].count == 1
+    assert groups["offer"].count == 1
+    assert groups["applied"].rows[0].notes == "Referral submitted"
+    assert groups["applied"].rows[0].next_action == "Follow up"
+    assert groups["applied"].rows[0].next_action_date == "2026-05-20"
+
+
+def test_applications_view_model_groups_note_only_entries_as_needs_status():
+    """Note-only tracker entries remain visible in a needs-status bucket."""
+    applications = {
+        "backend engineer||acme": {
+            "title": "Backend Engineer",
+            "company": "Acme",
+            "notes": "Review later",
+            "updated": "2026-05-13T10:00:00",
+        },
+        "platform engineer||northstar": {
+            "title": "Platform Engineer",
+            "company": "Northstar",
+            "status": "unknown-new-status",
+            "updated": "2026-05-14T10:00:00",
+        },
+    }
+
+    groups = _group_by_status(build_applications_view_model(applications))
+
+    assert groups["needs_status"].count == 2
+    assert [row.company for row in groups["needs_status"].rows] == ["Northstar", "Acme"]
+    assert groups["needs_status"].rows[1].notes == "Review later"
+
+
+def test_normalize_application_status_accepts_known_statuses_case_insensitively():
+    """Status normalization tolerates casing and blanks."""
+    assert normalize_application_status("Applied") == "applied"
+    assert normalize_application_status(" INTERVIEWING ") == "interviewing"
+    assert normalize_application_status("offer") == "offer"
+    assert normalize_application_status("rejected") == "rejected"
+    assert normalize_application_status("skipped") == "skipped"
+    assert normalize_application_status("") == "needs_status"
+    assert normalize_application_status(None) == "needs_status"
