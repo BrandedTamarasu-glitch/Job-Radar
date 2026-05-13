@@ -11,7 +11,7 @@ import customtkinter as ctk
 
 from job_radar.config import load_config
 from job_radar.search_presets import SEARCH_PRESETS, preset_choices
-from job_radar.sources import SOURCE_PHASE_ORDER, SOURCE_REGISTRY
+from job_radar.sources import MANUAL_SOURCE_REGISTRY, SOURCE_PHASE_ORDER, SOURCE_REGISTRY
 
 
 LOCATION_STRICTNESS_OPTIONS = {
@@ -63,6 +63,7 @@ class SearchControls(ctk.CTkFrame):
         # Validation state
         self._score_error_label = None
         self._source_vars = {}
+        self._manual_source_vars = {}
 
         # Build layout
         self._create_widgets()
@@ -266,6 +267,42 @@ class SearchControls(ctk.CTkFrame):
                 pady=3,
             )
 
+        manual_section = ctk.CTkFrame(self, fg_color="transparent")
+        manual_section.grid(row=8, column=0, sticky="ew", padx=10, pady=10)
+
+        ctk.CTkLabel(
+            manual_section,
+            text="Manual Links",
+            font=ctk.CTkFont(size=13, weight="bold"),
+        ).pack(anchor="w", pady=(0, 6))
+
+        ctk.CTkLabel(
+            manual_section,
+            text="Choose which browser-only search links to include in reports.",
+            font=ctk.CTkFont(size=11),
+            text_color="gray",
+            wraplength=520,
+            justify="left",
+        ).pack(anchor="w", pady=(0, 6))
+
+        manual_grid = ctk.CTkFrame(manual_section, fg_color="transparent")
+        manual_grid.pack(fill="x")
+        for index, source in enumerate(MANUAL_SOURCE_REGISTRY.values()):
+            var = ctk.BooleanVar(value=True)
+            self._manual_source_vars[source.key] = var
+            checkbox = ctk.CTkCheckBox(
+                manual_grid,
+                text=source.display_name,
+                variable=var,
+            )
+            checkbox.grid(
+                row=index // 2,
+                column=index % 2,
+                sticky="w",
+                padx=(0, 20),
+                pady=3,
+            )
+
     def _source_definitions(self):
         """Return source definitions in execution order."""
         return [
@@ -402,6 +439,10 @@ class SearchControls(ctk.CTkFrame):
             key for key, var in self._source_vars.items()
             if var.get()
         ]
+        selected_manual_sources = [
+            key for key, var in self._manual_source_vars.items()
+            if var.get()
+        ]
         include_companies = self._include_companies.get().strip()
         exclude_companies = self._exclude_companies.get().strip()
         required_skills = self._required_skills.get().strip()
@@ -416,6 +457,7 @@ class SearchControls(ctk.CTkFrame):
             "new_only": new_only,
             "preset": None if preset == "None" else preset,
             "selected_sources": selected_sources,
+            "selected_manual_sources": selected_manual_sources,
             "include_companies": include_companies,
             "exclude_companies": exclude_companies,
             "required_skills": required_skills,
@@ -451,6 +493,11 @@ class SearchControls(ctk.CTkFrame):
             selected_sources = set(config["selected_sources"] or [])
             for key, var in self._source_vars.items():
                 var.set(key in selected_sources)
+
+        if "selected_manual_sources" in config:
+            selected_manual_sources = set(config["selected_manual_sources"] or [])
+            for key, var in self._manual_source_vars.items():
+                var.set(key in selected_manual_sources)
 
         if "include_companies" in config:
             self._include_companies.delete(0, "end")

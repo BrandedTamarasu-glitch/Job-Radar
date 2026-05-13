@@ -322,8 +322,9 @@ def test_search_worker_applies_gui_search_preset(tmp_path):
             "query_failure_details": [],
         }
 
-    def fake_generate_manual_urls(report_profile):
+    def fake_generate_manual_urls(report_profile, selected_manual_sources=None):
         captured["manual_profile"] = report_profile
+        captured["selected_manual_sources"] = selected_manual_sources
         return []
 
     def fake_generate_report(**kwargs):
@@ -349,12 +350,13 @@ def test_search_worker_applies_gui_search_preset(tmp_path):
     assert captured["fetch_profile"]["arrangement"] == ["remote"]
     assert captured["fetch_profile"]["target_titles"][0] == "Senior Backend Engineer"
     assert captured["manual_profile"] == captured["fetch_profile"]
+    assert captured["selected_manual_sources"] is None
     assert captured["report_profile"] == captured["fetch_profile"]
     assert profile["location"] == "Austin, TX"
 
 
 def test_search_worker_applies_selected_sources(tmp_path):
-    """SearchWorker passes selected GUI source keys into fetching and reporting."""
+    """SearchWorker passes selected automated and manual source keys."""
     result_queue = queue.Queue()
     stop_event = threading.Event()
     captured = {}
@@ -374,28 +376,43 @@ def test_search_worker_applies_selected_sources(tmp_path):
 
     def fake_generate_report(**kwargs):
         captured["sources_searched"] = kwargs["sources_searched"]
+        captured["manual_urls"] = kwargs["manual_urls"]
         return {"html": str(tmp_path / "jobs.html")}
+
+    def fake_generate_manual_urls(report_profile, selected_manual_sources=None):
+        captured["selected_manual_sources"] = selected_manual_sources
+        return [
+            {
+                "source": "LinkedIn",
+                "title": "Backend Engineer",
+                "url": "https://example.com/linkedin",
+            }
+        ]
 
     with patch("job_radar.api_config.load_api_credentials"):
         with patch("job_radar.sources.fetch_all", side_effect=fake_fetch_all):
-            with patch("job_radar.sources.generate_manual_urls", return_value=[]):
+            with patch("job_radar.sources.generate_manual_urls", side_effect=fake_generate_manual_urls):
                 with patch("job_radar.sources.get_selected_source_display_names", return_value=["Dice"]):
-                    with patch("job_radar.tracker.mark_seen", side_effect=lambda scored: scored):
-                        with patch("job_radar.tracker.get_stats", return_value=None):
-                            with patch("job_radar.report.generate_report", side_effect=fake_generate_report):
-                                worker = SearchWorker(
-                                    result_queue,
-                                    stop_event,
-                                    profile,
-                                    {
-                                        "min_score": 2.8,
-                                        "selected_sources": ["dice"],
-                                    },
-                                )
-                                worker.run()
+                    with patch("job_radar.sources.get_manual_source_display_names", return_value=["LinkedIn"]):
+                        with patch("job_radar.tracker.mark_seen", side_effect=lambda scored: scored):
+                            with patch("job_radar.tracker.get_stats", return_value=None):
+                                with patch("job_radar.report.generate_report", side_effect=fake_generate_report):
+                                    worker = SearchWorker(
+                                        result_queue,
+                                        stop_event,
+                                        profile,
+                                        {
+                                            "min_score": 2.8,
+                                            "selected_sources": ["dice"],
+                                            "selected_manual_sources": ["linkedin"],
+                                        },
+                                    )
+                                    worker.run()
 
     assert captured["selected_sources"] == ["dice"]
-    assert captured["sources_searched"] == ["Dice"]
+    assert captured["selected_manual_sources"] == ["linkedin"]
+    assert captured["manual_urls"][0]["source"] == "LinkedIn"
+    assert captured["sources_searched"] == ["Dice", "LinkedIn"]
 
 
 def test_search_worker_filters_companies_before_scoring_and_tracking(tmp_path):

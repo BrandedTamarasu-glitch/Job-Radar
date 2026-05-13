@@ -1934,36 +1934,63 @@ def generate_weworkremotely_url(query: str) -> str:
     return f"https://weworkremotely.com/remote-jobs/search?term={urllib.parse.quote_plus(query)}"
 
 
-def generate_manual_urls(profile: dict) -> list[dict]:
+@dataclass(frozen=True)
+class ManualSourceDefinition:
+    """Metadata and URL generator for manual check sources."""
+
+    key: str
+    display_name: str
+    generator: Callable[[str, str], str]
+
+
+def _generate_weworkremotely_manual_url(title: str, location: str) -> str:
+    """Generate a WWR manual URL with the same signature as location-aware sources."""
+    return generate_weworkremotely_url(title)
+
+
+MANUAL_SOURCE_REGISTRY = {
+    "wellfound": ManualSourceDefinition("wellfound", "Wellfound", generate_wellfound_url),
+    "indeed": ManualSourceDefinition("indeed", "Indeed", generate_indeed_url),
+    "linkedin": ManualSourceDefinition("linkedin", "LinkedIn", generate_linkedin_url),
+    "glassdoor": ManualSourceDefinition("glassdoor", "Glassdoor", generate_glassdoor_url),
+    "weworkremotely": ManualSourceDefinition(
+        "weworkremotely",
+        "We Work Remotely",
+        _generate_weworkremotely_manual_url,
+    ),
+}
+
+
+def get_manual_source_display_names(selected_sources: list[str] | None = None) -> list[str]:
+    """Return manual source display names for selected source keys."""
+    selected = set(selected_sources) if selected_sources is not None else None
+    return [
+        source.display_name
+        for source in MANUAL_SOURCE_REGISTRY.values()
+        if selected is None or source.key in selected
+    ]
+
+
+def generate_manual_urls(
+    profile: dict,
+    selected_manual_sources: list[str] | None = None,
+) -> list[dict]:
     """Generate manual-check URLs for a candidate profile, sorted by source."""
     urls = []
     titles = profile.get("target_titles", [])[:3]
     location = profile.get("target_market", profile.get("location", ""))
+    selected = set(selected_manual_sources) if selected_manual_sources is not None else None
 
-    generators = [
-        ("Wellfound", generate_wellfound_url),
-        ("Indeed", generate_indeed_url),
-        ("LinkedIn", generate_linkedin_url),
-        ("Glassdoor", generate_glassdoor_url),
-    ]
-
-    # Group by source for cleaner report output
-    for source_name, gen_fn in generators:
+    for source in MANUAL_SOURCE_REGISTRY.values():
+        if selected is not None and source.key not in selected:
+            continue
         for title in titles:
-            url = gen_fn(title, location)
+            url = source.generator(title, location)
             urls.append({
-                "source": source_name,
+                "source": source.display_name,
                 "title": title,
                 "url": url,
             })
-
-    # WWR — Cloudflare blocks automated access, so always include as manual
-    for title in titles:
-        urls.append({
-            "source": "We Work Remotely",
-            "title": title,
-            "url": generate_weworkremotely_url(title),
-        })
 
     return urls
 
@@ -2175,7 +2202,7 @@ def get_automated_source_display_names() -> list[str]:
 
 def get_selected_source_display_names(selected_sources: list[str] | None = None) -> list[str]:
     """Return automated source display names for selected source keys."""
-    selected = set(selected_sources) if selected_sources else None
+    selected = set(selected_sources) if selected_sources is not None else None
     return [
         source.display_name
         for phase in SOURCE_PHASE_ORDER
@@ -2227,7 +2254,7 @@ def fetch_all(
     worker_count = resolve_max_workers(max_workers)
     slow_query_threshold = resolve_slow_query_threshold(slow_query_seconds)
     queries = build_search_queries(profile)
-    selected_source_set = set(selected_sources) if selected_sources else None
+    selected_source_set = set(selected_sources) if selected_sources is not None else None
     if selected_source_set is not None:
         queries = [
             query for query in queries

@@ -22,6 +22,7 @@ from job_radar.sources import (
     resolve_max_workers,
     resolve_slow_query_threshold,
     get_automated_source_display_names,
+    get_manual_source_display_names,
     get_selected_source_display_names,
     generate_wellfound_url,
     _slugify_for_wellfound,
@@ -501,6 +502,20 @@ def test_fetch_all_queries_only_selected_sources(monkeypatch):
     assert stats["query_failures"] == 0
 
 
+def test_fetch_all_empty_selected_sources_queries_nothing():
+    """An empty selected source list disables automated fetching."""
+    profile = {
+        "target_titles": ["Software Engineer"],
+        "core_skills": [],
+        "target_market": "Remote",
+    }
+
+    results, stats = fetch_all(profile, selected_sources=[])
+
+    assert results == []
+    assert stats["query_failures"] == 0
+
+
 def test_fetch_all_reports_jsearch_progress_and_job_count(monkeypatch):
     """Aggregator progress uses the registered display name and aggregate job count."""
     profile = {
@@ -765,6 +780,29 @@ def test_generate_manual_urls_wellfound_uses_first_three_titles():
 
     titles = {u["title"] for u in wellfound_urls}
     assert titles == {"A", "B", "C"}
+
+
+def test_generate_manual_urls_filters_selected_sources():
+    """Manual URL generation honors selected manual source keys."""
+    profile = {
+        "target_titles": ["Developer"],
+        "target_market": "Remote",
+    }
+
+    urls = generate_manual_urls(profile, selected_manual_sources=["linkedin"])
+
+    assert [url["source"] for url in urls] == ["LinkedIn"]
+    assert "linkedin.com" in urls[0]["url"]
+
+
+def test_get_manual_source_display_names_respects_empty_selection():
+    """Empty manual source selection reports no manual sources."""
+    assert get_manual_source_display_names([]) == []
+
+
+def test_get_selected_source_display_names_respects_empty_selection():
+    """Empty automated source selection reports no automated sources."""
+    assert get_selected_source_display_names([]) == []
 
 
 # ==============================================================================

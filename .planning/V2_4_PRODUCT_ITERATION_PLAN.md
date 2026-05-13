@@ -38,11 +38,11 @@ Accessibility:
 
 Goal: let users steer what gets searched without editing their profile for every run.
 
-Status: started. CLI saved search presets already exist; GUI search controls now expose the same presets and the worker applies the selected preset before fetching, scoring, manual URL generation, and report rendering. GUI source checkboxes now allow per-search automated source selection. Include/exclude company filters, must-have skill filters, location strictness controls, and freshness presets are available per GUI search and apply before scoring/tracking.
+Status: started. CLI saved search presets already exist; GUI search controls now expose the same presets and the worker applies the selected preset before fetching, scoring, manual URL generation, and report rendering. GUI source checkboxes now allow per-search automated and manual source selection. Include/exclude company filters, must-have skill filters, location strictness controls, and freshness presets are available per GUI search and apply before scoring/tracking.
 
 Deliverables:
 - [Done] Add saved search presets to GUI search controls.
-- [Partial] Add per-search source toggles for automated and manual sources. Automated source toggles are implemented; manual source toggles remain.
+- [Done] Add per-search source toggles for automated and manual sources.
 - [Done] Add include/exclude company filters.
 - [Partial] Add must-have vs nice-to-have skill controls. Must-have skill filtering is implemented; nice-to-have controls remain.
 - [Done] Add location/remote strictness controls.
@@ -50,7 +50,7 @@ Deliverables:
 
 Validation:
 - [Done] Tests that GUI preset selection applies the same overlay as CLI presets.
-- [Partial] Source-toggle tests ensuring disabled sources are not queried or shown as searched.
+- [Done] Source-toggle tests ensuring disabled sources are not queried or shown as searched.
 - [Partial] Scoring/search tests for must-have skills, company filters, location strictness, and freshness presets. Must-have, company filter, location strictness, and freshness tests are implemented.
 - Full suite after each behavior slice.
 

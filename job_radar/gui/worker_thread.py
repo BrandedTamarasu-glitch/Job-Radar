@@ -321,6 +321,7 @@ class SearchWorker:
                 fetch_all,
                 generate_manual_urls,
                 get_automated_source_display_names,
+                get_manual_source_display_names,
                 get_selected_source_display_names,
                 get_source_display_name,
             )
@@ -362,7 +363,11 @@ class SearchWorker:
                     }
                     self._queue.put(("source_complete", source_name, current, total, job_count))
 
-            selected_sources = self._search_config.get("selected_sources") or None
+            selected_sources = (
+                self._search_config["selected_sources"]
+                if "selected_sources" in self._search_config
+                else None
+            )
             results, dedup_stats = fetch_all(
                 search_profile,
                 on_source_progress=on_source_progress,
@@ -453,14 +458,25 @@ class SearchWorker:
                 return
 
             # Step 8: Generate report
-            manual_urls = generate_manual_urls(search_profile)
+            selected_manual_sources = (
+                self._search_config["selected_manual_sources"]
+                if "selected_manual_sources" in self._search_config
+                else None
+            )
+            manual_urls = generate_manual_urls(
+                search_profile,
+                selected_manual_sources=selected_manual_sources,
+            )
             tracker_stats = get_stats()
 
             # Build sources_searched list (all sources we attempted)
-            sources_searched = (
+            automated_sources_searched = (
                 get_selected_source_display_names(selected_sources)
                 if selected_sources
                 else get_automated_source_display_names()
+            )
+            sources_searched = automated_sources_searched + get_manual_source_display_names(
+                selected_manual_sources,
             )
 
             report_result = generate_report(
