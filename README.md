@@ -234,7 +234,7 @@ The easiest way to uninstall Job Radar is through the built-in GUI uninstaller:
 8. Confirm to proceed
 
 The GUI uninstaller will:
-- Remove all configuration files (`~/.job-radar`)
+- Remove profile, config, cache, reports, backups, and tracker data
 - Remove rate limit databases from the app data directory
 - Remove cached data
 - On macOS: Move the app bundle to Trash
@@ -252,14 +252,12 @@ The GUI uninstaller will:
 
 2. **Or manually delete:**
    - Delete the installation folder (default: `C:\Program Files\Job Radar`)
-   - Delete configuration: Press `Win+R`, type `%USERPROFILE%\.job-radar`, delete the folder
+   - Delete Job Radar app data from the platform application data directory
 
 #### Windows (Portable ZIP)
 
 1. Delete the `job-radar` folder (wherever you extracted it)
-2. Delete the configuration directory:
-   - Press `Win+R`, type `%USERPROFILE%\.job-radar`, press Enter
-   - Delete the entire `.job-radar` folder
+2. Delete Job Radar app data from the platform application data directory
 
 #### macOS (DMG or ZIP)
 
@@ -272,11 +270,9 @@ The GUI uninstaller will:
    Enter your password when prompted.
 
 2. **Delete configuration files:**
-   ```bash
-   rm -rf ~/.job-radar
-   ```
+   Delete Job Radar app data from `~/Library/Application Support/JobRadar`.
 
-3. **Clear rate limit database (if using API sources):** remove the `rate_limits` folder from the app data directory.
+3. **Clear tracker data:** remove `results/tracker.json` from the directory where you launched Job Radar.
 
 **Why sudo is needed:** macOS prevents unsigned apps from being deleted normally as a security measure. The `sudo rm` command bypasses this restriction.
 
@@ -285,9 +281,24 @@ The GUI uninstaller will:
 1. Delete the extracted `job-radar` directory
 2. Delete configuration files:
    ```bash
-   rm -rf ~/.job-radar
+   rm -rf ~/.local/share/JobRadar
    ```
-3. If you used API sources, also delete the `rate_limits` folder from the app data directory.
+3. Clear tracker data by removing `results/tracker.json` from the directory where you launched Job Radar.
+
+## Runtime Data Locations
+
+Job Radar stores user data outside the application bundle:
+
+| Data | Location |
+|---|---|
+| Profile | app data `profile.json` |
+| Config | app data `config.json` |
+| Reports | app data `results/` by default, or `--output DIR` |
+| HTTP cache | app data `cache/` |
+| Rate limits | app data `rate_limits/` |
+| Backups | app data `backups/` |
+| Tracker | launch directory `results/tracker.json` |
+| Error log | home directory `job-radar-error.log` |
 
 ## Score Ratings
 
@@ -423,7 +434,7 @@ python -m job_radar --help
 
 ### Running Tests
 
-The project includes a comprehensive test suite with 725 automated tests:
+The project includes a comprehensive test suite with 726 automated tests:
 
 ```bash
 # Install dev dependencies
@@ -466,7 +477,7 @@ For release builds, also run the platform build script and smoke-test the genera
 - API config (18 tests) - validates API key storage, validation, GUI integration, quota tracking
 - Rate limits (16 tests) - validates rate limiter cleanup, shared backends, config loading, quota queries
 - PDF parser (34 tests) - validates extraction, validation, Unicode support, error handling
-- Report generation (34 tests) - validates HTML/Markdown output, clipboard UI, status tracking, accessibility
+- Report generation (35 tests) - validates HTML/Markdown output, clipboard UI, status tracking, accessibility
 - UX polish (69 tests) - validates banner, help text, progress messages, maintenance commands, error handling
 - Profile manager (22 tests) - validates atomic writes, backups, rotation, schema migration, validation
 - Profile display (16 tests) - validates formatted output, field filtering, NO_COLOR compliance

@@ -42,7 +42,7 @@ On first launch, Job Radar runs an interactive setup wizard:
    - **Fill manually** — guided prompts for each field
 2. **Review and confirm** each field before saving
 
-The wizard creates `~/.job-radar/profile.json` with your settings.
+The wizard creates `profile.json` in the platform app data directory with your settings.
 
 **Profile fields:**
 
@@ -250,7 +250,7 @@ API keys significantly expand job coverage but are entirely optional.
 
 ## Cross-Run Tracking
 
-The tool maintains a `results/tracker.json` file that persists across runs:
+The tool maintains a `results/tracker.json` file in the launch directory that persists across runs:
 
 - **Deduplication** — Jobs seen in previous runs are marked as "seen" (not "NEW") in reports
 - **Cross-source matching** — rapidfuzz fuzzy matching at 85% threshold prevents duplicates from different sources
@@ -261,7 +261,7 @@ The tool maintains a `results/tracker.json` file that persists across runs:
 
 ## Config File
 
-Save persistent defaults in `~/.job-radar/config.json`:
+Save persistent defaults in `config.json` in the platform app data directory:
 
 ```json
 {
@@ -289,7 +289,20 @@ JOB_RADAR_REQUEST_TIMEOUT=8 job-radar
 JOB_RADAR_SLOW_QUERY_SECONDS=5 job-radar
 ```
 
-Rate-limit SQLite databases live under the platform app data directory in `rate_limits/`.
+## Runtime Data Locations
+
+Job Radar keeps user data outside the application bundle. Platform app data is resolved with `job_radar.paths.get_data_dir()`:
+
+| Data | Location |
+|---|---|
+| Profile | app data `profile.json` |
+| Config | app data `config.json` |
+| Reports | app data `results/` by default, or `--output DIR` |
+| HTTP cache | app data `cache/` |
+| Rate limits | app data `rate_limits/` |
+| Backups | app data `backups/` |
+| Tracker | launch directory `results/tracker.json` |
+| Error log | home directory `job-radar-error.log` |
 
 ## Customization
 
@@ -369,7 +382,7 @@ Job-Radar/
 │   ├── report.py           # HTML + Markdown report generator
 │   ├── tracker.py          # Cross-run dedup, stats, application tracking
 │   ├── cache.py            # HTTP caching and retry-with-backoff layer
-│   ├── config.py           # Config file loading (~/.job-radar/config.json)
+│   ├── config.py           # Config file loading from app data
 │   ├── wizard.py           # Interactive first-run setup wizard
 │   ├── profile_manager.py  # Centralized profile I/O (atomic writes, backups, schema migration)
 │   ├── profile_display.py  # Formatted profile preview (tabulate tables)
@@ -389,7 +402,7 @@ Job-Radar/
 │       ├── search_controls.py # Search tab controls and progress
 │       ├── scoring_config.py # Scoring weights and staffing preference UI
 │       └── tag_chip_widget.py # Reusable tag chip widget for list fields
-├── tests/                  # 725 automated tests (27 test files)
+├── tests/                  # 726 automated tests (27 test files)
 ├── scripts/                # Build scripts for standalone executables
 ├── installers/             # Platform-native installers (v2.1.0+)
 │   ├── macos/             # DMG installer build scripts
@@ -400,4 +413,4 @@ Job-Radar/
 └── WORKFLOW.md             # Full documentation and workflow details
 ```
 
-Runtime data such as `profile.json`, `config.json`, reports, tracker data, HTTP cache, and backups lives in the platform-specific user data directory resolved by `job_radar.paths.get_data_dir()`.
+Runtime data such as `profile.json`, `config.json`, reports, HTTP cache, rate limits, and backups lives in the platform-specific user data directory resolved by `job_radar.paths.get_data_dir()`. Cross-run tracker data currently lives in `results/tracker.json` under the launch directory.

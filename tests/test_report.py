@@ -1,5 +1,6 @@
 """Tests for dual-format report generation."""
 
+import json
 import pytest
 import re
 from pathlib import Path
@@ -874,6 +875,39 @@ def test_html_report_contains_tracker_status_embed(sample_profile, sample_scored
 
     # Check for embedded tracker status JSON script tag
     assert '<script type="application/json" id="tracker-status">' in html_content
+
+
+def test_html_report_embeds_legacy_tracker_status_data(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Old tracker application entries can still hydrate report status data."""
+    legacy_statuses = {
+        "backend developer||startupco": {"status": "interviewing"},
+    }
+
+    with pytest.MonkeyPatch.context() as monkeypatch:
+        monkeypatch.setattr(
+            "job_radar.tracker.get_all_application_statuses",
+            lambda: legacy_statuses,
+        )
+        result = generate_report(
+            profile=sample_profile,
+            scored_results=sample_scored_results,
+            manual_urls=sample_manual_urls,
+            sources_searched=["Dice"],
+            from_date="2026-02-06",
+            to_date="2026-02-09",
+            output_dir=str(tmp_path),
+        )
+
+    html_content = Path(result["html"]).read_text(encoding='utf-8')
+    match = re.search(
+        r'<script type="application/json" id="tracker-status">\s*(.*?)\s*</script>',
+        html_content,
+        re.S,
+    )
+
+    assert match is not None
+    assert json.loads(match.group(1)) == legacy_statuses
+    assert 'data-job-key="backend developer||startupco"' in html_content
 
 
 def test_html_report_contains_status_javascript(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
