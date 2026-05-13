@@ -390,6 +390,9 @@ job-radar --profile path/to/profile.json
 # Fresh fetch with debug logging
 job-radar --no-cache -v
 
+# Limit parallel source queries on slow or constrained networks
+JOB_RADAR_MAX_WORKERS=3 job-radar
+
 # Preview queries without running them
 job-radar --dry-run
 ```
@@ -419,7 +422,7 @@ python -m job_radar --help
 
 ### Running Tests
 
-The project includes a comprehensive test suite with 695 automated tests:
+The project includes a comprehensive test suite with 699 automated tests:
 
 ```bash
 # Install dev dependencies

@@ -36,6 +36,8 @@ Accessibility:
 
 Goal: prevent slow or flaky sources from making the app feel frozen.
 
+Status: started. Fetch parallelism is being centralized behind a validated `JOB_RADAR_MAX_WORKERS` runtime control while preserving the existing default.
+
 - Add configurable fetch parallelism with a conservative default.
 - Add configurable request timeout and propagate it into source fetches.
 - Record slow query/source warnings in run stats and reports.

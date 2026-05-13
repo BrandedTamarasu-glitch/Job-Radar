@@ -275,6 +275,14 @@ Supported keys: `min_score`, `new_only`, `output`. CLI flags always override the
 
 HTTP responses are cached for 4 hours in `.cache/` to avoid hammering sources during development or repeated runs. Use `--no-cache` to force fresh fetches.
 
+## Runtime Controls
+
+Set `JOB_RADAR_MAX_WORKERS` to tune how many source queries run in parallel. The default is `6`.
+
+```bash
+JOB_RADAR_MAX_WORKERS=3 job-radar
+```
+
 ## Customization
 
 ### Adding Skill Variants
@@ -373,7 +381,7 @@ Job-Radar/
 │       ├── search_controls.py # Search tab controls and progress
 │       ├── scoring_config.py # Scoring weights and staffing preference UI
 │       └── tag_chip_widget.py # Reusable tag chip widget for list fields
-├── tests/                  # 695 automated tests (27 test files)
+├── tests/                  # 699 automated tests (27 test files)
 ├── scripts/                # Build scripts for standalone executables
 ├── installers/             # Platform-native installers (v2.1.0+)
 │   ├── macos/             # DMG installer build scripts

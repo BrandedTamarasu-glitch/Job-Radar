@@ -19,6 +19,7 @@ from job_radar.sources import (
     fetch_usajobs,
     fetch_all,
     build_search_queries,
+    resolve_max_workers,
     get_automated_source_display_names,
     generate_wellfound_url,
     _slugify_for_wellfound,
@@ -528,6 +529,36 @@ def test_fetch_all_tracks_query_failures(monkeypatch):
     assert stats["query_failure_details"] == [
         {"source": "dice", "query": "Software Engineer", "error": "dice down"}
     ]
+    assert stats["max_workers"] == 6
+
+
+def test_resolve_max_workers_uses_default_without_env(monkeypatch):
+    """Fetch parallelism defaults to the current conservative worker count."""
+    monkeypatch.delenv("JOB_RADAR_MAX_WORKERS", raising=False)
+
+    assert resolve_max_workers() == 6
+
+
+def test_resolve_max_workers_accepts_explicit_value():
+    """Explicit worker values are accepted for programmatic callers."""
+    assert resolve_max_workers(3) == 3
+    assert resolve_max_workers("4") == 4
+
+
+def test_resolve_max_workers_reads_environment(monkeypatch):
+    """Users can tune fetch parallelism with an environment variable."""
+    monkeypatch.setenv("JOB_RADAR_MAX_WORKERS", "9")
+
+    assert resolve_max_workers() == 9
+
+
+def test_resolve_max_workers_falls_back_for_invalid_values(monkeypatch):
+    """Invalid worker settings fall back instead of crashing search startup."""
+    assert resolve_max_workers("not-a-number") == 6
+    assert resolve_max_workers(0) == 6
+
+    monkeypatch.setenv("JOB_RADAR_MAX_WORKERS", "-2")
+    assert resolve_max_workers() == 6
 
 
 # ==============================================================================

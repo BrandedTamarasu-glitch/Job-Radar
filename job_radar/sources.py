@@ -3,6 +3,7 @@
 import html
 import json as _json
 import logging
+import os
 import re
 import urllib.parse
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -72,6 +73,37 @@ HEADERS = {
 _MAX_TITLE = 100
 _MAX_COMPANY = 80
 _MAX_LOCATION = 60
+DEFAULT_MAX_WORKERS = 6
+MAX_WORKERS_ENV = "JOB_RADAR_MAX_WORKERS"
+
+
+def resolve_max_workers(value: int | str | None = None) -> int:
+    """Resolve fetch parallelism from an explicit value or environment."""
+    raw_value = value if value is not None else os.environ.get(MAX_WORKERS_ENV)
+    if raw_value in (None, ""):
+        return DEFAULT_MAX_WORKERS
+
+    try:
+        workers = int(raw_value)
+    except (TypeError, ValueError):
+        log.warning(
+            "%s must be a positive integer, got %r; using default %s",
+            MAX_WORKERS_ENV,
+            raw_value,
+            DEFAULT_MAX_WORKERS,
+        )
+        return DEFAULT_MAX_WORKERS
+
+    if workers < 1:
+        log.warning(
+            "%s must be at least 1, got %s; using default %s",
+            MAX_WORKERS_ENV,
+            workers,
+            DEFAULT_MAX_WORKERS,
+        )
+        return DEFAULT_MAX_WORKERS
+
+    return workers
 
 
 def _clean_field(text: str, max_len: int) -> str:
@@ -2127,7 +2159,7 @@ def get_source_display_name(source: str) -> str:
     return _source_display_name(source)
 
 
-def fetch_all(profile: dict, on_progress=None, on_source_progress=None) -> list[JobResult]:
+def fetch_all(profile: dict, on_progress=None, on_source_progress=None, max_workers: int | str | None = None) -> list[JobResult]:
     """Fetch from all automated sources with three-phase source ordering.
 
     Runs scrapers first, native APIs second, and aggregators last so native
@@ -2141,7 +2173,9 @@ def fetch_all(profile: dict, on_progress=None, on_source_progress=None) -> list[
         on_source_progress: Optional callback(source_name, count, total, status, job_count)
                            called when a source starts ('started') or finishes ('complete').
                            job_count is the number of deduplicated results from that source (0 for 'started').
+        max_workers: Optional parallel query worker count. Defaults to JOB_RADAR_MAX_WORKERS or 6.
     """
+    worker_count = resolve_max_workers(max_workers)
     queries = build_search_queries(profile)
 
     queries_by_phase = {
@@ -2188,7 +2222,7 @@ def fetch_all(profile: dict, on_progress=None, on_source_progress=None) -> list[
         nonlocal completed, sources_started, sources_done
         phase_results = []
 
-        with ThreadPoolExecutor(max_workers=6) as executor:
+        with ThreadPoolExecutor(max_workers=worker_count) as executor:
             # Submit queries grouped by source — fire START callback before each source's queries
             futures = {}
             started_sources_in_phase = set()
@@ -2234,7 +2268,7 @@ def fetch_all(profile: dict, on_progress=None, on_source_progress=None) -> list[
 
         return phase_results
 
-    log.info("Running %d search queries in sequential phases...", len(queries))
+    log.info("Running %d search queries in sequential phases with %d workers...", len(queries), worker_count)
 
     for phase in SOURCE_PHASE_ORDER:
         phase_queries = queries_by_phase[phase]
@@ -2251,6 +2285,7 @@ def fetch_all(profile: dict, on_progress=None, on_source_progress=None) -> list[
     dedup_stats["query_failures"] = len(query_failures)
     dedup_stats["failed_sources"] = sorted({f["source"] for f in query_failures})
     dedup_stats["query_failure_details"] = query_failures
+    dedup_stats["max_workers"] = worker_count
 
     log.info("Total unique results after deduplication: %d", len(all_results))
     return all_results, dedup_stats
