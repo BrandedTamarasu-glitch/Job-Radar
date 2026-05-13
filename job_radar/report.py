@@ -776,6 +776,14 @@ def _generate_html_report(
       font-size: 0.75rem;
       padding: 0.2em 0.5em;
     }}
+    .shortlist-btn {{
+      margin-left: 0.5rem;
+    }}
+    .shortlist-btn.is-shortlisted {{
+      color: #212529;
+      background-color: #ffc107;
+      border-color: #ffc107;
+    }}
 
     /* Pending sync indicator dot */
     .pending-dot {{
@@ -1597,7 +1605,8 @@ def _generate_html_report(
       hideApplied: false,
       hideRejected: false,
       hideInterviewing: false,
-      hideOffer: false
+      hideOffer: false,
+      showShortlistOnly: false
     }};
 
     // Load filter state from localStorage
@@ -1629,6 +1638,7 @@ def _generate_html_report(
     function applyFilter() {{
       // Load application status map
       var statusMap = {{}};
+      var shortlistMap = loadShortlistState();
       try {{
         var statusData = localStorage.getItem('job-radar-application-status');
         statusMap = statusData ? JSON.parse(statusData) : {{}};
@@ -1649,10 +1659,13 @@ def _generate_html_report(
         // Check if job has a status
         var statusEntry = statusMap[jobKey];
         var jobStatus = statusEntry ? statusEntry.status : null;
+        var isShortlisted = Boolean(shortlistMap[jobKey]);
 
         // Determine if job should be hidden
         var shouldHide = false;
-        if (jobStatus === 'applied' && filterState.hideApplied) {{
+        if (filterState.showShortlistOnly && !isShortlisted) {{
+          shouldHide = true;
+        }} else if (jobStatus === 'applied' && filterState.hideApplied) {{
           shouldHide = true;
         }} else if (jobStatus === 'rejected' && filterState.hideRejected) {{
           shouldHide = true;
@@ -1705,9 +1718,11 @@ def _generate_html_report(
       var checkbox = event.target;
       var checkboxId = checkbox.id;
 
-      // Derive state key from checkbox id (filter-applied -> hideApplied)
       var stateKey = 'hide' + checkboxId.replace('filter-', '').charAt(0).toUpperCase() +
                      checkboxId.replace('filter-', '').slice(1);
+      if (checkboxId === 'filter-shortlist') {{
+        stateKey = 'showShortlistOnly';
+      }}
 
       filterState[stateKey] = checkbox.checked;
       saveFilterState();
@@ -1720,6 +1735,7 @@ def _generate_html_report(
       filterState.hideRejected = false;
       filterState.hideInterviewing = false;
       filterState.hideOffer = false;
+      filterState.showShortlistOnly = false;
       saveFilterState();
 
       // Update checkbox UI
@@ -1727,6 +1743,7 @@ def _generate_html_report(
       document.getElementById('filter-rejected').checked = false;
       document.getElementById('filter-interviewing').checked = false;
       document.getElementById('filter-offer').checked = false;
+      document.getElementById('filter-shortlist').checked = false;
 
       applyFilter();
 
@@ -1744,12 +1761,14 @@ def _generate_html_report(
       document.getElementById('filter-rejected').checked = filterState.hideRejected;
       document.getElementById('filter-interviewing').checked = filterState.hideInterviewing;
       document.getElementById('filter-offer').checked = filterState.hideOffer;
+      document.getElementById('filter-shortlist').checked = filterState.showShortlistOnly;
 
       // Attach event listeners
       document.getElementById('filter-applied').addEventListener('change', handleFilterChange);
       document.getElementById('filter-rejected').addEventListener('change', handleFilterChange);
       document.getElementById('filter-interviewing').addEventListener('change', handleFilterChange);
       document.getElementById('filter-offer').addEventListener('change', handleFilterChange);
+      document.getElementById('filter-shortlist').addEventListener('change', handleFilterChange);
       document.getElementById('clear-filters').addEventListener('click', clearAllFilters);
 
       // Apply persisted filter state
@@ -1759,7 +1778,65 @@ def _generate_html_report(
     // Initialize filters after status hydration
     document.addEventListener('DOMContentLoaded', function() {{
       initializeFilters();
+      initializeShortlistControls();
     }});
+
+    function loadShortlistState() {{
+      try {{
+        var data = localStorage.getItem('job-radar-shortlist-state');
+        return data ? JSON.parse(data) : {{}};
+      }} catch (err) {{
+        console.warn('[shortlist] Failed to load localStorage:', err);
+        return {{}};
+      }}
+    }}
+
+    function saveShortlistState(shortlistMap) {{
+      try {{
+        localStorage.setItem('job-radar-shortlist-state', JSON.stringify(shortlistMap));
+      }} catch (err) {{
+        if (err.name === 'QuotaExceededError') {{
+          notyf.error('Storage quota exceeded');
+        }}
+        console.error('[shortlist] Failed to save localStorage:', err);
+      }}
+    }}
+
+    function setShortlistButtonState(button, isShortlisted) {{
+      button.classList.toggle('is-shortlisted', isShortlisted);
+      button.setAttribute('aria-pressed', isShortlisted ? 'true' : 'false');
+      button.textContent = isShortlisted ? 'Shortlisted' : 'Shortlist';
+    }}
+
+    function refreshShortlistButtons() {{
+      var shortlistMap = loadShortlistState();
+      var buttons = document.querySelectorAll('.shortlist-btn[data-shortlist-key]');
+      for (var i = 0; i < buttons.length; i++) {{
+        var key = buttons[i].getAttribute('data-shortlist-key');
+        setShortlistButtonState(buttons[i], Boolean(shortlistMap[key]));
+      }}
+    }}
+
+    function toggleShortlist(jobKey) {{
+      var shortlistMap = loadShortlistState();
+      if (shortlistMap[jobKey]) {{
+        delete shortlistMap[jobKey];
+      }} else {{
+        shortlistMap[jobKey] = true;
+      }}
+      saveShortlistState(shortlistMap);
+      refreshShortlistButtons();
+      applyFilter();
+    }}
+
+    function initializeShortlistControls() {{
+      refreshShortlistButtons();
+      document.addEventListener('click', function(event) {{
+        if (!event.target.matches('.shortlist-btn[data-shortlist-key]')) return;
+        event.preventDefault();
+        toggleShortlist(event.target.getAttribute('data-shortlist-key'));
+      }});
+    }}
 
     // CSV Export Functions
 
@@ -2140,6 +2217,16 @@ def _html_job_detail_items(result: dict, profile: dict) -> str:
     return "".join(details)
 
 
+def _html_shortlist_button(job_key_val: str, *, compact: bool = False) -> str:
+    """Generate an accessible shortlist toggle button."""
+    margin_class = " mt-1" if compact else ""
+    return (
+        f'<button type="button" class="btn btn-sm btn-outline-warning shortlist-btn{margin_class}" '
+        f'data-shortlist-key="{html.escape(job_key_val)}" aria-pressed="false" '
+        'aria-label="Toggle shortlist for this job">Shortlist</button>'
+    )
+
+
 def _html_hero_section(hero_jobs: list[dict], profile: dict) -> str:
     """Generate HTML for hero jobs section (score >= 4.0)."""
     if not hero_jobs:
@@ -2160,6 +2247,7 @@ def _html_hero_section(hero_jobs: list[dict], profile: dict) -> str:
 
         # Generate job key for status tracking
         job_key_val = f"{job.title.lower().strip()}||{job.company.lower().strip()}"
+        shortlist_button = _html_shortlist_button(job_key_val)
 
         # Add data attributes (hero-job class IN ADDITION to tier-strong)
         data_attrs = ""
@@ -2198,6 +2286,7 @@ def _html_hero_section(hero_jobs: list[dict], profile: dict) -> str:
               {i}. {html.escape(job.title)} — {html.escape(job.company)}
               {score_badge_html}{new_tag}
               {status_dropdown}
+              {shortlist_button}
             </h3>
           </div>
           <div class="card-body">
@@ -2264,6 +2353,7 @@ def _html_recommended_section(recommended: list[dict], profile: dict) -> str:
 
         # Generate job key for status tracking (matches tracker.job_key format)
         job_key_val = f"{job.title.lower().strip()}||{job.company.lower().strip()}"
+        shortlist_button = _html_shortlist_button(job_key_val)
 
         # Add data attributes for clipboard and status tracking functionality
         data_attrs = ""
@@ -2302,6 +2392,7 @@ def _html_recommended_section(recommended: list[dict], profile: dict) -> str:
               {i}. {html.escape(job.title)} — {html.escape(job.company)}
               {score_badge_html}{new_tag}
               {status_dropdown}
+              {shortlist_button}
             </h3>
           </div>
           <div class="card-body">
@@ -2405,6 +2496,7 @@ def _html_results_table(scored_results: list[dict]) -> str:
 
         # Update NEW badge with screen reader context
         new_badge_accessible = '<span class="badge bg-primary rounded-pill"><span class="visually-hidden">New listing, not seen in previous searches. </span>NEW</span>' if is_new else ''
+        shortlist_button = _html_shortlist_button(job_key_val, compact=True)
 
         # Update score badge with screen reader context and tier icon
         tier_icon_html = f'<span class="{_tier_icon_class(tier)}" aria-hidden="true"></span>'
@@ -2415,7 +2507,7 @@ def _html_results_table(scored_results: list[dict]) -> str:
           <th scope="row" data-label="#">{i}</th>
           <td data-label="Score">{score_badge_accessible}<br><small class="text-muted">({html.escape(rec)})</small></td>
           <td data-label="New" class="col-new">{new_badge_accessible}</td>
-          <td data-label="Status">{status_dropdown}</td>
+          <td data-label="Status">{status_dropdown}<br>{shortlist_button}</td>
           <td data-label="Title"><strong>{html.escape(job.title)}</strong></td>
           <td data-label="Company">{html.escape(job.company)}</td>
           <td data-label="Salary" class="col-salary">{salary}</td>
@@ -2480,6 +2572,9 @@ def _html_results_table(scored_results: list[dict]) -> str:
 
           <input type="checkbox" class="btn-check" id="filter-offer" autocomplete="off">
           <label class="btn btn-outline-secondary btn-sm" for="filter-offer">Hide Offer</label>
+
+          <input type="checkbox" class="btn-check" id="filter-shortlist" autocomplete="off">
+          <label class="btn btn-outline-warning btn-sm" for="filter-shortlist">Show Shortlist</label>
         </div>
 
         <button class="btn btn-outline-primary btn-sm" id="clear-filters" aria-label="Clear all filters and show all jobs">Show All</button>

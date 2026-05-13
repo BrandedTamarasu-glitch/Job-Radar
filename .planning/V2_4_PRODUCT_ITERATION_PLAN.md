@@ -112,8 +112,10 @@ Accessibility:
 
 Goal: make the generated report faster to work through on desktop and mobile.
 
+Status: started. Reports now include a shortlist state stored separately from application status, with per-job shortlist toggles and a Show Shortlist filter.
+
 Deliverables:
-- Add shortlist state separate from application status.
+- [Done] Add shortlist state separate from application status.
 - Add keyboard navigation between job cards.
 - Add compact/detail view toggle.
 - Improve mobile layout for reviewing jobs on phone.
@@ -121,7 +123,7 @@ Deliverables:
 - Group missing-skill callouts by must-have and nice-to-have.
 
 Validation:
-- Report tests for shortlist persistence and filtering.
+- [Done] Report tests for shortlist persistence and filtering.
 - Keyboard shortcut tests for navigation behavior.
 - Mobile/report layout smoke checks where practical.
 

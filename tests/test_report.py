@@ -1991,6 +1991,7 @@ def test_html_report_filter_ui_controls(sample_profile, sample_scored_results, s
     assert 'id="filter-rejected"' in html, "Filter Rejected checkbox missing"
     assert 'id="filter-interviewing"' in html, "Filter Interviewing checkbox missing"
     assert 'id="filter-offer"' in html, "Filter Offer checkbox missing"
+    assert 'id="filter-shortlist"' in html, "Shortlist filter checkbox missing"
     assert 'id="clear-filters"' in html, "Show All button missing"
     assert 'role="group"' in html, "ARIA group role missing"
     assert 'aria-label="Status filter checkboxes"' in html, "ARIA label for checkboxes missing"
@@ -2019,6 +2020,49 @@ def test_html_report_filter_javascript(sample_profile, sample_scored_results, sa
     assert 'initializeFilters' in html, "initializeFilters function missing"
     assert 'handleFilterChange' in html, "handleFilterChange function missing"
     assert 'clearAllFilters' in html, "clearAllFilters function missing"
+
+
+def test_html_report_shortlist_controls(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Report includes shortlist controls separate from application status."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_path = result["html"]
+    with open(html_path, encoding='utf-8') as f:
+        html = f.read()
+
+    assert 'class="btn btn-sm btn-outline-warning shortlist-btn' in html
+    assert 'data-shortlist-key=' in html
+    assert 'aria-pressed="false"' in html
+    assert 'Toggle shortlist for this job' in html
+
+
+def test_html_report_shortlist_javascript(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Shortlist state persists independently from application status."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_path = result["html"]
+    with open(html_path, encoding='utf-8') as f:
+        html = f.read()
+
+    assert 'job-radar-shortlist-state' in html
+    assert 'loadShortlistState' in html
+    assert 'saveShortlistState' in html
+    assert 'toggleShortlist' in html
+    assert 'showShortlistOnly' in html
 
 
 def test_html_report_filter_aria_announcements(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
