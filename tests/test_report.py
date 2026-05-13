@@ -4,7 +4,12 @@ import pytest
 import re
 from pathlib import Path
 from job_radar.sources import JobResult
-from job_radar.report import COLLAPSE_RESULTS_AFTER, generate_report
+from job_radar.report import (
+    COLLAPSE_RESULTS_AFTER,
+    _html_external_scripts,
+    _html_external_stylesheets,
+    generate_report,
+)
 
 
 @pytest.fixture
@@ -542,6 +547,18 @@ def test_html_report_contains_notyf_cdn(sample_profile, sample_scored_results, s
     # Check for Notyf CSS and JS CDN links
     assert "notyf.min.css" in html_content
     assert "notyf.min.js" in html_content
+
+
+def test_report_external_asset_helpers_are_focused():
+    """External report assets are centralized for payload review."""
+    stylesheets = _html_external_stylesheets()
+    scripts = _html_external_scripts()
+
+    assert "bootstrap.min.css" in stylesheets
+    assert "notyf.min.css" in stylesheets
+    assert "bootstrap.bundle.min.js" in scripts
+    assert "notyf.min.js" in scripts
+    assert "prism" not in (stylesheets + scripts).lower()
 
 
 def test_html_report_omits_unused_prism_assets(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):

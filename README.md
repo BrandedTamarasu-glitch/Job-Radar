@@ -422,7 +422,7 @@ python -m job_radar --help
 
 ### Running Tests
 
-The project includes a comprehensive test suite with 714 automated tests:
+The project includes a comprehensive test suite with 715 automated tests:
 
 ```bash
 # Install dev dependencies
