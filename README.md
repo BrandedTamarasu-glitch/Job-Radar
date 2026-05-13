@@ -434,7 +434,7 @@ python -m job_radar --help
 
 ### Running Tests
 
-The project includes a comprehensive test suite with 754 automated tests:
+The project includes a comprehensive test suite with 757 automated tests:
 
 ```bash
 # Install dev dependencies
@@ -472,8 +472,8 @@ For release builds, also run the platform build script and smoke-test the genera
 - Scoring config (25 tests) - validates scoring weights, staffing preference, normalization, live preview
 - Applications export (2 tests) - validates application pipeline CSV rows and UTF-8 CSV output
 - Applications view model (3 tests) - validates grouped pipeline statuses and note-only entries
-- Tracker functions (19 tests) - validates deduplication, pruning, app-data storage, application notes/next actions, and stats aggregation with tmp_path isolation
-- Config module (23 tests) - validates config file parsing, CLI override, defaults, validation
+- Tracker functions (20 tests) - validates deduplication, pruning, app-data storage, application notes/next actions, application-status report filtering, and stats aggregation with tmp_path isolation
+- Config module (24 tests) - validates config file parsing, CLI override, defaults, validation
 - Wizard (38 tests) - validates setup flow, PDF integration, navigation, error handling
 - API integration (56 tests) - validates all 11 API sources, mappers, rate limiting, source selection, manual source links, deduplication
 - API config (18 tests) - validates API key storage, validation, GUI integration, quota tracking
@@ -481,7 +481,7 @@ For release builds, also run the platform build script and smoke-test the genera
 - PDF parser (34 tests) - validates extraction, validation, Unicode support, error handling
 - Report generation (35 tests) - validates HTML/Markdown output, clipboard UI, status tracking, accessibility
 - UX polish (69 tests) - validates banner, help text, progress messages, maintenance commands, error handling
-- GUI search summary (19 tests) - validates search completion, source warnings, cache controls, GUI preset application, automated/manual source selection, company filters, must-have and nice-to-have skill controls, location strictness, and freshness presets
+- GUI search summary (20 tests) - validates search completion, source warnings, cache controls, GUI preset application, automated/manual source selection, company filters, application-status report filtering, must-have and nice-to-have skill controls, location strictness, and freshness presets
 - Profile manager (22 tests) - validates atomic writes, backups, rotation, schema migration, validation
 - Profile display (16 tests) - validates formatted output, field filtering, NO_COLOR compliance
 - Profile editor (23 tests) - validates field menu, diff preview, editing, validator reuse

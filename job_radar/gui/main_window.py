@@ -11,16 +11,21 @@ import sys
 import tempfile
 import threading
 import webbrowser
+from datetime import date
 from pathlib import Path
 
 import customtkinter as ctk
 import requests
 
 from job_radar import __version__
+from job_radar.applications_export import export_applications_csv
 from job_radar.paths import get_data_dir
+from job_radar.paths import get_results_dir
 from job_radar.profile_manager import load_profile
 from job_radar.config import load_config
+from job_radar.tracker import get_all_application_statuses
 from job_radar.update_checker import UpdateChecker, launch_installer, cleanup_old_installers, extract_summary
+from job_radar.gui.applications_view_model import build_applications_view_model
 from job_radar.gui.profile_form import ProfileForm
 from job_radar.gui.search_controls import SearchControls
 from job_radar.gui.search_summary import (
@@ -106,6 +111,7 @@ class MainWindow(ctk.CTk):
         self._clear_skipped_btn = None  # Settings "Clear skipped versions" button reference
         self._skipped_status_label = None  # Settings skipped version status label reference
         self._cache_status_label = None  # Settings cache maintenance status label reference
+        self._applications_export_status_label = None  # Applications tab export status
 
         # Download worker state
         self._download_worker = None
@@ -316,6 +322,7 @@ class MainWindow(ctk.CTk):
         # Add tabs
         self._tabview.add("Profile")
         self._tabview.add("Search")
+        self._tabview.add("Applications")
         self._tabview.add("Settings")
 
         # Track which tabs have been built (lazy loading)
@@ -336,6 +343,8 @@ class MainWindow(ctk.CTk):
         if current_tab not in self._tabs_built:
             if current_tab == "Search":
                 self._build_search_tab(self._tabview.tab("Search"))
+            elif current_tab == "Applications":
+                self._build_applications_tab(self._tabview.tab("Applications"))
             elif current_tab == "Settings":
                 self._build_settings_tab(self._tabview.tab("Settings"))
             self._tabs_built.add(current_tab)
@@ -499,6 +508,130 @@ class MainWindow(ctk.CTk):
 
         # Start with idle state
         self._show_search_idle()
+
+    def _build_applications_tab(self, parent):
+        """Build Applications tab with grouped pipeline statuses."""
+        for widget in parent.winfo_children():
+            widget.destroy()
+
+        scroll_frame = ctk.CTkScrollableFrame(parent)
+        scroll_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        scroll_frame.grid_columnconfigure(0, weight=1)
+
+        header_frame = ctk.CTkFrame(scroll_frame, fg_color="transparent")
+        header_frame.grid(row=0, column=0, sticky="ew", pady=(0, 12))
+        header_frame.grid_columnconfigure(0, weight=1)
+
+        ctk.CTkLabel(
+            header_frame,
+            text="Applications",
+            font=ctk.CTkFont(size=18, weight="bold"),
+        ).grid(row=0, column=0, sticky="w")
+
+        actions_frame = ctk.CTkFrame(header_frame, fg_color="transparent")
+        actions_frame.grid(row=0, column=1, sticky="e")
+
+        ctk.CTkButton(
+            actions_frame,
+            text="Export CSV",
+            width=120,
+            command=self._export_applications_csv,
+        ).pack(side="left", padx=(0, 8))
+
+        ctk.CTkButton(
+            actions_frame,
+            text="Refresh",
+            width=100,
+            command=lambda: self._build_applications_tab(parent),
+        ).pack(side="left")
+
+        self._applications_export_status_label = ctk.CTkLabel(
+            scroll_frame,
+            text="",
+            font=ctk.CTkFont(size=12),
+            text_color="gray",
+        )
+        self._applications_export_status_label.grid(row=1, column=0, sticky="w", pady=(0, 8))
+
+        applications = get_all_application_statuses()
+        groups = build_applications_view_model(applications)
+        total_rows = sum(group.count for group in groups)
+
+        if total_rows == 0:
+            ctk.CTkLabel(
+                scroll_frame,
+                text="No application pipeline entries yet.",
+                font=ctk.CTkFont(size=14),
+                text_color="gray",
+            ).grid(row=2, column=0, sticky="w", pady=20)
+            return
+
+        row_index = 2
+        for group in groups:
+            group_frame = ctk.CTkFrame(scroll_frame)
+            group_frame.grid(row=row_index, column=0, sticky="ew", pady=(0, 10))
+            group_frame.grid_columnconfigure(0, weight=1)
+            row_index += 1
+
+            ctk.CTkLabel(
+                group_frame,
+                text=f"{group.label} ({group.count})",
+                font=ctk.CTkFont(size=14, weight="bold"),
+            ).grid(row=0, column=0, sticky="w", padx=10, pady=(8, 4))
+
+            if group.count == 0:
+                ctk.CTkLabel(
+                    group_frame,
+                    text="No jobs in this status.",
+                    text_color="gray",
+                ).grid(row=1, column=0, sticky="w", padx=10, pady=(0, 8))
+                continue
+
+            for item_index, item in enumerate(group.rows, start=1):
+                details = []
+                if item.next_action:
+                    next_action = item.next_action
+                    if item.next_action_date:
+                        next_action = f"{next_action} ({item.next_action_date})"
+                    details.append(f"Next: {next_action}")
+                if item.notes:
+                    details.append(f"Notes: {item.notes}")
+                if item.updated:
+                    details.append(f"Updated: {item.updated[:10]}")
+
+                ctk.CTkLabel(
+                    group_frame,
+                    text=f"{item.title or 'Untitled'} — {item.company or 'Unknown company'}",
+                    font=ctk.CTkFont(size=13, weight="bold"),
+                    anchor="w",
+                ).grid(row=item_index * 2 - 1, column=0, sticky="ew", padx=16, pady=(4, 0))
+
+                ctk.CTkLabel(
+                    group_frame,
+                    text=" | ".join(details) if details else "No follow-up details.",
+                    text_color="gray",
+                    wraplength=760,
+                    anchor="w",
+                    justify="left",
+                ).grid(row=item_index * 2, column=0, sticky="ew", padx=16, pady=(0, 6))
+
+    def _export_applications_csv(self):
+        """Export tracked application pipeline entries to CSV."""
+        try:
+            applications = get_all_application_statuses()
+            output_path = get_results_dir() / f"applications-{date.today().isoformat()}.csv"
+            export_path = export_applications_csv(applications, output_path)
+            if self._applications_export_status_label is not None:
+                self._applications_export_status_label.configure(
+                    text=f"Exported to {export_path}",
+                    text_color="green",
+                )
+        except Exception as e:
+            if self._applications_export_status_label is not None:
+                self._applications_export_status_label.configure(
+                    text=f"Export failed: {e}",
+                    text_color="red",
+                )
 
     def _show_search_idle(self):
         """Display idle state with search controls and Run Search button."""
@@ -1323,6 +1456,7 @@ class MainWindow(ctk.CTk):
 
         # Get search configuration
         search_config = self._search_controls.get_config()
+        search_config["hide_rejected_skipped"] = load_config().get("hide_rejected_skipped", False)
 
         # Load profile
         try:

@@ -359,7 +359,7 @@ class SearchWorker:
             )
             from job_radar.scoring import score_job
             from job_radar.report import generate_report
-            from job_radar.tracker import mark_seen, get_stats
+            from job_radar.tracker import filter_scored_by_application_status, mark_seen, get_stats
             from job_radar.search import filter_by_date
             from job_radar.paths import get_results_dir
 
@@ -488,6 +488,8 @@ class SearchWorker:
             # Step 7: Apply min_score filter
             min_score = self._search_config.get("min_score", 2.8)
             scored = [r for r in scored if r["score"]["overall"] >= min_score]
+            if self._search_config.get("hide_rejected_skipped", False):
+                scored = filter_scored_by_application_status(scored, {"rejected", "skipped"})
 
             if self._stop_event.is_set():
                 self._queue.put(("cancelled",))

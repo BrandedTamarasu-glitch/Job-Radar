@@ -261,3 +261,26 @@ def get_all_application_statuses() -> dict:
     """
     tracker = _load_tracker()
     return tracker.get("applications", {})
+
+
+def filter_scored_by_application_status(
+    scored_results: list[dict],
+    hidden_statuses: set[str] | tuple[str, ...] | list[str],
+    *,
+    applications: dict | None = None,
+) -> list[dict]:
+    """Remove scored jobs whose tracked application status should be hidden."""
+    if not hidden_statuses:
+        return scored_results
+
+    hidden = {status.casefold() for status in hidden_statuses}
+    application_entries = applications if applications is not None else get_all_application_statuses()
+    filtered = []
+    for result in scored_results:
+        job = result["job"]
+        entry = application_entries.get(job_key(job.title, job.company)) or {}
+        status = (entry.get("status") or "").casefold()
+        if status in hidden:
+            continue
+        filtered.append(result)
+    return filtered

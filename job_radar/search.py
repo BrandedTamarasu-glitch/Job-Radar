@@ -44,7 +44,7 @@ from .search_presets import (
     format_preset_list,
     preset_choices,
 )
-from .tracker import mark_seen, get_stats
+from .tracker import filter_scored_by_application_status, mark_seen, get_stats
 from .browser import open_report_in_browser
 from .paths import get_results_dir
 
@@ -1129,6 +1129,10 @@ def main():
         before = len(scored)
         scored = [r for r in scored if r["score"]["overall"] >= args.min_score]
         print(f"  {C.DIM}--min-score {args.min_score}: {before - len(scored)} results below threshold{C.RESET}")
+    if getattr(args, "hide_rejected_skipped", False):
+        before = len(scored)
+        scored = filter_scored_by_application_status(scored, {"rejected", "skipped"})
+        print(f"  {C.DIM}hide_rejected_skipped: {before - len(scored)} rejected/skipped results filtered{C.RESET}")
 
     # Check for zero results after scoring
     min_score = args.min_score if args.min_score is not None else 2.8

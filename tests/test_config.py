@@ -182,6 +182,7 @@ def test_default_config_path_ends_with_config_json():
     ("profile_path", True),  # profile_path_valid
     ("auto_open_browser", True),  # auto_open_browser_valid
     ("rate_limits", True),  # rate_limits_valid
+    ("hide_rejected_skipped", True),  # hide_rejected_skipped_valid
     ("profile", False),    # profile_rejected
     ("config", False),     # config_rejected
     ("unknown", False),    # unknown_rejected
@@ -192,18 +193,19 @@ def test_default_config_path_ends_with_config_json():
     "profile_path_valid",
     "auto_open_browser_valid",
     "rate_limits_valid",
+    "hide_rejected_skipped_valid",
     "profile_rejected",
     "config_rejected",
     "unknown_rejected",
 ])
 def test_known_keys_membership(key, should_exist):
-    """Test KNOWN_KEYS contains exactly min_score, new_only, output, profile_path, auto_open_browser, rate_limits."""
+    """Test KNOWN_KEYS membership for supported config keys."""
     assert (key in KNOWN_KEYS) == should_exist
 
 
 def test_known_keys_exact_size():
-    """Test KNOWN_KEYS contains exactly 7 members."""
-    assert len(KNOWN_KEYS) == 7
+    """Test KNOWN_KEYS contains exactly 8 members."""
+    assert len(KNOWN_KEYS) == 8
 
 
 # ---------------------------------------------------------------------------

@@ -267,11 +267,12 @@ Save persistent defaults in `config.json` in the platform app data directory:
 {
   "min_score": 3.0,
   "new_only": true,
-  "output": "/path/to/reports"
+  "output": "/path/to/reports",
+  "hide_rejected_skipped": true
 }
 ```
 
-Supported keys: `min_score`, `new_only`, `output`. CLI flags always override the config file. Use `--config PATH` to load a different file.
+Supported keys: `min_score`, `new_only`, `output`, `profile_path`, `auto_open_browser`, `rate_limits`, `update_state`, `hide_rejected_skipped`. CLI flags always override matching config values. Use `--config PATH` to load a different file.
 
 ## Caching
 
@@ -404,7 +405,7 @@ Job-Radar/
 │       ├── scoring_config.py # Scoring weights and staffing preference UI
 │       ├── applications_view_model.py # Application pipeline grouping
 │       └── tag_chip_widget.py # Reusable tag chip widget for list fields
-├── tests/                  # 754 automated tests (29 test files)
+├── tests/                  # 757 automated tests (29 test files)
 ├── scripts/                # Build scripts for standalone executables
 ├── installers/             # Platform-native installers (v2.1.0+)
 │   ├── macos/             # DMG installer build scripts

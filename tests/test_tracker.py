@@ -13,6 +13,7 @@ from job_radar.tracker import (
     get_application_entry,
     get_application_status,
     get_stats,
+    filter_scored_by_application_status,
     job_key,
     mark_seen,
     update_application_details,
@@ -330,6 +331,30 @@ def test_update_application_details_can_create_unstatused_entry(tmp_path):
     assert entry["notes"] == "Interesting role; review later"
     assert entry["title"] == "Backend Engineer"
     assert entry["company"] == "Acme"
+
+
+def test_filter_scored_by_application_status_hides_rejected_and_skipped(job_factory):
+    """Report filtering can hide terminal application statuses."""
+    kept_job = job_factory(title="Backend Engineer", company="Acme")
+    rejected_job = job_factory(title="Platform Engineer", company="Ledger")
+    skipped_job = job_factory(title="SRE", company="OpsCo")
+    results = [
+        {"job": kept_job, "score": {"overall": 4.2}},
+        {"job": rejected_job, "score": {"overall": 4.0}},
+        {"job": skipped_job, "score": {"overall": 3.8}},
+    ]
+    applications = {
+        job_key("Platform Engineer", "Ledger"): {"status": "rejected"},
+        job_key("SRE", "OpsCo"): {"status": "skipped"},
+    }
+
+    filtered = filter_scored_by_application_status(
+        results,
+        {"rejected", "skipped"},
+        applications=applications,
+    )
+
+    assert [item["job"].company for item in filtered] == ["Acme"]
 
 
 # ---------------------------------------------------------------------------
