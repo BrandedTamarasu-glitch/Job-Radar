@@ -27,3 +27,53 @@ def test_clear_cache_removes_only_json_cache_files(tmp_path, monkeypatch):
 
     assert not cached.exists()
     assert unrelated.exists()
+
+
+def test_resolve_request_timeout_defaults_without_env(monkeypatch):
+    """Request timeout preserves the historical default."""
+    monkeypatch.delenv("JOB_RADAR_REQUEST_TIMEOUT", raising=False)
+
+    assert cache.resolve_request_timeout() == 15.0
+
+
+def test_resolve_request_timeout_accepts_explicit_value():
+    """Explicit timeout values are accepted for source-specific calls."""
+    assert cache.resolve_request_timeout(8) == 8.0
+    assert cache.resolve_request_timeout("2.5") == 2.5
+
+
+def test_resolve_request_timeout_reads_environment(monkeypatch):
+    """Users can tune default request timeout with an environment variable."""
+    monkeypatch.setenv("JOB_RADAR_REQUEST_TIMEOUT", "6.5")
+
+    assert cache.resolve_request_timeout() == 6.5
+
+
+def test_resolve_request_timeout_falls_back_for_invalid_values(monkeypatch):
+    """Invalid timeout settings fall back instead of crashing fetches."""
+    assert cache.resolve_request_timeout("not-a-number") == 15.0
+    assert cache.resolve_request_timeout(0) == 15.0
+
+    monkeypatch.setenv("JOB_RADAR_REQUEST_TIMEOUT", "-1")
+    assert cache.resolve_request_timeout() == 15.0
+
+
+def test_fetch_with_retry_uses_resolved_timeout(monkeypatch):
+    """fetch_with_retry passes the resolved timeout to requests."""
+    calls = []
+
+    class Response:
+        text = "ok"
+
+        def raise_for_status(self):
+            return None
+
+    def fake_get(url, headers, timeout):
+        calls.append(timeout)
+        return Response()
+
+    monkeypatch.setenv("JOB_RADAR_REQUEST_TIMEOUT", "4")
+    monkeypatch.setattr("job_radar.cache.requests.get", fake_get)
+
+    assert cache.fetch_with_retry("https://example.com", headers={}, use_cache=False) == "ok"
+    assert calls == [4.0]

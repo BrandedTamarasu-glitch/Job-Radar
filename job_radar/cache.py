@@ -3,6 +3,7 @@
 import hashlib
 import json
 import logging
+import os
 import time
 from pathlib import Path
 from typing import Optional
@@ -14,6 +15,37 @@ from .paths import get_data_dir
 log = logging.getLogger(__name__)
 
 _CACHE_MAX_AGE_SECONDS = 4 * 3600  # 4 hours
+DEFAULT_REQUEST_TIMEOUT = 15.0
+REQUEST_TIMEOUT_ENV = "JOB_RADAR_REQUEST_TIMEOUT"
+
+
+def resolve_request_timeout(value: int | float | str | None = None) -> float:
+    """Resolve HTTP request timeout from explicit value or environment."""
+    raw_value = value if value is not None else os.environ.get(REQUEST_TIMEOUT_ENV)
+    if raw_value in (None, ""):
+        return DEFAULT_REQUEST_TIMEOUT
+
+    try:
+        timeout = float(raw_value)
+    except (TypeError, ValueError):
+        log.warning(
+            "%s must be a positive number, got %r; using default %.1f",
+            REQUEST_TIMEOUT_ENV,
+            raw_value,
+            DEFAULT_REQUEST_TIMEOUT,
+        )
+        return DEFAULT_REQUEST_TIMEOUT
+
+    if timeout <= 0:
+        log.warning(
+            "%s must be greater than 0, got %s; using default %.1f",
+            REQUEST_TIMEOUT_ENV,
+            timeout,
+            DEFAULT_REQUEST_TIMEOUT,
+        )
+        return DEFAULT_REQUEST_TIMEOUT
+
+    return timeout
 
 
 def get_cache_dir() -> Path:
@@ -60,7 +92,7 @@ def _write_cache(url: str, body: str):
 def fetch_with_retry(
     url: str,
     headers: dict,
-    timeout: int = 15,
+    timeout: int | float | str | None = None,
     retries: int = 3,
     backoff: float = 2.0,
     use_cache: bool = True,
@@ -70,6 +102,8 @@ def fetch_with_retry(
     Returns:
         Response body text, or None on failure.
     """
+    request_timeout = resolve_request_timeout(timeout)
+
     if use_cache:
         cached = _read_cache(url)
         if cached is not None:
@@ -78,7 +112,7 @@ def fetch_with_retry(
     last_error = None
     for attempt in range(1, retries + 1):
         try:
-            resp = requests.get(url, headers=headers, timeout=timeout)
+            resp = requests.get(url, headers=headers, timeout=request_timeout)
             resp.raise_for_status()
             body = resp.text
             if use_cache:
