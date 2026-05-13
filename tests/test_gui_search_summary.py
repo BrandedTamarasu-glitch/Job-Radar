@@ -5,7 +5,9 @@ import threading
 from unittest.mock import patch
 
 from job_radar.gui.search_summary import (
+    cancellation_message,
     completion_message,
+    error_message,
     source_summary_lines,
     source_warning_message,
     zero_result_lines,
@@ -55,6 +57,13 @@ def test_zero_result_lines_reuse_next_action_guidance():
     lines = zero_result_lines(0)
     assert lines
     assert any("minimum score" in line for line in lines)
+
+
+def test_interruption_messages_explain_report_state():
+    """Cancel and error messages explain whether a report exists."""
+    assert "No new report was generated" in cancellation_message()
+    assert "before a report could be generated" in error_message("network down")
+    assert "network down" in error_message("network down")
 
 
 def test_search_worker_emits_completion_summary(tmp_path):

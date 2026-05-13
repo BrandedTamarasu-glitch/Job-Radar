@@ -24,7 +24,9 @@ from job_radar.update_checker import UpdateChecker, launch_installer, cleanup_ol
 from job_radar.gui.profile_form import ProfileForm
 from job_radar.gui.search_controls import SearchControls
 from job_radar.gui.search_summary import (
+    cancellation_message,
     completion_message,
+    error_message,
     source_summary_lines,
     source_warning_message,
     zero_result_lines,
@@ -701,8 +703,7 @@ class MainWindow(ctk.CTk):
                         self._on_search_cancelled()
                     elif msg_type == "error":
                         _, error_msg = msg
-                        self._show_error_dialog(error_msg)
-                        self._show_search_idle()
+                        self._show_search_error(error_msg)
                     # Update checker messages
                     elif msg_type == "update_available":
                         _, version, release_url, tag_name = msg
@@ -1406,7 +1407,8 @@ class MainWindow(ctk.CTk):
 
     def _on_search_cancelled(self):
         """Handle search cancellation."""
-        # Show cancelled message briefly, then return to idle
+        self._worker = None
+        self._worker_thread = None
         for widget in self._search_content.winfo_children():
             widget.destroy()
 
@@ -1416,13 +1418,79 @@ class MainWindow(ctk.CTk):
         cancel_label = ctk.CTkLabel(
             content_frame,
             text="Search cancelled",
-            font=ctk.CTkFont(size=16),
+            font=ctk.CTkFont(size=16, weight="bold"),
             text_color="orange"
         )
-        cancel_label.pack()
+        cancel_label.pack(pady=(0, 12))
 
-        # Reset to idle after 1.5 seconds
-        self.after(1500, self._show_search_idle)
+        detail_label = ctk.CTkLabel(
+            content_frame,
+            text=cancellation_message(),
+            font=ctk.CTkFont(size=12),
+            text_color="gray",
+            wraplength=420,
+            justify="center"
+        )
+        detail_label.pack(pady=(0, 20))
+
+        new_search_btn = ctk.CTkButton(
+            content_frame,
+            text="New Search",
+            height=40,
+            width=200,
+            command=self._show_search_idle,
+            fg_color="transparent",
+            border_width=2
+        )
+        new_search_btn.pack()
+
+    def _show_search_error(self, message: str):
+        """Display a persistent search error state with retry controls."""
+        self._worker = None
+        self._worker_thread = None
+        for widget in self._search_content.winfo_children():
+            widget.destroy()
+
+        content_frame = ctk.CTkFrame(self._search_content, fg_color="transparent")
+        content_frame.grid(row=0, column=0)
+
+        error_label = ctk.CTkLabel(
+            content_frame,
+            text="Search failed",
+            font=ctk.CTkFont(size=16, weight="bold"),
+            text_color="red"
+        )
+        error_label.pack(pady=(0, 12))
+
+        detail_label = ctk.CTkLabel(
+            content_frame,
+            text=error_message(message),
+            font=ctk.CTkFont(size=12),
+            text_color="gray",
+            wraplength=420,
+            justify="center"
+        )
+        detail_label.pack(pady=(0, 20))
+
+        retry_btn = ctk.CTkButton(
+            content_frame,
+            text="Try Again",
+            height=40,
+            width=200,
+            command=self._start_real_search
+        )
+        retry_btn.pack(pady=(0, 15))
+
+        new_search_btn = ctk.CTkButton(
+            content_frame,
+            text="Back to Search",
+            height=40,
+            width=200,
+            command=self._show_search_idle,
+            fg_color="transparent",
+            border_width=2
+        )
+        new_search_btn.pack()
 
     def _open_report(self):
         """Open HTML report in default browser."""

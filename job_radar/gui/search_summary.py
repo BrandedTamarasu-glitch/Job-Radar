@@ -55,3 +55,20 @@ def zero_result_lines(job_count: int) -> list[str]:
     if job_count != 0:
         return []
     return list(ZERO_RESULTS_TIPS)
+
+
+def cancellation_message() -> str:
+    """Return the GUI message for a cancelled search."""
+    return (
+        "Search cancelled. No new report was generated for this run. "
+        "You can adjust settings or start a new search."
+    )
+
+
+def error_message(error: str) -> str:
+    """Return the GUI message for a failed search."""
+    detail = (error or "Unknown error").strip()
+    return (
+        "Search failed before a report could be generated. "
+        f"Details: {detail}"
+    )

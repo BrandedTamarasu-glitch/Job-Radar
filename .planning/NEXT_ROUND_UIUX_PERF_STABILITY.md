@@ -15,7 +15,7 @@ Focus the next implementation round on making Job Radar feel more trustworthy un
 
 Goal: make the desktop app explain what happened without requiring logs or report inspection.
 
-Status: started. Worker completion messages now include a per-source run summary and source-warning metadata. The GUI completion state now renders partial source warnings, source job counts, and zero-result next actions.
+Status: started. Worker completion messages now include a per-source run summary and source-warning metadata. The GUI completion state now renders partial source warnings, source job counts, and zero-result next actions. Cancelled and failed searches now have persistent states that explain whether a report was generated and offer clear retry/navigation controls.
 
 - Show source warnings in the GUI completion state.
 - Add a compact per-source run summary: attempted, succeeded, failed, job count.
