@@ -1,6 +1,6 @@
 # Job Radar — Workflow
 
-**Version 2.4.0** | [Changelog](CHANGELOG.md)
+**Version 2.5.0** | [Changelog](CHANGELOG.md)
 
 A desktop job search tool that fetches listings from 11 API sources and 4 manual URLs, scores them against your customizable profile, tracks results across runs, and generates ranked HTML + Markdown reports with interactive features and WCAG 2.1 AA accessibility. Available as both a desktop GUI application and CLI for power users.
 

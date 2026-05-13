@@ -1,6 +1,13 @@
 # Job Radar
 
-A desktop job search tool that searches multiple job boards, scores listings against your profile, and generates ranked reports. Available as both a **desktop GUI application** (double-click to launch) and a **CLI** for power users and scripting. Features include multi-source search (11 API sources: Dice, HN Hiring, RemoteOK, We Work Remotely, Adzuna, Authentic Jobs, JSearch, USAJobs, SerpAPI, Jobicy, hiring.cafe + 4 manual URLs: Wellfound, Indeed, LinkedIn, Glassdoor), PDF resume import, fuzzy skill matching, user-configurable scoring weights, cross-source deduplication with richness scoring, real-time API quota tracking, in-app auto-updates, and dual-format HTML and Markdown reports with one-click URL copying, keyboard shortcuts, application status tracking, and WCAG 2.1 Level AA accessibility.
+A desktop job search tool that searches multiple job boards, scores listings against your profile, and generates ranked reports. Available as both a **desktop GUI application** (double-click to launch) and a **CLI** for power users and scripting. Features include multi-source search (11 API sources: Dice, HN Hiring, RemoteOK, We Work Remotely, Adzuna, Authentic Jobs, JSearch, USAJobs, SerpAPI, Jobicy, hiring.cafe + 4 manual URLs: Wellfound, Indeed, LinkedIn, Glassdoor), PDF resume import, fuzzy skill matching, user-configurable scoring weights, cross-source deduplication with richness scoring, real-time API quota tracking, in-app auto-updates, and dual-format HTML and Markdown reports with shortlist state, compact/detail review, keyboard navigation, application status tracking, and WCAG 2.1 Level AA accessibility.
+
+## What's New in v2.5.0
+
+- **More precise GUI searches:** Presets, source toggles, company filters, must-have and nice-to-have skill controls, location strictness, and freshness presets are now available directly from the GUI.
+- **Application follow-through:** The GUI now includes an Applications tab, application notes/next actions, CSV export, and report filtering for rejected/skipped entries.
+- **Performance visibility:** Search summaries and Settings now show source timing, source health history, cache hit/miss counters, slowest-source diagnostics, source-specific cache TTLs, and improved cancellation boundaries.
+- **Faster report review:** Reports now include shortlist state, keyboard navigation, compact/detail mode, mobile review improvements, why-this-matched summaries, and grouped must-have/nice-to-have skill callouts.
 
 ## Installation
 

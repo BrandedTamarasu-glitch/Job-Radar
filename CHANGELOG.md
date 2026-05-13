@@ -1,5 +1,19 @@
 # Changelog
 
+## v2.5.0 — 2026-05-13
+
+### New Features
+- **GUI search steering** — Added GUI presets, source toggles, company filters, must-have and nice-to-have skill controls, location strictness, and freshness presets for per-search control without editing the profile.
+- **Application pipeline** — Added a GUI Applications tab, application notes, next actions, next-action dates, CSV export, and a config-backed option to hide rejected/skipped jobs from future reports.
+- **Performance and source diagnostics** — Added per-source timing, source health history, cache hit/miss/write counters, slowest-source diagnostics in Settings, source-specific cache TTLs, and better GUI cancellation propagation into source fetch boundaries.
+- **Report review workflow** — Added shortlist state separate from application status, keyboard navigation between visible jobs, compact/detail view, improved mobile report layout, concise "why this matched" summaries, and grouped must-have/nice-to-have skill callouts.
+
+### Documentation
+- Updated README and workflow docs for the v2.5.0 product iteration, expanded feature coverage, and refreshed test counts.
+
+### Validation
+- 781 automated tests collected: 773 passed, 8 skipped.
+
 ## v2.4.0 — 2026-05-13
 
 ### New Features
