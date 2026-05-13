@@ -203,10 +203,12 @@ class SearchWorker:
         try:
             # Lazy imports to avoid circular dependencies and keep module importable
             from job_radar.api_config import load_api_credentials
+            from job_radar.search_presets import apply_search_preset
             from job_radar.sources import (
                 fetch_all,
                 generate_manual_urls,
                 get_automated_source_display_names,
+                get_selected_source_display_names,
                 get_source_display_name,
             )
             from job_radar.scoring import score_job
@@ -214,6 +216,11 @@ class SearchWorker:
             from job_radar.tracker import mark_seen, get_stats
             from job_radar.search import filter_by_date
             from job_radar.paths import get_results_dir
+
+            search_profile = apply_search_preset(
+                self._profile,
+                self._search_config.get("preset"),
+            )
 
             # Step 1: Load API credentials
             load_api_credentials()
@@ -242,7 +249,12 @@ class SearchWorker:
                     }
                     self._queue.put(("source_complete", source_name, current, total, job_count))
 
-            results, dedup_stats = fetch_all(self._profile, on_source_progress=on_source_progress)
+            selected_sources = self._search_config.get("selected_sources") or None
+            results, dedup_stats = fetch_all(
+                search_profile,
+                on_source_progress=on_source_progress,
+                selected_sources=selected_sources,
+            )
             source_failures = dedup_stats.get("query_failure_details") or []
             failed_source_names = [
                 get_source_display_name(failure.get("source", "unknown"))
@@ -280,7 +292,7 @@ class SearchWorker:
             # Step 4: Score all results and filter dealbreakers
             scored = []
             for result in results:
-                score = score_job(result, self._profile)
+                score = score_job(result, search_profile)
                 # Filter out dealbreakers
                 if not score.get("dealbreaker"):
                     scored.append({
@@ -315,14 +327,18 @@ class SearchWorker:
                 return
 
             # Step 8: Generate report
-            manual_urls = generate_manual_urls(self._profile)
+            manual_urls = generate_manual_urls(search_profile)
             tracker_stats = get_stats()
 
             # Build sources_searched list (all sources we attempted)
-            sources_searched = get_automated_source_display_names()
+            sources_searched = (
+                get_selected_source_display_names(selected_sources)
+                if selected_sources
+                else get_automated_source_display_names()
+            )
 
             report_result = generate_report(
-                profile=self._profile,
+                profile=search_profile,
                 scored_results=scored,
                 manual_urls=manual_urls,
                 sources_searched=sources_searched,

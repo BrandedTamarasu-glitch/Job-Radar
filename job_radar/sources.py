@@ -2170,11 +2170,18 @@ SOURCE_REGISTRY: dict[str, SourceDefinition] = {
 
 def get_automated_source_display_names() -> list[str]:
     """Return automated source names in execution order for reports."""
+    return get_selected_source_display_names(None)
+
+
+def get_selected_source_display_names(selected_sources: list[str] | None = None) -> list[str]:
+    """Return automated source display names for selected source keys."""
+    selected = set(selected_sources) if selected_sources else None
     return [
         source.display_name
         for phase in SOURCE_PHASE_ORDER
         for source in SOURCE_REGISTRY.values()
         if source.phase == phase
+        and (selected is None or source.key in selected)
     ]
 
 
@@ -2197,6 +2204,7 @@ def fetch_all(
     on_source_progress=None,
     max_workers: int | str | None = None,
     slow_query_seconds: int | float | str | None = None,
+    selected_sources: list[str] | None = None,
 ) -> list[JobResult]:
     """Fetch from all automated sources with three-phase source ordering.
 
@@ -2214,10 +2222,17 @@ def fetch_all(
         max_workers: Optional parallel query worker count. Defaults to JOB_RADAR_MAX_WORKERS or 6.
         slow_query_seconds: Optional threshold for slow-query warnings.
                             Defaults to JOB_RADAR_SLOW_QUERY_SECONDS or 8.
+        selected_sources: Optional list of source keys to query. Defaults to all sources.
     """
     worker_count = resolve_max_workers(max_workers)
     slow_query_threshold = resolve_slow_query_threshold(slow_query_seconds)
     queries = build_search_queries(profile)
+    selected_source_set = set(selected_sources) if selected_sources else None
+    if selected_source_set is not None:
+        queries = [
+            query for query in queries
+            if query["source"] in selected_source_set
+        ]
 
     queries_by_phase = {
         phase: [

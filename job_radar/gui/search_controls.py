@@ -10,6 +10,8 @@ from typing import Optional
 import customtkinter as ctk
 
 from job_radar.config import load_config
+from job_radar.search_presets import SEARCH_PRESETS, preset_choices
+from job_radar.sources import SOURCE_PHASE_ORDER, SOURCE_REGISTRY
 
 
 # Try to import CTkDatePicker, fall back to manual entry if unavailable
@@ -42,6 +44,7 @@ class SearchControls(ctk.CTkFrame):
 
         # Validation state
         self._score_error_label = None
+        self._source_vars = {}
 
         # Build layout
         self._create_widgets()
@@ -102,12 +105,84 @@ class SearchControls(ctk.CTkFrame):
         )
         self._score_error_label.grid(row=1, column=0, columnspan=2, sticky="w", pady=(2, 0))
 
+        # Search preset section
+        preset_section = ctk.CTkFrame(self, fg_color="transparent")
+        preset_section.grid(row=2, column=0, sticky="ew", padx=10, pady=10)
+        preset_section.grid_columnconfigure(1, weight=1)
+
+        ctk.CTkLabel(preset_section, text="Search Preset:").grid(row=0, column=0, sticky="w", padx=(0, 10))
+        self._preset_choices = ["None"] + preset_choices()
+        self._preset_var = ctk.StringVar(value="None")
+        self._preset_menu = ctk.CTkOptionMenu(
+            preset_section,
+            values=self._preset_choices,
+            variable=self._preset_var,
+            command=self._on_preset_changed,
+        )
+        self._preset_menu.grid(row=0, column=1, sticky="ew")
+
+        self._preset_description = ctk.CTkLabel(
+            preset_section,
+            text="Use your saved profile settings.",
+            font=ctk.CTkFont(size=11),
+            text_color="gray",
+            wraplength=520,
+            justify="left",
+        )
+        self._preset_description.grid(row=1, column=0, columnspan=2, sticky="w", pady=(5, 0))
+
         # New only section
         new_section = ctk.CTkFrame(self, fg_color="transparent")
-        new_section.grid(row=2, column=0, sticky="ew", padx=10, pady=10)
+        new_section.grid(row=3, column=0, sticky="ew", padx=10, pady=10)
 
         self._new_only = ctk.CTkSwitch(new_section, text="New jobs only")
         self._new_only.pack(anchor="w")
+
+        # Source selection section
+        source_section = ctk.CTkFrame(self, fg_color="transparent")
+        source_section.grid(row=4, column=0, sticky="ew", padx=10, pady=10)
+
+        ctk.CTkLabel(
+            source_section,
+            text="Sources",
+            font=ctk.CTkFont(size=13, weight="bold"),
+        ).pack(anchor="w", pady=(0, 6))
+
+        ctk.CTkLabel(
+            source_section,
+            text="Choose which automated sources to query for this search.",
+            font=ctk.CTkFont(size=11),
+            text_color="gray",
+            wraplength=520,
+            justify="left",
+        ).pack(anchor="w", pady=(0, 6))
+
+        source_grid = ctk.CTkFrame(source_section, fg_color="transparent")
+        source_grid.pack(fill="x")
+        for index, source in enumerate(self._source_definitions()):
+            var = ctk.BooleanVar(value=True)
+            self._source_vars[source.key] = var
+            checkbox = ctk.CTkCheckBox(
+                source_grid,
+                text=source.display_name,
+                variable=var,
+            )
+            checkbox.grid(
+                row=index // 2,
+                column=index % 2,
+                sticky="w",
+                padx=(0, 20),
+                pady=3,
+            )
+
+    def _source_definitions(self):
+        """Return source definitions in execution order."""
+        return [
+            source
+            for phase in SOURCE_PHASE_ORDER
+            for source in SOURCE_REGISTRY.values()
+            if source.phase == phase
+        ]
 
     def _set_default_values(self):
         """Set default values from config.json or fallback defaults."""
@@ -125,6 +200,16 @@ class SearchControls(ctk.CTkFrame):
 
         # Date filter: unchecked by default (matches CLI behavior)
         self._date_enabled.deselect()
+
+    def _on_preset_changed(self, value: str):
+        """Update preset helper text when the selected preset changes."""
+        if value == "None":
+            self._preset_description.configure(text="Use your saved profile settings.")
+            return
+
+        preset = SEARCH_PRESETS.get(value)
+        if preset:
+            self._preset_description.configure(text=preset.description)
 
     def _toggle_date_filter(self):
         """Enable/disable date entry fields based on checkbox state."""
@@ -212,12 +297,19 @@ class SearchControls(ctk.CTkFrame):
 
         # New only: boolean
         new_only = self._new_only.get() == 1
+        preset = self._preset_var.get()
+        selected_sources = [
+            key for key, var in self._source_vars.items()
+            if var.get()
+        ]
 
         return {
             "from_date": from_date,
             "to_date": to_date,
             "min_score": min_score,
-            "new_only": new_only
+            "new_only": new_only,
+            "preset": None if preset == "None" else preset,
+            "selected_sources": selected_sources,
         }
 
     def set_defaults(self, config: dict):
@@ -235,6 +327,17 @@ class SearchControls(ctk.CTkFrame):
                 self._new_only.select()
             else:
                 self._new_only.deselect()
+
+        if "preset" in config:
+            preset = config["preset"] or "None"
+            if preset in self._preset_choices:
+                self._preset_var.set(preset)
+                self._on_preset_changed(preset)
+
+        if "selected_sources" in config:
+            selected_sources = set(config["selected_sources"] or [])
+            for key, var in self._source_vars.items():
+                var.set(key in selected_sources)
 
         if "from_date" in config and config["from_date"]:
             self._date_enabled.select()

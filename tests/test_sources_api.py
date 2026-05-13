@@ -22,6 +22,7 @@ from job_radar.sources import (
     resolve_max_workers,
     resolve_slow_query_threshold,
     get_automated_source_display_names,
+    get_selected_source_display_names,
     generate_wellfound_url,
     _slugify_for_wellfound,
     generate_manual_urls,
@@ -447,6 +448,57 @@ def test_automated_source_display_names_follow_phase_order():
 
     assert names[:4] == ["Dice", "HN Hiring", "RemoteOK", "We Work Remotely"]
     assert names[-2:] == ["JSearch", "SerpAPI (Google Jobs)"]
+
+
+def test_selected_source_display_names_follow_phase_order():
+    """Selected report source names are filtered while preserving phase order."""
+    names = get_selected_source_display_names(["jsearch", "dice", "remoteok"])
+
+    assert names == ["Dice", "RemoteOK", "JSearch"]
+
+
+def test_fetch_all_queries_only_selected_sources(monkeypatch):
+    """Selected sources limit which generated queries are executed."""
+    profile = {
+        "target_titles": ["Software Engineer"],
+        "core_skills": [],
+        "target_market": "Remote",
+    }
+    dice_job = JobResult(
+        title="Software Engineer",
+        company="ExampleCo",
+        location="Remote",
+        arrangement="remote",
+        salary="Not listed",
+        date_posted="Today",
+        description="Build software",
+        url="https://example.com/job",
+        source="Dice",
+    )
+
+    monkeypatch.setattr("job_radar.sources.fetch_dice", lambda *args, **kwargs: [dice_job])
+    skipped_fetchers = [
+        "fetch_hn_hiring",
+        "fetch_remoteok",
+        "fetch_weworkremotely",
+        "fetch_adzuna",
+        "fetch_authenticjobs",
+        "fetch_jsearch",
+        "fetch_usajobs",
+        "fetch_serpapi",
+        "fetch_jobicy",
+        "fetch_hiringcafe",
+    ]
+    for fetcher_name in skipped_fetchers:
+        monkeypatch.setattr(
+            f"job_radar.sources.{fetcher_name}",
+            lambda *args, **kwargs: pytest.fail(f"{fetcher_name} should not be called"),
+        )
+
+    results, stats = fetch_all(profile, selected_sources=["dice"])
+
+    assert results == [dice_job]
+    assert stats["query_failures"] == 0
 
 
 def test_fetch_all_reports_jsearch_progress_and_job_count(monkeypatch):

@@ -99,7 +99,7 @@ def test_search_worker_emits_completion_summary(tmp_path):
         "core_skills": ["Python"],
     }
 
-    def fake_fetch_all(_profile, on_source_progress=None):
+    def fake_fetch_all(_profile, on_source_progress=None, selected_sources=None):
         on_source_progress("Dice", 1, 2, "started", 0)
         on_source_progress("Dice", 1, 2, "complete", 0)
         on_source_progress("RemoteOK", 2, 2, "started", 0)
@@ -136,3 +136,102 @@ def test_search_worker_emits_completion_summary(tmp_path):
         {"name": "Dice", "job_count": 0, "warning_count": 1},
         {"name": "RemoteOK", "job_count": 3, "warning_count": 0},
     ]
+
+
+def test_search_worker_applies_gui_search_preset(tmp_path):
+    """SearchWorker applies selected GUI preset before fetching and reporting."""
+    result_queue = queue.Queue()
+    stop_event = threading.Event()
+    captured = {}
+    profile = {
+        "name": "Test User",
+        "target_titles": ["Backend Engineer"],
+        "core_skills": ["Python"],
+        "location": "Austin, TX",
+    }
+
+    def fake_fetch_all(fetch_profile, on_source_progress=None, selected_sources=None):
+        captured["fetch_profile"] = fetch_profile
+        if on_source_progress:
+            on_source_progress("RemoteOK", 1, 1, "started", 0)
+            on_source_progress("RemoteOK", 1, 1, "complete", 0)
+        return [], {
+            "query_failures": 0,
+            "failed_sources": [],
+            "query_failure_details": [],
+        }
+
+    def fake_generate_manual_urls(report_profile):
+        captured["manual_profile"] = report_profile
+        return []
+
+    def fake_generate_report(**kwargs):
+        captured["report_profile"] = kwargs["profile"]
+        return {"html": str(tmp_path / "jobs.html")}
+
+    with patch("job_radar.api_config.load_api_credentials"):
+        with patch("job_radar.sources.fetch_all", side_effect=fake_fetch_all):
+            with patch("job_radar.sources.generate_manual_urls", side_effect=fake_generate_manual_urls):
+                with patch("job_radar.sources.get_automated_source_display_names", return_value=["RemoteOK"]):
+                    with patch("job_radar.tracker.mark_seen", side_effect=lambda scored: scored):
+                        with patch("job_radar.tracker.get_stats", return_value=None):
+                            with patch("job_radar.report.generate_report", side_effect=fake_generate_report):
+                                worker = SearchWorker(
+                                    result_queue,
+                                    stop_event,
+                                    profile,
+                                    {"min_score": 2.8, "preset": "remote-backend"},
+                                )
+                                worker.run()
+
+    assert captured["fetch_profile"]["location"] == "Remote"
+    assert captured["fetch_profile"]["arrangement"] == ["remote"]
+    assert captured["fetch_profile"]["target_titles"][0] == "Senior Backend Engineer"
+    assert captured["manual_profile"] == captured["fetch_profile"]
+    assert captured["report_profile"] == captured["fetch_profile"]
+    assert profile["location"] == "Austin, TX"
+
+
+def test_search_worker_applies_selected_sources(tmp_path):
+    """SearchWorker passes selected GUI source keys into fetching and reporting."""
+    result_queue = queue.Queue()
+    stop_event = threading.Event()
+    captured = {}
+    profile = {
+        "name": "Test User",
+        "target_titles": ["Backend Engineer"],
+        "core_skills": ["Python"],
+    }
+
+    def fake_fetch_all(fetch_profile, on_source_progress=None, selected_sources=None):
+        captured["selected_sources"] = selected_sources
+        return [], {
+            "query_failures": 0,
+            "failed_sources": [],
+            "query_failure_details": [],
+        }
+
+    def fake_generate_report(**kwargs):
+        captured["sources_searched"] = kwargs["sources_searched"]
+        return {"html": str(tmp_path / "jobs.html")}
+
+    with patch("job_radar.api_config.load_api_credentials"):
+        with patch("job_radar.sources.fetch_all", side_effect=fake_fetch_all):
+            with patch("job_radar.sources.generate_manual_urls", return_value=[]):
+                with patch("job_radar.sources.get_selected_source_display_names", return_value=["Dice"]):
+                    with patch("job_radar.tracker.mark_seen", side_effect=lambda scored: scored):
+                        with patch("job_radar.tracker.get_stats", return_value=None):
+                            with patch("job_radar.report.generate_report", side_effect=fake_generate_report):
+                                worker = SearchWorker(
+                                    result_queue,
+                                    stop_event,
+                                    profile,
+                                    {
+                                        "min_score": 2.8,
+                                        "selected_sources": ["dice"],
+                                    },
+                                )
+                                worker.run()
+
+    assert captured["selected_sources"] == ["dice"]
+    assert captured["sources_searched"] == ["Dice"]
