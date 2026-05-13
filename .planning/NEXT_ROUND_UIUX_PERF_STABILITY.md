@@ -78,7 +78,7 @@ Accessibility:
 Goal: avoid hidden performance degradation for long-running users.
 
 - [Done] Add conservative tracker pruning for old seen jobs.
-- Add cache maintenance hooks for stale files.
+- [Done] Add cache maintenance hooks for stale files.
 - Add a visible cache clear path in CLI/GUI.
 - Document storage locations for cache, tracker, and rate-limit data.
 

@@ -17,6 +17,8 @@ log = logging.getLogger(__name__)
 _CACHE_MAX_AGE_SECONDS = 4 * 3600  # 4 hours
 DEFAULT_REQUEST_TIMEOUT = 15.0
 REQUEST_TIMEOUT_ENV = "JOB_RADAR_REQUEST_TIMEOUT"
+CACHE_MAINTENANCE_INTERVAL_SECONDS = 3600
+_LAST_CACHE_MAINTENANCE = 0.0
 
 
 def resolve_request_timeout(value: int | float | str | None = None) -> float:
@@ -89,6 +91,51 @@ def _write_cache(url: str, body: str):
         log.debug("Cache write failed: %s", e)
 
 
+def prune_stale_cache(
+    *,
+    max_age_seconds: int | float = _CACHE_MAX_AGE_SECONDS,
+    now: float | None = None,
+) -> int:
+    """Remove stale or unreadable cached response files."""
+    cache_dir = get_cache_dir()
+    if not cache_dir.is_dir():
+        return 0
+
+    current_time = time.time() if now is None else now
+    pruned = 0
+
+    for path in cache_dir.glob("*.json"):
+        try:
+            entry = json.loads(path.read_text(encoding="utf-8"))
+            timestamp = float(entry["ts"])
+            should_prune = current_time - timestamp > max_age_seconds
+        except (json.JSONDecodeError, KeyError, TypeError, ValueError, OSError):
+            should_prune = True
+
+        if should_prune:
+            try:
+                path.unlink()
+                pruned += 1
+            except OSError as e:
+                log.debug("Cache prune failed for %s: %s", path, e)
+
+    if pruned:
+        log.info("Pruned %d stale cache file(s)", pruned)
+    return pruned
+
+
+def _maybe_prune_stale_cache(now: float | None = None) -> int:
+    """Run cache pruning at most once per maintenance interval."""
+    global _LAST_CACHE_MAINTENANCE
+
+    current_time = time.time() if now is None else now
+    if current_time - _LAST_CACHE_MAINTENANCE < CACHE_MAINTENANCE_INTERVAL_SECONDS:
+        return 0
+
+    _LAST_CACHE_MAINTENANCE = current_time
+    return prune_stale_cache(now=current_time)
+
+
 def fetch_with_retry(
     url: str,
     headers: dict,
@@ -105,6 +152,7 @@ def fetch_with_retry(
     request_timeout = resolve_request_timeout(timeout)
 
     if use_cache:
+        _maybe_prune_stale_cache()
         cached = _read_cache(url)
         if cached is not None:
             return cached

@@ -1,5 +1,7 @@
 """HTTP cache path and lifecycle tests."""
 
+import json
+
 from job_radar import cache
 
 
@@ -27,6 +29,67 @@ def test_clear_cache_removes_only_json_cache_files(tmp_path, monkeypatch):
 
     assert not cached.exists()
     assert unrelated.exists()
+
+
+def test_clear_cache_ignores_missing_cache_dir(tmp_path, monkeypatch):
+    """clear_cache is safe when no cache directory exists yet."""
+    data_dir = tmp_path / "data"
+    monkeypatch.setattr("job_radar.cache.get_data_dir", lambda: data_dir)
+
+    cache.clear_cache()
+
+    assert not (data_dir / "cache").exists()
+
+
+def test_prune_stale_cache_removes_only_stale_json_files(tmp_path, monkeypatch):
+    """prune_stale_cache removes stale cache entries and keeps fresh/unrelated files."""
+    data_dir = tmp_path / "data"
+    cache_dir = data_dir / "cache"
+    cache_dir.mkdir(parents=True)
+    stale = cache_dir / "stale.json"
+    fresh = cache_dir / "fresh.json"
+    unrelated = cache_dir / "notes.txt"
+    stale.write_text(json.dumps({"ts": 1000, "body": "old"}), encoding="utf-8")
+    fresh.write_text(json.dumps({"ts": 10_000, "body": "new"}), encoding="utf-8")
+    unrelated.write_text("keep", encoding="utf-8")
+    monkeypatch.setattr("job_radar.cache.get_data_dir", lambda: data_dir)
+
+    pruned = cache.prune_stale_cache(max_age_seconds=3600, now=10_000)
+
+    assert pruned == 1
+    assert not stale.exists()
+    assert fresh.exists()
+    assert unrelated.exists()
+
+
+def test_prune_stale_cache_removes_unreadable_json_files(tmp_path, monkeypatch):
+    """prune_stale_cache removes corrupt JSON cache entries."""
+    data_dir = tmp_path / "data"
+    cache_dir = data_dir / "cache"
+    cache_dir.mkdir(parents=True)
+    corrupt = cache_dir / "corrupt.json"
+    corrupt.write_text("{", encoding="utf-8")
+    monkeypatch.setattr("job_radar.cache.get_data_dir", lambda: data_dir)
+
+    pruned = cache.prune_stale_cache(now=10_000)
+
+    assert pruned == 1
+    assert not corrupt.exists()
+
+
+def test_maybe_prune_stale_cache_respects_maintenance_interval(monkeypatch):
+    """The maintenance hook avoids scanning on every cached request."""
+    calls = []
+    monkeypatch.setattr("job_radar.cache._LAST_CACHE_MAINTENANCE", 0.0)
+    monkeypatch.setattr(
+        "job_radar.cache.prune_stale_cache",
+        lambda now: calls.append(now) or 2,
+    )
+
+    assert cache._maybe_prune_stale_cache(now=3600) == 2
+    assert cache._maybe_prune_stale_cache(now=3601) == 0
+    assert cache._maybe_prune_stale_cache(now=7200) == 2
+    assert calls == [3600, 7200]
 
 
 def test_resolve_request_timeout_defaults_without_env(monkeypatch):
