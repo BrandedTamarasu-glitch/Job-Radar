@@ -100,6 +100,20 @@ def test_score_skill_match(job_factory, core_skills, secondary_skills, descripti
     assert expected_min <= result["score"] <= expected_max
 
 
+def test_score_skill_match_reports_missing_core_skills(job_factory):
+    """Skill match explains which core skills were absent from the listing."""
+    job = job_factory(description="Build Python services with FastAPI")
+    profile = {
+        "core_skills": ["Python", "FastAPI", "PostgreSQL"],
+        "secondary_skills": ["Docker"],
+    }
+
+    result = _score_skill_match(job, profile)
+
+    assert result["matched_core"] == ["Python", "FastAPI"]
+    assert result["missing_core"] == ["PostgreSQL"]
+
+
 # ---------------------------------------------------------------------------
 # Fuzzy variant matching tests (TEST-GAP-01 - v1.0 milestone audit)
 # ---------------------------------------------------------------------------

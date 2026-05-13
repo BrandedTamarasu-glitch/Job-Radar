@@ -62,6 +62,8 @@ Goal: help job seekers understand and tune ranking decisions.
 - Improve dealbreaker matching with phrase and word-boundary handling.
 - Add scoring regression fixtures with expected score bands.
 
+Status: in progress. Skill scoring now reports missing core skills, and detailed Markdown/HTML reports show those missing skills so users can see why a role ranked lower without changing score math. Remaining work: richer title/compensation explanations, dealbreaker boundary handling, and scoring regression fixtures.
+
 Deliverable: users can understand why a job ranked where it did.
 
 ## Sprint 5: Maintainability Refactor

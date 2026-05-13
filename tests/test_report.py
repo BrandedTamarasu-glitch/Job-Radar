@@ -78,6 +78,7 @@ def sample_scored_results():
                     "skill_match": {
                         "ratio": "1/3",
                         "matched_core": ["Python"],
+                        "missing_core": ["FastAPI", "PostgreSQL"],
                         "matched_secondary": [],
                     },
                     "title_relevance": {"reason": "Related"},
@@ -226,6 +227,26 @@ def test_html_report_contains_job_data(sample_profile, sample_scored_results, sa
 
     # Check score badges exist (Bootstrap badge classes)
     assert "bg-success" in html_content or "bg-warning" in html_content or "bg-secondary" in html_content
+
+
+def test_reports_show_missing_core_skills(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Detailed reports show missing core skills for score transparency."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+
+    html_content = Path(result["html"]).read_text(encoding="utf-8")
+    md_content = Path(result["markdown"]).read_text(encoding="utf-8")
+
+    assert "Missing core skills" in html_content
+    assert "FastAPI, PostgreSQL" in html_content
+    assert "**Missing core skills:** FastAPI, PostgreSQL" in md_content
 
 
 def test_html_report_escapes_html_entities(tmp_path):

@@ -216,6 +216,8 @@ def _format_detailed_result(lines: list, rank: int, result: dict, profile: dict)
     lines.append(f"- **Stack match:** {skill['ratio']} — matched: {', '.join(skill['matched_core']) if skill['matched_core'] else 'none'}")
     if skill.get("matched_secondary"):
         lines.append(f"- **Secondary skills:** {', '.join(skill['matched_secondary'])}")
+    if skill.get("missing_core"):
+        lines.append(f"- **Missing core skills:** {', '.join(skill['missing_core'])}")
     title_rel = components.get("title_relevance", {})
     if title_rel:
         lines.append(f"- **Title match:** {title_rel.get('reason', 'N/A')}")
@@ -1958,6 +1960,10 @@ def _html_hero_section(hero_jobs: list[dict], profile: dict) -> str:
             matched_sec = ", ".join(skill["matched_secondary"])
             details.append(f"<li><strong>Secondary skills:</strong> {html.escape(matched_sec)}</li>")
 
+        if skill.get("missing_core"):
+            missing_core = ", ".join(skill["missing_core"])
+            details.append(f"<li><strong>Missing core skills:</strong> {html.escape(missing_core)}</li>")
+
         title_rel = components.get("title_relevance", {})
         if title_rel:
             details.append(f"<li><strong>Title match:</strong> {html.escape(title_rel.get('reason', 'N/A'))}</li>")
@@ -2110,6 +2116,10 @@ def _html_recommended_section(recommended: list[dict], profile: dict) -> str:
         if skill.get("matched_secondary"):
             matched_sec = ", ".join(skill["matched_secondary"])
             details.append(f"<li><strong>Secondary skills:</strong> {html.escape(matched_sec)}</li>")
+
+        if skill.get("missing_core"):
+            missing_core = ", ".join(skill["missing_core"])
+            details.append(f"<li><strong>Missing core skills:</strong> {html.escape(missing_core)}</li>")
 
         title_rel = components.get("title_relevance", {})
         if title_rel:

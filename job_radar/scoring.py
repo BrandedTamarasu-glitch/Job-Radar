@@ -302,6 +302,7 @@ def _score_skill_match(job, profile: dict) -> dict:
 
     matched_core = [s for s in core_skills if _skill_in_text(s, searchable)]
     matched_secondary = [s for s in secondary_skills if _skill_in_text(s, searchable)]
+    missing_core = [s for s in core_skills if s not in matched_core]
 
     if not core_skills:
         ratio = 0.0
@@ -316,6 +317,7 @@ def _score_skill_match(job, profile: dict) -> dict:
         "score": round(score, 1),
         "matched_core": matched_core,
         "matched_secondary": matched_secondary,
+        "missing_core": missing_core,
         "ratio": f"{len(matched_core)}/{len(core_skills)} core",
     }
 
