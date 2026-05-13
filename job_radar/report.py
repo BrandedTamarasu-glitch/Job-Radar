@@ -330,10 +330,8 @@ def _format_detailed_result(lines: list, rank: int, result: dict, profile: dict)
     type_str = f" | {emp_type}" if emp_type else ""
     lines.append(f"- **Location:** {job.location} | {job.arrangement}{type_str}")
     lines.append(f"- **Stack match:** {skill['ratio']} — matched: {', '.join(skill['matched_core']) if skill['matched_core'] else 'none'}")
-    if skill.get("matched_secondary"):
-        lines.append(f"- **Secondary skills:** {', '.join(skill['matched_secondary'])}")
-    if skill.get("missing_core"):
-        lines.append(f"- **Missing core skills:** {', '.join(skill['missing_core'])}")
+    for label, values in _skill_callout_groups(skill, profile):
+        lines.append(f"- **{label}:** {', '.join(values)}")
     title_rel = components.get("title_relevance", {})
     if title_rel:
         lines.append(f"- **Title match:** {title_rel.get('reason', 'N/A')}")
@@ -2331,13 +2329,11 @@ def _html_job_detail_items(result: dict, profile: dict) -> str:
     matched_core = ", ".join(skill["matched_core"]) if skill["matched_core"] else "none"
     details.append(f"<li><strong>Stack match:</strong> {html.escape(skill['ratio'])} — matched: {html.escape(matched_core)}</li>")
 
-    if skill.get("matched_secondary"):
-        matched_sec = ", ".join(skill["matched_secondary"])
-        details.append(f"<li><strong>Secondary skills:</strong> {html.escape(matched_sec)}</li>")
-
-    if skill.get("missing_core"):
-        missing_core = ", ".join(skill["missing_core"])
-        details.append(f"<li><strong>Missing core skills:</strong> {html.escape(missing_core)}</li>")
+    for label, values in _skill_callout_groups(skill, profile):
+        details.append(
+            f"<li class=\"skill-callout\"><strong>{html.escape(label)}:</strong> "
+            f"{html.escape(', '.join(values))}</li>"
+        )
 
     title_rel = components.get("title_relevance", {})
     if title_rel:
@@ -2369,6 +2365,29 @@ def _html_job_detail_items(result: dict, profile: dict) -> str:
             details.append(f"<li><strong>Talking points:</strong><ul>{talking_points}</ul></li>")
 
     return "".join(details)
+
+
+def _skill_callout_groups(skill: dict, profile: dict) -> list[tuple[str, list[str]]]:
+    """Return grouped must-have/nice-to-have skill callouts."""
+    groups = []
+    missing_core = list(skill.get("missing_core") or [])
+    if missing_core:
+        groups.append(("Missing must-have skills", missing_core))
+
+    matched_secondary = list(skill.get("matched_secondary") or [])
+    if matched_secondary:
+        groups.append(("Nice-to-have matches", matched_secondary))
+
+    secondary_skills = list(profile.get("secondary_skills") or [])
+    matched_secondary_lower = {value.casefold() for value in matched_secondary}
+    missing_secondary = [
+        value for value in secondary_skills
+        if value.casefold() not in matched_secondary_lower
+    ]
+    if missing_secondary:
+        groups.append(("Missing nice-to-have skills", missing_secondary))
+
+    return groups
 
 
 def _html_shortlist_button(job_key_val: str, *, compact: bool = False) -> str:

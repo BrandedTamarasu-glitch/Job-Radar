@@ -10,6 +10,7 @@ from job_radar.report import (
     _html_external_scripts,
     _html_external_stylesheets,
     _match_summary_text,
+    _skill_callout_groups,
     generate_report,
 )
 
@@ -21,6 +22,7 @@ def sample_profile():
         "name": "Jane Developer",
         "target_titles": ["Senior Python Developer", "Backend Engineer"],
         "core_skills": ["Python", "FastAPI", "PostgreSQL"],
+        "secondary_skills": ["Docker", "Redis"],
         "level": "senior",
         "years_experience": 7,
         "location": "San Francisco, CA",
@@ -294,7 +296,7 @@ def test_html_report_contains_job_data(sample_profile, sample_scored_results, sa
 
 
 def test_reports_show_missing_core_skills(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
-    """Detailed reports show missing core skills for score transparency."""
+    """Detailed reports group missing skills by must-have/nice-to-have context."""
     result = generate_report(
         profile=sample_profile,
         scored_results=sample_scored_results,
@@ -308,9 +310,25 @@ def test_reports_show_missing_core_skills(sample_profile, sample_scored_results,
     html_content = Path(result["html"]).read_text(encoding="utf-8")
     md_content = Path(result["markdown"]).read_text(encoding="utf-8")
 
-    assert "Missing core skills" in html_content
+    assert "Missing must-have skills" in html_content
+    assert "Missing nice-to-have skills" in html_content
     assert "FastAPI, PostgreSQL" in html_content
-    assert "**Missing core skills:** FastAPI, PostgreSQL" in md_content
+    assert "**Missing must-have skills:** FastAPI, PostgreSQL" in md_content
+    assert "**Missing nice-to-have skills:**" in md_content
+
+
+def test_skill_callout_groups_split_must_have_and_nice_to_have(sample_profile):
+    """Skill callouts distinguish core gaps from secondary skill context."""
+    skill = {
+        "missing_core": ["FastAPI"],
+        "matched_secondary": ["Docker"],
+    }
+
+    assert _skill_callout_groups(skill, sample_profile) == [
+        ("Missing must-have skills", ["FastAPI"]),
+        ("Nice-to-have matches", ["Docker"]),
+        ("Missing nice-to-have skills", ["Redis"]),
+    ]
 
 
 def test_html_report_escapes_html_entities(tmp_path):
