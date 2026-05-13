@@ -14,7 +14,7 @@ import zipfile
 from pathlib import Path
 
 from .paths import get_data_dir, get_log_file, is_frozen
-from .rate_limits import _cleanup_connections
+from .rate_limits import _cleanup_connections, get_rate_limits_dir
 
 log = logging.getLogger(__name__)
 
@@ -52,10 +52,10 @@ def get_uninstall_paths() -> list[tuple[str, str]]:
     if backups_dir.exists():
         paths.append((str(backups_dir), "backups/ - Profile backup files"))
 
-    # Rate limit databases (current working directory)
-    rate_limits_dir = Path.cwd() / ".rate_limits"
+    # Rate limit databases
+    rate_limits_dir = get_rate_limits_dir()
     if rate_limits_dir.exists():
-        paths.append((str(rate_limits_dir), ".rate_limits/ - API rate limit databases"))
+        paths.append((str(rate_limits_dir), "rate_limits/ - API rate limit databases"))
 
     # Cache directory if it exists
     cache_dir = data_dir / "cache"

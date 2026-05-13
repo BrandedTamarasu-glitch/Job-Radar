@@ -6,6 +6,7 @@ from job_radar.rate_limits import (
     BACKEND_API_MAP,
     RATE_LIMITS,
     check_rate_limit,
+    get_rate_limits_dir,
     get_rate_limit_status,
     get_rate_limiter,
 )
@@ -46,7 +47,7 @@ def test_rate_limits_dict_has_expected_sources():
 
 def test_check_rate_limit_allows_first_call(tmp_path, monkeypatch):
     """Test check_rate_limit returns True on first call (not rate limited)."""
-    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr("job_radar.rate_limits.get_data_dir", lambda: tmp_path / "data")
 
     result = check_rate_limit("adzuna")
 
@@ -55,7 +56,7 @@ def test_check_rate_limit_allows_first_call(tmp_path, monkeypatch):
 
 def test_check_rate_limit_returns_bool(tmp_path, monkeypatch):
     """Test check_rate_limit returns boolean value."""
-    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr("job_radar.rate_limits.get_data_dir", lambda: tmp_path / "data")
 
     result = check_rate_limit("adzuna")
 
@@ -76,17 +77,27 @@ def test_get_rate_limit_status_returns_dict(tmp_path, monkeypatch):
 
 def test_rate_limit_creates_db_file(tmp_path, monkeypatch):
     """Test rate limiter creates SQLite database file."""
-    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr("job_radar.rate_limits.get_data_dir", lambda: tmp_path / "data")
 
     check_rate_limit("adzuna")
 
-    db_path = tmp_path / ".rate_limits" / "adzuna.db"
+    db_path = tmp_path / "data" / "rate_limits" / "adzuna.db"
     assert db_path.exists()
+
+
+def test_rate_limits_dir_uses_app_data_dir(tmp_path, monkeypatch):
+    """Rate-limit state lives under app data, not the launch directory."""
+    launch_dir = tmp_path / "launch"
+    launch_dir.mkdir()
+    monkeypatch.chdir(launch_dir)
+    monkeypatch.setattr("job_radar.rate_limits.get_data_dir", lambda: tmp_path / "data")
+
+    assert get_rate_limits_dir() == tmp_path / "data" / "rate_limits"
 
 
 def test_independent_source_limits(tmp_path, monkeypatch):
     """Test different sources have independent rate limits."""
-    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr("job_radar.rate_limits.get_data_dir", lambda: tmp_path / "data")
 
     # Both should be allowed on first call (independent limits)
     result_adzuna = check_rate_limit("adzuna")
@@ -96,8 +107,8 @@ def test_independent_source_limits(tmp_path, monkeypatch):
     assert result_authentic is True
 
     # Verify separate DB files created
-    adzuna_db = tmp_path / ".rate_limits" / "adzuna.db"
-    authentic_db = tmp_path / ".rate_limits" / "authentic_jobs.db"
+    adzuna_db = tmp_path / "data" / "rate_limits" / "adzuna.db"
+    authentic_db = tmp_path / "data" / "rate_limits" / "authentic_jobs.db"
     assert adzuna_db.exists()
     assert authentic_db.exists()
 
@@ -106,7 +117,7 @@ def test_cleanup_closes_all_connections(tmp_path, monkeypatch):
     """Test _cleanup_connections closes all SQLite connections and clears limiters."""
     from job_radar import rate_limits
 
-    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr("job_radar.rate_limits.get_data_dir", lambda: tmp_path / "data")
 
     # Create multiple rate limiters (creates connections and limiters)
     check_rate_limit("adzuna")
@@ -131,7 +142,7 @@ def test_shared_backend_limiters(tmp_path, monkeypatch):
     """Test sources mapped to same backend API share limiter instance."""
     from job_radar import rate_limits
 
-    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr("job_radar.rate_limits.get_data_dir", lambda: tmp_path / "data")
 
     # Temporarily add test mapping for sources sharing same backend
     # Simulate future JSearch scenario where multiple sources share backend
@@ -161,7 +172,7 @@ def test_shared_backend_limiters(tmp_path, monkeypatch):
         assert "shared_backend" in rate_limits._limiters
 
         # Should only create one database file (using backend name)
-        db_path = tmp_path / ".rate_limits" / "shared_backend.db"
+        db_path = tmp_path / "data" / "rate_limits" / "shared_backend.db"
         assert db_path.exists()
 
     finally:
@@ -174,7 +185,7 @@ def test_backend_map_fallback(tmp_path, monkeypatch):
     """Test unmapped sources use source name as backend (backward compatibility)."""
     from job_radar import rate_limits
 
-    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr("job_radar.rate_limits.get_data_dir", lambda: tmp_path / "data")
 
     # Use a source not in BACKEND_API_MAP
     unmapped_source = "unmapped_test_source"
@@ -188,7 +199,7 @@ def test_backend_map_fallback(tmp_path, monkeypatch):
     assert unmapped_source in rate_limits._limiters
 
     # Should create database file using source name
-    db_path = tmp_path / ".rate_limits" / f"{unmapped_source}.db"
+    db_path = tmp_path / "data" / "rate_limits" / f"{unmapped_source}.db"
     assert db_path.exists()
 
 

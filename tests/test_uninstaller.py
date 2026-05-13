@@ -62,8 +62,7 @@ def test_get_uninstall_paths_empty_when_no_files(tmp_path, monkeypatch):
 
     monkeypatch.setattr("job_radar.uninstaller.get_data_dir", lambda: data_dir)
     monkeypatch.setattr("job_radar.uninstaller.get_log_file", lambda: log_file)
-    # Also patch Path.cwd() to avoid picking up real .rate_limits directory
-    monkeypatch.setattr("pathlib.Path.cwd", lambda: tmp_path)
+    monkeypatch.setattr("job_radar.uninstaller.get_rate_limits_dir", lambda: data_dir / "rate_limits")
 
     result = get_uninstall_paths()
 
@@ -451,7 +450,7 @@ def test_delete_app_data_full_flow(tmp_path, monkeypatch):
     backups_dir.mkdir()
     (backups_dir / "backup1.json").write_text('{"old": "data"}')
 
-    rate_limits_dir = tmp_path / ".rate_limits"
+    rate_limits_dir = data_dir / "rate_limits"
     rate_limits_dir.mkdir()
     (rate_limits_dir / "jsearch.db").write_text("fake db")
 
@@ -461,6 +460,7 @@ def test_delete_app_data_full_flow(tmp_path, monkeypatch):
     # Monkeypatch paths module
     monkeypatch.setattr("job_radar.uninstaller.get_data_dir", lambda: data_dir)
     monkeypatch.setattr("job_radar.uninstaller.get_log_file", lambda: log_file)
+    monkeypatch.setattr("job_radar.uninstaller.get_rate_limits_dir", lambda: rate_limits_dir)
 
     # Mock _cleanup_connections (no-op for this test)
     with patch("job_radar.uninstaller._cleanup_connections"):
@@ -520,7 +520,7 @@ def test_get_uninstall_paths_returns_correct_descriptions(tmp_path, monkeypatch)
     backups_dir = data_dir / "backups"
     backups_dir.mkdir()
 
-    rate_limits_dir = tmp_path / ".rate_limits"
+    rate_limits_dir = data_dir / "rate_limits"
     rate_limits_dir.mkdir()
 
     log_file = tmp_path / "job-radar-error.log"
@@ -529,7 +529,7 @@ def test_get_uninstall_paths_returns_correct_descriptions(tmp_path, monkeypatch)
     # Monkeypatch paths
     monkeypatch.setattr("job_radar.uninstaller.get_data_dir", lambda: data_dir)
     monkeypatch.setattr("job_radar.uninstaller.get_log_file", lambda: log_file)
-    monkeypatch.setattr("pathlib.Path.cwd", lambda: tmp_path)
+    monkeypatch.setattr("job_radar.uninstaller.get_rate_limits_dir", lambda: rate_limits_dir)
 
     # Get paths
     paths = get_uninstall_paths()

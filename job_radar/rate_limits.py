@@ -21,7 +21,6 @@ and fall back to defaults.
 import atexit
 import datetime
 import logging
-import os
 import sqlite3
 from pathlib import Path
 
@@ -35,6 +34,7 @@ from pyrate_limiter import (
 )
 
 from .config import load_config
+from .paths import get_data_dir
 
 log = logging.getLogger(__name__)
 
@@ -133,6 +133,11 @@ _limiters: dict[str, Limiter] = {}
 _connections: dict[str, sqlite3.Connection] = {}
 
 
+def get_rate_limits_dir() -> Path:
+    """Return the platform-specific rate limiter storage directory."""
+    return get_data_dir() / "rate_limits"
+
+
 def _cleanup_connections() -> None:
     """Close all SQLite connections on application exit.
 
@@ -180,7 +185,7 @@ atexit.register(_cleanup_connections)
 def get_rate_limiter(source: str) -> Limiter:
     """Get or create a rate limiter for the given source.
 
-    Creates .rate_limits/ directory and SQLite database for persistent state.
+    Creates rate limiter storage and SQLite database for persistent state.
     Limiters are cached to avoid re-initialization.
 
     Sources sharing the same backend API (via BACKEND_API_MAP) will share
@@ -204,9 +209,9 @@ def get_rate_limiter(source: str) -> Limiter:
     if backend_api in _limiters:
         return _limiters[backend_api]
 
-    # Create .rate_limits/ directory
-    rate_limits_dir = Path.cwd() / ".rate_limits"
-    rate_limits_dir.mkdir(exist_ok=True)
+    # Create platform-specific rate limiter directory
+    rate_limits_dir = get_rate_limits_dir()
+    rate_limits_dir.mkdir(parents=True, exist_ok=True)
 
     # Get rate configuration using backend API name (with fallback default)
     rates = RATE_LIMITS.get(backend_api, [Rate(60, Duration.MINUTE)])

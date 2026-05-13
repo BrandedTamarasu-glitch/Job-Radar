@@ -235,7 +235,7 @@ The easiest way to uninstall Job Radar is through the built-in GUI uninstaller:
 
 The GUI uninstaller will:
 - Remove all configuration files (`~/.job-radar`)
-- Remove rate limit databases (`~/.rate_limits`)
+- Remove rate limit databases from the app data directory
 - Remove cached data
 - On macOS: Move the app bundle to Trash
 - On Windows (NSIS installer): Unregister from Add/Remove Programs and remove shortcuts
@@ -276,10 +276,7 @@ The GUI uninstaller will:
    rm -rf ~/.job-radar
    ```
 
-3. **Clear rate limit database (if using API sources):**
-   ```bash
-   rm -rf ~/.rate_limits
-   ```
+3. **Clear rate limit database (if using API sources):** remove the `rate_limits` folder from the app data directory.
 
 **Why sudo is needed:** macOS prevents unsigned apps from being deleted normally as a security measure. The `sudo rm` command bypasses this restriction.
 
@@ -290,10 +287,7 @@ The GUI uninstaller will:
    ```bash
    rm -rf ~/.job-radar
    ```
-3. If you used API sources, also delete:
-   ```bash
-   rm -rf ~/.rate_limits
-   ```
+3. If you used API sources, also delete the `rate_limits` folder from the app data directory.
 
 ## Score Ratings
 
@@ -425,7 +419,7 @@ python -m job_radar --help
 
 ### Running Tests
 
-The project includes a comprehensive test suite with 704 automated tests:
+The project includes a comprehensive test suite with 705 automated tests:
 
 ```bash
 # Install dev dependencies
