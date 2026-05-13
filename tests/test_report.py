@@ -2107,6 +2107,50 @@ def test_html_report_keyboard_navigation_hint(sample_profile, sample_scored_resu
     assert '<kbd>J</kbd>/<kbd>K</kbd> = navigate' in html
 
 
+def test_html_report_compact_view_toggle_controls(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Report includes an accessible compact/detail view toggle."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_path = result["html"]
+    with open(html_path, encoding='utf-8') as f:
+        html = f.read()
+
+    assert 'id="view-mode-toggle"' in html
+    assert 'aria-pressed="false"' in html
+    assert 'Toggle compact report view' in html
+    assert 'Compact View' in html
+
+
+def test_html_report_compact_view_javascript_and_css(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Compact view persists and hides secondary report details."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_path = result["html"]
+    with open(html_path, encoding='utf-8') as f:
+        html = f.read()
+
+    assert 'job-radar-report-view-mode' in html
+    assert 'function initializeViewModeToggle' in html
+    assert 'function setReportViewMode' in html
+    assert 'compact-report' in html
+    assert '.job-detail-list' in html
+    assert 'job-card-body' in html
+
+
 def test_html_report_filter_aria_announcements(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
     """Filter JavaScript includes ARIA announcements for accessibility."""
     result = generate_report(

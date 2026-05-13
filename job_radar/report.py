@@ -784,6 +784,16 @@ def _generate_html_report(
       background-color: #ffc107;
       border-color: #ffc107;
     }}
+    body.compact-report .job-detail-list {{
+      display: none;
+    }}
+    body.compact-report .job-card-body {{
+      padding-top: 0.75rem;
+      padding-bottom: 0.75rem;
+    }}
+    body.compact-report .col-snippet {{
+      display: none;
+    }}
 
     /* Pending sync indicator dot */
     .pending-dot {{
@@ -1814,6 +1824,7 @@ def _generate_html_report(
     document.addEventListener('DOMContentLoaded', function() {{
       initializeFilters();
       initializeShortlistControls();
+      initializeViewModeToggle();
     }});
 
     function loadShortlistState() {{
@@ -1870,6 +1881,45 @@ def _generate_html_report(
         if (!event.target.matches('.shortlist-btn[data-shortlist-key]')) return;
         event.preventDefault();
         toggleShortlist(event.target.getAttribute('data-shortlist-key'));
+      }});
+    }}
+
+    function loadReportViewMode() {{
+      try {{
+        return localStorage.getItem('job-radar-report-view-mode') || 'detail';
+      }} catch (err) {{
+        console.warn('[view] Failed to load view mode:', err);
+        return 'detail';
+      }}
+    }}
+
+    function saveReportViewMode(mode) {{
+      try {{
+        localStorage.setItem('job-radar-report-view-mode', mode);
+      }} catch (err) {{
+        console.warn('[view] Failed to save view mode:', err);
+      }}
+    }}
+
+    function setReportViewMode(mode) {{
+      var compact = mode === 'compact';
+      document.body.classList.toggle('compact-report', compact);
+      var toggle = document.getElementById('view-mode-toggle');
+      if (toggle) {{
+        toggle.setAttribute('aria-pressed', compact ? 'true' : 'false');
+        toggle.textContent = compact ? 'Detail View' : 'Compact View';
+      }}
+      announceToScreenReader(compact ? 'Compact report view enabled' : 'Detail report view enabled');
+    }}
+
+    function initializeViewModeToggle() {{
+      var toggle = document.getElementById('view-mode-toggle');
+      if (!toggle) return;
+      setReportViewMode(loadReportViewMode());
+      toggle.addEventListener('click', function() {{
+        var nextMode = document.body.classList.contains('compact-report') ? 'detail' : 'compact';
+        saveReportViewMode(nextMode);
+        setReportViewMode(nextMode);
       }});
     }}
 
@@ -2324,8 +2374,8 @@ def _html_hero_section(hero_jobs: list[dict], profile: dict) -> str:
               {shortlist_button}
             </h3>
           </div>
-          <div class="card-body">
-            <ul class="mb-0">
+          <div class="card-body job-card-body">
+            <ul class="mb-0 job-detail-list">
               {details_html}
             </ul>
           </div>
@@ -2430,8 +2480,8 @@ def _html_recommended_section(recommended: list[dict], profile: dict) -> str:
               {shortlist_button}
             </h3>
           </div>
-          <div class="card-body">
-            <ul class="mb-0">
+          <div class="card-body job-card-body">
+            <ul class="mb-0 job-detail-list">
               {details_html}
             </ul>
           </div>
@@ -2615,6 +2665,8 @@ def _html_results_table(scored_results: list[dict]) -> str:
         <button class="btn btn-outline-primary btn-sm" id="clear-filters" aria-label="Clear all filters and show all jobs">Show All</button>
 
         <button class="btn btn-outline-success btn-sm no-print" id="export-csv-btn" onclick="exportVisibleJobsToCSV()" aria-label="Export visible jobs to CSV file">Export CSV</button>
+
+        <button class="btn btn-outline-secondary btn-sm" id="view-mode-toggle" type="button" aria-pressed="false" aria-label="Toggle compact report view">Compact View</button>
 
         <span id="filter-count" class="text-muted small ms-2" aria-hidden="true"></span>
       </div>

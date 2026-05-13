@@ -112,12 +112,12 @@ Accessibility:
 
 Goal: make the generated report faster to work through on desktop and mobile.
 
-Status: started. Reports now include a shortlist state stored separately from application status, with per-job shortlist toggles and a Show Shortlist filter. Reports also support keyboard navigation between visible job cards with J/K and arrow keys.
+Status: started. Reports now include a shortlist state stored separately from application status, with per-job shortlist toggles and a Show Shortlist filter. Reports also support keyboard navigation between visible job cards with J/K and arrow keys. A compact/detail view toggle lets users hide secondary job details while scanning.
 
 Deliverables:
 - [Done] Add shortlist state separate from application status.
 - [Done] Add keyboard navigation between job cards.
-- Add compact/detail view toggle.
+- [Done] Add compact/detail view toggle.
 - Improve mobile layout for reviewing jobs on phone.
 - Add a concise "why this matched" summary at the top of each card.
 - Group missing-skill callouts by must-have and nice-to-have.
@@ -125,6 +125,7 @@ Deliverables:
 Validation:
 - [Done] Report tests for shortlist persistence and filtering.
 - [Done] Keyboard shortcut tests for navigation behavior.
+- [Done] Report tests for compact/detail view toggle persistence and state.
 - Mobile/report layout smoke checks where practical.
 
 Accessibility:
