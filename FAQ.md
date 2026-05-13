@@ -1,6 +1,6 @@
 # Job Radar — Frequently Asked Questions
 
-**Version 2.2.0** | [Changelog](CHANGELOG.md) | [README](README.md) | [Full Documentation](WORKFLOW.md)
+**Version 2.3.0** | [Changelog](CHANGELOG.md) | [README](README.md) | [Full Documentation](WORKFLOW.md)
 
 ## Installation & Setup
 

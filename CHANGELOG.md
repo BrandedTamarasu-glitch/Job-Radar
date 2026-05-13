@@ -1,5 +1,21 @@
 # Changelog
 
+## v2.3.0 — 2026-05-13
+
+### New Features
+- **GUI search outcome clarity** — Completion screens now show source warnings, per-source job counts, zero-result next actions, and clearer cancelled/error states.
+- **Runtime stability controls** — Added documented controls for fetch parallelism, request timeout, and slow-source warning thresholds.
+- **Cache maintenance controls** — Added stale cache pruning plus visible cache clearing in both CLI (`--clear-cache`) and GUI Settings.
+
+### Improvements
+- **Report responsiveness** — Removed unused report assets, added a payload-size guard, collapsed lower-score rows in large reports, and centralized external asset tags.
+- **Long-running data maintenance** — Added conservative tracker pruning for old seen jobs while preserving application status and legacy records.
+- **Storage consistency** — Tracker data now defaults to app data `results/tracker.json`, with legacy launch-directory tracker fallback.
+- **Uninstall clarity** — Runtime data locations, cleanup behavior, and profile/config-only backup scope are documented consistently across README, workflow docs, and FAQ.
+
+### Validation
+- 727 automated tests collected: 719 passed, 8 skipped.
+
 ## v2.2.0 — 2026-02-16
 
 ### New Features
