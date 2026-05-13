@@ -195,3 +195,45 @@ def test_fetch_with_retry_tracks_disabled_cache_requests(monkeypatch):
         "writes": 0,
         "disabled": 1,
     }
+
+
+def test_fetch_with_retry_honors_custom_cache_ttl(tmp_path, monkeypatch):
+    """fetch_with_retry treats cached entries as stale using caller-provided TTL."""
+    data_dir = tmp_path / "data"
+    calls = []
+
+    class Response:
+        text = "fresh body"
+
+        def raise_for_status(self):
+            return None
+
+    def fake_get(url, headers, timeout):
+        calls.append(url)
+        return Response()
+
+    monkeypatch.setattr("job_radar.cache.get_data_dir", lambda: data_dir)
+    cache_path = cache._cache_path("https://example.com/jobs")
+    cache_path.parent.mkdir(parents=True)
+    cache_path.write_text(
+        json.dumps({"url": "https://example.com/jobs", "ts": 1000, "body": "old body"}),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr("job_radar.cache.time.time", lambda: 1301)
+    monkeypatch.setattr("job_radar.cache.requests.get", fake_get)
+    cache.reset_cache_stats()
+
+    body = cache.fetch_with_retry(
+        "https://example.com/jobs",
+        headers={},
+        cache_ttl_seconds=300,
+    )
+
+    assert body == "fresh body"
+    assert calls == ["https://example.com/jobs"]
+    assert cache.get_cache_stats() == {
+        "hits": 0,
+        "misses": 1,
+        "writes": 1,
+        "disabled": 0,
+    }

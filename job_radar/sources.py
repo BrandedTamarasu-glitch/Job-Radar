@@ -78,6 +78,19 @@ DEFAULT_MAX_WORKERS = 6
 MAX_WORKERS_ENV = "JOB_RADAR_MAX_WORKERS"
 DEFAULT_SLOW_QUERY_SECONDS = 8.0
 SLOW_QUERY_ENV = "JOB_RADAR_SLOW_QUERY_SECONDS"
+SOURCE_CACHE_TTL_SECONDS = {
+    "dice": 60 * 60,
+    "hn_hiring": 6 * 3600,
+    "remoteok": 2 * 3600,
+    "weworkremotely": 2 * 3600,
+    "adzuna": 2 * 3600,
+    "authentic_jobs": 4 * 3600,
+    "jsearch": 2 * 3600,
+    "usajobs": 12 * 3600,
+    "hiringcafe": 2 * 3600,
+    "serpapi": 2 * 3600,
+    "jobicy": 2 * 3600,
+}
 
 
 def resolve_max_workers(value: int | str | None = None) -> int:
@@ -136,6 +149,11 @@ def resolve_slow_query_threshold(value: int | float | str | None = None) -> floa
         return DEFAULT_SLOW_QUERY_SECONDS
 
     return threshold
+
+
+def source_cache_ttl(source_key: str) -> int:
+    """Return cache TTL seconds for a source key."""
+    return SOURCE_CACHE_TTL_SECONDS.get(source_key, 4 * 3600)
 
 
 def _clean_field(text: str, max_len: int) -> str:
@@ -266,7 +284,7 @@ def fetch_dice(query: str, location: str = "") -> list[JobResult]:
     if location:
         url += f"&location={urllib.parse.quote_plus(location)}"
 
-    body = fetch_with_retry(url, headers=HEADERS)
+    body = fetch_with_retry(url, headers=HEADERS, cache_ttl_seconds=source_cache_ttl("dice"))
     if body is None:
         log.warning("[Dice] Fetch failed for '%s'", query)
         return results
@@ -358,7 +376,7 @@ def fetch_hn_hiring(technology: str) -> list[JobResult]:
     results = []
     url = f"https://hnhiring.com/technologies/{urllib.parse.quote_plus(technology.lower())}"
 
-    body = fetch_with_retry(url, headers=HEADERS)
+    body = fetch_with_retry(url, headers=HEADERS, cache_ttl_seconds=source_cache_ttl("hn_hiring"))
     if body is None:
         log.warning("[HN Hiring] Fetch failed for '%s'", technology)
         return results
@@ -584,6 +602,7 @@ def fetch_remoteok(query: str) -> list[JobResult]:
         url,
         headers={**HEADERS, "Accept": "application/json"},
         use_cache=True,
+        cache_ttl_seconds=source_cache_ttl("remoteok"),
     )
     if body is None:
         log.warning("[RemoteOK] Fetch failed")
@@ -696,7 +715,12 @@ def fetch_weworkremotely(query: str) -> list[JobResult]:
     encoded_q = urllib.parse.quote_plus(query)
     url = f"https://weworkremotely.com/remote-jobs/search?term={encoded_q}"
 
-    body = fetch_with_retry(url, headers=HEADERS, retries=1)
+    body = fetch_with_retry(
+        url,
+        headers=HEADERS,
+        retries=1,
+        cache_ttl_seconds=source_cache_ttl("weworkremotely"),
+    )
     if body is None:
         log.info("[WWR] Fetch failed for '%s' — check manual URLs", query)
         return results
@@ -800,7 +824,12 @@ def fetch_adzuna(query: str, location: str = "", verbose: bool = False) -> list[
 
     # Fetch with retry
     try:
-        body = fetch_with_retry(url, headers=HEADERS, use_cache=True)
+        body = fetch_with_retry(
+            url,
+            headers=HEADERS,
+            use_cache=True,
+            cache_ttl_seconds=source_cache_ttl("adzuna"),
+        )
         if body is None:
             log.debug("[Adzuna] Fetch failed for '%s'", query)
             return results
@@ -930,7 +959,12 @@ def fetch_authenticjobs(query: str, location: str = "", verbose: bool = False) -
 
     # Fetch with retry
     try:
-        body = fetch_with_retry(url, headers=HEADERS, use_cache=True)
+        body = fetch_with_retry(
+            url,
+            headers=HEADERS,
+            use_cache=True,
+            cache_ttl_seconds=source_cache_ttl("authentic_jobs"),
+        )
         if body is None:
             log.debug("[Authentic Jobs] Fetch failed for '%s'", query)
             return results
@@ -1074,7 +1108,12 @@ def fetch_jsearch(query: str, location: str = "", verbose: bool = False) -> list
 
     # Fetch with retry
     try:
-        body = fetch_with_retry(url, headers=headers, use_cache=True)
+        body = fetch_with_retry(
+            url,
+            headers=headers,
+            use_cache=True,
+            cache_ttl_seconds=source_cache_ttl("jsearch"),
+        )
         if body is None:
             log.debug("[JSearch] Fetch failed for '%s'", query)
             return results
@@ -1239,7 +1278,12 @@ def fetch_usajobs(query: str, location: str = "", profile: dict = None, verbose:
 
     # Fetch with retry
     try:
-        body = fetch_with_retry(url, headers=headers, use_cache=True)
+        body = fetch_with_retry(
+            url,
+            headers=headers,
+            use_cache=True,
+            cache_ttl_seconds=source_cache_ttl("usajobs"),
+        )
         if body is None:
             log.debug("[USAJobs] Fetch failed for '%s'", query)
             return results
@@ -1647,7 +1691,13 @@ def fetch_hiringcafe(query: str, location: str = "", verbose: bool = False) -> l
 
     # Fetch with retry (retries=1 per user decision "No retry -- fail fast")
     try:
-        body = fetch_with_retry(url, headers=HEADERS, use_cache=True, retries=1)
+        body = fetch_with_retry(
+            url,
+            headers=HEADERS,
+            use_cache=True,
+            retries=1,
+            cache_ttl_seconds=source_cache_ttl("hiringcafe"),
+        )
         if body is None:
             log.debug("[hiring.cafe] Fetch failed for '%s'", query)
             return results
@@ -1739,7 +1789,12 @@ def fetch_serpapi(query: str, location: str = "", verbose: bool = False) -> list
 
     # Fetch with retry
     try:
-        body = fetch_with_retry(url, headers=HEADERS, use_cache=True)
+        body = fetch_with_retry(
+            url,
+            headers=HEADERS,
+            use_cache=True,
+            cache_ttl_seconds=source_cache_ttl("serpapi"),
+        )
         if body is None:
             log.debug("[SerpAPI] Fetch failed for '%s'", query)
             return results
@@ -1801,7 +1856,12 @@ def fetch_jobicy(query: str, location: str = "", verbose: bool = False) -> list[
 
     # Fetch with retry
     try:
-        body = fetch_with_retry(url, headers=HEADERS, use_cache=True)
+        body = fetch_with_retry(
+            url,
+            headers=HEADERS,
+            use_cache=True,
+            cache_ttl_seconds=source_cache_ttl("jobicy"),
+        )
         if body is None:
             log.debug("[Jobicy] Fetch failed for '%s'", query)
             return results

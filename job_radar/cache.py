@@ -88,14 +88,15 @@ def _cache_path(url: str) -> Path:
     return get_cache_dir() / f"{url_hash}.json"
 
 
-def _read_cache(url: str) -> Optional[str]:
+def _read_cache(url: str, max_age_seconds: int | float | None = None) -> Optional[str]:
     """Read cached response if it exists and is fresh."""
     path = _cache_path(url)
     if not path.exists():
         return None
     try:
         entry = json.loads(path.read_text(encoding="utf-8"))
-        if time.time() - entry["ts"] > _CACHE_MAX_AGE_SECONDS:
+        effective_max_age = _CACHE_MAX_AGE_SECONDS if max_age_seconds is None else max_age_seconds
+        if time.time() - entry["ts"] > effective_max_age:
             path.unlink()
             return None
         log.debug("Cache hit: %s", url[:80])
@@ -170,6 +171,7 @@ def fetch_with_retry(
     retries: int = 3,
     backoff: float = 2.0,
     use_cache: bool = True,
+    cache_ttl_seconds: int | float | None = None,
 ) -> Optional[str]:
     """Fetch a URL with retry, backoff, and optional caching.
 
@@ -180,7 +182,7 @@ def fetch_with_retry(
 
     if use_cache:
         _maybe_prune_stale_cache()
-        cached = _read_cache(url)
+        cached = _read_cache(url, max_age_seconds=cache_ttl_seconds)
         if cached is not None:
             _increment_cache_stat("hits")
             return cached

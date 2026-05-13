@@ -21,6 +21,7 @@ from job_radar.sources import (
     build_search_queries,
     resolve_max_workers,
     resolve_slow_query_threshold,
+    source_cache_ttl,
     get_automated_source_display_names,
     get_manual_source_display_names,
     get_selected_source_display_names,
@@ -659,6 +660,13 @@ def test_resolve_slow_query_threshold_falls_back_for_invalid_values(monkeypatch)
     assert resolve_slow_query_threshold() == 8.0
 
 
+def test_source_cache_ttl_uses_source_specific_values():
+    """Sources can use different cache freshness windows."""
+    assert source_cache_ttl("dice") == 3600
+    assert source_cache_ttl("usajobs") == 12 * 3600
+    assert source_cache_ttl("unknown") == 4 * 3600
+
+
 def test_fetch_all_records_slow_query_warnings(monkeypatch):
     """Per-query slow warnings are summarized without failing the search."""
     profile = {
@@ -1017,8 +1025,9 @@ def test_fetch_usajobs_passes_federal_filters(monkeypatch):
     # Capture URL to verify params
     captured_url = []
 
-    def mock_fetch_with_retry(url, headers=None, use_cache=None):
+    def mock_fetch_with_retry(url, headers=None, use_cache=None, cache_ttl_seconds=None):
         captured_url.append(url)
+        assert cache_ttl_seconds == source_cache_ttl("usajobs")
         return '{"SearchResult": {"SearchResultItems": []}}'
 
     monkeypatch.setattr("job_radar.sources.fetch_with_retry", mock_fetch_with_retry)
