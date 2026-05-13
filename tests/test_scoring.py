@@ -10,6 +10,7 @@ from job_radar.scoring import (
     _score_location,
     _score_domain,
     _score_response_likelihood,
+    missing_required_skills,
     score_job,
 )
 
@@ -112,6 +113,15 @@ def test_score_skill_match_reports_missing_core_skills(job_factory):
 
     assert result["matched_core"] == ["Python", "FastAPI"]
     assert result["missing_core"] == ["PostgreSQL"]
+
+
+def test_missing_required_skills_uses_skill_variants(job_factory):
+    """Must-have skill checks reuse variant-aware skill matching."""
+    job = job_factory(description="Build services with NodeJS and k8s")
+
+    missing = missing_required_skills(job, ["node.js", "kubernetes", "PostgreSQL"])
+
+    assert missing == ["PostgreSQL"]
 
 
 # ---------------------------------------------------------------------------

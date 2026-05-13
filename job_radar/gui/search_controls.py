@@ -163,9 +163,27 @@ class SearchControls(ctk.CTkFrame):
         )
         self._exclude_companies.grid(row=2, column=1, sticky="ew", pady=4)
 
+        # Must-have skills section
+        skills_section = ctk.CTkFrame(self, fg_color="transparent")
+        skills_section.grid(row=5, column=0, sticky="ew", padx=10, pady=10)
+        skills_section.grid_columnconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            skills_section,
+            text="Must-Have Skills",
+            font=ctk.CTkFont(size=13, weight="bold"),
+        ).grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 6))
+
+        ctk.CTkLabel(skills_section, text="Require:").grid(row=1, column=0, sticky="w", padx=(0, 10))
+        self._required_skills = ctk.CTkEntry(
+            skills_section,
+            placeholder_text="Comma-separated skills required in listing",
+        )
+        self._required_skills.grid(row=1, column=1, sticky="ew", pady=4)
+
         # Source selection section
         source_section = ctk.CTkFrame(self, fg_color="transparent")
-        source_section.grid(row=5, column=0, sticky="ew", padx=10, pady=10)
+        source_section.grid(row=6, column=0, sticky="ew", padx=10, pady=10)
 
         ctk.CTkLabel(
             source_section,
@@ -329,6 +347,7 @@ class SearchControls(ctk.CTkFrame):
         ]
         include_companies = self._include_companies.get().strip()
         exclude_companies = self._exclude_companies.get().strip()
+        required_skills = self._required_skills.get().strip()
 
         return {
             "from_date": from_date,
@@ -339,6 +358,7 @@ class SearchControls(ctk.CTkFrame):
             "selected_sources": selected_sources,
             "include_companies": include_companies,
             "exclude_companies": exclude_companies,
+            "required_skills": required_skills,
         }
 
     def set_defaults(self, config: dict):
@@ -375,6 +395,10 @@ class SearchControls(ctk.CTkFrame):
         if "exclude_companies" in config:
             self._exclude_companies.delete(0, "end")
             self._exclude_companies.insert(0, config["exclude_companies"] or "")
+
+        if "required_skills" in config:
+            self._required_skills.delete(0, "end")
+            self._required_skills.insert(0, config["required_skills"] or "")
 
         if "from_date" in config and config["from_date"]:
             self._date_enabled.select()

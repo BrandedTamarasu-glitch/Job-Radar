@@ -434,7 +434,7 @@ python -m job_radar --help
 
 ### Running Tests
 
-The project includes a comprehensive test suite with 733 automated tests:
+The project includes a comprehensive test suite with 736 automated tests:
 
 ```bash
 # Install dev dependencies
@@ -468,7 +468,7 @@ python -m job_radar --help
 For release builds, also run the platform build script and smoke-test the generated `job-radar --version` executable from `dist/`.
 
 **Test coverage:**
-- Scoring functions (37 tests) - validates all `_score_*` functions with parametrized edge cases
+- Scoring functions (38 tests) - validates all `_score_*` functions, required-skill matching, and parametrized edge cases
 - Scoring config (25 tests) - validates scoring weights, staffing preference, normalization, live preview
 - Tracker functions (16 tests) - validates deduplication, pruning, app-data storage, and stats aggregation with tmp_path isolation
 - Config module (23 tests) - validates config file parsing, CLI override, defaults, validation
@@ -479,7 +479,7 @@ For release builds, also run the platform build script and smoke-test the genera
 - PDF parser (34 tests) - validates extraction, validation, Unicode support, error handling
 - Report generation (35 tests) - validates HTML/Markdown output, clipboard UI, status tracking, accessibility
 - UX polish (69 tests) - validates banner, help text, progress messages, maintenance commands, error handling
-- GUI search summary (11 tests) - validates search completion, source warnings, cache controls, GUI preset application, source selection, and company filters
+- GUI search summary (13 tests) - validates search completion, source warnings, cache controls, GUI preset application, source selection, company filters, and must-have skill filters
 - Profile manager (22 tests) - validates atomic writes, backups, rotation, schema migration, validation
 - Profile display (16 tests) - validates formatted output, field filtering, NO_COLOR compliance
 - Profile editor (23 tests) - validates field menu, diff preview, editing, validator reuse

@@ -49,6 +49,19 @@ def filter_by_company(results: list, include=None, exclude=None) -> list:
     return filtered
 
 
+def filter_by_required_skills(results: list, required_skills=None) -> list:
+    """Filter jobs that do not contain every required skill."""
+    if not required_skills:
+        return results
+
+    from job_radar.scoring import missing_required_skills
+
+    return [
+        result for result in results
+        if not missing_required_skills(result, required_skills)
+    ]
+
+
 class MockSearchWorker:
     """Simulates a long-running search operation for threading validation.
 
@@ -322,6 +335,10 @@ class SearchWorker:
                 results,
                 include=self._search_config.get("include_companies"),
                 exclude=self._search_config.get("exclude_companies"),
+            )
+            results = filter_by_required_skills(
+                results,
+                self._search_config.get("required_skills"),
             )
 
             if self._stop_event.is_set():

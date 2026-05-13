@@ -12,7 +12,11 @@ from job_radar.gui.search_summary import (
     source_warning_message,
     zero_result_lines,
 )
-from job_radar.gui.worker_thread import SearchWorker, filter_by_company
+from job_radar.gui.worker_thread import (
+    SearchWorker,
+    filter_by_company,
+    filter_by_required_skills,
+)
 from job_radar.sources import JobResult
 
 
@@ -110,6 +114,38 @@ def test_filter_by_company_applies_include_and_exclude_terms():
         include="northstar, ledger",
         exclude="ledger",
     )
+
+    assert [job.company for job in filtered] == ["Northstar Tools"]
+
+
+def test_filter_by_required_skills_keeps_only_jobs_with_all_required_skills():
+    """Must-have skills filter keeps jobs matching every required skill."""
+    jobs = [
+        JobResult(
+            title="Engineer",
+            company="Northstar Tools",
+            location="Remote",
+            arrangement="remote",
+            salary="Not listed",
+            date_posted="Today",
+            description="Build NodeJS services on k8s",
+            url="https://example.com/1",
+            source="Dice",
+        ),
+        JobResult(
+            title="Engineer",
+            company="LedgerWorks",
+            location="Remote",
+            arrangement="remote",
+            salary="Not listed",
+            date_posted="Today",
+            description="Build Python services",
+            url="https://example.com/2",
+            source="Dice",
+        ),
+    ]
+
+    filtered = filter_by_required_skills(jobs, "node.js, kubernetes")
 
     assert [job.company for job in filtered] == ["Northstar Tools"]
 
@@ -352,6 +388,80 @@ def test_search_worker_filters_companies_before_scoring_and_tracking(tmp_path):
                                         "min_score": 0,
                                         "include_companies": "northstar, ledger",
                                         "exclude_companies": "ledger",
+                                    },
+                                )
+                                worker.run()
+
+    assert captured["tracked_companies"] == ["Northstar Tools"]
+    assert captured["reported_companies"] == ["Northstar Tools"]
+
+
+def test_search_worker_filters_required_skills_before_scoring_and_tracking(tmp_path):
+    """SearchWorker applies must-have skill filters before tracking/reporting."""
+    result_queue = queue.Queue()
+    stop_event = threading.Event()
+    captured = {}
+    profile = {
+        "name": "Test User",
+        "target_titles": ["Backend Engineer"],
+        "core_skills": ["Python"],
+    }
+    jobs = [
+        JobResult(
+            title="Backend Engineer",
+            company="Northstar Tools",
+            location="Remote",
+            arrangement="remote",
+            salary="Not listed",
+            date_posted="Today",
+            description="Build NodeJS APIs on k8s",
+            url="https://example.com/1",
+            source="Dice",
+        ),
+        JobResult(
+            title="Backend Engineer",
+            company="LedgerWorks",
+            location="Remote",
+            arrangement="remote",
+            salary="Not listed",
+            date_posted="Today",
+            description="Build Python APIs",
+            url="https://example.com/2",
+            source="Dice",
+        ),
+    ]
+
+    def fake_fetch_all(fetch_profile, on_source_progress=None, selected_sources=None):
+        return jobs, {
+            "query_failures": 0,
+            "failed_sources": [],
+            "query_failure_details": [],
+        }
+
+    def fake_mark_seen(scored):
+        captured["tracked_companies"] = [item["job"].company for item in scored]
+        return scored
+
+    def fake_generate_report(**kwargs):
+        captured["reported_companies"] = [
+            item["job"].company for item in kwargs["scored_results"]
+        ]
+        return {"html": str(tmp_path / "jobs.html")}
+
+    with patch("job_radar.api_config.load_api_credentials"):
+        with patch("job_radar.sources.fetch_all", side_effect=fake_fetch_all):
+            with patch("job_radar.sources.generate_manual_urls", return_value=[]):
+                with patch("job_radar.sources.get_automated_source_display_names", return_value=["Dice"]):
+                    with patch("job_radar.tracker.mark_seen", side_effect=fake_mark_seen):
+                        with patch("job_radar.tracker.get_stats", return_value=None):
+                            with patch("job_radar.report.generate_report", side_effect=fake_generate_report):
+                                worker = SearchWorker(
+                                    result_queue,
+                                    stop_event,
+                                    profile,
+                                    {
+                                        "min_score": 0,
+                                        "required_skills": "node.js, kubernetes",
                                     },
                                 )
                                 worker.run()

@@ -322,6 +322,30 @@ def _score_skill_match(job, profile: dict) -> dict:
     }
 
 
+def missing_required_skills(job, required_skills: list[str] | str | None) -> list[str]:
+    """Return required skills that do not appear in a job listing."""
+    if not required_skills:
+        return []
+    if isinstance(required_skills, str):
+        skills = [
+            skill.strip()
+            for skill in required_skills.split(",")
+            if skill.strip()
+        ]
+    else:
+        skills = [
+            skill.strip()
+            for skill in required_skills
+            if skill and skill.strip()
+        ]
+
+    searchable = (job.title + " " + job.description + " " + job.company).lower()
+    return [
+        skill for skill in skills
+        if not _skill_in_text(skill, searchable)
+    ]
+
+
 def _score_title_relevance(job, profile: dict) -> dict:
     """Score how well the job title matches the candidate's target titles."""
     target_titles = [t.lower() for t in profile.get("target_titles", [])]
