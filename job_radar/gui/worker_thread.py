@@ -11,9 +11,17 @@ import hashlib
 import queue
 import threading
 import time
+from datetime import date, timedelta
 from pathlib import Path
 
 import requests
+
+
+FRESHNESS_DAY_WINDOWS = {
+    "past_24h": 1,
+    "past_48h": 2,
+    "past_7d": 7,
+}
 
 
 def parse_company_filter(value: str | list[str] | None) -> list[str]:
@@ -103,6 +111,22 @@ def filter_by_location_strictness(results: list, strictness: str | None = None) 
         elif strictness == "exclude_onsite" and arrangement != "onsite":
             filtered.append(result)
     return filtered
+
+
+def resolve_date_filter(search_config: dict, today: date | None = None) -> tuple[str | None, str | None]:
+    """Resolve GUI freshness/custom settings into date-filter boundaries."""
+    from_date = search_config.get("from_date")
+    to_date = search_config.get("to_date")
+    if from_date and to_date:
+        return from_date, to_date
+
+    freshness = search_config.get("freshness") or "any"
+    days = FRESHNESS_DAY_WINDOWS.get(freshness)
+    if days is None:
+        return None, None
+
+    today = today or date.today()
+    return (today - timedelta(days=days)).isoformat(), today.isoformat()
 
 
 class MockSearchWorker:
@@ -369,8 +393,7 @@ class SearchWorker:
                 return
 
             # Step 3: Apply date filter if specified
-            from_date = self._search_config.get("from_date")
-            to_date = self._search_config.get("to_date")
+            from_date, to_date = resolve_date_filter(self._search_config)
             if from_date and to_date:
                 results = filter_by_date(results, from_date, to_date)
 

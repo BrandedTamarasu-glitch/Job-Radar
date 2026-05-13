@@ -23,6 +23,14 @@ LOCATION_STRICTNESS_OPTIONS = {
     "Exclude on-site": "exclude_onsite",
 }
 
+FRESHNESS_OPTIONS = {
+    "Any time": "any",
+    "Past 24 hours": "past_24h",
+    "Past 48 hours": "past_48h",
+    "Past 7 days": "past_7d",
+    "Custom range": "custom",
+}
+
 
 # Try to import CTkDatePicker, fall back to manual entry if unavailable
 try:
@@ -70,31 +78,41 @@ class SearchControls(ctk.CTkFrame):
         date_section.grid(row=0, column=0, sticky="ew", padx=10, pady=10)
         date_section.grid_columnconfigure(1, weight=1)
 
+        ctk.CTkLabel(date_section, text="Freshness:").grid(row=0, column=0, sticky="w", padx=(0, 10))
+        self._freshness_var = ctk.StringVar(value="Any time")
+        self._freshness_menu = ctk.CTkOptionMenu(
+            date_section,
+            values=list(FRESHNESS_OPTIONS.keys()),
+            variable=self._freshness_var,
+            command=self._on_freshness_changed,
+        )
+        self._freshness_menu.grid(row=0, column=1, sticky="ew", pady=(0, 10))
+
         # Date filter checkbox
         self._date_enabled = ctk.CTkCheckBox(
             date_section,
-            text="Apply date filter",
+            text="Custom date range",
             command=self._toggle_date_filter
         )
-        self._date_enabled.grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 10))
+        self._date_enabled.grid(row=1, column=0, columnspan=2, sticky="w", pady=(0, 10))
 
         # From date
-        ctk.CTkLabel(date_section, text="From:").grid(row=1, column=0, sticky="w", padx=(20, 10))
+        ctk.CTkLabel(date_section, text="From:").grid(row=2, column=0, sticky="w", padx=(20, 10))
         self._from_date = ctk.CTkEntry(
             date_section,
             placeholder_text="YYYY-MM-DD",
             state="disabled"
         )
-        self._from_date.grid(row=1, column=1, sticky="ew", pady=5)
+        self._from_date.grid(row=2, column=1, sticky="ew", pady=5)
 
         # To date
-        ctk.CTkLabel(date_section, text="To:").grid(row=2, column=0, sticky="w", padx=(20, 10))
+        ctk.CTkLabel(date_section, text="To:").grid(row=3, column=0, sticky="w", padx=(20, 10))
         self._to_date = ctk.CTkEntry(
             date_section,
             placeholder_text="YYYY-MM-DD",
             state="disabled"
         )
-        self._to_date.grid(row=2, column=1, sticky="ew", pady=5)
+        self._to_date.grid(row=3, column=1, sticky="ew", pady=5)
 
         # Min score section
         score_section = ctk.CTkFrame(self, fg_color="transparent")
@@ -284,9 +302,18 @@ class SearchControls(ctk.CTkFrame):
         if preset:
             self._preset_description.configure(text=preset.description)
 
+    def _on_freshness_changed(self, value: str):
+        """Switch between preset freshness windows and custom dates."""
+        if value == "Custom range":
+            self._date_enabled.select()
+        else:
+            self._date_enabled.deselect()
+        self._toggle_date_filter()
+
     def _toggle_date_filter(self):
         """Enable/disable date entry fields based on checkbox state."""
         if self._date_enabled.get():
+            self._freshness_var.set("Custom range")
             self._from_date.configure(state="normal")
             self._to_date.configure(state="normal")
         else:
@@ -379,10 +406,12 @@ class SearchControls(ctk.CTkFrame):
         exclude_companies = self._exclude_companies.get().strip()
         required_skills = self._required_skills.get().strip()
         location_strictness_label = self._location_strictness_var.get()
+        freshness_label = self._freshness_var.get()
 
         return {
             "from_date": from_date,
             "to_date": to_date,
+            "freshness": FRESHNESS_OPTIONS.get(freshness_label, "any"),
             "min_score": min_score,
             "new_only": new_only,
             "preset": None if preset == "None" else preset,
@@ -440,6 +469,14 @@ class SearchControls(ctk.CTkFrame):
             for label, value in LOCATION_STRICTNESS_OPTIONS.items():
                 if value == strictness:
                     self._location_strictness_var.set(label)
+                    break
+
+        if "freshness" in config:
+            freshness = config["freshness"] or "any"
+            for label, value in FRESHNESS_OPTIONS.items():
+                if value == freshness:
+                    self._freshness_var.set(label)
+                    self._on_freshness_changed(label)
                     break
 
         if "from_date" in config and config["from_date"]:

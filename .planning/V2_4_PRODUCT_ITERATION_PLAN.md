@@ -38,7 +38,7 @@ Accessibility:
 
 Goal: let users steer what gets searched without editing their profile for every run.
 
-Status: started. CLI saved search presets already exist; GUI search controls now expose the same presets and the worker applies the selected preset before fetching, scoring, manual URL generation, and report rendering. GUI source checkboxes now allow per-search automated source selection. Include/exclude company filters, must-have skill filters, and location strictness controls are available per GUI search and apply before scoring/tracking.
+Status: started. CLI saved search presets already exist; GUI search controls now expose the same presets and the worker applies the selected preset before fetching, scoring, manual URL generation, and report rendering. GUI source checkboxes now allow per-search automated source selection. Include/exclude company filters, must-have skill filters, location strictness controls, and freshness presets are available per GUI search and apply before scoring/tracking.
 
 Deliverables:
 - [Done] Add saved search presets to GUI search controls.
@@ -46,12 +46,12 @@ Deliverables:
 - [Done] Add include/exclude company filters.
 - [Partial] Add must-have vs nice-to-have skill controls. Must-have skill filtering is implemented; nice-to-have controls remain.
 - [Done] Add location/remote strictness controls.
-- Add freshness controls: 24h, 48h, 7d, custom.
+- [Done] Add freshness controls: 24h, 48h, 7d, custom.
 
 Validation:
 - [Done] Tests that GUI preset selection applies the same overlay as CLI presets.
 - [Partial] Source-toggle tests ensuring disabled sources are not queried or shown as searched.
-- [Partial] Scoring/search tests for must-have skills, company filters, and location strictness. Must-have, company filter, and location strictness tests are implemented.
+- [Partial] Scoring/search tests for must-have skills, company filters, location strictness, and freshness presets. Must-have, company filter, location strictness, and freshness tests are implemented.
 - Full suite after each behavior slice.
 
 Accessibility:

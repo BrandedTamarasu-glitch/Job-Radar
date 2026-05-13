@@ -2,6 +2,7 @@
 
 import queue
 import threading
+from datetime import date
 from unittest.mock import patch
 
 from job_radar.gui.search_summary import (
@@ -17,6 +18,7 @@ from job_radar.gui.worker_thread import (
     filter_by_company,
     filter_by_location_strictness,
     filter_by_required_skills,
+    resolve_date_filter,
 )
 from job_radar.sources import JobResult
 
@@ -199,6 +201,30 @@ def test_filter_by_location_strictness_uses_arrangement_and_text_hints():
         job.company for job in filter_by_location_strictness(jobs, "exclude_onsite")
     ] == ["RemoteCo", "HybridCo"]
     assert filter_by_location_strictness(jobs, "profile") == jobs
+
+
+def test_resolve_date_filter_maps_freshness_presets():
+    """Freshness presets resolve to concrete date boundaries."""
+    today = date(2026, 5, 13)
+
+    assert resolve_date_filter({"freshness": "any"}, today=today) == (None, None)
+    assert resolve_date_filter({"freshness": "past_24h"}, today=today) == (
+        "2026-05-12",
+        "2026-05-13",
+    )
+    assert resolve_date_filter({"freshness": "past_48h"}, today=today) == (
+        "2026-05-11",
+        "2026-05-13",
+    )
+    assert resolve_date_filter({"freshness": "past_7d"}, today=today) == (
+        "2026-05-06",
+        "2026-05-13",
+    )
+    assert resolve_date_filter({
+        "freshness": "past_24h",
+        "from_date": "2026-05-01",
+        "to_date": "2026-05-03",
+    }, today=today) == ("2026-05-01", "2026-05-03")
 
 
 def test_clear_cache_settings_handler_updates_status_label(tmp_path):
@@ -593,3 +619,82 @@ def test_search_worker_filters_location_strictness_before_scoring_and_tracking(t
 
     assert captured["tracked_companies"] == ["RemoteCo"]
     assert captured["reported_companies"] == ["RemoteCo"]
+
+
+def test_search_worker_applies_freshness_before_scoring_and_tracking(tmp_path):
+    """SearchWorker converts freshness presets into date filters."""
+    result_queue = queue.Queue()
+    stop_event = threading.Event()
+    captured = {}
+    profile = {
+        "name": "Test User",
+        "target_titles": ["Backend Engineer"],
+        "core_skills": ["Python"],
+    }
+    today = date.today().isoformat()
+    jobs = [
+        JobResult(
+            title="Backend Engineer",
+            company="FreshCo",
+            location="Remote",
+            arrangement="remote",
+            salary="Not listed",
+            date_posted=today,
+            description="Build Python APIs",
+            url="https://example.com/1",
+            source="Dice",
+        ),
+        JobResult(
+            title="Backend Engineer",
+            company="OldCo",
+            location="Remote",
+            arrangement="remote",
+            salary="Not listed",
+            date_posted="2020-01-01",
+            description="Build Python APIs",
+            url="https://example.com/2",
+            source="Dice",
+        ),
+    ]
+
+    def fake_fetch_all(fetch_profile, on_source_progress=None, selected_sources=None):
+        return jobs, {
+            "query_failures": 0,
+            "failed_sources": [],
+            "query_failure_details": [],
+        }
+
+    def fake_mark_seen(scored):
+        captured["tracked_companies"] = [item["job"].company for item in scored]
+        return scored
+
+    def fake_generate_report(**kwargs):
+        captured["reported_companies"] = [
+            item["job"].company for item in kwargs["scored_results"]
+        ]
+        captured["from_date"] = kwargs["from_date"]
+        captured["to_date"] = kwargs["to_date"]
+        return {"html": str(tmp_path / "jobs.html")}
+
+    with patch("job_radar.api_config.load_api_credentials"):
+        with patch("job_radar.sources.fetch_all", side_effect=fake_fetch_all):
+            with patch("job_radar.sources.generate_manual_urls", return_value=[]):
+                with patch("job_radar.sources.get_automated_source_display_names", return_value=["Dice"]):
+                    with patch("job_radar.tracker.mark_seen", side_effect=fake_mark_seen):
+                        with patch("job_radar.tracker.get_stats", return_value=None):
+                            with patch("job_radar.report.generate_report", side_effect=fake_generate_report):
+                                worker = SearchWorker(
+                                    result_queue,
+                                    stop_event,
+                                    profile,
+                                    {
+                                        "min_score": 0,
+                                        "freshness": "past_24h",
+                                    },
+                                )
+                                worker.run()
+
+    assert captured["tracked_companies"] == ["FreshCo"]
+    assert captured["reported_companies"] == ["FreshCo"]
+    assert captured["to_date"] == today
+    assert captured["from_date"] <= today
