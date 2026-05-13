@@ -385,17 +385,26 @@ class SearchWorker:
             def on_source_progress(source_name, current, total, status, job_count):
                 """Callback for source-level progress updates."""
                 if status == "started":
+                    started_at = time.monotonic()
                     source_runs.setdefault(source_name, {
                         "name": source_name,
                         "job_count": 0,
                         "warning_count": 0,
                     })
+                    source_runs[source_name]["started_at"] = started_at
                     self._queue.put(("source_started", source_name, current, total))
                 elif status == "complete":
+                    started_at = source_runs.get(source_name, {}).get("started_at")
+                    duration_seconds = (
+                        round(time.monotonic() - started_at, 3)
+                        if started_at is not None
+                        else None
+                    )
                     source_runs[source_name] = {
                         "name": source_name,
                         "job_count": job_count,
                         "warning_count": 0,
+                        "duration_seconds": duration_seconds,
                     }
                     self._queue.put(("source_complete", source_name, current, total, job_count))
 
@@ -423,7 +432,14 @@ class SearchWorker:
                 source_runs[source_name]["warning_count"] += 1
 
             run_summary = {
-                "sources": list(source_runs.values()),
+                "sources": [
+                    {
+                        key: value
+                        for key, value in source.items()
+                        if key != "started_at"
+                    }
+                    for source in source_runs.values()
+                ],
                 "query_failures": dedup_stats.get("query_failures", 0),
                 "failed_sources": sorted(set(failed_source_names), key=str.casefold),
                 "source_warnings": source_failures,

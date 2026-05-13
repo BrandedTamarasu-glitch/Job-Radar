@@ -60,6 +60,21 @@ def test_source_summary_lines_include_jobs_and_warnings():
     ]
 
 
+def test_source_summary_lines_include_source_timing():
+    """Per-source summary lines include elapsed source timing when available."""
+    summary = {
+        "sources": [
+            {"name": "Dice", "job_count": 4, "warning_count": 0, "duration_seconds": 1.234},
+            {"name": "Adzuna", "job_count": 2, "warning_count": 1, "duration_seconds": 65.0},
+        ]
+    }
+
+    assert source_summary_lines(summary) == [
+        "Dice: 4 jobs in 1.2s",
+        "Adzuna: 2 jobs in 1m 05s (1 query warning)",
+    ]
+
+
 def test_zero_result_lines_reuse_next_action_guidance():
     """Zero-result GUI state has concrete next actions."""
     assert zero_result_lines(3) == []
@@ -265,7 +280,7 @@ def test_clear_cache_settings_handler_updates_status_label(tmp_path):
 
 
 def test_search_worker_emits_completion_summary(tmp_path):
-    """SearchWorker includes source warnings and per-source counts on completion."""
+    """SearchWorker includes source warnings, counts, and timings on completion."""
     result_queue = queue.Queue()
     stop_event = threading.Event()
     profile = {
@@ -293,9 +308,10 @@ def test_search_worker_emits_completion_summary(tmp_path):
                 with patch("job_radar.sources.get_automated_source_display_names", return_value=["Dice", "RemoteOK"]):
                     with patch("job_radar.tracker.mark_seen", side_effect=lambda scored: scored):
                         with patch("job_radar.tracker.get_stats", return_value=None):
-                            with patch("job_radar.report.generate_report", return_value={"html": str(tmp_path / "jobs.html")}):
-                                worker = SearchWorker(result_queue, stop_event, profile, {"min_score": 2.8})
-                                worker.run()
+                            with patch("job_radar.gui.worker_thread.time.monotonic", side_effect=[10.0, 10.25, 20.0, 21.5]):
+                                with patch("job_radar.report.generate_report", return_value={"html": str(tmp_path / "jobs.html")}):
+                                    worker = SearchWorker(result_queue, stop_event, profile, {"min_score": 2.8})
+                                    worker.run()
 
     messages = []
     while not result_queue.empty():
@@ -308,8 +324,8 @@ def test_search_worker_emits_completion_summary(tmp_path):
     assert summary["query_failures"] == 1
     assert summary["failed_sources"] == ["Dice"]
     assert summary["sources"] == [
-        {"name": "Dice", "job_count": 0, "warning_count": 1},
-        {"name": "RemoteOK", "job_count": 3, "warning_count": 0},
+        {"name": "Dice", "job_count": 0, "warning_count": 1, "duration_seconds": 0.25},
+        {"name": "RemoteOK", "job_count": 3, "warning_count": 0, "duration_seconds": 1.5},
     ]
 
 

@@ -86,8 +86,10 @@ Accessibility:
 
 Goal: make performance explainable and tunable as source coverage grows.
 
+Status: started. GUI search completion summaries now include per-source elapsed timing from the worker progress callback, making slow sources visible after each run.
+
 Deliverables:
-- Add per-source timing to GUI completion summary.
+- [Done] Add per-source timing to GUI completion summary.
 - Add source health history across runs.
 - Add cache hit/miss counters.
 - Add "slowest sources" diagnostics in Settings.
@@ -95,7 +97,8 @@ Deliverables:
 - Improve cancellation propagation deeper into source fetches where practical.
 
 Validation:
-- Tests for timing and cache metric aggregation.
+- [Done] Tests for GUI source timing summary formatting and worker aggregation.
+- Tests for cache metric aggregation.
 - Cancellation tests for source execution boundaries.
 - Full suite and at least one manual slow-source smoke test.
 

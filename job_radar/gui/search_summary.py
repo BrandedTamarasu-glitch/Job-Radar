@@ -40,14 +40,30 @@ def source_summary_lines(summary: dict | None) -> list[str]:
         name = source.get("name", "Unknown source")
         job_count = int(source.get("job_count") or 0)
         warning_count = int(source.get("warning_count") or 0)
+        duration_seconds = source.get("duration_seconds")
         noun = "job" if job_count == 1 else "jobs"
         line = f"{name}: {job_count} {noun}"
+        if duration_seconds is not None:
+            line += f" in {_format_duration(float(duration_seconds))}"
         if warning_count:
             query_noun = "query warning" if warning_count == 1 else "query warnings"
             line += f" ({warning_count} {query_noun})"
         lines.append(line)
 
     return lines
+
+
+def _format_duration(seconds: float) -> str:
+    """Format short source timings for compact GUI display."""
+    if seconds < 60:
+        return f"{seconds:.1f}s"
+
+    minutes = int(seconds // 60)
+    remaining_seconds = int(round(seconds % 60))
+    if remaining_seconds == 60:
+        minutes += 1
+        remaining_seconds = 0
+    return f"{minutes}m {remaining_seconds:02d}s"
 
 
 def zero_result_lines(job_count: int) -> list[str]:
