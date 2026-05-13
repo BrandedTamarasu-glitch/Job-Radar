@@ -36,7 +36,7 @@ Accessibility:
 
 Goal: prevent slow or flaky sources from making the app feel frozen.
 
-Status: started. Fetch parallelism is centralized behind a validated `JOB_RADAR_MAX_WORKERS` runtime control while preserving the existing default. Request timeout propagation is available through a validated `JOB_RADAR_REQUEST_TIMEOUT` control in `fetch_with_retry`. Rate-limit SQLite state now lives under the platform app data path instead of the launch directory.
+Status: started. Fetch parallelism is centralized behind a validated `JOB_RADAR_MAX_WORKERS` runtime control while preserving the existing default. Request timeout propagation is available through a validated `JOB_RADAR_REQUEST_TIMEOUT` control in `fetch_with_retry`. Rate-limit SQLite state now lives under the platform app data path instead of the launch directory. Slow query warnings are recorded with `JOB_RADAR_SLOW_QUERY_SECONDS` and surfaced in generated reports.
 
 - Add configurable fetch parallelism with a conservative default.
 - Add configurable request timeout and propagate it into source fetches.

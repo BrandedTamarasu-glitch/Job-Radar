@@ -390,6 +390,9 @@ JOB_RADAR_MAX_WORKERS=3 job-radar
 # Lower HTTP request timeout for flaky sources
 JOB_RADAR_REQUEST_TIMEOUT=8 job-radar
 
+# Lower slow-source warning threshold for diagnostics
+JOB_RADAR_SLOW_QUERY_SECONDS=5 job-radar
+
 # Preview queries without running them
 job-radar --dry-run
 ```
@@ -419,7 +422,7 @@ python -m job_radar --help
 
 ### Running Tests
 
-The project includes a comprehensive test suite with 705 automated tests:
+The project includes a comprehensive test suite with 711 automated tests:
 
 ```bash
 # Install dev dependencies

@@ -210,6 +210,37 @@ def test_generate_report_surfaces_source_failures(sample_profile, sample_scored_
     assert "timeout" in html_report
 
 
+def test_generate_report_surfaces_source_warnings(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Non-fatal source warnings are visible in both report formats."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice", "HN Hiring"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+        source_warnings=[
+            {
+                "source": "dice",
+                "query": "Backend Engineer",
+                "elapsed_seconds": 9.5,
+                "threshold_seconds": 8.0,
+            }
+        ],
+    )
+
+    markdown = Path(result["markdown"]).read_text(encoding="utf-8")
+    html_report = Path(result["html"]).read_text(encoding="utf-8")
+
+    assert "Performance warnings" in markdown
+    assert "Backend Engineer" in markdown
+    assert "9.5s" in markdown
+    assert "Performance warnings" in html_report
+    assert "Backend Engineer" in html_report
+    assert "9.5s" in html_report
+
+
 def test_html_report_contains_bootstrap(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
     """Test that HTML report includes Bootstrap CDN and responsive metadata."""
     result = generate_report(

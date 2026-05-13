@@ -332,6 +332,7 @@ class SearchWorker:
                 tracker_stats=tracker_stats,
                 min_score=min_score,
                 source_failures=source_failures,
+                source_warnings=dedup_stats.get("slow_query_warnings"),
             )
 
             report_path = report_result["html"]

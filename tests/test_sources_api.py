@@ -20,6 +20,7 @@ from job_radar.sources import (
     fetch_all,
     build_search_queries,
     resolve_max_workers,
+    resolve_slow_query_threshold,
     get_automated_source_display_names,
     generate_wellfound_url,
     _slugify_for_wellfound,
@@ -559,6 +560,62 @@ def test_resolve_max_workers_falls_back_for_invalid_values(monkeypatch):
 
     monkeypatch.setenv("JOB_RADAR_MAX_WORKERS", "-2")
     assert resolve_max_workers() == 6
+
+
+def test_resolve_slow_query_threshold_defaults_without_env(monkeypatch):
+    """Slow-query warnings default to the current conservative threshold."""
+    monkeypatch.delenv("JOB_RADAR_SLOW_QUERY_SECONDS", raising=False)
+
+    assert resolve_slow_query_threshold() == 8.0
+
+
+def test_resolve_slow_query_threshold_accepts_explicit_value():
+    """Explicit slow-query thresholds are accepted."""
+    assert resolve_slow_query_threshold(3) == 3.0
+    assert resolve_slow_query_threshold("2.5") == 2.5
+
+
+def test_resolve_slow_query_threshold_reads_environment(monkeypatch):
+    """Users can tune slow-query warning sensitivity with an environment variable."""
+    monkeypatch.setenv("JOB_RADAR_SLOW_QUERY_SECONDS", "5")
+
+    assert resolve_slow_query_threshold() == 5.0
+
+
+def test_resolve_slow_query_threshold_falls_back_for_invalid_values(monkeypatch):
+    """Invalid slow-query threshold settings fall back instead of crashing."""
+    assert resolve_slow_query_threshold("not-a-number") == 8.0
+    assert resolve_slow_query_threshold(-1) == 8.0
+
+    monkeypatch.setenv("JOB_RADAR_SLOW_QUERY_SECONDS", "-2")
+    assert resolve_slow_query_threshold() == 8.0
+
+
+def test_fetch_all_records_slow_query_warnings(monkeypatch):
+    """Per-query slow warnings are summarized without failing the search."""
+    profile = {
+        "target_titles": ["Software Engineer"],
+        "core_skills": [],
+        "target_market": "Remote",
+    }
+
+    monkeypatch.setattr("job_radar.sources.fetch_dice", lambda *args, **kwargs: [])
+    monkeypatch.setattr("job_radar.sources.fetch_hn_hiring", lambda *args, **kwargs: [])
+    monkeypatch.setattr("job_radar.sources.fetch_remoteok", lambda *args, **kwargs: [])
+    monkeypatch.setattr("job_radar.sources.fetch_weworkremotely", lambda *args, **kwargs: [])
+    monkeypatch.setattr("job_radar.sources.fetch_adzuna", lambda *args, **kwargs: [])
+    monkeypatch.setattr("job_radar.sources.fetch_authenticjobs", lambda *args, **kwargs: [])
+    monkeypatch.setattr("job_radar.sources.fetch_jsearch", lambda *args, **kwargs: [])
+    monkeypatch.setattr("job_radar.sources.fetch_usajobs", lambda *args, **kwargs: [])
+    monkeypatch.setattr("job_radar.sources.fetch_serpapi", lambda *args, **kwargs: [])
+    monkeypatch.setattr("job_radar.sources.fetch_jobicy", lambda *args, **kwargs: [])
+    monkeypatch.setattr("job_radar.sources.fetch_hiringcafe", lambda *args, **kwargs: [])
+
+    results, stats = fetch_all(profile, slow_query_seconds=0)
+
+    assert results == []
+    assert stats["slow_queries"] > 0
+    assert stats["slow_query_warnings"][0]["threshold_seconds"] == 0.0
 
 
 # ==============================================================================

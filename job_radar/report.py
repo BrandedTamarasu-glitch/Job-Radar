@@ -40,6 +40,7 @@ def generate_report(
     tracker_stats: dict | None = None,
     min_score: float = 2.8,
     source_failures: list[dict] | None = None,
+    source_warnings: list[dict] | None = None,
 ) -> dict:
     """Generate both HTML and Markdown reports for a candidate's search results.
 
@@ -54,6 +55,7 @@ def generate_report(
         tracker_stats: Cross-run statistics dict from tracker module
         min_score: Minimum score threshold for filtering results
         source_failures: Optional per-query source failures from fetch_all
+        source_warnings: Optional non-fatal source warnings from fetch_all
 
     Returns:
         Dict with keys:
@@ -72,7 +74,7 @@ def generate_report(
     md_path = output_path / md_filename
     _generate_markdown_report(
         md_path, profile, scored_results, manual_urls,
-        sources_searched, from_date, to_date, tracker_stats, min_score, source_failures
+        sources_searched, from_date, to_date, tracker_stats, min_score, source_failures, source_warnings
     )
 
     # Generate HTML report
@@ -80,7 +82,7 @@ def generate_report(
     html_path = output_path / html_filename
     _generate_html_report(
         html_path, profile, scored_results, manual_urls,
-        sources_searched, from_date, to_date, tracker_stats, min_score, source_failures
+        sources_searched, from_date, to_date, tracker_stats, min_score, source_failures, source_warnings
     )
 
     # Calculate statistics
@@ -109,6 +111,7 @@ def _generate_markdown_report(
     tracker_stats: dict | None = None,
     min_score: float = 2.8,
     source_failures: list[dict] | None = None,
+    source_warnings: list[dict] | None = None,
 ) -> None:
     """Generate a Markdown report for a candidate's search results.
 
@@ -135,6 +138,12 @@ def _generate_markdown_report(
         lines.append(
             f"**Source warnings:** {len(source_failures)} query failures across "
             f"{', '.join(failed_sources)}"
+        )
+    if source_warnings:
+        warning_sources = _failed_source_names(source_warnings)
+        lines.append(
+            f"**Performance warnings:** {len(source_warnings)} slow queries across "
+            f"{', '.join(warning_sources)}"
         )
 
     # Tracker stats
@@ -205,6 +214,8 @@ def _generate_markdown_report(
 
     if source_failures:
         lines.extend(_markdown_source_failures(source_failures))
+    if source_warnings:
+        lines.extend(_markdown_source_warnings(source_warnings))
 
     # Manual check URLs (grouped by source)
     lines.append("## Manual Check URLs")
@@ -248,6 +259,28 @@ def _markdown_source_failures(source_failures: list[dict]) -> list[str]:
         lines.append(f"| {source} | {query} | {error} |")
     if len(source_failures) > 10:
         lines.append(f"| ... | ... | {len(source_failures) - 10} more failures omitted |")
+    lines.append("")
+    return lines
+
+
+def _markdown_source_warnings(source_warnings: list[dict]) -> list[str]:
+    """Format non-fatal source warnings for the Markdown report."""
+    lines = [
+        "## Performance Warnings",
+        "",
+        "Some source queries completed slowly. Results are still included.",
+        "",
+        "| Source | Query | Elapsed | Threshold |",
+        "|---|---|---|---|",
+    ]
+    for warning in source_warnings[:10]:
+        source = _markdown_cell(str(warning.get("source", "unknown")))
+        query = _markdown_cell(str(warning.get("query", "")) or "N/A")
+        elapsed = warning.get("elapsed_seconds", "N/A")
+        threshold = warning.get("threshold_seconds", "N/A")
+        lines.append(f"| {source} | {query} | {elapsed}s | {threshold}s |")
+    if len(source_warnings) > 10:
+        lines.append(f"| ... | ... | ... | {len(source_warnings) - 10} more warnings omitted |")
     lines.append("")
     return lines
 
@@ -350,6 +383,7 @@ def _generate_html_report(
     tracker_stats: dict | None = None,
     min_score: float = 2.8,
     source_failures: list[dict] | None = None,
+    source_warnings: list[dict] | None = None,
 ) -> None:
     """Generate an HTML report with Bootstrap 5.3 styling."""
     # Import tracker locally to avoid circular dependency
@@ -972,6 +1006,7 @@ def _generate_html_report(
 
       {_html_tracker_stats(tracker_stats) if tracker_stats else ''}
       {_html_source_failures(source_failures) if source_failures else ''}
+      {_html_source_warnings(source_warnings) if source_warnings else ''}
     </div>
   </header>
 
@@ -1954,6 +1989,33 @@ def _html_source_failures(source_failures: list[dict]) -> str:
     <div class="alert alert-warning" role="status">
       <strong>Source warnings:</strong> {len(source_failures)} query failures across {failed_sources}.
       Results from other sources are still included.
+      <ul class="mb-0 mt-2">
+        {''.join(rows)}
+        {omitted}
+      </ul>
+    </div>
+    """
+
+
+def _html_source_warnings(source_warnings: list[dict]) -> str:
+    """Generate HTML for non-fatal source performance warnings."""
+    warning_sources = ", ".join(html.escape(name) for name in _failed_source_names(source_warnings))
+    rows = []
+    for warning in source_warnings[:10]:
+        source = html.escape(str(warning.get("source", "unknown")))
+        query = html.escape(str(warning.get("query", "")) or "N/A")
+        elapsed = html.escape(str(warning.get("elapsed_seconds", "N/A")))
+        threshold = html.escape(str(warning.get("threshold_seconds", "N/A")))
+        rows.append(f"<li><strong>{source}</strong>: {query} took {elapsed}s (threshold {threshold}s)</li>")
+
+    omitted = ""
+    if len(source_warnings) > 10:
+        omitted = f"<li>{len(source_warnings) - 10} more warnings omitted</li>"
+
+    return f"""
+    <div class="alert alert-warning" role="status">
+      <strong>Performance warnings:</strong> {len(source_warnings)} slow queries across {warning_sources}.
+      Results are still included.
       <ul class="mb-0 mt-2">
         {''.join(rows)}
         {omitted}

@@ -1146,6 +1146,7 @@ def main():
             tracker_stats=tracker_stats,
             min_score=min_score,
             source_failures=dedup_stats.get("query_failure_details"),
+            source_warnings=dedup_stats.get("slow_query_warnings"),
         )
     except Exception as e:
         print(f"\nReport generation failed — your results were found but couldn't be saved")

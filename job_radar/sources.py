@@ -5,6 +5,7 @@ import json as _json
 import logging
 import os
 import re
+import time
 import urllib.parse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
@@ -75,6 +76,8 @@ _MAX_COMPANY = 80
 _MAX_LOCATION = 60
 DEFAULT_MAX_WORKERS = 6
 MAX_WORKERS_ENV = "JOB_RADAR_MAX_WORKERS"
+DEFAULT_SLOW_QUERY_SECONDS = 8.0
+SLOW_QUERY_ENV = "JOB_RADAR_SLOW_QUERY_SECONDS"
 
 
 def resolve_max_workers(value: int | str | None = None) -> int:
@@ -104,6 +107,35 @@ def resolve_max_workers(value: int | str | None = None) -> int:
         return DEFAULT_MAX_WORKERS
 
     return workers
+
+
+def resolve_slow_query_threshold(value: int | float | str | None = None) -> float:
+    """Resolve slow query warning threshold from explicit value or environment."""
+    raw_value = value if value is not None else os.environ.get(SLOW_QUERY_ENV)
+    if raw_value in (None, ""):
+        return DEFAULT_SLOW_QUERY_SECONDS
+
+    try:
+        threshold = float(raw_value)
+    except (TypeError, ValueError):
+        log.warning(
+            "%s must be a non-negative number, got %r; using default %.1f",
+            SLOW_QUERY_ENV,
+            raw_value,
+            DEFAULT_SLOW_QUERY_SECONDS,
+        )
+        return DEFAULT_SLOW_QUERY_SECONDS
+
+    if threshold < 0:
+        log.warning(
+            "%s must be non-negative, got %s; using default %.1f",
+            SLOW_QUERY_ENV,
+            threshold,
+            DEFAULT_SLOW_QUERY_SECONDS,
+        )
+        return DEFAULT_SLOW_QUERY_SECONDS
+
+    return threshold
 
 
 def _clean_field(text: str, max_len: int) -> str:
@@ -2159,7 +2191,13 @@ def get_source_display_name(source: str) -> str:
     return _source_display_name(source)
 
 
-def fetch_all(profile: dict, on_progress=None, on_source_progress=None, max_workers: int | str | None = None) -> list[JobResult]:
+def fetch_all(
+    profile: dict,
+    on_progress=None,
+    on_source_progress=None,
+    max_workers: int | str | None = None,
+    slow_query_seconds: int | float | str | None = None,
+) -> list[JobResult]:
     """Fetch from all automated sources with three-phase source ordering.
 
     Runs scrapers first, native APIs second, and aggregators last so native
@@ -2174,8 +2212,11 @@ def fetch_all(profile: dict, on_progress=None, on_source_progress=None, max_work
                            called when a source starts ('started') or finishes ('complete').
                            job_count is the number of deduplicated results from that source (0 for 'started').
         max_workers: Optional parallel query worker count. Defaults to JOB_RADAR_MAX_WORKERS or 6.
+        slow_query_seconds: Optional threshold for slow-query warnings.
+                            Defaults to JOB_RADAR_SLOW_QUERY_SECONDS or 8.
     """
     worker_count = resolve_max_workers(max_workers)
+    slow_query_threshold = resolve_slow_query_threshold(slow_query_seconds)
     queries = build_search_queries(profile)
 
     queries_by_phase = {
@@ -2209,6 +2250,7 @@ def fetch_all(profile: dict, on_progress=None, on_source_progress=None, max_work
     sources_done = 0
     total_sources = len(source_names)
     query_failures = []
+    slow_query_warnings = []
 
     def run_query(q):
         source = SOURCE_REGISTRY.get(q["source"])
@@ -2225,6 +2267,7 @@ def fetch_all(profile: dict, on_progress=None, on_source_progress=None, max_work
         with ThreadPoolExecutor(max_workers=worker_count) as executor:
             # Submit queries grouped by source — fire START callback before each source's queries
             futures = {}
+            future_started_at = {}
             started_sources_in_phase = set()
             for q in query_list:
                 source = q["source"]
@@ -2234,13 +2277,23 @@ def fetch_all(profile: dict, on_progress=None, on_source_progress=None, max_work
                     if on_source_progress:
                         display_name = _source_display_name(source)
                         on_source_progress(display_name, sources_started, total_sources, "started", 0)
-                futures[executor.submit(run_query, q)] = q
+                future = executor.submit(run_query, q)
+                futures[future] = q
+                future_started_at[future] = time.perf_counter()
 
             # Process results as they complete — fire COMPLETE callback when source finishes
             for future in as_completed(futures):
                 q = futures[future]
                 completed += 1
                 source = q["source"]
+                elapsed = time.perf_counter() - future_started_at[future]
+                if elapsed >= slow_query_threshold:
+                    slow_query_warnings.append({
+                        "source": source,
+                        "query": q.get("query", ""),
+                        "elapsed_seconds": round(elapsed, 2),
+                        "threshold_seconds": slow_query_threshold,
+                    })
                 try:
                     results = future.result()
                     for r in results:
@@ -2285,7 +2338,10 @@ def fetch_all(profile: dict, on_progress=None, on_source_progress=None, max_work
     dedup_stats["query_failures"] = len(query_failures)
     dedup_stats["failed_sources"] = sorted({f["source"] for f in query_failures})
     dedup_stats["query_failure_details"] = query_failures
+    dedup_stats["slow_query_warnings"] = slow_query_warnings
+    dedup_stats["slow_queries"] = len(slow_query_warnings)
     dedup_stats["max_workers"] = worker_count
+    dedup_stats["slow_query_threshold_seconds"] = slow_query_threshold
 
     log.info("Total unique results after deduplication: %d", len(all_results))
     return all_results, dedup_stats

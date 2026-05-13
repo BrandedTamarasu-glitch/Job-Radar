@@ -279,10 +279,12 @@ HTTP responses are cached for 4 hours in `.cache/` to avoid hammering sources du
 
 Set `JOB_RADAR_MAX_WORKERS` to tune how many source queries run in parallel. The default is `6`.
 Set `JOB_RADAR_REQUEST_TIMEOUT` to tune the default HTTP request timeout in seconds. The default is `15`.
+Set `JOB_RADAR_SLOW_QUERY_SECONDS` to tune when source queries are reported as slow. The default is `8`.
 
 ```bash
 JOB_RADAR_MAX_WORKERS=3 job-radar
 JOB_RADAR_REQUEST_TIMEOUT=8 job-radar
+JOB_RADAR_SLOW_QUERY_SECONDS=5 job-radar
 ```
 
 Rate-limit SQLite databases live under the platform app data directory in `rate_limits/`.
@@ -385,7 +387,7 @@ Job-Radar/
 │       ├── search_controls.py # Search tab controls and progress
 │       ├── scoring_config.py # Scoring weights and staffing preference UI
 │       └── tag_chip_widget.py # Reusable tag chip widget for list fields
-├── tests/                  # 705 automated tests (27 test files)
+├── tests/                  # 711 automated tests (27 test files)
 ├── scripts/                # Build scripts for standalone executables
 ├── installers/             # Platform-native installers (v2.1.0+)
 │   ├── macos/             # DMG installer build scripts
