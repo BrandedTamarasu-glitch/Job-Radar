@@ -12,7 +12,8 @@ from job_radar.gui.search_summary import (
     source_warning_message,
     zero_result_lines,
 )
-from job_radar.gui.worker_thread import SearchWorker
+from job_radar.gui.worker_thread import SearchWorker, filter_by_company
+from job_radar.sources import JobResult
 
 
 def test_completion_message_handles_zero_one_and_many():
@@ -64,6 +65,53 @@ def test_interruption_messages_explain_report_state():
     assert "No new report was generated" in cancellation_message()
     assert "before a report could be generated" in error_message("network down")
     assert "network down" in error_message("network down")
+
+
+def test_filter_by_company_applies_include_and_exclude_terms():
+    """Company filters match case-insensitively against company names."""
+    jobs = [
+        JobResult(
+            title="Engineer",
+            company="Northstar Tools",
+            location="Remote",
+            arrangement="remote",
+            salary="Not listed",
+            date_posted="Today",
+            description="Build software",
+            url="https://example.com/1",
+            source="Dice",
+        ),
+        JobResult(
+            title="Engineer",
+            company="LedgerWorks",
+            location="Remote",
+            arrangement="remote",
+            salary="Not listed",
+            date_posted="Today",
+            description="Build software",
+            url="https://example.com/2",
+            source="Dice",
+        ),
+        JobResult(
+            title="Engineer",
+            company="ScaleOps",
+            location="Remote",
+            arrangement="remote",
+            salary="Not listed",
+            date_posted="Today",
+            description="Build software",
+            url="https://example.com/3",
+            source="Dice",
+        ),
+    ]
+
+    filtered = filter_by_company(
+        jobs,
+        include="northstar, ledger",
+        exclude="ledger",
+    )
+
+    assert [job.company for job in filtered] == ["Northstar Tools"]
 
 
 def test_clear_cache_settings_handler_updates_status_label(tmp_path):
@@ -235,3 +283,78 @@ def test_search_worker_applies_selected_sources(tmp_path):
 
     assert captured["selected_sources"] == ["dice"]
     assert captured["sources_searched"] == ["Dice"]
+
+
+def test_search_worker_filters_companies_before_scoring_and_tracking(tmp_path):
+    """SearchWorker applies company filters before scoring/tracking/reporting."""
+    result_queue = queue.Queue()
+    stop_event = threading.Event()
+    captured = {}
+    profile = {
+        "name": "Test User",
+        "target_titles": ["Backend Engineer"],
+        "core_skills": ["Python"],
+    }
+    jobs = [
+        JobResult(
+            title="Backend Engineer",
+            company="Northstar Tools",
+            location="Remote",
+            arrangement="remote",
+            salary="Not listed",
+            date_posted="Today",
+            description="Build Python APIs",
+            url="https://example.com/1",
+            source="Dice",
+        ),
+        JobResult(
+            title="Backend Engineer",
+            company="LedgerWorks",
+            location="Remote",
+            arrangement="remote",
+            salary="Not listed",
+            date_posted="Today",
+            description="Build Python APIs",
+            url="https://example.com/2",
+            source="Dice",
+        ),
+    ]
+
+    def fake_fetch_all(fetch_profile, on_source_progress=None, selected_sources=None):
+        return jobs, {
+            "query_failures": 0,
+            "failed_sources": [],
+            "query_failure_details": [],
+        }
+
+    def fake_mark_seen(scored):
+        captured["tracked_companies"] = [item["job"].company for item in scored]
+        return scored
+
+    def fake_generate_report(**kwargs):
+        captured["reported_companies"] = [
+            item["job"].company for item in kwargs["scored_results"]
+        ]
+        return {"html": str(tmp_path / "jobs.html")}
+
+    with patch("job_radar.api_config.load_api_credentials"):
+        with patch("job_radar.sources.fetch_all", side_effect=fake_fetch_all):
+            with patch("job_radar.sources.generate_manual_urls", return_value=[]):
+                with patch("job_radar.sources.get_automated_source_display_names", return_value=["Dice"]):
+                    with patch("job_radar.tracker.mark_seen", side_effect=fake_mark_seen):
+                        with patch("job_radar.tracker.get_stats", return_value=None):
+                            with patch("job_radar.report.generate_report", side_effect=fake_generate_report):
+                                worker = SearchWorker(
+                                    result_queue,
+                                    stop_event,
+                                    profile,
+                                    {
+                                        "min_score": 0,
+                                        "include_companies": "northstar, ledger",
+                                        "exclude_companies": "ledger",
+                                    },
+                                )
+                                worker.run()
+
+    assert captured["tracked_companies"] == ["Northstar Tools"]
+    assert captured["reported_companies"] == ["Northstar Tools"]

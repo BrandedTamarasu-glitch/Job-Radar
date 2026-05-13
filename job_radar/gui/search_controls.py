@@ -138,9 +138,34 @@ class SearchControls(ctk.CTkFrame):
         self._new_only = ctk.CTkSwitch(new_section, text="New jobs only")
         self._new_only.pack(anchor="w")
 
+        # Company filter section
+        company_section = ctk.CTkFrame(self, fg_color="transparent")
+        company_section.grid(row=4, column=0, sticky="ew", padx=10, pady=10)
+        company_section.grid_columnconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            company_section,
+            text="Company Filters",
+            font=ctk.CTkFont(size=13, weight="bold"),
+        ).grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 6))
+
+        ctk.CTkLabel(company_section, text="Include:").grid(row=1, column=0, sticky="w", padx=(0, 10))
+        self._include_companies = ctk.CTkEntry(
+            company_section,
+            placeholder_text="Comma-separated company names",
+        )
+        self._include_companies.grid(row=1, column=1, sticky="ew", pady=4)
+
+        ctk.CTkLabel(company_section, text="Exclude:").grid(row=2, column=0, sticky="w", padx=(0, 10))
+        self._exclude_companies = ctk.CTkEntry(
+            company_section,
+            placeholder_text="Comma-separated company names",
+        )
+        self._exclude_companies.grid(row=2, column=1, sticky="ew", pady=4)
+
         # Source selection section
         source_section = ctk.CTkFrame(self, fg_color="transparent")
-        source_section.grid(row=4, column=0, sticky="ew", padx=10, pady=10)
+        source_section.grid(row=5, column=0, sticky="ew", padx=10, pady=10)
 
         ctk.CTkLabel(
             source_section,
@@ -302,6 +327,8 @@ class SearchControls(ctk.CTkFrame):
             key for key, var in self._source_vars.items()
             if var.get()
         ]
+        include_companies = self._include_companies.get().strip()
+        exclude_companies = self._exclude_companies.get().strip()
 
         return {
             "from_date": from_date,
@@ -310,6 +337,8 @@ class SearchControls(ctk.CTkFrame):
             "new_only": new_only,
             "preset": None if preset == "None" else preset,
             "selected_sources": selected_sources,
+            "include_companies": include_companies,
+            "exclude_companies": exclude_companies,
         }
 
     def set_defaults(self, config: dict):
@@ -338,6 +367,14 @@ class SearchControls(ctk.CTkFrame):
             selected_sources = set(config["selected_sources"] or [])
             for key, var in self._source_vars.items():
                 var.set(key in selected_sources)
+
+        if "include_companies" in config:
+            self._include_companies.delete(0, "end")
+            self._include_companies.insert(0, config["include_companies"] or "")
+
+        if "exclude_companies" in config:
+            self._exclude_companies.delete(0, "end")
+            self._exclude_companies.insert(0, config["exclude_companies"] or "")
 
         if "from_date" in config and config["from_date"]:
             self._date_enabled.select()

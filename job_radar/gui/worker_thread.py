@@ -16,6 +16,39 @@ from pathlib import Path
 import requests
 
 
+def parse_company_filter(value: str | list[str] | None) -> list[str]:
+    """Parse comma-separated company filter text into normalized terms."""
+    if not value:
+        return []
+    if isinstance(value, str):
+        raw_items = value.split(",")
+    else:
+        raw_items = value
+    return [
+        item.strip().casefold()
+        for item in raw_items
+        if item and item.strip()
+    ]
+
+
+def filter_by_company(results: list, include=None, exclude=None) -> list:
+    """Filter jobs by company include/exclude terms."""
+    include_terms = parse_company_filter(include)
+    exclude_terms = parse_company_filter(exclude)
+    if not include_terms and not exclude_terms:
+        return results
+
+    filtered = []
+    for result in results:
+        company = getattr(result, "company", "").casefold()
+        if include_terms and not any(term in company for term in include_terms):
+            continue
+        if exclude_terms and any(term in company for term in exclude_terms):
+            continue
+        filtered.append(result)
+    return filtered
+
+
 class MockSearchWorker:
     """Simulates a long-running search operation for threading validation.
 
@@ -284,6 +317,12 @@ class SearchWorker:
             to_date = self._search_config.get("to_date")
             if from_date and to_date:
                 results = filter_by_date(results, from_date, to_date)
+
+            results = filter_by_company(
+                results,
+                include=self._search_config.get("include_companies"),
+                exclude=self._search_config.get("exclude_companies"),
+            )
 
             if self._stop_event.is_set():
                 self._queue.put(("cancelled",))

@@ -38,12 +38,12 @@ Accessibility:
 
 Goal: let users steer what gets searched without editing their profile for every run.
 
-Status: started. CLI saved search presets already exist; GUI search controls now expose the same presets and the worker applies the selected preset before fetching, scoring, manual URL generation, and report rendering. GUI source checkboxes now allow per-search automated source selection.
+Status: started. CLI saved search presets already exist; GUI search controls now expose the same presets and the worker applies the selected preset before fetching, scoring, manual URL generation, and report rendering. GUI source checkboxes now allow per-search automated source selection. Include/exclude company filters are available per GUI search and apply before scoring/tracking.
 
 Deliverables:
 - [Done] Add saved search presets to GUI search controls.
 - [Partial] Add per-search source toggles for automated and manual sources. Automated source toggles are implemented; manual source toggles remain.
-- Add include/exclude company filters.
+- [Done] Add include/exclude company filters.
 - Add must-have vs nice-to-have skill controls.
 - Add location/remote strictness controls.
 - Add freshness controls: 24h, 48h, 7d, custom.
@@ -51,7 +51,7 @@ Deliverables:
 Validation:
 - [Done] Tests that GUI preset selection applies the same overlay as CLI presets.
 - [Partial] Source-toggle tests ensuring disabled sources are not queried or shown as searched.
-- Scoring/search tests for must-have skills and company filters.
+- [Partial] Scoring/search tests for must-have skills and company filters. Company filter tests are implemented.
 - Full suite after each behavior slice.
 
 Accessibility:
