@@ -390,6 +390,12 @@ def test_empty_results_generates_reports(sample_profile, sample_manual_urls, tmp
     # Check HTML contains "No results" message
     html_content = Path(result["html"]).read_text(encoding='utf-8')
     assert "No results" in html_content or "no results" in html_content.lower()
+    assert "Try next" in html_content
+    assert "Lower the minimum score threshold" in html_content
+
+    markdown_content = Path(result["markdown"]).read_text(encoding="utf-8")
+    assert "### Try Next" in markdown_content
+    assert "Broaden target titles" in markdown_content
 
 
 def test_generate_report_creates_output_dir(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):

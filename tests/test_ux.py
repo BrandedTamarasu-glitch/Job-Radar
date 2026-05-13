@@ -309,3 +309,5 @@ class TestFriendlyErrors:
         output = capsys.readouterr().out
         # Should have encouraging message about broadening search
         assert "no match" in output.lower() or "try" in output.lower() or "broaden" in output.lower()
+        assert "Lower the minimum score threshold" in output
+        assert "Open the manual check URLs" in output

@@ -20,6 +20,15 @@ def _make_snippet(text: str, max_len: int = 80) -> str:
     return clean if clean else "—"
 
 
+ZERO_RESULTS_TIPS = [
+    "Lower the minimum score threshold for this run.",
+    "Broaden target titles or add adjacent titles to your profile.",
+    "Add common variants of your core skills.",
+    "Widen location or include remote/hybrid arrangements.",
+    "Open the manual check URLs below for sources that block automation.",
+]
+
+
 def generate_report(
     profile: dict,
     scored_results: list[dict],
@@ -179,6 +188,10 @@ def _generate_markdown_report(
         lines.append("")
     else:
         lines.append("_No results found._")
+        lines.append("")
+        lines.append("### Try Next")
+        for tip in ZERO_RESULTS_TIPS:
+            lines.append(f"- {tip}")
         lines.append("")
 
     # Manual check URLs (grouped by source)
@@ -2187,11 +2200,16 @@ def _html_recommended_section(recommended: list[dict], profile: dict) -> str:
 def _html_results_table(scored_results: list[dict]) -> str:
     """Generate HTML for all results table."""
     if not scored_results:
+        tips = "".join(f"<li>{html.escape(tip)}</li>" for tip in ZERO_RESULTS_TIPS)
         return """
         <section aria-labelledby="results-heading">
           <div class="mb-4">
             <h2 id="results-heading" class="h4 mb-3">All Results (sorted by score)</h2>
             <p class="text-muted"><em>No results found.</em></p>
+            <h3 class="h5 mt-3">Try next</h3>
+            <ul>
+              """ + tips + """
+            </ul>
           </div>
         </section>
         """

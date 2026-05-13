@@ -35,8 +35,8 @@ from .sources import (
     generate_manual_urls,
     get_automated_source_display_names,
 )
+from .report import ZERO_RESULTS_TIPS, generate_report
 from .scoring import score_job
-from .report import generate_report
 from .tracker import mark_seen, get_stats
 from .browser import open_report_in_browser
 from .paths import get_results_dir
@@ -959,8 +959,10 @@ def main():
     # Check for zero results after scoring
     min_score = args.min_score if args.min_score is not None else 2.8
     if not scored:
-        print(f"\n  No matches found — try broadening your skills or lowering min_score")
+        print(f"\n  No matches found — try broadening your search")
         print(f"  Current min_score: {min_score}")
+        for tip in ZERO_RESULTS_TIPS:
+            print(f"  - {tip}")
         # Continue to generate report (includes manual check URLs)
 
     # Step 5: Generate report
