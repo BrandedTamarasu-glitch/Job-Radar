@@ -77,13 +77,13 @@ Accessibility:
 
 Goal: avoid hidden performance degradation for long-running users.
 
-- Add conservative tracker pruning for old seen jobs.
+- [Done] Add conservative tracker pruning for old seen jobs.
 - Add cache maintenance hooks for stale files.
 - Add a visible cache clear path in CLI/GUI.
 - Document storage locations for cache, tracker, and rate-limit data.
 
 Validation:
-- Tracker pruning boundary tests.
+- [Done] Tracker pruning boundary tests.
 - Cache clear tests for missing and populated directories.
 - Smoke test that old tracker data does not break report status hydration.
 

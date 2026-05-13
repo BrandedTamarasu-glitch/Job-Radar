@@ -11,6 +11,7 @@ from datetime import date, datetime
 log = logging.getLogger(__name__)
 
 _TRACKER_PATH = os.path.join(os.getcwd(), "results", "tracker.json")
+TRACKER_SEEN_RETENTION_DAYS = 180
 
 
 def _load_tracker() -> dict:
@@ -40,6 +41,49 @@ def job_key(title: str, company: str) -> str:
     return f"{title.lower().strip()}||{company.lower().strip()}"
 
 
+def _parse_iso_date(value: str | None) -> date | None:
+    """Parse an ISO date string, returning None for legacy/malformed values."""
+    if not value:
+        return None
+    try:
+        return date.fromisoformat(value[:10])
+    except (TypeError, ValueError):
+        return None
+
+
+def _prune_old_seen_jobs(
+    tracker: dict,
+    *,
+    today: date | None = None,
+    retention_days: int = TRACKER_SEEN_RETENTION_DAYS,
+) -> int:
+    """Prune stale seen-job entries without application status.
+
+    Entries with application state or malformed dates are retained so pruning
+    cannot discard user-managed status data or legacy records we cannot age.
+    """
+    current_date = today or date.today()
+    applications = tracker.get("applications", {})
+    seen_jobs = tracker.get("seen_jobs", {})
+    pruned_keys = []
+
+    for key, entry in seen_jobs.items():
+        if key in applications:
+            continue
+
+        seen_date = _parse_iso_date(entry.get("last_seen") or entry.get("first_seen"))
+        if seen_date is None:
+            continue
+
+        if (current_date - seen_date).days > retention_days:
+            pruned_keys.append(key)
+
+    for key in pruned_keys:
+        del seen_jobs[key]
+
+    return len(pruned_keys)
+
+
 def mark_seen(scored_results: list[dict]) -> list[dict]:
     """Mark each result as 'new' or 'seen'. Returns annotated results.
 
@@ -55,11 +99,13 @@ def mark_seen(scored_results: list[dict]) -> list[dict]:
         if key in seen:
             r["is_new"] = False
             r["first_seen"] = seen[key]["first_seen"]
+            seen[key]["last_seen"] = today
         else:
             r["is_new"] = True
             r["first_seen"] = today
             seen[key] = {
                 "first_seen": today,
+                "last_seen": today,
                 "title": job.title,
                 "company": job.company,
                 "source": job.source,
@@ -76,6 +122,7 @@ def mark_seen(scored_results: list[dict]) -> list[dict]:
 
     # Keep only last 90 days of run history
     tracker["run_history"] = tracker["run_history"][-90:]
+    _prune_old_seen_jobs(tracker)
 
     _save_tracker(tracker)
     return scored_results

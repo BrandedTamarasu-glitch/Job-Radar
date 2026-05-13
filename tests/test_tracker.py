@@ -1,8 +1,18 @@
 """Parametrized tests for tracker functions with tmp_path isolation."""
 
-import pytest
+import json
+from datetime import date, timedelta
 from unittest.mock import patch
-from job_radar.tracker import job_key, mark_seen, get_stats, _TRACKER_PATH
+
+import pytest
+from job_radar.tracker import (
+    TRACKER_SEEN_RETENTION_DAYS,
+    _TRACKER_PATH,
+    _prune_old_seen_jobs,
+    get_stats,
+    job_key,
+    mark_seen,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -76,6 +86,11 @@ def test_mark_seen_repeat_job(tmp_path, job_factory):
 
         # first_seen should be the same date
         assert annotated2[0]["first_seen"] == first_seen_date
+
+        with open(tmp_path / "tracker.json", encoding="utf-8") as f:
+            tracker = json.load(f)
+        entry = tracker["seen_jobs"][job_key("Senior Python Dev", "AcmeCorp")]
+        assert entry["last_seen"] == date.today().isoformat()
 
 
 def test_mark_seen_multiple_jobs(tmp_path, job_factory):
@@ -163,6 +178,87 @@ def test_get_stats_after_runs(tmp_path, job_factory):
         assert stats2["total_unique_jobs_seen"] == 8  # 5 + 3 new
         assert stats2["total_runs"] == 2
         assert stats2["avg_new_per_run_last_7"] == 4.0  # (5+3)/2
+
+
+# ---------------------------------------------------------------------------
+# tracker pruning tests
+# ---------------------------------------------------------------------------
+
+def test_prune_old_seen_jobs_removes_stale_entries_without_status():
+    """Test old seen jobs without application status are pruned."""
+    today = date(2026, 5, 13)
+    stale_date = today - timedelta(days=TRACKER_SEEN_RETENTION_DAYS + 1)
+    fresh_date = today - timedelta(days=TRACKER_SEEN_RETENTION_DAYS)
+    tracker = {
+        "seen_jobs": {
+            "stale||company": {"first_seen": stale_date.isoformat()},
+            "fresh||company": {"first_seen": fresh_date.isoformat()},
+        },
+        "applications": {},
+        "run_history": [],
+    }
+
+    pruned = _prune_old_seen_jobs(tracker, today=today)
+
+    assert pruned == 1
+    assert "stale||company" not in tracker["seen_jobs"]
+    assert "fresh||company" in tracker["seen_jobs"]
+
+
+def test_prune_old_seen_jobs_keeps_entries_with_application_status():
+    """Test application status protects old seen jobs from pruning."""
+    today = date(2026, 5, 13)
+    stale_date = today - timedelta(days=TRACKER_SEEN_RETENTION_DAYS + 30)
+    tracker = {
+        "seen_jobs": {
+            "applied||company": {"first_seen": stale_date.isoformat()},
+        },
+        "applications": {
+            "applied||company": {"status": "applied"},
+        },
+        "run_history": [],
+    }
+
+    pruned = _prune_old_seen_jobs(tracker, today=today)
+
+    assert pruned == 0
+    assert "applied||company" in tracker["seen_jobs"]
+
+
+def test_prune_old_seen_jobs_uses_last_seen_when_available():
+    """Test recently re-seen jobs are retained even with old first_seen dates."""
+    today = date(2026, 5, 13)
+    tracker = {
+        "seen_jobs": {
+            "active||company": {
+                "first_seen": "2025-01-01",
+                "last_seen": today.isoformat(),
+            },
+        },
+        "applications": {},
+        "run_history": [],
+    }
+
+    pruned = _prune_old_seen_jobs(tracker, today=today)
+
+    assert pruned == 0
+    assert "active||company" in tracker["seen_jobs"]
+
+
+def test_prune_old_seen_jobs_keeps_malformed_legacy_dates():
+    """Test legacy records with malformed dates are retained."""
+    tracker = {
+        "seen_jobs": {
+            "legacy||company": {"first_seen": "not-a-date"},
+        },
+        "applications": {},
+        "run_history": [],
+    }
+
+    pruned = _prune_old_seen_jobs(tracker, today=date(2026, 5, 13))
+
+    assert pruned == 0
+    assert "legacy||company" in tracker["seen_jobs"]
 
 
 # ---------------------------------------------------------------------------

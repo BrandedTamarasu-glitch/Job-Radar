@@ -255,6 +255,7 @@ The tool maintains a `results/tracker.json` file that persists across runs:
 - **Cross-source matching** — rapidfuzz fuzzy matching at 85% threshold prevents duplicates from different sources
 - **Application status** — Track Applied/Interviewing/Rejected/Offer status in HTML reports (saved to localStorage and tracker.json)
 - **Run history** — Tracks total results and new results per run for the last 90 days
+- **Seen-job maintenance** — Seen jobs older than 180 days are pruned unless they have application status or legacy date data that cannot be safely aged
 - **Lifetime stats** — Shows total unique jobs seen and average new jobs per run in the report header
 
 ## Config File
@@ -387,7 +388,7 @@ Job-Radar/
 │       ├── search_controls.py # Search tab controls and progress
 │       ├── scoring_config.py # Scoring weights and staffing preference UI
 │       └── tag_chip_widget.py # Reusable tag chip widget for list fields
-├── tests/                  # 715 automated tests (27 test files)
+├── tests/                  # 719 automated tests (27 test files)
 ├── scripts/                # Build scripts for standalone executables
 ├── installers/             # Platform-native installers (v2.1.0+)
 │   ├── macos/             # DMG installer build scripts
