@@ -422,6 +422,7 @@ class SearchWorker:
                 search_profile,
                 on_source_progress=on_source_progress,
                 selected_sources=selected_sources,
+                cancellation_event=self._stop_event,
             )
             source_failures = dedup_stats.get("query_failure_details") or []
             failed_source_names = [

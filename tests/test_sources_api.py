@@ -1,5 +1,7 @@
 """Tests for API source integration covering mappers, text utilities, fetchers, and pipeline."""
 
+import threading
+
 import pytest
 from unittest.mock import patch, MagicMock
 from job_radar.sources import (
@@ -665,6 +667,29 @@ def test_source_cache_ttl_uses_source_specific_values():
     assert source_cache_ttl("dice") == 3600
     assert source_cache_ttl("usajobs") == 12 * 3600
     assert source_cache_ttl("unknown") == 4 * 3600
+
+
+def test_fetch_all_honors_cancellation_before_query_submission(monkeypatch):
+    """fetch_all skips query submission when cancellation is already requested."""
+    profile = {
+        "target_titles": ["Software Engineer"],
+        "core_skills": [],
+        "target_market": "Remote",
+    }
+    calls = []
+    cancellation_event = threading.Event()
+    cancellation_event.set()
+    monkeypatch.setattr("job_radar.sources.fetch_dice", lambda *args, **kwargs: calls.append(args) or [])
+
+    results, stats = fetch_all(
+        profile,
+        selected_sources=["dice"],
+        cancellation_event=cancellation_event,
+    )
+
+    assert results == []
+    assert calls == []
+    assert stats["cancelled"] is True
 
 
 def test_fetch_all_records_slow_query_warnings(monkeypatch):

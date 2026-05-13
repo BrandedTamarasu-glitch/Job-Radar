@@ -314,7 +314,7 @@ def test_search_worker_emits_completion_summary(tmp_path, source_health_recorder
         "core_skills": ["Python"],
     }
 
-    def fake_fetch_all(_profile, on_source_progress=None, selected_sources=None):
+    def fake_fetch_all(_profile, on_source_progress=None, selected_sources=None, cancellation_event=None):
         on_source_progress("Dice", 1, 2, "started", 0)
         on_source_progress("Dice", 1, 2, "complete", 0)
         on_source_progress("RemoteOK", 2, 2, "started", 0)
@@ -369,7 +369,7 @@ def test_search_worker_applies_gui_search_preset(tmp_path):
         "location": "Austin, TX",
     }
 
-    def fake_fetch_all(fetch_profile, on_source_progress=None, selected_sources=None):
+    def fake_fetch_all(fetch_profile, on_source_progress=None, selected_sources=None, cancellation_event=None):
         captured["fetch_profile"] = fetch_profile
         if on_source_progress:
             on_source_progress("RemoteOK", 1, 1, "started", 0)
@@ -424,7 +424,7 @@ def test_search_worker_applies_selected_sources(tmp_path):
         "core_skills": ["Python"],
     }
 
-    def fake_fetch_all(fetch_profile, on_source_progress=None, selected_sources=None):
+    def fake_fetch_all(fetch_profile, on_source_progress=None, selected_sources=None, cancellation_event=None):
         captured["selected_sources"] = selected_sources
         return [], {
             "query_failures": 0,
@@ -508,7 +508,7 @@ def test_search_worker_filters_companies_before_scoring_and_tracking(tmp_path):
         ),
     ]
 
-    def fake_fetch_all(fetch_profile, on_source_progress=None, selected_sources=None):
+    def fake_fetch_all(fetch_profile, on_source_progress=None, selected_sources=None, cancellation_event=None):
         return jobs, {
             "query_failures": 0,
             "failed_sources": [],
@@ -583,7 +583,7 @@ def test_search_worker_hides_rejected_and_skipped_applications_before_report(tmp
         ),
     ]
 
-    def fake_fetch_all(fetch_profile, on_source_progress=None, selected_sources=None):
+    def fake_fetch_all(fetch_profile, on_source_progress=None, selected_sources=None, cancellation_event=None):
         return jobs, {
             "query_failures": 0,
             "failed_sources": [],
@@ -657,7 +657,7 @@ def test_search_worker_filters_required_skills_before_scoring_and_tracking(tmp_p
         ),
     ]
 
-    def fake_fetch_all(fetch_profile, on_source_progress=None, selected_sources=None):
+    def fake_fetch_all(fetch_profile, on_source_progress=None, selected_sources=None, cancellation_event=None):
         return jobs, {
             "query_failures": 0,
             "failed_sources": [],
@@ -708,7 +708,7 @@ def test_search_worker_applies_preferred_skills_to_search_profile(tmp_path):
         "secondary_skills": ["Docker"],
     }
 
-    def fake_fetch_all(fetch_profile, on_source_progress=None, selected_sources=None):
+    def fake_fetch_all(fetch_profile, on_source_progress=None, selected_sources=None, cancellation_event=None):
         captured["fetch_profile"] = fetch_profile
         return [], {
             "query_failures": 0,
@@ -786,7 +786,7 @@ def test_search_worker_filters_location_strictness_before_scoring_and_tracking(t
         ),
     ]
 
-    def fake_fetch_all(fetch_profile, on_source_progress=None, selected_sources=None):
+    def fake_fetch_all(fetch_profile, on_source_progress=None, selected_sources=None, cancellation_event=None):
         return jobs, {
             "query_failures": 0,
             "failed_sources": [],
@@ -861,7 +861,7 @@ def test_search_worker_applies_freshness_before_scoring_and_tracking(tmp_path):
         ),
     ]
 
-    def fake_fetch_all(fetch_profile, on_source_progress=None, selected_sources=None):
+    def fake_fetch_all(fetch_profile, on_source_progress=None, selected_sources=None, cancellation_event=None):
         return jobs, {
             "query_failures": 0,
             "failed_sources": [],

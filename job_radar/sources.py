@@ -2292,6 +2292,7 @@ def fetch_all(
     max_workers: int | str | None = None,
     slow_query_seconds: int | float | str | None = None,
     selected_sources: list[str] | None = None,
+    cancellation_event=None,
 ) -> list[JobResult]:
     """Fetch from all automated sources with three-phase source ordering.
 
@@ -2310,6 +2311,8 @@ def fetch_all(
         slow_query_seconds: Optional threshold for slow-query warnings.
                             Defaults to JOB_RADAR_SLOW_QUERY_SECONDS or 8.
         selected_sources: Optional list of source keys to query. Defaults to all sources.
+        cancellation_event: Optional threading.Event-like object. When set,
+                            stops new query submission and skips later phases.
     """
     worker_count = resolve_max_workers(max_workers)
     slow_query_threshold = resolve_slow_query_threshold(slow_query_seconds)
@@ -2356,6 +2359,8 @@ def fetch_all(
     slow_query_warnings = []
 
     def run_query(q):
+        if cancellation_event is not None and cancellation_event.is_set():
+            return []
         source = SOURCE_REGISTRY.get(q["source"])
         if source is None:
             log.warning("Unknown source skipped: %s", q["source"])
@@ -2373,6 +2378,8 @@ def fetch_all(
             future_started_at = {}
             started_sources_in_phase = set()
             for q in query_list:
+                if cancellation_event is not None and cancellation_event.is_set():
+                    break
                 source = q["source"]
                 if source not in started_sources_in_phase:
                     started_sources_in_phase.add(source)
@@ -2386,6 +2393,11 @@ def fetch_all(
 
             # Process results as they complete — fire COMPLETE callback when source finishes
             for future in as_completed(futures):
+                if cancellation_event is not None and cancellation_event.is_set():
+                    for pending in futures:
+                        if not pending.done():
+                            pending.cancel()
+                    break
                 q = futures[future]
                 completed += 1
                 source = q["source"]
@@ -2427,6 +2439,8 @@ def fetch_all(
     log.info("Running %d search queries in sequential phases with %d workers...", len(queries), worker_count)
 
     for phase in SOURCE_PHASE_ORDER:
+        if cancellation_event is not None and cancellation_event.is_set():
+            break
         phase_queries = queries_by_phase[phase]
         if phase_queries:
             log.debug("Running %d %s queries", len(phase_queries), phase)
@@ -2446,6 +2460,7 @@ def fetch_all(
     dedup_stats["max_workers"] = worker_count
     dedup_stats["slow_query_threshold_seconds"] = slow_query_threshold
     dedup_stats["cache_stats"] = get_cache_stats()
+    dedup_stats["cancelled"] = bool(cancellation_event and cancellation_event.is_set())
 
     log.info("Total unique results after deduplication: %d", len(all_results))
     return all_results, dedup_stats

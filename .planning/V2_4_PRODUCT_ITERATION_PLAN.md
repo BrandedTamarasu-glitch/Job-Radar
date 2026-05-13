@@ -86,7 +86,7 @@ Accessibility:
 
 Goal: make performance explainable and tunable as source coverage grows.
 
-Status: started. GUI search completion summaries now include per-source elapsed timing from the worker progress callback, making slow sources visible after each run. The tracker now persists compact source health history across runs for future diagnostics. Cache hit/miss/write counters are now captured per fetch run and surfaced in GUI/CLI summaries. Settings now includes slowest-source diagnostics built from persisted source health history. Source fetchers now have source-specific cache TTLs.
+Status: started. GUI search completion summaries now include per-source elapsed timing from the worker progress callback, making slow sources visible after each run. The tracker now persists compact source health history across runs for future diagnostics. Cache hit/miss/write counters are now captured per fetch run and surfaced in GUI/CLI summaries. Settings now includes slowest-source diagnostics built from persisted source health history. Source fetchers now have source-specific cache TTLs. GUI cancellation now propagates into fetch execution boundaries so pending phases and unsubmitted source queries can stop earlier.
 
 Deliverables:
 - [Done] Add per-source timing to GUI completion summary.
@@ -94,7 +94,7 @@ Deliverables:
 - [Done] Add cache hit/miss counters.
 - [View-model/UI done] Add "slowest sources" diagnostics in Settings.
 - [Backend done] Consider per-source cache TTLs.
-- Improve cancellation propagation deeper into source fetches where practical.
+- [Backend done] Improve cancellation propagation deeper into source fetches where practical.
 
 Validation:
 - [Done] Tests for GUI source timing summary formatting and worker aggregation.
@@ -102,7 +102,7 @@ Validation:
 - [Done] Tests for cache metric aggregation.
 - [Done] Source diagnostics view-model tests.
 - [Done] Cache TTL tests for custom expiry and source-specific values.
-- Cancellation tests for source execution boundaries.
+- [Done] Cancellation tests for source execution boundaries.
 - Full suite and at least one manual slow-source smoke test.
 
 Accessibility:
