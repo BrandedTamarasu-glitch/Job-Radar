@@ -57,6 +57,8 @@ Risks:
 
 Goal: preserve current report features while reducing payload and maintenance risk.
 
+Status: started. Unused Prism syntax-highlighting CSS/JS assets are being removed from generated reports while preserving Bootstrap, Notyf, clipboard, status, filter, CSV, keyboard, and print behavior.
+
 - Extract CSS/JS report generation into focused helper modules or template sections.
 - Remove unused CDN assets if they are not required by report features.
 - Add optional collapsed sections for lower-score results when result count is high.

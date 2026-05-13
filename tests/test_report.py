@@ -544,6 +544,24 @@ def test_html_report_contains_notyf_cdn(sample_profile, sample_scored_results, s
     assert "notyf.min.js" in html_content
 
 
+def test_html_report_omits_unused_prism_assets(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Report payload does not include unused syntax-highlighting assets."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+
+    html_content = Path(result["html"]).read_text(encoding="utf-8")
+
+    assert "prismjs" not in html_content.lower()
+    assert "prism.css" not in html_content.lower()
+
+
 def test_html_report_contains_clipboard_javascript(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
     """Test that HTML report includes clipboard JavaScript functionality."""
     result = generate_report(

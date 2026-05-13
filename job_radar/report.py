@@ -419,9 +419,6 @@ def _generate_html_report(
   <!-- Notyf toast notifications -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
 
-  <!-- Prism.js syntax highlighting -->
-  <link href="https://cdn.jsdelivr.net/npm/prismjs@1/themes/prism.css" rel="stylesheet">
-
   <style>
     /* CSS Custom Properties Foundation */
     :root {{
@@ -1039,10 +1036,6 @@ def _generate_html_report(
 
   <!-- Notyf toast notifications -->
   <script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
-
-  <!-- Prism.js for syntax highlighting -->
-  <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-core.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/prismjs@1/plugins/autoloader/prism-autoloader.min.js"></script>
 
   <!-- Clipboard and keyboard functionality -->
   <script>
