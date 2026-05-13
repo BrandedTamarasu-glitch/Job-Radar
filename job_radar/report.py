@@ -1925,6 +1925,65 @@ def _html_profile_section(profile: dict) -> str:
     """
 
 
+def _html_job_detail_items(result: dict, profile: dict) -> str:
+    """Build the shared detail list for hero and recommended job cards."""
+    job = result["job"]
+    score = result["score"]
+    components = score["components"]
+    skill = components["skill_match"]
+    response = components["response"]
+
+    details = []
+    details.append(f"<li><strong>Posted:</strong> {html.escape(job.date_posted)}</li>")
+    details.append(f"<li><strong>Rate/Salary:</strong> {html.escape(job.salary)}</li>")
+
+    emp_type = getattr(job, "employment_type", "")
+    type_str = f" | {html.escape(emp_type)}" if emp_type else ""
+    details.append(f"<li><strong>Location:</strong> {html.escape(job.location)} | {html.escape(job.arrangement)}{type_str}</li>")
+
+    matched_core = ", ".join(skill["matched_core"]) if skill["matched_core"] else "none"
+    details.append(f"<li><strong>Stack match:</strong> {html.escape(skill['ratio'])} — matched: {html.escape(matched_core)}</li>")
+
+    if skill.get("matched_secondary"):
+        matched_sec = ", ".join(skill["matched_secondary"])
+        details.append(f"<li><strong>Secondary skills:</strong> {html.escape(matched_sec)}</li>")
+
+    if skill.get("missing_core"):
+        missing_core = ", ".join(skill["missing_core"])
+        details.append(f"<li><strong>Missing core skills:</strong> {html.escape(missing_core)}</li>")
+
+    title_rel = components.get("title_relevance", {})
+    if title_rel:
+        details.append(f"<li><strong>Title match:</strong> {html.escape(title_rel.get('reason', 'N/A'))}</li>")
+
+    details.append(f"<li><strong>Seniority:</strong> {html.escape(components['seniority']['reason'])}</li>")
+    details.append(f"<li><strong>Response likelihood:</strong> {html.escape(response['likelihood'])} — {html.escape(response['reason'])}</li>")
+
+    if components.get("comp_note"):
+        details.append(f"<li><strong>Comp warning:</strong> {html.escape(components['comp_note'])}</li>")
+
+    if components.get("parse_note"):
+        details.append(f"<li><strong>Note:</strong> {html.escape(components['parse_note'])}</li>")
+
+    if job.apply_info:
+        details.append(f"<li><strong>Apply:</strong> {html.escape(job.apply_info)}</li>")
+
+    if job.url:
+        source_aria_label = f"View on {job.source}, opens in new tab"
+        details.append(f'<li><strong>Link:</strong> <a href="{html.escape(job.url)}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary" aria-label="{html.escape(source_aria_label)}">{html.escape(job.source)}</a></li>')
+        details.append(f'<li><button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copySingleUrl(this)" data-url="{html.escape(job.url)}">Copy URL</button></li>')
+
+    highlights = profile.get("highlights", [])
+    matched_core_list = skill.get("matched_core", [])
+    if highlights and matched_core_list:
+        relevant = _match_highlights(highlights, matched_core_list, job)
+        if relevant:
+            talking_points = "".join(f"<li>{html.escape(h)}</li>" for h in relevant)
+            details.append(f"<li><strong>Talking points:</strong><ul>{talking_points}</ul></li>")
+
+    return "".join(details)
+
+
 def _html_hero_section(hero_jobs: list[dict], profile: dict) -> str:
     """Generate HTML for hero jobs section (score >= 4.0)."""
     if not hero_jobs:
@@ -1934,9 +1993,6 @@ def _html_hero_section(hero_jobs: list[dict], profile: dict) -> str:
     for i, r in enumerate(hero_jobs, 1):
         job = r["job"]
         score = r["score"]
-        components = score["components"]
-        skill = components["skill_match"]
-        response = components["response"]
         is_new = r.get("is_new", True)
         new_tag = ' <span class="badge bg-primary"><span class="visually-hidden">New listing, not seen in previous searches. </span>NEW</span>' if is_new else ""
 
@@ -1944,57 +2000,7 @@ def _html_hero_section(hero_jobs: list[dict], profile: dict) -> str:
         tier = "strong"
         score_val = score["overall"]
 
-        # Build details list
-        details = []
-        details.append(f"<li><strong>Posted:</strong> {html.escape(job.date_posted)}</li>")
-        details.append(f"<li><strong>Rate/Salary:</strong> {html.escape(job.salary)}</li>")
-
-        emp_type = getattr(job, "employment_type", "")
-        type_str = f" | {html.escape(emp_type)}" if emp_type else ""
-        details.append(f"<li><strong>Location:</strong> {html.escape(job.location)} | {html.escape(job.arrangement)}{type_str}</li>")
-
-        matched_core = ", ".join(skill["matched_core"]) if skill["matched_core"] else "none"
-        details.append(f"<li><strong>Stack match:</strong> {html.escape(skill['ratio'])} — matched: {html.escape(matched_core)}</li>")
-
-        if skill.get("matched_secondary"):
-            matched_sec = ", ".join(skill["matched_secondary"])
-            details.append(f"<li><strong>Secondary skills:</strong> {html.escape(matched_sec)}</li>")
-
-        if skill.get("missing_core"):
-            missing_core = ", ".join(skill["missing_core"])
-            details.append(f"<li><strong>Missing core skills:</strong> {html.escape(missing_core)}</li>")
-
-        title_rel = components.get("title_relevance", {})
-        if title_rel:
-            details.append(f"<li><strong>Title match:</strong> {html.escape(title_rel.get('reason', 'N/A'))}</li>")
-
-        details.append(f"<li><strong>Seniority:</strong> {html.escape(components['seniority']['reason'])}</li>")
-        details.append(f"<li><strong>Response likelihood:</strong> {html.escape(response['likelihood'])} — {html.escape(response['reason'])}</li>")
-
-        if components.get("comp_note"):
-            details.append(f"<li><strong>Comp warning:</strong> {html.escape(components['comp_note'])}</li>")
-
-        if components.get("parse_note"):
-            details.append(f"<li><strong>Note:</strong> {html.escape(components['parse_note'])}</li>")
-
-        if job.apply_info:
-            details.append(f"<li><strong>Apply:</strong> {html.escape(job.apply_info)}</li>")
-
-        if job.url:
-            source_aria_label = f"View on {job.source}, opens in new tab"
-            details.append(f'<li><strong>Link:</strong> <a href="{html.escape(job.url)}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary" aria-label="{html.escape(source_aria_label)}">{html.escape(job.source)}</a></li>')
-            details.append(f'<li><button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copySingleUrl(this)" data-url="{html.escape(job.url)}">Copy URL</button></li>')
-
-        # Talking points
-        highlights = profile.get("highlights", [])
-        matched_core_list = skill.get("matched_core", [])
-        if highlights and matched_core_list:
-            relevant = _match_highlights(highlights, matched_core_list, job)
-            if relevant:
-                talking_points = "".join(f"<li>{html.escape(h)}</li>" for h in relevant)
-                details.append(f"<li><strong>Talking points:</strong><ul>{talking_points}</ul></li>")
-
-        details_html = "".join(details)
+        details_html = _html_job_detail_items(r, profile)
 
         # Generate job key for status tracking
         job_key_val = f"{job.title.lower().strip()}||{job.company.lower().strip()}"
@@ -2091,9 +2097,6 @@ def _html_recommended_section(recommended: list[dict], profile: dict) -> str:
     for i, r in enumerate(recommended, 1):
         job = r["job"]
         score = r["score"]
-        components = score["components"]
-        skill = components["skill_match"]
-        response = components["response"]
         is_new = r.get("is_new", True)
         new_tag = ' <span class="badge bg-primary"><span class="visually-hidden">New listing, not seen in previous searches. </span>NEW</span>' if is_new else ""
 
@@ -2101,57 +2104,7 @@ def _html_recommended_section(recommended: list[dict], profile: dict) -> str:
         score_val = score["overall"]
         tier = _score_tier(score_val)
 
-        # Build details list
-        details = []
-        details.append(f"<li><strong>Posted:</strong> {html.escape(job.date_posted)}</li>")
-        details.append(f"<li><strong>Rate/Salary:</strong> {html.escape(job.salary)}</li>")
-
-        emp_type = getattr(job, "employment_type", "")
-        type_str = f" | {html.escape(emp_type)}" if emp_type else ""
-        details.append(f"<li><strong>Location:</strong> {html.escape(job.location)} | {html.escape(job.arrangement)}{type_str}</li>")
-
-        matched_core = ", ".join(skill["matched_core"]) if skill["matched_core"] else "none"
-        details.append(f"<li><strong>Stack match:</strong> {html.escape(skill['ratio'])} — matched: {html.escape(matched_core)}</li>")
-
-        if skill.get("matched_secondary"):
-            matched_sec = ", ".join(skill["matched_secondary"])
-            details.append(f"<li><strong>Secondary skills:</strong> {html.escape(matched_sec)}</li>")
-
-        if skill.get("missing_core"):
-            missing_core = ", ".join(skill["missing_core"])
-            details.append(f"<li><strong>Missing core skills:</strong> {html.escape(missing_core)}</li>")
-
-        title_rel = components.get("title_relevance", {})
-        if title_rel:
-            details.append(f"<li><strong>Title match:</strong> {html.escape(title_rel.get('reason', 'N/A'))}</li>")
-
-        details.append(f"<li><strong>Seniority:</strong> {html.escape(components['seniority']['reason'])}</li>")
-        details.append(f"<li><strong>Response likelihood:</strong> {html.escape(response['likelihood'])} — {html.escape(response['reason'])}</li>")
-
-        if components.get("comp_note"):
-            details.append(f"<li><strong>Comp warning:</strong> {html.escape(components['comp_note'])}</li>")
-
-        if components.get("parse_note"):
-            details.append(f"<li><strong>Note:</strong> {html.escape(components['parse_note'])}</li>")
-
-        if job.apply_info:
-            details.append(f"<li><strong>Apply:</strong> {html.escape(job.apply_info)}</li>")
-
-        if job.url:
-            source_aria_label = f"View on {job.source}, opens in new tab"
-            details.append(f'<li><strong>Link:</strong> <a href="{html.escape(job.url)}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary" aria-label="{html.escape(source_aria_label)}">{html.escape(job.source)}</a></li>')
-            details.append(f'<li><button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copySingleUrl(this)" data-url="{html.escape(job.url)}">Copy URL</button></li>')
-
-        # Talking points
-        highlights = profile.get("highlights", [])
-        matched_core_list = skill.get("matched_core", [])
-        if highlights and matched_core_list:
-            relevant = _match_highlights(highlights, matched_core_list, job)
-            if relevant:
-                talking_points = "".join(f"<li>{html.escape(h)}</li>" for h in relevant)
-                details.append(f"<li><strong>Talking points:</strong><ul>{talking_points}</ul></li>")
-
-        details_html = "".join(details)
+        details_html = _html_job_detail_items(r, profile)
 
         # Generate job key for status tracking (matches tracker.job_key format)
         job_key_val = f"{job.title.lower().strip()}||{job.company.lower().strip()}"

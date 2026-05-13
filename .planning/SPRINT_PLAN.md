@@ -75,6 +75,8 @@ Goal: reduce future change cost without rewriting the app.
 - Split `sources.py` into API sources, scraper sources, and shared parsing utilities.
 - Keep behavior stable with focused tests around each extraction.
 
+Status: in progress. HTML report card detail rendering has been extracted into a shared helper used by both hero and recommended sections, reducing duplicated markup while preserving report output. Remaining work: broader report module extraction and GUI/source module splits.
+
 Deliverable: smaller modules with the same external behavior.
 
 ## Sprint 6: Product Polish
