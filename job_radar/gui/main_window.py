@@ -23,6 +23,12 @@ from job_radar.config import load_config
 from job_radar.update_checker import UpdateChecker, launch_installer, cleanup_old_installers, extract_summary
 from job_radar.gui.profile_form import ProfileForm
 from job_radar.gui.search_controls import SearchControls
+from job_radar.gui.search_summary import (
+    completion_message,
+    source_summary_lines,
+    source_warning_message,
+    zero_result_lines,
+)
 from job_radar.gui.worker_thread import create_search_worker, create_download_worker
 from job_radar.gui.scoring_config import ScoringConfigWidget
 from job_radar.gui.update_banner import UpdateBanner, DownloadConfirmDialog
@@ -586,13 +592,15 @@ class MainWindow(ctk.CTk):
         )
         cancel_btn.pack()
 
-    def _show_search_complete(self, job_count: int):
+    def _show_search_complete(self, job_count: int, summary: dict | None = None):
         """Display completion state with Open Report and New Search buttons.
 
         Parameters
         ----------
         job_count : int
             Total number of jobs found
+        summary : dict | None
+            Optional per-source completion and warning summary.
         """
         # Clear current content
         for widget in self._search_content.winfo_children():
@@ -605,11 +613,48 @@ class MainWindow(ctk.CTk):
         # Completion message
         completion_label = ctk.CTkLabel(
             content_frame,
-            text=f"Search complete! {job_count} jobs found",
+            text=completion_message(job_count),
             font=ctk.CTkFont(size=16, weight="bold"),
-            text_color="green"
+            text_color="green" if job_count else "orange"
         )
-        completion_label.pack(pady=(0, 30))
+        completion_label.pack(pady=(0, 15))
+
+        warning_message = source_warning_message(summary)
+        if warning_message:
+            warning_label = ctk.CTkLabel(
+                content_frame,
+                text=warning_message,
+                font=ctk.CTkFont(size=12),
+                text_color="orange",
+                wraplength=420,
+                justify="center"
+            )
+            warning_label.pack(pady=(0, 12))
+
+        next_actions = zero_result_lines(job_count)
+        if next_actions:
+            next_action_text = "Try next:\n" + "\n".join(f"- {line}" for line in next_actions)
+            next_action_label = ctk.CTkLabel(
+                content_frame,
+                text=next_action_text,
+                font=ctk.CTkFont(size=12),
+                text_color="gray",
+                wraplength=420,
+                justify="left"
+            )
+            next_action_label.pack(pady=(0, 16))
+
+        summary_lines = source_summary_lines(summary)
+        if summary_lines:
+            summary_box = ctk.CTkTextbox(
+                content_frame,
+                width=420,
+                height=min(180, max(80, len(summary_lines) * 24)),
+                state="normal"
+            )
+            summary_box.insert("end", "\n".join(summary_lines))
+            summary_box.configure(state="disabled")
+            summary_box.pack(pady=(0, 20))
 
         # Open Report button
         open_report_btn = ctk.CTkButton(
@@ -649,8 +694,9 @@ class MainWindow(ctk.CTk):
                         _, source_name, current, total, job_count = msg
                         self._on_source_complete(source_name, current, total, job_count)
                     elif msg_type == "search_complete":
-                        _, job_count, report_path = msg
-                        self._on_search_complete(job_count, report_path)
+                        _, job_count, report_path, *rest = msg
+                        summary = rest[0] if rest else None
+                        self._on_search_complete(job_count, report_path, summary)
                     elif msg_type == "cancelled":
                         self._on_search_cancelled()
                     elif msg_type == "error":
@@ -1342,7 +1388,7 @@ class MainWindow(ctk.CTk):
         self._progress_bar.set(current / total)
         self._progress_count.configure(text=f"Source {current} of {total}")
 
-    def _on_search_complete(self, job_count: int, report_path: str):
+    def _on_search_complete(self, job_count: int, report_path: str, summary: dict | None = None):
         """Handle search completion.
 
         Parameters
@@ -1351,9 +1397,11 @@ class MainWindow(ctk.CTk):
             Total number of jobs found
         report_path : str
             Path to generated HTML report
+        summary : dict | None
+            Optional per-source completion and warning summary.
         """
         self._report_path = report_path
-        self._show_search_complete(job_count)
+        self._show_search_complete(job_count, summary)
         self.update_quota_display()
 
     def _on_search_cancelled(self):

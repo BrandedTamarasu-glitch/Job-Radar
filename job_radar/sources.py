@@ -2122,6 +2122,11 @@ def _source_display_name(source: str) -> str:
     return _SOURCE_DISPLAY_NAMES.get(source, source)
 
 
+def get_source_display_name(source: str) -> str:
+    """Return a public human-readable source name for diagnostics."""
+    return _source_display_name(source)
+
+
 def fetch_all(profile: dict, on_progress=None, on_source_progress=None) -> list[JobResult]:
     """Fetch from all automated sources with three-phase source ordering.
 

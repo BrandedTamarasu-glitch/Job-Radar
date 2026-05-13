@@ -1,0 +1,57 @@
+"""Formatting helpers for GUI search completion summaries."""
+
+from __future__ import annotations
+
+from job_radar.report import ZERO_RESULTS_TIPS
+
+
+def completion_message(job_count: int) -> str:
+    """Return the primary GUI completion message for a search."""
+    if job_count == 0:
+        return "Search complete. No matching jobs found."
+    noun = "job" if job_count == 1 else "jobs"
+    return f"Search complete! {job_count} {noun} found"
+
+
+def source_warning_message(summary: dict | None) -> str | None:
+    """Return a concise warning message for partial source failures."""
+    if not summary:
+        return None
+    failures = int(summary.get("query_failures") or 0)
+    if failures <= 0:
+        return None
+
+    failed_sources = summary.get("failed_sources") or []
+    source_text = ", ".join(failed_sources) if failed_sources else "one or more sources"
+    noun = "query" if failures == 1 else "queries"
+    return (
+        f"Warning: {failures} source {noun} failed across {source_text}. "
+        "The report includes results from sources that completed."
+    )
+
+
+def source_summary_lines(summary: dict | None) -> list[str]:
+    """Return per-source summary lines for the GUI completion view."""
+    if not summary:
+        return []
+
+    lines: list[str] = []
+    for source in summary.get("sources", []):
+        name = source.get("name", "Unknown source")
+        job_count = int(source.get("job_count") or 0)
+        warning_count = int(source.get("warning_count") or 0)
+        noun = "job" if job_count == 1 else "jobs"
+        line = f"{name}: {job_count} {noun}"
+        if warning_count:
+            query_noun = "query warning" if warning_count == 1 else "query warnings"
+            line += f" ({warning_count} {query_noun})"
+        lines.append(line)
+
+    return lines
+
+
+def zero_result_lines(job_count: int) -> list[str]:
+    """Return next-action guidance for an empty search result."""
+    if job_count != 0:
+        return []
+    return list(ZERO_RESULTS_TIPS)

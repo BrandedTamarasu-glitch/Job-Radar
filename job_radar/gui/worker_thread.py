@@ -163,7 +163,7 @@ class SearchWorker:
     Queue message protocol:
         - ("source_started", source_name: str, current: int, total: int)
         - ("source_complete", source_name: str, current: int, total: int, job_count: int)
-        - ("search_complete", job_count: int, report_path: str)
+        - ("search_complete", job_count: int, report_path: str, summary: dict)
         - ("cancelled",)
         - ("error", message: str)
     """
@@ -207,6 +207,7 @@ class SearchWorker:
                 fetch_all,
                 generate_manual_urls,
                 get_automated_source_display_names,
+                get_source_display_name,
             )
             from job_radar.scoring import score_job
             from job_radar.report import generate_report
@@ -222,14 +223,45 @@ class SearchWorker:
                 return
 
             # Step 2: Fetch all results with progress callback
+            source_runs = {}
+
             def on_source_progress(source_name, current, total, status, job_count):
                 """Callback for source-level progress updates."""
                 if status == "started":
+                    source_runs.setdefault(source_name, {
+                        "name": source_name,
+                        "job_count": 0,
+                        "warning_count": 0,
+                    })
                     self._queue.put(("source_started", source_name, current, total))
                 elif status == "complete":
+                    source_runs[source_name] = {
+                        "name": source_name,
+                        "job_count": job_count,
+                        "warning_count": 0,
+                    }
                     self._queue.put(("source_complete", source_name, current, total, job_count))
 
             results, dedup_stats = fetch_all(self._profile, on_source_progress=on_source_progress)
+            source_failures = dedup_stats.get("query_failure_details") or []
+            failed_source_names = [
+                get_source_display_name(failure.get("source", "unknown"))
+                for failure in source_failures
+            ]
+            for source_name in failed_source_names:
+                source_runs.setdefault(source_name, {
+                    "name": source_name,
+                    "job_count": 0,
+                    "warning_count": 0,
+                })
+                source_runs[source_name]["warning_count"] += 1
+
+            run_summary = {
+                "sources": list(source_runs.values()),
+                "query_failures": dedup_stats.get("query_failures", 0),
+                "failed_sources": sorted(set(failed_source_names), key=str.casefold),
+                "source_warnings": source_failures,
+            }
 
             if self._stop_event.is_set():
                 self._queue.put(("cancelled",))
@@ -299,14 +331,14 @@ class SearchWorker:
                 output_dir=str(get_results_dir()),
                 tracker_stats=tracker_stats,
                 min_score=min_score,
-                source_failures=dedup_stats.get("query_failure_details"),
+                source_failures=source_failures,
             )
 
             report_path = report_result["html"]
             job_count = len(scored)
 
             # Step 9: Send completion message
-            self._queue.put(("search_complete", job_count, report_path))
+            self._queue.put(("search_complete", job_count, report_path, run_summary))
 
         except Exception as e:
             # Send error to GUI
