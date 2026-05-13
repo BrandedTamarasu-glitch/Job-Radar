@@ -16,6 +16,7 @@ log = logging.getLogger(__name__)
 _TRACKER_PATH: str | None = None
 _LEGACY_TRACKER_PATH = os.path.join(os.getcwd(), "results", "tracker.json")
 TRACKER_SEEN_RETENTION_DAYS = 180
+TRACKER_SOURCE_HEALTH_RETENTION_RUNS = 90
 
 
 def _default_tracker_path() -> Path:
@@ -172,6 +173,51 @@ def get_stats() -> dict:
         "total_runs": len(history),
         "avg_new_per_run_last_7": round(avg_new, 1),
     }
+
+
+def record_source_health(
+    summary: dict,
+    *,
+    timestamp: str | None = None,
+    retention_runs: int = TRACKER_SOURCE_HEALTH_RETENTION_RUNS,
+) -> dict:
+    """Persist per-source run health for later diagnostics."""
+    tracker = _load_tracker()
+    source_health_history = tracker.setdefault("source_health_history", [])
+    sources = []
+    for source in summary.get("sources", []):
+        entry = {
+            "name": source.get("name", "Unknown source"),
+            "job_count": int(source.get("job_count") or 0),
+            "warning_count": int(source.get("warning_count") or 0),
+        }
+        if source.get("duration_seconds") is not None:
+            entry["duration_seconds"] = round(float(source["duration_seconds"]), 3)
+        sources.append(entry)
+
+    health_entry = {
+        "timestamp": timestamp or datetime.now().isoformat(),
+        "sources": sources,
+        "query_failures": int(summary.get("query_failures") or 0),
+        "failed_sources": list(summary.get("failed_sources") or []),
+        "total_jobs": sum(source["job_count"] for source in sources),
+    }
+    if summary.get("source_warnings") is not None:
+        health_entry["source_warnings"] = list(summary.get("source_warnings") or [])
+
+    source_health_history.append(health_entry)
+    tracker["source_health_history"] = source_health_history[-retention_runs:]
+    _save_tracker(tracker)
+    return health_entry
+
+
+def get_source_health_history(limit: int | None = None) -> list[dict]:
+    """Return persisted source health runs in chronological order."""
+    tracker = _load_tracker()
+    history = tracker.get("source_health_history", [])
+    if limit is None:
+        return list(history)
+    return list(history[-limit:])
 
 
 def update_application_status(

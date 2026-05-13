@@ -359,7 +359,12 @@ class SearchWorker:
             )
             from job_radar.scoring import score_job
             from job_radar.report import generate_report
-            from job_radar.tracker import filter_scored_by_application_status, mark_seen, get_stats
+            from job_radar.tracker import (
+                filter_scored_by_application_status,
+                get_stats,
+                mark_seen,
+                record_source_health,
+            )
             from job_radar.search import filter_by_date
             from job_radar.paths import get_results_dir
 
@@ -521,6 +526,7 @@ class SearchWorker:
                 search_profile,
                 selected_manual_sources=selected_manual_sources,
             )
+            record_source_health(run_summary)
             tracker_stats = get_stats()
 
             # Build sources_searched list (all sources we attempted)

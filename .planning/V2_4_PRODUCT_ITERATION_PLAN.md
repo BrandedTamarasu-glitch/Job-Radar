@@ -86,11 +86,11 @@ Accessibility:
 
 Goal: make performance explainable and tunable as source coverage grows.
 
-Status: started. GUI search completion summaries now include per-source elapsed timing from the worker progress callback, making slow sources visible after each run.
+Status: started. GUI search completion summaries now include per-source elapsed timing from the worker progress callback, making slow sources visible after each run. The tracker now persists compact source health history across runs for future diagnostics.
 
 Deliverables:
 - [Done] Add per-source timing to GUI completion summary.
-- Add source health history across runs.
+- [Backend done] Add source health history across runs.
 - Add cache hit/miss counters.
 - Add "slowest sources" diagnostics in Settings.
 - Consider per-source cache TTLs.
@@ -98,6 +98,7 @@ Deliverables:
 
 Validation:
 - [Done] Tests for GUI source timing summary formatting and worker aggregation.
+- [Done] Tracker persistence tests for source health history.
 - Tests for cache metric aggregation.
 - Cancellation tests for source execution boundaries.
 - Full suite and at least one manual slow-source smoke test.

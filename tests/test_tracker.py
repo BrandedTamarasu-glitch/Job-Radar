@@ -12,10 +12,12 @@ from job_radar.tracker import (
     _tracker_path,
     get_application_entry,
     get_application_status,
+    get_source_health_history,
     get_stats,
     filter_scored_by_application_status,
     job_key,
     mark_seen,
+    record_source_health,
     update_application_details,
     update_application_status,
 )
@@ -355,6 +357,69 @@ def test_filter_scored_by_application_status_hides_rejected_and_skipped(job_fact
     )
 
     assert [item["job"].company for item in filtered] == ["Acme"]
+
+
+# ---------------------------------------------------------------------------
+# source health history tests
+# ---------------------------------------------------------------------------
+
+def test_record_source_health_persists_run_summary(tmp_path):
+    """Source health history stores compact per-run source diagnostics."""
+    summary = {
+        "sources": [
+            {
+                "name": "Dice",
+                "job_count": 3,
+                "warning_count": 1,
+                "duration_seconds": 1.23456,
+            },
+            {"name": "RemoteOK", "job_count": 0, "warning_count": 0},
+        ],
+        "query_failures": 1,
+        "failed_sources": ["Dice"],
+        "source_warnings": [{"source": "dice", "query": "Backend", "error": "timeout"}],
+    }
+
+    with patch("job_radar.tracker._TRACKER_PATH", str(tmp_path / "tracker.json")):
+        entry = record_source_health(summary, timestamp="2026-05-13T12:00:00")
+        history = get_source_health_history()
+
+    assert entry["timestamp"] == "2026-05-13T12:00:00"
+    assert entry["total_jobs"] == 3
+    assert entry["query_failures"] == 1
+    assert entry["failed_sources"] == ["Dice"]
+    assert entry["sources"] == [
+        {
+            "name": "Dice",
+            "job_count": 3,
+            "warning_count": 1,
+            "duration_seconds": 1.235,
+        },
+        {"name": "RemoteOK", "job_count": 0, "warning_count": 0},
+    ]
+    assert history == [entry]
+
+
+def test_record_source_health_retains_recent_runs(tmp_path):
+    """Source health history is capped to the most recent runs."""
+    with patch("job_radar.tracker._TRACKER_PATH", str(tmp_path / "tracker.json")):
+        for index in range(4):
+            record_source_health(
+                {
+                    "sources": [{"name": f"Source {index}", "job_count": index}],
+                    "query_failures": 0,
+                },
+                timestamp=f"2026-05-13T12:00:0{index}",
+                retention_runs=2,
+            )
+        history = get_source_health_history()
+        limited = get_source_health_history(limit=1)
+
+    assert [entry["timestamp"] for entry in history] == [
+        "2026-05-13T12:00:02",
+        "2026-05-13T12:00:03",
+    ]
+    assert [entry["timestamp"] for entry in limited] == ["2026-05-13T12:00:03"]
 
 
 # ---------------------------------------------------------------------------

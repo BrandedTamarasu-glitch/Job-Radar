@@ -5,6 +5,8 @@ import threading
 from datetime import date
 from unittest.mock import patch
 
+import pytest
+
 from job_radar.gui.search_summary import (
     cancellation_message,
     completion_message,
@@ -22,6 +24,13 @@ from job_radar.gui.worker_thread import (
     resolve_date_filter,
 )
 from job_radar.sources import JobResult
+
+
+@pytest.fixture(autouse=True)
+def source_health_recorder():
+    """Prevent GUI worker tests from writing source health into real tracker data."""
+    with patch("job_radar.tracker.record_source_health") as recorder:
+        yield recorder
 
 
 def test_completion_message_handles_zero_one_and_many():
@@ -279,7 +288,7 @@ def test_clear_cache_settings_handler_updates_status_label(tmp_path):
     assert "Removed 1 cached response file" in window._cache_status_label.text
 
 
-def test_search_worker_emits_completion_summary(tmp_path):
+def test_search_worker_emits_completion_summary(tmp_path, source_health_recorder):
     """SearchWorker includes source warnings, counts, and timings on completion."""
     result_queue = queue.Queue()
     stop_event = threading.Event()
@@ -327,6 +336,7 @@ def test_search_worker_emits_completion_summary(tmp_path):
         {"name": "Dice", "job_count": 0, "warning_count": 1, "duration_seconds": 0.25},
         {"name": "RemoteOK", "job_count": 3, "warning_count": 0, "duration_seconds": 1.5},
     ]
+    source_health_recorder.assert_called_once_with(summary)
 
 
 def test_search_worker_applies_gui_search_preset(tmp_path):
