@@ -203,7 +203,11 @@ class SearchWorker:
         try:
             # Lazy imports to avoid circular dependencies and keep module importable
             from job_radar.api_config import load_api_credentials
-            from job_radar.sources import fetch_all, generate_manual_urls
+            from job_radar.sources import (
+                fetch_all,
+                generate_manual_urls,
+                get_automated_source_display_names,
+            )
             from job_radar.scoring import score_job
             from job_radar.report import generate_report
             from job_radar.tracker import mark_seen, get_stats
@@ -283,10 +287,7 @@ class SearchWorker:
             tracker_stats = get_stats()
 
             # Build sources_searched list (all sources we attempted)
-            sources_searched = [
-                "Dice", "HN Hiring", "RemoteOK", "We Work Remotely",
-                "Adzuna", "Authentic Jobs", "LinkedIn", "Indeed", "Glassdoor", "USAJobs (Federal)"
-            ]
+            sources_searched = get_automated_source_display_names()
 
             report_result = generate_report(
                 profile=self._profile,

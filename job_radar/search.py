@@ -29,7 +29,12 @@ from .profile_manager import (
     ProfileNotFoundError,
     ProfileCorruptedError,
 )
-from .sources import fetch_all, generate_manual_urls, build_search_queries
+from .sources import (
+    build_search_queries,
+    fetch_all,
+    generate_manual_urls,
+    get_automated_source_display_names,
+)
 from .scoring import score_job
 from .report import generate_report
 from .tracker import mark_seen, get_stats
@@ -910,6 +915,9 @@ def main():
     # Display dedup stats if duplicates found
     if dedup_stats["duplicates_removed"] > 0:
         print(f"  {C.DIM}{dedup_stats['duplicates_removed']} duplicates removed across {dedup_stats['sources_involved']} sources{C.RESET}")
+    if dedup_stats.get("query_failures"):
+        failed_sources = ", ".join(dedup_stats.get("failed_sources", []))
+        print(f"  {C.YELLOW}{dedup_stats['query_failures']} source queries failed: {failed_sources}{C.RESET}")
 
     # Step 2: Date filter
     print(f"\n{C.BOLD}Step 2:{C.RESET} Filtering by date range ({from_date} to {to_date})...")
@@ -957,10 +965,7 @@ def main():
 
     # Step 5: Generate report
     manual_urls = generate_manual_urls(profile)
-    sources_searched = list({r["job"].source for r in scored}) if scored else [
-        "Dice", "HN Hiring", "RemoteOK", "We Work Remotely",
-        "Adzuna", "Authentic Jobs", "LinkedIn", "Indeed", "Glassdoor", "USAJobs (Federal)"
-    ]
+    sources_searched = list({r["job"].source for r in scored}) if scored else get_automated_source_display_names()
     tracker_stats = get_stats()
 
     print(f"\n{C.BOLD}Step 5:{C.RESET} Generating report...")

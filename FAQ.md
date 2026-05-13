@@ -367,13 +367,14 @@ Debug logging shows:
 
 ### Jobs are duplicated across sources
 
-Job Radar uses exact-match URL deduplication. If jobs appear from multiple sources (e.g., JSearch vs Direct), it's because they have different URLs even though they're the same posting.
+Job Radar uses cross-source fuzzy deduplication. It compares title, company, and location, then keeps the richest listing when multiple sources have the same role.
 
 The deduplication algorithm checks:
-1. Exact URL match
-2. Job ID extraction from URL
+1. Exact title, company, and location matches
+2. Fuzzy title/company/location similarity
+3. Listing richness, including salary, description length, structured salary, employment type, apply info, and date posted
 
-Fuzzy matching (e.g., Levenshtein distance) is planned for a future release.
+If duplicates still appear, the listings likely differ enough in company, title, or location that automatic merging would risk hiding distinct roles.
 
 ## Uninstalling
 

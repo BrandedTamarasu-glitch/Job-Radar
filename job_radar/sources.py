@@ -6,8 +6,9 @@ import logging
 import re
 import urllib.parse
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import date
+from typing import Callable
 
 from bs4 import BeautifulSoup
 
@@ -17,6 +18,9 @@ from .rate_limits import check_rate_limit
 from .deduplication import deduplicate_cross_source
 
 log = logging.getLogger(__name__)
+
+
+QueryFetcher = Callable[[dict, dict], list["JobResult"]]
 
 
 @dataclass
@@ -40,6 +44,20 @@ class JobResult:
 
     def __hash__(self):
         return hash((self.title, self.company, self.source))
+
+
+@dataclass(frozen=True)
+class SourceDefinition:
+    """Metadata and query runner for an automated job source."""
+
+    key: str
+    display_name: str
+    phase: str
+    fetcher: QueryFetcher
+
+    def fetch(self, query: dict, profile: dict) -> list[JobResult]:
+        """Run this source's fetcher for one query dict."""
+        return self.fetcher(query, profile)
 
 
 HEADERS = {
@@ -594,6 +612,7 @@ _SOURCE_DISPLAY_NAMES = {
     "linkedin": "LinkedIn",
     "indeed": "Indeed",
     "glassdoor": "Glassdoor",
+    "jsearch": "JSearch",
     "jsearch_other": "JSearch (Other)",
     "usajobs": "USAJobs (Federal)",
     "serpapi": "SerpAPI (Google Jobs)",
@@ -2023,11 +2042,91 @@ def build_search_queries(profile: dict) -> list[dict]:
     return queries
 
 
+def _fetch_dice_query(query: dict, profile: dict) -> list[JobResult]:
+    return fetch_dice(query["query"], query.get("location", ""))
+
+
+def _fetch_hn_hiring_query(query: dict, profile: dict) -> list[JobResult]:
+    return fetch_hn_hiring(query["query"])
+
+
+def _fetch_remoteok_query(query: dict, profile: dict) -> list[JobResult]:
+    return fetch_remoteok(query["query"])
+
+
+def _fetch_weworkremotely_query(query: dict, profile: dict) -> list[JobResult]:
+    return fetch_weworkremotely(query["query"])
+
+
+def _fetch_adzuna_query(query: dict, profile: dict) -> list[JobResult]:
+    return fetch_adzuna(query["query"], query.get("location", ""))
+
+
+def _fetch_authentic_jobs_query(query: dict, profile: dict) -> list[JobResult]:
+    return fetch_authenticjobs(query["query"], query.get("location", ""))
+
+
+def _fetch_jsearch_query(query: dict, profile: dict) -> list[JobResult]:
+    return fetch_jsearch(query["query"], query.get("location", ""))
+
+
+def _fetch_usajobs_query(query: dict, profile: dict) -> list[JobResult]:
+    return fetch_usajobs(query["query"], query.get("location", ""), profile=profile)
+
+
+def _fetch_serpapi_query(query: dict, profile: dict) -> list[JobResult]:
+    return fetch_serpapi(query["query"], query.get("location", ""))
+
+
+def _fetch_jobicy_query(query: dict, profile: dict) -> list[JobResult]:
+    return fetch_jobicy(query["query"], query.get("location", ""))
+
+
+def _fetch_hiringcafe_query(query: dict, profile: dict) -> list[JobResult]:
+    return fetch_hiringcafe(query["query"], query.get("location", ""))
+
+
+SOURCE_PHASE_ORDER = ("scraper", "api", "aggregator")
+
+
+SOURCE_REGISTRY: dict[str, SourceDefinition] = {
+    "dice": SourceDefinition("dice", "Dice", "scraper", _fetch_dice_query),
+    "hn_hiring": SourceDefinition("hn_hiring", "HN Hiring", "scraper", _fetch_hn_hiring_query),
+    "remoteok": SourceDefinition("remoteok", "RemoteOK", "scraper", _fetch_remoteok_query),
+    "weworkremotely": SourceDefinition("weworkremotely", "We Work Remotely", "scraper", _fetch_weworkremotely_query),
+    "adzuna": SourceDefinition("adzuna", "Adzuna", "api", _fetch_adzuna_query),
+    "authentic_jobs": SourceDefinition("authentic_jobs", "Authentic Jobs", "api", _fetch_authentic_jobs_query),
+    "usajobs": SourceDefinition("usajobs", "USAJobs (Federal)", "api", _fetch_usajobs_query),
+    "jobicy": SourceDefinition("jobicy", "Jobicy (Remote)", "api", _fetch_jobicy_query),
+    "hiringcafe": SourceDefinition("hiringcafe", "hiring.cafe", "api", _fetch_hiringcafe_query),
+    "jsearch": SourceDefinition("jsearch", "JSearch", "aggregator", _fetch_jsearch_query),
+    "serpapi": SourceDefinition("serpapi", "SerpAPI (Google Jobs)", "aggregator", _fetch_serpapi_query),
+}
+
+
+def get_automated_source_display_names() -> list[str]:
+    """Return automated source names in execution order for reports."""
+    return [
+        source.display_name
+        for phase in SOURCE_PHASE_ORDER
+        for source in SOURCE_REGISTRY.values()
+        if source.phase == phase
+    ]
+
+
+def _source_display_name(source: str) -> str:
+    """Return a human-readable source name for query or result source keys."""
+    definition = SOURCE_REGISTRY.get(source)
+    if definition:
+        return definition.display_name
+    return _SOURCE_DISPLAY_NAMES.get(source, source)
+
+
 def fetch_all(profile: dict, on_progress=None, on_source_progress=None) -> list[JobResult]:
     """Fetch from all automated sources with three-phase source ordering.
 
-    Runs scrapers first (Dice, HN Hiring, RemoteOK, WWR), then APIs (Adzuna, Authentic Jobs),
-    then aggregators (JSearch, USAJobs) to ensure native sources win in dedup.
+    Runs scrapers first, native APIs second, and aggregators last so native
+    sources win when cross-source deduplication keeps an equally rich listing.
     All results are deduplicated using cross-source fuzzy matching.
 
     Args:
@@ -2040,33 +2139,24 @@ def fetch_all(profile: dict, on_progress=None, on_source_progress=None) -> list[
     """
     queries = build_search_queries(profile)
 
-    # Split queries into three phases: native source wins over aggregator
-    SCRAPER_SOURCES = {"dice", "hn_hiring", "remoteok", "weworkremotely"}
-    API_SOURCES = {"adzuna", "authentic_jobs", "usajobs", "jobicy", "hiringcafe"}  # USAJobs, Jobicy, and hiring.cafe are native sources
-    AGGREGATOR_SOURCES = {"jsearch", "serpapi"}  # JSearch and SerpAPI are aggregators — run LAST
-
-    scraper_queries = [q for q in queries if q["source"] in SCRAPER_SOURCES]
-    api_queries = [q for q in queries if q["source"] in API_SOURCES]
-    aggregator_queries = [q for q in queries if q["source"] in AGGREGATOR_SOURCES]
+    queries_by_phase = {
+        phase: [
+            q for q in queries
+            if q["source"] in SOURCE_REGISTRY
+            and SOURCE_REGISTRY[q["source"]].phase == phase
+        ]
+        for phase in SOURCE_PHASE_ORDER
+    }
 
     all_results = []
     seen = set()
     total = len(queries)
     completed = 0
 
-    # Source-level tracking
-    # Replace "jsearch" with its display sources for total source count
-    JSEARCH_DISPLAY_SOURCES = ["linkedin", "indeed", "glassdoor"]
     source_names = []
     for q in queries:
-        if q["source"] == "jsearch":
-            # JSearch splits into multiple display sources
-            for display_source in JSEARCH_DISPLAY_SOURCES:
-                if display_source not in source_names:
-                    source_names.append(display_source)
-        else:
-            if q["source"] not in source_names:
-                source_names.append(q["source"])
+        if q["source"] not in source_names:
+            source_names.append(q["source"])
 
     source_query_counts = {}
     source_completed = {}
@@ -2076,38 +2166,17 @@ def fetch_all(profile: dict, on_progress=None, on_source_progress=None) -> list[
         source_completed[q["source"]] = 0
         source_job_counts[q["source"]] = 0
 
-    # Initialize JSearch display sources
-    for display_source in JSEARCH_DISPLAY_SOURCES:
-        source_job_counts[display_source] = 0
-
     sources_started = 0
     sources_done = 0
     total_sources = len(source_names)
+    query_failures = []
 
     def run_query(q):
-        if q["source"] == "dice":
-            return fetch_dice(q["query"], q.get("location", ""))
-        elif q["source"] == "hn_hiring":
-            return fetch_hn_hiring(q["query"])
-        elif q["source"] == "remoteok":
-            return fetch_remoteok(q["query"])
-        elif q["source"] == "weworkremotely":
-            return fetch_weworkremotely(q["query"])
-        elif q["source"] == "adzuna":
-            return fetch_adzuna(q["query"], q.get("location", ""))
-        elif q["source"] == "authentic_jobs":
-            return fetch_authenticjobs(q["query"], q.get("location", ""))
-        elif q["source"] == "jsearch":
-            return fetch_jsearch(q["query"], q.get("location", ""))
-        elif q["source"] == "usajobs":
-            return fetch_usajobs(q["query"], q.get("location", ""), profile=profile)
-        elif q["source"] == "serpapi":
-            return fetch_serpapi(q["query"], q.get("location", ""))
-        elif q["source"] == "jobicy":
-            return fetch_jobicy(q["query"], q.get("location", ""))
-        elif q["source"] == "hiringcafe":
-            return fetch_hiringcafe(q["query"], q.get("location", ""))
-        return []
+        source = SOURCE_REGISTRY.get(q["source"])
+        if source is None:
+            log.warning("Unknown source skipped: %s", q["source"])
+            return []
+        return source.fetch(q, profile)
 
     def _run_queries_parallel(query_list, phase_name):
         """Helper to run queries in parallel and collect results."""
@@ -2124,7 +2193,7 @@ def fetch_all(profile: dict, on_progress=None, on_source_progress=None) -> list[
                     started_sources_in_phase.add(source)
                     sources_started += 1
                     if on_source_progress:
-                        display_name = _SOURCE_DISPLAY_NAMES.get(source, source)
+                        display_name = _source_display_name(source)
                         on_source_progress(display_name, sources_started, total_sources, "started", 0)
                 futures[executor.submit(run_query, q)] = q
 
@@ -2140,10 +2209,12 @@ def fetch_all(profile: dict, on_progress=None, on_source_progress=None) -> list[
                         if key not in seen:
                             seen.add(key)
                             phase_results.append(r)
-                            # Track by actual source (for JSearch split display)
+                            source_job_counts[source] = source_job_counts.get(source, 0) + 1
+                            # Also track by actual source for aggregate stats/debugging.
                             actual_source = r.source
                             source_job_counts[actual_source] = source_job_counts.get(actual_source, 0) + 1
                 except Exception as e:
+                    query_failures.append({"source": source, "query": q.get("query", ""), "error": str(e)})
                     log.error("Query failed (%s): %s", q, e)
                 if on_progress:
                     on_progress(completed, total, source)
@@ -2153,30 +2224,18 @@ def fetch_all(profile: dict, on_progress=None, on_source_progress=None) -> list[
                 if source_completed[source] == source_query_counts[source]:
                     sources_done += 1
                     if on_source_progress:
-                        display_name = _SOURCE_DISPLAY_NAMES.get(source, source)
+                        display_name = _source_display_name(source)
                         on_source_progress(display_name, sources_done, total_sources, "complete", source_job_counts.get(source, 0))
 
         return phase_results
 
     log.info("Running %d search queries in sequential phases...", len(queries))
 
-    # Phase 1: Scrapers
-    if scraper_queries:
-        log.debug("Phase 1: Running %d scraper queries", len(scraper_queries))
-        scraper_results = _run_queries_parallel(scraper_queries, "scraper")
-        all_results.extend(scraper_results)
-
-    # Phase 2: APIs
-    if api_queries:
-        log.debug("Phase 2: Running %d API queries", len(api_queries))
-        api_results = _run_queries_parallel(api_queries, "api")
-        all_results.extend(api_results)
-
-    # Phase 3: Aggregators (run last — native sources win in dedup)
-    if aggregator_queries:
-        log.debug("Phase 3: Running %d aggregator queries", len(aggregator_queries))
-        aggregator_results = _run_queries_parallel(aggregator_queries, "aggregator")
-        all_results.extend(aggregator_results)
+    for phase in SOURCE_PHASE_ORDER:
+        phase_queries = queries_by_phase[phase]
+        if phase_queries:
+            log.debug("Running %d %s queries", len(phase_queries), phase)
+            all_results.extend(_run_queries_parallel(phase_queries, phase))
 
     log.info("Total results before deduplication: %d", len(all_results))
 
@@ -2184,6 +2243,8 @@ def fetch_all(profile: dict, on_progress=None, on_source_progress=None) -> list[
     dedup_result = deduplicate_cross_source(all_results)
     all_results = dedup_result["results"]
     dedup_stats = dedup_result["stats"]
+    dedup_stats["query_failures"] = len(query_failures)
+    dedup_stats["failed_sources"] = sorted({f["source"] for f in query_failures})
 
     log.info("Total unique results after deduplication: %d", len(all_results))
     return all_results, dedup_stats

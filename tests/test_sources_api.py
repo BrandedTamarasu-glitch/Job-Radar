@@ -17,11 +17,15 @@ from job_radar.sources import (
     fetch_authenticjobs,
     fetch_jsearch,
     fetch_usajobs,
+    fetch_all,
     build_search_queries,
+    get_automated_source_display_names,
     generate_wellfound_url,
     _slugify_for_wellfound,
     generate_manual_urls,
     JobResult,
+    SOURCE_PHASE_ORDER,
+    SOURCE_REGISTRY,
 )
 from job_radar.rate_limits import RATE_LIMITS, BACKEND_API_MAP
 
@@ -410,6 +414,117 @@ def test_build_search_queries_authentic_jobs_uses_top_2_titles():
     assert "UX Designer" in query_titles
     assert "Product Designer" in query_titles
     assert "UI Designer" not in query_titles  # 3rd title not included
+
+
+def test_source_registry_covers_all_generated_query_sources():
+    """Every generated automated query has a registered source definition."""
+    profile = {
+        "name": "Test User",
+        "target_titles": ["Software Engineer", "Backend Developer"],
+        "core_skills": ["python", "react"],
+        "secondary_skills": ["typescript"],
+        "target_market": "Remote",
+    }
+
+    queries = build_search_queries(profile)
+    query_sources = {q["source"] for q in queries}
+
+    assert query_sources <= set(SOURCE_REGISTRY)
+
+
+def test_source_registry_uses_known_phases():
+    """Registered sources use the canonical phase names."""
+    valid_phases = set(SOURCE_PHASE_ORDER)
+
+    assert all(source.phase in valid_phases for source in SOURCE_REGISTRY.values())
+
+
+def test_automated_source_display_names_follow_phase_order():
+    """Report source names come from the registry in execution order."""
+    names = get_automated_source_display_names()
+
+    assert names[:4] == ["Dice", "HN Hiring", "RemoteOK", "We Work Remotely"]
+    assert names[-2:] == ["JSearch", "SerpAPI (Google Jobs)"]
+
+
+def test_fetch_all_reports_jsearch_progress_and_job_count(monkeypatch):
+    """Aggregator progress uses the registered display name and aggregate job count."""
+    profile = {
+        "target_titles": ["Software Engineer"],
+        "core_skills": [],
+        "target_market": "Remote",
+    }
+    jsearch_job = JobResult(
+        title="Software Engineer",
+        company="ExampleCo",
+        location="Remote",
+        arrangement="remote",
+        salary="Not listed",
+        date_posted="Today",
+        description="Build software",
+        url="https://example.com/job",
+        source="LinkedIn",
+    )
+    progress = []
+
+    monkeypatch.setattr("job_radar.sources.fetch_dice", lambda *args, **kwargs: [])
+    monkeypatch.setattr("job_radar.sources.fetch_hn_hiring", lambda *args, **kwargs: [])
+    monkeypatch.setattr("job_radar.sources.fetch_remoteok", lambda *args, **kwargs: [])
+    monkeypatch.setattr("job_radar.sources.fetch_weworkremotely", lambda *args, **kwargs: [])
+    monkeypatch.setattr("job_radar.sources.fetch_adzuna", lambda *args, **kwargs: [])
+    monkeypatch.setattr("job_radar.sources.fetch_authenticjobs", lambda *args, **kwargs: [])
+    monkeypatch.setattr("job_radar.sources.fetch_jsearch", lambda *args, **kwargs: [jsearch_job])
+    monkeypatch.setattr("job_radar.sources.fetch_usajobs", lambda *args, **kwargs: [])
+    monkeypatch.setattr("job_radar.sources.fetch_serpapi", lambda *args, **kwargs: [])
+    monkeypatch.setattr("job_radar.sources.fetch_jobicy", lambda *args, **kwargs: [])
+    monkeypatch.setattr("job_radar.sources.fetch_hiringcafe", lambda *args, **kwargs: [])
+
+    results, stats = fetch_all(
+        profile,
+        on_source_progress=lambda source, count, total, status, job_count=0: progress.append(
+            (source, count, total, status, job_count)
+        ),
+    )
+
+    assert results == [jsearch_job]
+    assert stats["query_failures"] == 0
+    jsearch_complete = [
+        event for event in progress
+        if event[0] == "JSearch" and event[3] == "complete"
+    ]
+    assert jsearch_complete
+    assert jsearch_complete[0][2] == 10
+    assert jsearch_complete[0][4] == 1
+
+
+def test_fetch_all_tracks_query_failures(monkeypatch):
+    """Per-query failures are summarized without failing the whole search."""
+    profile = {
+        "target_titles": ["Software Engineer"],
+        "core_skills": [],
+        "target_market": "Remote",
+    }
+
+    def fail_dice(*args, **kwargs):
+        raise RuntimeError("dice down")
+
+    monkeypatch.setattr("job_radar.sources.fetch_dice", fail_dice)
+    monkeypatch.setattr("job_radar.sources.fetch_hn_hiring", lambda *args, **kwargs: [])
+    monkeypatch.setattr("job_radar.sources.fetch_remoteok", lambda *args, **kwargs: [])
+    monkeypatch.setattr("job_radar.sources.fetch_weworkremotely", lambda *args, **kwargs: [])
+    monkeypatch.setattr("job_radar.sources.fetch_adzuna", lambda *args, **kwargs: [])
+    monkeypatch.setattr("job_radar.sources.fetch_authenticjobs", lambda *args, **kwargs: [])
+    monkeypatch.setattr("job_radar.sources.fetch_jsearch", lambda *args, **kwargs: [])
+    monkeypatch.setattr("job_radar.sources.fetch_usajobs", lambda *args, **kwargs: [])
+    monkeypatch.setattr("job_radar.sources.fetch_serpapi", lambda *args, **kwargs: [])
+    monkeypatch.setattr("job_radar.sources.fetch_jobicy", lambda *args, **kwargs: [])
+    monkeypatch.setattr("job_radar.sources.fetch_hiringcafe", lambda *args, **kwargs: [])
+
+    results, stats = fetch_all(profile)
+
+    assert results == []
+    assert stats["query_failures"] == 1
+    assert stats["failed_sources"] == ["dice"]
 
 
 # ==============================================================================

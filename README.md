@@ -401,7 +401,7 @@ python -m job_radar --help
 
 ### Running Tests
 
-The project includes a comprehensive test suite with 675 automated tests:
+The project includes a comprehensive test suite with 680 automated tests:
 
 ```bash
 # Install dev dependencies
@@ -451,7 +451,7 @@ For release builds, also run the platform build script and smoke-test the genera
 - Profile editor (23 tests) - validates field menu, diff preview, editing, validator reuse
 - CLI update flags (40 tests) - validates validators, handlers, mutual exclusion, integration
 - Uninstaller (14 tests) - validates backup creation, path enumeration, cleanup scripts, platform detection
-- Deduplication (28 tests) - validates exact-match URL dedup, richness scoring, multi-source mapping
+- Deduplication (28 tests) - validates fuzzy cross-source dedup, richness scoring, multi-source mapping
 - Entry integration (46 tests) - validates GUI/CLI entry points, wizard flow, error handling
 - Auto-update (42 tests) - validates detection, download, SHA256 verification, installer launch, skip version
 - Browser (12 tests) - validates report opening, platform detection, error handling

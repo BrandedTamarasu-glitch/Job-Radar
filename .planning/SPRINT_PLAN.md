@@ -49,6 +49,8 @@ Goal: make job sources easier to maintain and debug.
 - Normalize source display names and progress accounting.
 - Surface per-source failures in CLI, GUI, and reports without failing the whole search.
 
+Status: in progress. The source registry is in place, `fetch_all()` no longer uses long dispatch branches, source display/progress accounting is normalized, and query failures are summarized for CLI/reporting consumers. Remaining work: deeper module extraction and richer GUI/report surfacing for partial source failures.
+
 Deliverable: same search behavior with cleaner source architecture and better diagnostics.
 
 ## Sprint 4: Match Quality & Transparency
