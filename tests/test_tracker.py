@@ -378,6 +378,7 @@ def test_record_source_health_persists_run_summary(tmp_path):
         "query_failures": 1,
         "failed_sources": ["Dice"],
         "source_warnings": [{"source": "dice", "query": "Backend", "error": "timeout"}],
+        "cache_stats": {"hits": 2, "misses": 1, "writes": 1, "disabled": 0},
     }
 
     with patch("job_radar.tracker._TRACKER_PATH", str(tmp_path / "tracker.json")):
@@ -388,6 +389,7 @@ def test_record_source_health_persists_run_summary(tmp_path):
     assert entry["total_jobs"] == 3
     assert entry["query_failures"] == 1
     assert entry["failed_sources"] == ["Dice"]
+    assert entry["cache_stats"] == {"hits": 2, "misses": 1, "writes": 1, "disabled": 0}
     assert entry["sources"] == [
         {
             "name": "Dice",

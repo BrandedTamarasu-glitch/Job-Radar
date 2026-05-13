@@ -4,6 +4,7 @@ import hashlib
 import json
 import logging
 import os
+import threading
 import time
 from pathlib import Path
 from typing import Optional
@@ -19,6 +20,32 @@ DEFAULT_REQUEST_TIMEOUT = 15.0
 REQUEST_TIMEOUT_ENV = "JOB_RADAR_REQUEST_TIMEOUT"
 CACHE_MAINTENANCE_INTERVAL_SECONDS = 3600
 _LAST_CACHE_MAINTENANCE = 0.0
+_CACHE_STATS = {
+    "hits": 0,
+    "misses": 0,
+    "writes": 0,
+    "disabled": 0,
+}
+_CACHE_STATS_LOCK = threading.Lock()
+
+
+def reset_cache_stats() -> None:
+    """Reset in-process cache counters for a new fetch run."""
+    with _CACHE_STATS_LOCK:
+        for key in _CACHE_STATS:
+            _CACHE_STATS[key] = 0
+
+
+def get_cache_stats() -> dict:
+    """Return a snapshot of in-process cache counters."""
+    with _CACHE_STATS_LOCK:
+        return dict(_CACHE_STATS)
+
+
+def _increment_cache_stat(key: str) -> None:
+    """Increment one cache counter safely across parallel fetch workers."""
+    with _CACHE_STATS_LOCK:
+        _CACHE_STATS[key] = _CACHE_STATS.get(key, 0) + 1
 
 
 def resolve_request_timeout(value: int | float | str | None = None) -> float:
@@ -155,7 +182,11 @@ def fetch_with_retry(
         _maybe_prune_stale_cache()
         cached = _read_cache(url)
         if cached is not None:
+            _increment_cache_stat("hits")
             return cached
+        _increment_cache_stat("misses")
+    else:
+        _increment_cache_stat("disabled")
 
     last_error = None
     for attempt in range(1, retries + 1):
@@ -165,6 +196,7 @@ def fetch_with_retry(
             body = resp.text
             if use_cache:
                 _write_cache(url, body)
+                _increment_cache_stat("writes")
             return body
         except requests.RequestException as e:
             last_error = e

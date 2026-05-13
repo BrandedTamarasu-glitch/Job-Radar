@@ -434,7 +434,7 @@ python -m job_radar --help
 
 ### Running Tests
 
-The project includes a comprehensive test suite with 760 automated tests:
+The project includes a comprehensive test suite with 763 automated tests:
 
 ```bash
 # Install dev dependencies
@@ -475,13 +475,13 @@ For release builds, also run the platform build script and smoke-test the genera
 - Tracker functions (22 tests) - validates deduplication, pruning, app-data storage, application notes/next actions, application-status report filtering, source health history, and stats aggregation with tmp_path isolation
 - Config module (24 tests) - validates config file parsing, CLI override, defaults, validation
 - Wizard (38 tests) - validates setup flow, PDF integration, navigation, error handling
-- API integration (56 tests) - validates all 11 API sources, mappers, rate limiting, source selection, manual source links, deduplication
+- API integration (56 tests) - validates all 11 API sources, mappers, rate limiting, source selection, cache stats propagation, manual source links, deduplication
 - API config (18 tests) - validates API key storage, validation, GUI integration, quota tracking
 - Rate limits (16 tests) - validates rate limiter cleanup, shared backends, config loading, quota queries
 - PDF parser (34 tests) - validates extraction, validation, Unicode support, error handling
 - Report generation (35 tests) - validates HTML/Markdown output, clipboard UI, status tracking, accessibility
 - UX polish (69 tests) - validates banner, help text, progress messages, maintenance commands, error handling
-- GUI search summary (21 tests) - validates search completion, source warnings, per-source timing, cache controls, GUI preset application, automated/manual source selection, company filters, application-status report filtering, must-have and nice-to-have skill controls, location strictness, and freshness presets
+- GUI search summary (22 tests) - validates search completion, source warnings, per-source timing, cache counters, cache controls, GUI preset application, automated/manual source selection, company filters, application-status report filtering, must-have and nice-to-have skill controls, location strictness, and freshness presets
 - Profile manager (22 tests) - validates atomic writes, backups, rotation, schema migration, validation
 - Profile display (16 tests) - validates formatted output, field filtering, NO_COLOR compliance
 - Profile editor (23 tests) - validates field menu, diff preview, editing, validator reuse

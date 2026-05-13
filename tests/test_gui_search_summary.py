@@ -8,6 +8,7 @@ from unittest.mock import patch
 import pytest
 
 from job_radar.gui.search_summary import (
+    cache_summary_line,
     cancellation_message,
     completion_message,
     error_message,
@@ -82,6 +83,21 @@ def test_source_summary_lines_include_source_timing():
         "Dice: 4 jobs in 1.2s",
         "Adzuna: 2 jobs in 1m 05s (1 query warning)",
     ]
+
+
+def test_cache_summary_line_includes_hits_misses_and_writes():
+    """Cache summary copy exposes hit/miss counters from completed searches."""
+    summary = {
+        "cache_stats": {
+            "hits": 3,
+            "misses": 2,
+            "writes": 2,
+            "disabled": 1,
+        }
+    }
+
+    assert cache_summary_line(summary) == "Cache: 3 hits, 2 misses, 2 writes, 1 uncached requests"
+    assert cache_summary_line({"cache_stats": {}}) is None
 
 
 def test_zero_result_lines_reuse_next_action_guidance():
@@ -309,6 +325,7 @@ def test_search_worker_emits_completion_summary(tmp_path, source_health_recorder
             "query_failure_details": [
                 {"source": "dice", "query": "Backend Engineer", "error": "timeout"}
             ],
+            "cache_stats": {"hits": 2, "misses": 1, "writes": 1, "disabled": 0},
         }
 
     with patch("job_radar.api_config.load_api_credentials"):
@@ -332,6 +349,7 @@ def test_search_worker_emits_completion_summary(tmp_path, source_health_recorder
     summary = complete[3]
     assert summary["query_failures"] == 1
     assert summary["failed_sources"] == ["Dice"]
+    assert summary["cache_stats"] == {"hits": 2, "misses": 1, "writes": 1, "disabled": 0}
     assert summary["sources"] == [
         {"name": "Dice", "job_count": 0, "warning_count": 1, "duration_seconds": 0.25},
         {"name": "RemoteOK", "job_count": 3, "warning_count": 0, "duration_seconds": 1.5},

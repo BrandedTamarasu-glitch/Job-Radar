@@ -14,7 +14,7 @@ from typing import Callable
 
 from bs4 import BeautifulSoup
 
-from .cache import fetch_with_retry
+from .cache import fetch_with_retry, get_cache_stats, reset_cache_stats
 from .api_config import get_api_key
 from .rate_limits import check_rate_limit
 from .deduplication import deduplicate_cross_source
@@ -2253,6 +2253,7 @@ def fetch_all(
     """
     worker_count = resolve_max_workers(max_workers)
     slow_query_threshold = resolve_slow_query_threshold(slow_query_seconds)
+    reset_cache_stats()
     queries = build_search_queries(profile)
     selected_source_set = set(selected_sources) if selected_sources is not None else None
     if selected_source_set is not None:
@@ -2384,6 +2385,7 @@ def fetch_all(
     dedup_stats["slow_queries"] = len(slow_query_warnings)
     dedup_stats["max_workers"] = worker_count
     dedup_stats["slow_query_threshold_seconds"] = slow_query_threshold
+    dedup_stats["cache_stats"] = get_cache_stats()
 
     log.info("Total unique results after deduplication: %d", len(all_results))
     return all_results, dedup_stats

@@ -53,6 +53,27 @@ def source_summary_lines(summary: dict | None) -> list[str]:
     return lines
 
 
+def cache_summary_line(summary: dict | None) -> str | None:
+    """Return a compact cache hit/miss summary for completed searches."""
+    if not summary:
+        return None
+
+    cache_stats = summary.get("cache_stats") or {}
+    hits = int(cache_stats.get("hits") or 0)
+    misses = int(cache_stats.get("misses") or 0)
+    writes = int(cache_stats.get("writes") or 0)
+    disabled = int(cache_stats.get("disabled") or 0)
+    if hits == 0 and misses == 0 and writes == 0 and disabled == 0:
+        return None
+
+    parts = [f"{hits} hits", f"{misses} misses"]
+    if writes:
+        parts.append(f"{writes} writes")
+    if disabled:
+        parts.append(f"{disabled} uncached requests")
+    return "Cache: " + ", ".join(parts)
+
+
 def _format_duration(seconds: float) -> str:
     """Format short source timings for compact GUI display."""
     if seconds < 60:

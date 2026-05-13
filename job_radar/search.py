@@ -1092,6 +1092,13 @@ def main():
     if dedup_stats.get("query_failures"):
         failed_sources = ", ".join(dedup_stats.get("failed_sources", []))
         print(f"  {C.YELLOW}{dedup_stats['query_failures']} source queries failed: {failed_sources}{C.RESET}")
+    cache_stats = dedup_stats.get("cache_stats") or {}
+    if cache_stats:
+        print(
+            f"  {C.DIM}Cache: {cache_stats.get('hits', 0)} hits, "
+            f"{cache_stats.get('misses', 0)} misses, "
+            f"{cache_stats.get('writes', 0)} writes{C.RESET}"
+        )
 
     # Step 2: Date filter
     print(f"\n{C.BOLD}Step 2:{C.RESET} Filtering by date range ({from_date} to {to_date})...")

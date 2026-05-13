@@ -30,6 +30,7 @@ from job_radar.gui.profile_form import ProfileForm
 from job_radar.gui.search_controls import SearchControls
 from job_radar.gui.search_summary import (
     cancellation_message,
+    cache_summary_line,
     completion_message,
     error_message,
     source_summary_lines,
@@ -781,6 +782,9 @@ class MainWindow(ctk.CTk):
             next_action_label.pack(pady=(0, 16))
 
         summary_lines = source_summary_lines(summary)
+        cache_line = cache_summary_line(summary)
+        if cache_line:
+            summary_lines.append(cache_line)
         if summary_lines:
             summary_box = ctk.CTkTextbox(
                 content_frame,

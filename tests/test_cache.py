@@ -142,3 +142,56 @@ def test_fetch_with_retry_uses_resolved_timeout(monkeypatch):
 
     assert cache.fetch_with_retry("https://example.com", headers={}, use_cache=False) == "ok"
     assert calls == [4.0]
+
+
+def test_fetch_with_retry_tracks_cache_hits_misses_and_writes(tmp_path, monkeypatch):
+    """fetch_with_retry records cache counters for misses, writes, and hits."""
+    data_dir = tmp_path / "data"
+    calls = []
+
+    class Response:
+        text = "cached body"
+
+        def raise_for_status(self):
+            return None
+
+    def fake_get(url, headers, timeout):
+        calls.append(url)
+        return Response()
+
+    monkeypatch.setattr("job_radar.cache.get_data_dir", lambda: data_dir)
+    monkeypatch.setattr("job_radar.cache.requests.get", fake_get)
+    cache.reset_cache_stats()
+
+    first = cache.fetch_with_retry("https://example.com/jobs", headers={})
+    second = cache.fetch_with_retry("https://example.com/jobs", headers={})
+
+    assert first == "cached body"
+    assert second == "cached body"
+    assert calls == ["https://example.com/jobs"]
+    assert cache.get_cache_stats() == {
+        "hits": 1,
+        "misses": 1,
+        "writes": 1,
+        "disabled": 0,
+    }
+
+
+def test_fetch_with_retry_tracks_disabled_cache_requests(monkeypatch):
+    """fetch_with_retry records uncached requests when cache is disabled."""
+    class Response:
+        text = "live body"
+
+        def raise_for_status(self):
+            return None
+
+    monkeypatch.setattr("job_radar.cache.requests.get", lambda *args, **kwargs: Response())
+    cache.reset_cache_stats()
+
+    assert cache.fetch_with_retry("https://example.com/jobs", headers={}, use_cache=False) == "live body"
+    assert cache.get_cache_stats() == {
+        "hits": 0,
+        "misses": 0,
+        "writes": 0,
+        "disabled": 1,
+    }

@@ -598,6 +598,7 @@ def test_fetch_all_tracks_query_failures(monkeypatch):
         {"source": "dice", "query": "Software Engineer", "error": "dice down"}
     ]
     assert stats["max_workers"] == 6
+    assert stats["cache_stats"] == {"hits": 0, "misses": 0, "writes": 0, "disabled": 0}
 
 
 def test_resolve_max_workers_uses_default_without_env(monkeypatch):
