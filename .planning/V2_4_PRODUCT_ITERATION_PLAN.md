@@ -62,16 +62,18 @@ Accessibility:
 
 Goal: support follow-through after discovery, not only search.
 
+Status: started. Tracker persistence now supports application notes plus next-action and next-action date metadata while preserving existing status behavior.
+
 Deliverables:
 - Add a dedicated GUI Applications view.
 - Surface tracker statuses: Applied, Interviewing, Rejected, Offer.
-- Add notes per job.
-- Add next-action and date fields.
+- [Backend done] Add notes per job.
+- [Backend done] Add next-action and date fields.
 - Export application pipeline to CSV.
 - Add a "hide rejected/skipped" setting for future reports.
 
 Validation:
-- Tracker persistence tests for notes and next actions.
+- [Done] Tracker persistence tests for notes and next actions.
 - GUI view-model tests for grouped application statuses.
 - CSV export tests.
 

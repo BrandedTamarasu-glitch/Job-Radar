@@ -10,9 +10,13 @@ from job_radar.tracker import (
     _load_tracker,
     _prune_old_seen_jobs,
     _tracker_path,
+    get_application_entry,
+    get_application_status,
     get_stats,
     job_key,
     mark_seen,
+    update_application_details,
+    update_application_status,
 )
 
 
@@ -260,6 +264,72 @@ def test_prune_old_seen_jobs_keeps_malformed_legacy_dates():
 
     assert pruned == 0
     assert "legacy||company" in tracker["seen_jobs"]
+
+
+# ---------------------------------------------------------------------------
+# application pipeline metadata tests
+# ---------------------------------------------------------------------------
+
+def test_update_application_status_persists_notes_and_next_action(tmp_path):
+    """Application status can carry notes plus next-action metadata."""
+    with patch("job_radar.tracker._TRACKER_PATH", str(tmp_path / "tracker.json")):
+        update_application_status(
+            "Backend Engineer",
+            "Acme",
+            "applied",
+            notes="Submitted through referral",
+            next_action="Follow up with recruiter",
+            next_action_date="2026-05-20",
+        )
+
+        entry = get_application_entry("Backend Engineer", "Acme")
+
+    assert entry is not None
+    assert entry["status"] == "applied"
+    assert entry["notes"] == "Submitted through referral"
+    assert entry["next_action"] == "Follow up with recruiter"
+    assert entry["next_action_date"] == "2026-05-20"
+    assert "updated" in entry
+
+
+def test_update_application_details_preserves_existing_status(tmp_path):
+    """Notes/next-action edits do not clobber the tracked application status."""
+    with patch("job_radar.tracker._TRACKER_PATH", str(tmp_path / "tracker.json")):
+        update_application_status("Backend Engineer", "Acme", "interviewing")
+        update_application_details(
+            "Backend Engineer",
+            "Acme",
+            notes="Panel scheduled",
+            next_action="Prepare system design examples",
+            next_action_date="2026-05-21",
+        )
+
+        entry = get_application_entry("Backend Engineer", "Acme")
+        status = get_application_status("Backend Engineer", "Acme")
+
+    assert status == "interviewing"
+    assert entry["status"] == "interviewing"
+    assert entry["notes"] == "Panel scheduled"
+    assert entry["next_action"] == "Prepare system design examples"
+    assert entry["next_action_date"] == "2026-05-21"
+
+
+def test_update_application_details_can_create_unstatused_entry(tmp_path):
+    """Users can save notes before choosing a pipeline status."""
+    with patch("job_radar.tracker._TRACKER_PATH", str(tmp_path / "tracker.json")):
+        update_application_details(
+            "Backend Engineer",
+            "Acme",
+            notes="Interesting role; review later",
+        )
+
+        entry = get_application_entry("Backend Engineer", "Acme")
+        status = get_application_status("Backend Engineer", "Acme")
+
+    assert status is None
+    assert entry["notes"] == "Interesting role; review later"
+    assert entry["title"] == "Backend Engineer"
+    assert entry["company"] == "Acme"
 
 
 # ---------------------------------------------------------------------------

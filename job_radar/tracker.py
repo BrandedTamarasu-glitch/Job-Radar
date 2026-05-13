@@ -174,19 +174,37 @@ def get_stats() -> dict:
     }
 
 
-def update_application_status(title: str, company: str, status: str):
+def update_application_status(
+    title: str,
+    company: str,
+    status: str,
+    *,
+    notes: str | None = None,
+    next_action: str | None = None,
+    next_action_date: str | None = None,
+):
     """Update application status for a job.
 
     Status values: 'applied', 'skipped', 'interviewing', 'rejected', 'offer'.
     """
     tracker = _load_tracker()
     key = job_key(title, company)
-    tracker["applications"][key] = {
+    existing = tracker["applications"].get(key, {})
+    entry = {
+        **existing,
         "title": title,
         "company": company,
         "status": status,
         "updated": datetime.now().isoformat(),
     }
+    if notes is not None:
+        entry["notes"] = notes
+    if next_action is not None:
+        entry["next_action"] = next_action
+    if next_action_date is not None:
+        entry["next_action_date"] = next_action_date
+
+    tracker["applications"][key] = entry
     _save_tracker(tracker)
 
 
@@ -195,7 +213,44 @@ def get_application_status(title: str, company: str) -> str | None:
     tracker = _load_tracker()
     key = job_key(title, company)
     entry = tracker["applications"].get(key)
-    return entry["status"] if entry else None
+    return entry.get("status") if entry else None
+
+
+def update_application_details(
+    title: str,
+    company: str,
+    *,
+    notes: str | None = None,
+    next_action: str | None = None,
+    next_action_date: str | None = None,
+):
+    """Update application notes and next-action metadata without changing status."""
+    tracker = _load_tracker()
+    key = job_key(title, company)
+    existing = tracker["applications"].get(key, {})
+    entry = {
+        **existing,
+        "title": title,
+        "company": company,
+        "updated": datetime.now().isoformat(),
+    }
+    if notes is not None:
+        entry["notes"] = notes
+    if next_action is not None:
+        entry["next_action"] = next_action
+    if next_action_date is not None:
+        entry["next_action_date"] = next_action_date
+
+    tracker["applications"][key] = entry
+    _save_tracker(tracker)
+
+
+def get_application_entry(title: str, company: str) -> dict | None:
+    """Get full application tracker entry for a job, or None if untracked."""
+    tracker = _load_tracker()
+    key = job_key(title, company)
+    entry = tracker["applications"].get(key)
+    return entry.copy() if entry else None
 
 
 def get_all_application_statuses() -> dict:
