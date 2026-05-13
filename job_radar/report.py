@@ -952,7 +952,7 @@ def _generate_html_report(
       .job-card-body {{
         padding: 1rem;
       }}
-      .job-detail-list > li {{
+    .job-detail-list > li {{
         margin-bottom: 0.4rem;
       }}
 
@@ -2381,6 +2381,39 @@ def _html_shortlist_button(job_key_val: str, *, compact: bool = False) -> str:
     )
 
 
+def _match_summary_text(result: dict) -> str:
+    """Build a concise explanation for why a job matched."""
+    score = result["score"]
+    components = score.get("components", {})
+    skill = components.get("skill_match", {})
+    title = components.get("title_relevance", {})
+    seniority = components.get("seniority", {})
+    response = components.get("response", {})
+
+    parts = []
+    if skill.get("ratio"):
+        parts.append(f"{skill['ratio']} core skills")
+    if title.get("reason"):
+        parts.append(f"title: {title['reason']}")
+    if seniority.get("reason"):
+        parts.append(f"seniority: {seniority['reason']}")
+    if response.get("likelihood"):
+        parts.append(f"{response['likelihood']} response likelihood")
+
+    if not parts:
+        return f"Matched with score {score.get('overall', 'N/A')}"
+    return "; ".join(parts)
+
+
+def _html_match_summary(result: dict) -> str:
+    """Generate the visible match-summary callout for a job card."""
+    return (
+        '<p class="match-summary small mb-3">'
+        f'<strong>Why this matched:</strong> {html.escape(_match_summary_text(result))}'
+        '</p>'
+    )
+
+
 def _html_hero_section(hero_jobs: list[dict], profile: dict) -> str:
     """Generate HTML for hero jobs section (score >= 4.0)."""
     if not hero_jobs:
@@ -2398,6 +2431,7 @@ def _html_hero_section(hero_jobs: list[dict], profile: dict) -> str:
         score_val = score["overall"]
 
         details_html = _html_job_detail_items(r, profile)
+        match_summary_html = _html_match_summary(r)
 
         # Generate job key for status tracking
         job_key_val = f"{job.title.lower().strip()}||{job.company.lower().strip()}"
@@ -2444,6 +2478,7 @@ def _html_hero_section(hero_jobs: list[dict], profile: dict) -> str:
             </h3>
           </div>
           <div class="card-body job-card-body">
+            {match_summary_html}
             <ul class="mb-0 job-detail-list">
               {details_html}
             </ul>
@@ -2504,6 +2539,7 @@ def _html_recommended_section(recommended: list[dict], profile: dict) -> str:
         tier = _score_tier(score_val)
 
         details_html = _html_job_detail_items(r, profile)
+        match_summary_html = _html_match_summary(r)
 
         # Generate job key for status tracking (matches tracker.job_key format)
         job_key_val = f"{job.title.lower().strip()}||{job.company.lower().strip()}"
@@ -2550,6 +2586,7 @@ def _html_recommended_section(recommended: list[dict], profile: dict) -> str:
             </h3>
           </div>
           <div class="card-body job-card-body">
+            {match_summary_html}
             <ul class="mb-0 job-detail-list">
               {details_html}
             </ul>

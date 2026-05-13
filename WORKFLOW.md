@@ -405,7 +405,7 @@ Job-Radar/
 │       ├── scoring_config.py # Scoring weights and staffing preference UI
 │       ├── applications_view_model.py # Application pipeline grouping
 │       └── tag_chip_widget.py # Reusable tag chip widget for list fields
-├── tests/                  # 778 automated tests (30 test files)
+├── tests/                  # 780 automated tests (30 test files)
 ├── scripts/                # Build scripts for standalone executables
 ├── installers/             # Platform-native installers (v2.1.0+)
 │   ├── macos/             # DMG installer build scripts

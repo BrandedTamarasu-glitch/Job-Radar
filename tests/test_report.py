@@ -9,6 +9,7 @@ from job_radar.report import (
     COLLAPSE_RESULTS_AFTER,
     _html_external_scripts,
     _html_external_stylesheets,
+    _match_summary_text,
     generate_report,
 )
 
@@ -2197,6 +2198,36 @@ def test_html_report_compact_view_javascript_and_css(sample_profile, sample_scor
     assert 'compact-report' in html
     assert '.job-detail-list' in html
     assert 'job-card-body' in html
+
+
+def test_match_summary_text_uses_score_components(sample_scored_results):
+    """Match summary uses existing scoring component data."""
+    summary = _match_summary_text(sample_scored_results[0])
+
+    assert "3/3 core skills" in summary
+    assert "title: Exact match" in summary
+    assert "seniority: Matches level" in summary
+    assert "High response likelihood" in summary
+
+
+def test_html_report_match_summary_callout(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Hero/recommended cards show a concise why-this-matched summary."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_path = result["html"]
+    with open(html_path, encoding='utf-8') as f:
+        html = f.read()
+
+    assert 'class="match-summary small mb-3"' in html
+    assert "Why this matched:" in html
+    assert "3/3 core skills" in html
 
 
 def test_html_report_filter_aria_announcements(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
