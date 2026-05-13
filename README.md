@@ -434,7 +434,7 @@ python -m job_radar --help
 
 ### Running Tests
 
-The project includes a comprehensive test suite with 763 automated tests:
+The project includes a comprehensive test suite with 767 automated tests:
 
 ```bash
 # Install dev dependencies
@@ -478,6 +478,7 @@ For release builds, also run the platform build script and smoke-test the genera
 - API integration (56 tests) - validates all 11 API sources, mappers, rate limiting, source selection, cache stats propagation, manual source links, deduplication
 - API config (18 tests) - validates API key storage, validation, GUI integration, quota tracking
 - Rate limits (16 tests) - validates rate limiter cleanup, shared backends, config loading, quota queries
+- Source diagnostics view model (4 tests) - validates slowest-source diagnostics and cache totals for Settings
 - PDF parser (34 tests) - validates extraction, validation, Unicode support, error handling
 - Report generation (35 tests) - validates HTML/Markdown output, clipboard UI, status tracking, accessibility
 - UX polish (69 tests) - validates banner, help text, progress messages, maintenance commands, error handling

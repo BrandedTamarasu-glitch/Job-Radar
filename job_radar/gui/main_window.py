@@ -23,7 +23,7 @@ from job_radar.paths import get_data_dir
 from job_radar.paths import get_results_dir
 from job_radar.profile_manager import load_profile
 from job_radar.config import load_config
-from job_radar.tracker import get_all_application_statuses
+from job_radar.tracker import get_all_application_statuses, get_source_health_history
 from job_radar.update_checker import UpdateChecker, launch_installer, cleanup_old_installers, extract_summary
 from job_radar.gui.applications_view_model import build_applications_view_model
 from job_radar.gui.profile_form import ProfileForm
@@ -37,6 +37,7 @@ from job_radar.gui.search_summary import (
     source_warning_message,
     zero_result_lines,
 )
+from job_radar.gui.source_diagnostics_view_model import format_source_diagnostics_lines
 from job_radar.gui.worker_thread import create_search_worker, create_download_worker
 from job_radar.gui.scoring_config import ScoringConfigWidget
 from job_radar.gui.update_banner import UpdateBanner, DownloadConfirmDialog
@@ -112,6 +113,7 @@ class MainWindow(ctk.CTk):
         self._clear_skipped_btn = None  # Settings "Clear skipped versions" button reference
         self._skipped_status_label = None  # Settings skipped version status label reference
         self._cache_status_label = None  # Settings cache maintenance status label reference
+        self._source_diagnostics_textbox = None  # Settings source diagnostics text reference
         self._applications_export_status_label = None  # Applications tab export status
 
         # Download worker state
@@ -1450,6 +1452,20 @@ class MainWindow(ctk.CTk):
         if self._cache_status_label:
             self._cache_status_label.configure(text=message)
 
+    def _source_diagnostics_text(self) -> str:
+        """Return current source diagnostics text for the Settings tab."""
+        history = get_source_health_history(limit=20)
+        return "\n".join(format_source_diagnostics_lines(history))
+
+    def _refresh_source_diagnostics(self):
+        """Refresh source diagnostics text in Settings."""
+        if not self._source_diagnostics_textbox:
+            return
+        self._source_diagnostics_textbox.configure(state="normal")
+        self._source_diagnostics_textbox.delete("1.0", "end")
+        self._source_diagnostics_textbox.insert("end", self._source_diagnostics_text())
+        self._source_diagnostics_textbox.configure(state="disabled")
+
     def _start_real_search(self):
         """Start real search operation with full pipeline execution."""
         # Validate search controls
@@ -1954,6 +1970,33 @@ class MainWindow(ctk.CTk):
             text_color="gray"
         )
         self._cache_status_label.pack(pady=(0, 10), anchor="w", padx=10)
+
+        diagnostics_title = ctk.CTkLabel(
+            scroll_frame,
+            text="Performance Diagnostics",
+            font=ctk.CTkFont(size=16, weight="bold")
+        )
+        diagnostics_title.pack(pady=(10, 8), anchor="w", padx=10)
+
+        self._source_diagnostics_textbox = ctk.CTkTextbox(
+            scroll_frame,
+            width=620,
+            height=130,
+            state="normal"
+        )
+        self._source_diagnostics_textbox.insert("end", self._source_diagnostics_text())
+        self._source_diagnostics_textbox.configure(state="disabled")
+        self._source_diagnostics_textbox.pack(pady=(0, 8), anchor="w", padx=10)
+
+        refresh_diagnostics_btn = ctk.CTkButton(
+            scroll_frame,
+            text="Refresh Diagnostics",
+            width=180,
+            fg_color="transparent",
+            border_width=1,
+            command=self._refresh_source_diagnostics
+        )
+        refresh_diagnostics_btn.pack(pady=(0, 10), anchor="w", padx=10)
 
         # Separator between storage maintenance and scoring config
         separator = ctk.CTkFrame(scroll_frame, height=2, fg_color="gray70")
