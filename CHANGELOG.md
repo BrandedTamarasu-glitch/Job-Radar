@@ -1,5 +1,17 @@
 # Changelog
 
+## v2.4.0 — 2026-05-13
+
+### New Features
+- **GUI search controls** — Added GUI presets, automated/manual source toggles, company include/exclude filters, must-have and nice-to-have skill controls, location strictness, and freshness presets.
+- **Application pipeline foundation** — Added tracker persistence for notes, next actions, and next-action dates; added an Applications view-model; added application pipeline CSV export helpers.
+
+### Fixes
+- **Release test compatibility** — Metadata tests now support Python 3.10 via `tomli` fallback, fixing the failed release workflow collection error on macOS.
+
+### Validation
+- 754 automated tests collected: 746 passed, 8 skipped.
+
 ## v2.3.0 — 2026-05-13
 
 ### New Features
