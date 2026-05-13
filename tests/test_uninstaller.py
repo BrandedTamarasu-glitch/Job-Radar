@@ -70,8 +70,8 @@ def test_get_uninstall_paths_empty_when_no_files(tmp_path, monkeypatch):
     assert result == []
 
 
-def test_get_uninstall_paths_includes_backups_and_cache(tmp_path, monkeypatch):
-    """Test includes backups/ and cache/ directories when present."""
+def test_get_uninstall_paths_includes_backups_cache_and_results(tmp_path, monkeypatch):
+    """Test includes backups/, cache/, and results/ directories when present."""
     data_dir = tmp_path / "data"
     data_dir.mkdir()
 
@@ -81,6 +81,10 @@ def test_get_uninstall_paths_includes_backups_and_cache(tmp_path, monkeypatch):
 
     cache_dir = data_dir / "cache"
     cache_dir.mkdir()
+
+    results_dir = data_dir / "results"
+    results_dir.mkdir()
+    (results_dir / "tracker.json").write_text("{}")
 
     log_file = tmp_path / "log.log"
 
@@ -92,6 +96,7 @@ def test_get_uninstall_paths_includes_backups_and_cache(tmp_path, monkeypatch):
     paths = [path for path, _ in result]
     assert str(backups_dir) in paths
     assert str(cache_dir) in paths
+    assert str(results_dir) in paths
 
 
 def test_get_uninstall_paths_descriptions_are_human_readable(tmp_path, monkeypatch):

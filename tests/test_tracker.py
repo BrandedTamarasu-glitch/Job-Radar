@@ -7,8 +7,9 @@ from unittest.mock import patch
 import pytest
 from job_radar.tracker import (
     TRACKER_SEEN_RETENTION_DAYS,
-    _TRACKER_PATH,
+    _load_tracker,
     _prune_old_seen_jobs,
+    _tracker_path,
     get_stats,
     job_key,
     mark_seen,
@@ -262,16 +263,34 @@ def test_prune_old_seen_jobs_keeps_malformed_legacy_dates():
 
 
 # ---------------------------------------------------------------------------
-# Production tracker safety test
+# tracker path tests
 # ---------------------------------------------------------------------------
 
-def test_tracker_never_touches_production():
-    """Test that documents where production tracker lives (safety documentation)."""
-    # This test verifies isolation by documenting the production path
-    # All other tests MUST use tmp_path + patch to avoid touching this file
-    # Use os.path.normpath for platform-agnostic comparison (handles / vs \ on Windows)
-    import os
-    normalized_path = os.path.normpath(_TRACKER_PATH)
-    expected = os.path.normpath("results/tracker.json")
-    assert expected in normalized_path
-    assert normalized_path.endswith(expected)
+def test_tracker_default_path_uses_app_data_results_dir(tmp_path, monkeypatch):
+    """Production tracker lives under the app data results directory."""
+    data_results = tmp_path / "data" / "results"
+    monkeypatch.setattr("job_radar.tracker.get_results_dir", lambda: data_results)
+    monkeypatch.setattr("job_radar.tracker._TRACKER_PATH", None)
+
+    assert _tracker_path() == data_results / "tracker.json"
+
+
+def test_load_tracker_reads_legacy_launch_tracker_when_app_data_missing(tmp_path, monkeypatch):
+    """Existing launch-directory trackers are read before the app-data file exists."""
+    legacy_tracker = tmp_path / "results" / "tracker.json"
+    legacy_tracker.parent.mkdir()
+    legacy_tracker.write_text(
+        json.dumps({
+            "seen_jobs": {"legacy||company": {"first_seen": "2026-01-01"}},
+            "applications": {},
+            "run_history": [],
+        }),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr("job_radar.tracker._TRACKER_PATH", None)
+    monkeypatch.setattr("job_radar.tracker._LEGACY_TRACKER_PATH", str(legacy_tracker))
+    monkeypatch.setattr("job_radar.tracker.get_results_dir", lambda: tmp_path / "data" / "results")
+
+    tracker = _load_tracker()
+
+    assert "legacy||company" in tracker["seen_jobs"]

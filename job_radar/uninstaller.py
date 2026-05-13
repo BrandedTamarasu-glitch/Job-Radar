@@ -62,6 +62,11 @@ def get_uninstall_paths() -> list[tuple[str, str]]:
     if cache_dir.exists():
         paths.append((str(cache_dir), "cache/ - Temporary cached data"))
 
+    # Reports and tracker data
+    results_dir = data_dir / "results"
+    if results_dir.exists():
+        paths.append((str(results_dir), "results/ - Generated reports and tracker data"))
+
     # Log file
     if log_file.exists():
         paths.append((str(log_file), "job-radar-error.log - Error logs"))

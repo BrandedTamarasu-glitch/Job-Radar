@@ -15,7 +15,7 @@ Focus the next implementation round on making Job Radar feel more trustworthy un
 
 Goal: make the desktop app explain what happened without requiring logs or report inspection.
 
-Status: started. Worker completion messages now include a per-source run summary and source-warning metadata. The GUI completion state now renders partial source warnings, source job counts, and zero-result next actions. Cancelled and failed searches now have persistent states that explain whether a report was generated and offer clear retry/navigation controls.
+Status: complete. Worker completion messages now include a per-source run summary and source-warning metadata. The GUI completion state now renders partial source warnings, source job counts, and zero-result next actions. Cancelled and failed searches now have persistent states that explain whether a report was generated and offer clear retry/navigation controls.
 
 - Show source warnings in the GUI completion state.
 - Add a compact per-source run summary: attempted, succeeded, failed, job count.
@@ -36,7 +36,7 @@ Accessibility:
 
 Goal: prevent slow or flaky sources from making the app feel frozen.
 
-Status: started. Fetch parallelism is centralized behind a validated `JOB_RADAR_MAX_WORKERS` runtime control while preserving the existing default. Request timeout propagation is available through a validated `JOB_RADAR_REQUEST_TIMEOUT` control in `fetch_with_retry`. Rate-limit SQLite state now lives under the platform app data path instead of the launch directory. Slow query warnings are recorded with `JOB_RADAR_SLOW_QUERY_SECONDS` and surfaced in generated reports.
+Status: complete. Fetch parallelism is centralized behind a validated `JOB_RADAR_MAX_WORKERS` runtime control while preserving the existing default. Request timeout propagation is available through a validated `JOB_RADAR_REQUEST_TIMEOUT` control in `fetch_with_retry`. Rate-limit SQLite state now lives under the platform app data path instead of the launch directory. Slow query warnings are recorded with `JOB_RADAR_SLOW_QUERY_SECONDS` and surfaced in generated reports.
 
 - Add configurable fetch parallelism with a conservative default.
 - Add configurable request timeout and propagate it into source fetches.
@@ -57,7 +57,7 @@ Risks:
 
 Goal: preserve current report features while reducing payload and maintenance risk.
 
-Status: started. Unused Prism syntax-highlighting CSS/JS assets are removed from generated reports while preserving Bootstrap, Notyf, clipboard, status, filter, CSV, keyboard, and print behavior. A payload-size guard now catches unexpected growth for small reports. Large result tables now keep the first 20 rows visible and collapse lower-score rows behind a keyboard-operable disclosure. External report asset tags are centralized in focused helpers for easier payload review.
+Status: complete. Unused Prism syntax-highlighting CSS/JS assets are removed from generated reports while preserving Bootstrap, Notyf, clipboard, status, filter, CSV, keyboard, and print behavior. A payload-size guard now catches unexpected growth for small reports. Large result tables now keep the first 20 rows visible and collapse lower-score rows behind a keyboard-operable disclosure. External report asset tags are centralized in focused helpers for easier payload review.
 
 - Extract CSS/JS report generation into focused helper modules or template sections.
 - Remove unused CDN assets if they are not required by report features.
@@ -77,6 +77,8 @@ Accessibility:
 
 Goal: avoid hidden performance degradation for long-running users.
 
+Status: complete.
+
 - [Done] Add conservative tracker pruning for old seen jobs.
 - [Done] Add cache maintenance hooks for stale files.
 - [Done] Add a visible cache clear path in CLI/GUI.
@@ -86,6 +88,22 @@ Validation:
 - [Done] Tracker pruning boundary tests.
 - [Done] Cache clear tests for missing and populated directories.
 - [Done] Smoke test that old tracker data does not break report status hydration.
+
+## Sprint E: Storage Consistency & Cleanup Correctness
+
+Goal: make runtime data cleanup and packaged app behavior consistent across CLI and GUI.
+
+Status: complete. Tracker data now defaults to the platform app data `results/` directory, with a legacy launch-directory fallback so existing users keep cross-run history. Uninstall preview and documentation now match app-data cleanup behavior.
+
+- [Done] Move default tracker storage to app data while preserving legacy fallback reads.
+- [Done] Ensure uninstall previews and deletion semantics match documented storage locations.
+- [Done] Explicitly document that uninstall backups remain profile/config only and reports/tracker data must be copied separately.
+- [Done] Add focused tests for tracker path resolution, legacy fallback, and uninstall cleanup expectations.
+
+Validation:
+- [Done] Tracker app-data path and legacy fallback tests.
+- [Done] Uninstaller tests for tracker/report cleanup behavior.
+- [Done] Full suite after storage cleanup changes.
 
 ## Suggested Order
 

@@ -7,20 +7,45 @@ import json
 import logging
 import os
 from datetime import date, datetime
+from pathlib import Path
+
+from .paths import get_results_dir
 
 log = logging.getLogger(__name__)
 
-_TRACKER_PATH = os.path.join(os.getcwd(), "results", "tracker.json")
+_TRACKER_PATH: str | None = None
+_LEGACY_TRACKER_PATH = os.path.join(os.getcwd(), "results", "tracker.json")
 TRACKER_SEEN_RETENTION_DAYS = 180
+
+
+def _default_tracker_path() -> Path:
+    """Return the default tracker path in the platform app data results dir."""
+    return get_results_dir() / "tracker.json"
+
+
+def _tracker_path() -> Path:
+    """Return the active tracker path, honoring tests that patch _TRACKER_PATH."""
+    return Path(_TRACKER_PATH) if _TRACKER_PATH else _default_tracker_path()
+
+
+def _read_tracker_file(path: Path) -> dict:
+    with path.open(encoding="utf-8") as f:
+        return json.load(f)
 
 
 def _load_tracker() -> dict:
     """Load tracker data from disk."""
-    if not os.path.exists(_TRACKER_PATH):
+    tracker_path = _tracker_path()
+    if not tracker_path.exists():
+        legacy_path = Path(_LEGACY_TRACKER_PATH)
+        if _TRACKER_PATH is None and legacy_path.exists():
+            try:
+                return _read_tracker_file(legacy_path)
+            except (json.JSONDecodeError, OSError) as e:
+                log.warning("Failed to load legacy tracker: %s", e)
         return {"seen_jobs": {}, "applications": {}, "run_history": []}
     try:
-        with open(_TRACKER_PATH, encoding="utf-8") as f:
-            return json.load(f)
+        return _read_tracker_file(tracker_path)
     except (json.JSONDecodeError, OSError) as e:
         log.warning("Failed to load tracker: %s", e)
         return {"seen_jobs": {}, "applications": {}, "run_history": []}
@@ -28,9 +53,10 @@ def _load_tracker() -> dict:
 
 def _save_tracker(data: dict):
     """Save tracker data to disk."""
-    os.makedirs(os.path.dirname(_TRACKER_PATH), exist_ok=True)
+    tracker_path = _tracker_path()
+    tracker_path.parent.mkdir(parents=True, exist_ok=True)
     try:
-        with open(_TRACKER_PATH, "w", encoding="utf-8") as f:
+        with tracker_path.open("w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
     except OSError as e:
         log.warning("Failed to save tracker: %s", e)

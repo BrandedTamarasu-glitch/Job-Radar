@@ -227,7 +227,7 @@ The easiest way to uninstall Job Radar is through the built-in GUI uninstaller:
 1. **Launch Job Radar GUI**
 2. Go to the **Settings** tab
 3. Scroll to the **Uninstall** section at the bottom
-4. **Optional:** Click "Create Backup" to save your profile and config before uninstalling
+4. **Optional:** Click "Create Backup" to save your profile and config before uninstalling. Reports and tracker data are not included in this ZIP; copy reports separately if you want to keep them.
 5. Check the "I understand this will delete all Job Radar data" checkbox
 6. Click the red "Uninstall" button
 7. Review the confirmation dialog showing exactly what will be deleted
@@ -272,7 +272,7 @@ The GUI uninstaller will:
 2. **Delete configuration files:**
    Delete Job Radar app data from `~/Library/Application Support/JobRadar`.
 
-3. **Clear tracker data:** remove `results/tracker.json` from the directory where you launched Job Radar.
+3. **Clear legacy tracker data:** if present, remove `results/tracker.json` from the directory where you launched Job Radar.
 
 **Why sudo is needed:** macOS prevents unsigned apps from being deleted normally as a security measure. The `sudo rm` command bypasses this restriction.
 
@@ -283,7 +283,7 @@ The GUI uninstaller will:
    ```bash
    rm -rf ~/.local/share/JobRadar
    ```
-3. Clear tracker data by removing `results/tracker.json` from the directory where you launched Job Radar.
+3. Clear legacy tracker data by removing `results/tracker.json` from the directory where you launched Job Radar, if present.
 
 ## Runtime Data Locations
 
@@ -297,7 +297,7 @@ Job Radar stores user data outside the application bundle:
 | HTTP cache | app data `cache/` |
 | Rate limits | app data `rate_limits/` |
 | Backups | app data `backups/` |
-| Tracker | launch directory `results/tracker.json` |
+| Tracker | app data `results/tracker.json`; existing launch-directory trackers are read as a legacy fallback |
 | Error log | home directory `job-radar-error.log` |
 
 ## Score Ratings
@@ -434,7 +434,7 @@ python -m job_radar --help
 
 ### Running Tests
 
-The project includes a comprehensive test suite with 726 automated tests:
+The project includes a comprehensive test suite with 727 automated tests:
 
 ```bash
 # Install dev dependencies
@@ -470,7 +470,7 @@ For release builds, also run the platform build script and smoke-test the genera
 **Test coverage:**
 - Scoring functions (37 tests) - validates all `_score_*` functions with parametrized edge cases
 - Scoring config (25 tests) - validates scoring weights, staffing preference, normalization, live preview
-- Tracker functions (15 tests) - validates deduplication, pruning, and stats aggregation with tmp_path isolation
+- Tracker functions (16 tests) - validates deduplication, pruning, app-data storage, and stats aggregation with tmp_path isolation
 - Config module (23 tests) - validates config file parsing, CLI override, defaults, validation
 - Wizard (38 tests) - validates setup flow, PDF integration, navigation, error handling
 - API integration (50 tests) - validates all 11 API sources, mappers, rate limiting, deduplication

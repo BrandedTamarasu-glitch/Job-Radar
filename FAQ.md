@@ -37,18 +37,23 @@ No. The standalone executables include all dependencies bundled via PyInstaller.
 
 ### Where are my configuration files stored?
 
-- **Windows:** `%USERPROFILE%\.job-radar\`
-- **macOS/Linux:** `~/.job-radar/`
+Job Radar stores user data in the platform app data directory:
 
-This directory contains:
-- `profile.json` — Your candidate profile
-- `config.json` — Optional persistent defaults
-- `.env` — API keys (if configured)
-- `backups/` — Automatic profile backups (last 10)
+| Data | Location |
+|---|---|
+| Profile | app data `profile.json` |
+| Config | app data `config.json` |
+| Reports | app data `results/` by default, or your custom `--output` directory |
+| Tracker | app data `results/tracker.json`; existing launch-directory trackers are read as a legacy fallback |
+| HTTP cache | app data `cache/` |
+| Rate limits | app data `rate_limits/` |
+| Backups | app data `backups/` |
+| Error log | home directory `job-radar-error.log` |
 
-Rate limit databases are stored separately in:
-- **Windows:** `%USERPROFILE%\.rate_limits\`
-- **macOS/Linux:** `~/.rate_limits/`
+Common app data locations:
+- **Windows:** `%APPDATA%\JobRadar\`
+- **macOS:** `~/Library/Application Support/JobRadar/`
+- **Linux:** `~/.local/share/JobRadar/`
 
 ### Can I use Job Radar without API keys?
 
@@ -157,11 +162,13 @@ You can then review and edit the auto-filled fields before saving.
 
 ### How do I back up my profile?
 
-**Automatic:** Job Radar creates timestamped backups before every profile update in `~/.job-radar/backups/` (keeps last 10).
+**Automatic:** Job Radar creates timestamped backups before every profile update in the app data `backups/` directory (keeps last 10).
 
 **Manual:**
 - GUI Settings tab → Uninstall section → "Create Backup" button (creates ZIP with profile and config)
-- Or copy `~/.job-radar/profile.json` manually
+- Or copy app data `profile.json` manually
+
+The uninstall backup ZIP does not include reports or tracker data. Copy app data `results/` separately if you want to keep generated reports or cross-run history.
 
 ### What are dealbreakers and how do they work?
 
@@ -233,7 +240,7 @@ The `--min-score` flag (default: 2.8) controls the threshold for inclusion in re
 
 ### Why are some jobs marked "NEW" and others not?
 
-Job Radar maintains a `results/tracker.json` file that tracks all jobs seen across runs. Jobs appearing for the first time are marked "NEW". Previously seen jobs show as "seen" to help you focus on fresh listings.
+Job Radar maintains an app data `results/tracker.json` file that tracks all jobs seen across runs. Jobs appearing for the first time are marked "NEW". Previously seen jobs show as "seen" to help you focus on fresh listings. Existing launch-directory `results/tracker.json` files are still read as a legacy fallback.
 
 ## Report Features
 
@@ -258,7 +265,7 @@ The HTML report opens automatically in your browser after each search. Features 
 
 Click the status dropdown on any job card to mark it as Applied, Interviewing, Rejected, or Offer. Status is saved to:
 1. **Browser localStorage** — Persists across sessions in the same browser
-2. **results/tracker.json** — Embedded in the tracker file for long-term storage
+2. **App data results/tracker.json** — Embedded in the tracker file for long-term storage
 
 Status data syncs bidirectionally between localStorage and tracker.json on report load.
 
@@ -288,7 +295,7 @@ And a job mentions "microservices architecture", Job Radar suggests:
 
 ### How do I open old reports?
 
-All reports are saved to `results/` (or your custom `--output` directory) with timestamped filenames:
+All reports are saved to app data `results/` by default, or your custom `--output` directory, with timestamped filenames:
 
 ```
 results/
@@ -317,7 +324,7 @@ This was fixed in v2.1.0. Update to the latest version. Job Radar now uses an `a
 
 If you're on v2.1.0+ and still seeing this:
 1. Close all Job Radar instances
-2. Delete `~/.rate_limits/*.db`
+2. Delete the app data `rate_limits/` directory
 3. Restart Job Radar
 
 ### No jobs are showing up in my report
@@ -383,15 +390,15 @@ If duplicates still appear, the listings likely differ enough in company, title,
 **GUI Method (Recommended):**
 1. Launch Job Radar GUI → Settings tab
 2. Scroll to Uninstall section
-3. Optional: Click "Create Backup" to save profile/config
+3. Optional: Click "Create Backup" to save profile/config. Reports and tracker data are not included in this ZIP.
 4. Check "I understand this will delete all Job Radar data"
 5. Click red "Uninstall" button
 6. Confirm in the dialog
 
 The GUI uninstaller removes:
 - Application files
-- Configuration (`~/.job-radar`)
-- Rate limit databases (`~/.rate_limits`)
+- Profile, config, reports, tracker data, and backups from app data
+- Rate limit databases from app data `rate_limits/`
 - Cached data
 - Windows: Add/Remove Programs entry
 - macOS: App bundle moved to Trash
@@ -400,9 +407,7 @@ The GUI uninstaller removes:
 
 ### Will uninstalling delete my job search results?
 
-No. Generated reports in `results/` are NOT deleted by the uninstaller. Only configuration, profile, and app files are removed.
-
-If you want to delete reports too, manually delete the `results/` directory.
+Yes. The GUI uninstaller removes app data `results/`, including generated reports and tracker data. Create an external backup first if you want to keep profile/config, and manually copy reports you want to retain.
 
 ### Can I reinstall Job Radar after uninstalling?
 

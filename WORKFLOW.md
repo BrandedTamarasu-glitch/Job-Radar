@@ -250,7 +250,7 @@ API keys significantly expand job coverage but are entirely optional.
 
 ## Cross-Run Tracking
 
-The tool maintains a `results/tracker.json` file in the launch directory that persists across runs:
+The tool maintains a `results/tracker.json` file in the app data directory that persists across runs:
 
 - **Deduplication** — Jobs seen in previous runs are marked as "seen" (not "NEW") in reports
 - **Cross-source matching** — rapidfuzz fuzzy matching at 85% threshold prevents duplicates from different sources
@@ -301,7 +301,7 @@ Job Radar keeps user data outside the application bundle. Platform app data is r
 | HTTP cache | app data `cache/` |
 | Rate limits | app data `rate_limits/` |
 | Backups | app data `backups/` |
-| Tracker | launch directory `results/tracker.json` |
+| Tracker | app data `results/tracker.json`; existing launch-directory trackers are read as a legacy fallback |
 | Error log | home directory `job-radar-error.log` |
 
 ## Customization
@@ -345,7 +345,7 @@ The desktop GUI application provides a visual interface for all Job Radar featur
 **GUI Method (Recommended):**
 1. Launch Job Radar GUI → Settings tab
 2. Scroll to Uninstall section
-3. Optional: Click "Create Backup" to save profile/config
+3. Optional: Click "Create Backup" to save profile/config. Reports and tracker data are not included in this ZIP; copy reports separately if needed.
 4. Check "I understand this will delete all Job Radar data"
 5. Click red "Uninstall" button
 6. Review confirmation dialog showing paths to be deleted
@@ -402,7 +402,7 @@ Job-Radar/
 │       ├── search_controls.py # Search tab controls and progress
 │       ├── scoring_config.py # Scoring weights and staffing preference UI
 │       └── tag_chip_widget.py # Reusable tag chip widget for list fields
-├── tests/                  # 726 automated tests (27 test files)
+├── tests/                  # 727 automated tests (27 test files)
 ├── scripts/                # Build scripts for standalone executables
 ├── installers/             # Platform-native installers (v2.1.0+)
 │   ├── macos/             # DMG installer build scripts
@@ -413,4 +413,4 @@ Job-Radar/
 └── WORKFLOW.md             # Full documentation and workflow details
 ```
 
-Runtime data such as `profile.json`, `config.json`, reports, HTTP cache, rate limits, and backups lives in the platform-specific user data directory resolved by `job_radar.paths.get_data_dir()`. Cross-run tracker data currently lives in `results/tracker.json` under the launch directory.
+Runtime data such as `profile.json`, `config.json`, reports, tracker data, HTTP cache, rate limits, and backups lives in the platform-specific user data directory resolved by `job_radar.paths.get_data_dir()`. Existing launch-directory tracker files are still read as a legacy fallback.
