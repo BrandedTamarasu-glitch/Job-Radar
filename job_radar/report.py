@@ -27,6 +27,7 @@ ZERO_RESULTS_TIPS = [
     "Widen location or include remote/hybrid arrangements.",
     "Open the manual check URLs below for sources that block automation.",
 ]
+COLLAPSE_RESULTS_AFTER = 20
 
 
 def generate_report(
@@ -2414,6 +2415,41 @@ def _html_results_table(scored_results: list[dict]) -> str:
         """)
 
     rows_html = "".join(rows)
+    visible_rows_html = rows_html
+    collapsed_rows_html = ""
+    hidden_count = max(0, len(rows) - COLLAPSE_RESULTS_AFTER)
+    if hidden_count:
+        visible_rows_html = "".join(rows[:COLLAPSE_RESULTS_AFTER])
+        collapsed_rows_html = f"""
+        <details class="mt-3" id="lower-score-results">
+          <summary class="btn btn-outline-secondary btn-sm">
+            Show {hidden_count} additional lower-score results
+          </summary>
+          <div class="table-responsive mt-3">
+            <table class="table table-striped table-hover">
+              <caption class="visually-hidden">Additional lower-score job results sorted by relevance score</caption>
+              <thead>
+                <tr>
+                  <th scope="col">#</th>
+                  <th scope="col">Score</th>
+                  <th scope="col" class="col-new">New</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">Title</th>
+                  <th scope="col">Company</th>
+                  <th scope="col" class="col-salary">Salary</th>
+                  <th scope="col" class="col-type">Type</th>
+                  <th scope="col">Location</th>
+                  <th scope="col" class="col-snippet">Snippet</th>
+                  <th scope="col">Link</th>
+                </tr>
+              </thead>
+              <tbody>
+                {"".join(rows[COLLAPSE_RESULTS_AFTER:])}
+              </tbody>
+            </table>
+          </div>
+        </details>
+        """
 
     # Filter controls HTML
     filter_controls = """
@@ -2468,10 +2504,11 @@ def _html_results_table(scored_results: list[dict]) -> str:
               </tr>
             </thead>
             <tbody>
-              {rows_html}
+              {visible_rows_html}
             </tbody>
           </table>
         </div>
+        {collapsed_rows_html}
       </div>
     </section>
     """
