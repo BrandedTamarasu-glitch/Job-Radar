@@ -18,17 +18,17 @@ log = logging.getLogger(__name__)
 
 # URL where update manifest JSON is hosted
 # Will be populated when GitHub Pages or similar hosting is configured
-UPDATE_CHECK_URL = "https://coryebert.github.io/Job-Radar/update.json"
+UPDATE_CHECK_URL = "https://brandedtamarasu-glitch.github.io/Job-Radar/update.json"
 
 # Update manifest schema:
 # {
 #     "version": "2.1.0",
 #     "min_version": "2.0.0",
-#     "release_url": "https://github.com/coryebert/Job-Radar/releases/latest",
+#     "release_url": "https://github.com/BrandedTamarasu-glitch/Job-Radar/releases/latest",
 #     "macos_dmg_url": "https://github.com/.../Job-Radar-v2.1.0-macos.dmg",
 #     "windows_exe_url": "https://github.com/.../Job-Radar-Setup-v2.1.0.exe",
 #     "linux_tar_url": "https://github.com/.../job-radar-v2.1.0-linux.tar.gz",
-#     "changelog": "https://github.com/coryebert/Job-Radar/blob/main/CHANGELOG.md"
+#     "changelog": "https://github.com/BrandedTamarasu-glitch/Job-Radar/blob/main/CHANGELOG.md"
 # }
 
 

@@ -9,6 +9,7 @@ import shutil
 import stat
 import subprocess
 import sys
+import tempfile
 import zipfile
 from pathlib import Path
 
@@ -16,6 +17,11 @@ from .paths import get_data_dir, get_log_file, is_frozen
 from .rate_limits import _cleanup_connections
 
 log = logging.getLogger(__name__)
+
+
+def _cleanup_script_path(filename: str) -> Path:
+    """Return a writable path for delayed self-delete cleanup scripts."""
+    return Path(tempfile.gettempdir()) / filename
 
 
 def get_uninstall_paths() -> list[tuple[str, str]]:
@@ -191,7 +197,7 @@ def create_cleanup_script(binary_path: Path) -> tuple[str, str | None]:
                         break
 
             # Create shell script to move to Trash
-            script_path = Path.home() / ".job-radar-cleanup.sh"
+            script_path = _cleanup_script_path(".job-radar-cleanup.sh")
             script_content = f"""#!/bin/bash
 sleep 3
 osascript -e 'tell application "Finder" to delete POSIX file "{app_path}"'
@@ -212,7 +218,7 @@ rm -f "$0"
 
         elif platform == "win32":
             # Windows: Create batch file
-            script_path = Path.home() / "job-radar-cleanup.bat"
+            script_path = _cleanup_script_path("job-radar-cleanup.bat")
             script_content = f"""@echo off
 timeout /t 3 /nobreak >nul
 del /f /q "{binary_path}"
@@ -233,7 +239,7 @@ del /f /q "%~f0"
 
         else:
             # Linux: Create shell script
-            script_path = Path.home() / ".job-radar-cleanup.sh"
+            script_path = _cleanup_script_path(".job-radar-cleanup.sh")
             script_content = f"""#!/bin/bash
 sleep 3
 rm -f "{binary_path}"

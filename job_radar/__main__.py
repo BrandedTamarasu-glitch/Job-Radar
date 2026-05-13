@@ -5,14 +5,23 @@ import os
 import sys
 
 
+def _log_nonfatal(message: str, exception: Exception) -> None:
+    """Best-effort log for recoverable startup failures."""
+    try:
+        from job_radar.banner import log_error_to_file
+        log_error_to_file(message, exception=exception)
+    except Exception:
+        pass
+
+
 def _fix_ssl_for_frozen():
     """Set REQUESTS_CA_BUNDLE for frozen builds so HTTPS works."""
     if getattr(sys, 'frozen', False):
         try:
             import certifi
             os.environ['REQUESTS_CA_BUNDLE'] = certifi.where()
-        except ImportError:
-            pass  # certifi missing - requests will use system certs
+        except ImportError as e:
+            _log_nonfatal("certifi missing in frozen build; using system certs", e)
 
 
 def _get_profile_name() -> str | None:
@@ -48,8 +57,8 @@ def _get_profile_name() -> str | None:
             with open(profile_path, 'r', encoding='utf-8') as f:
                 profile = json.load(f)
                 return profile.get("name")
-    except Exception:
-        pass  # Any error - return None (banner will show without name)
+    except Exception as e:
+        _log_nonfatal("Could not read profile name for startup banner", e)
 
     return None
 
@@ -114,13 +123,12 @@ def _run_cli():
                             print("\nCancelled. Goodbye!")
                             sys.exit(0)
                         # else: "Run search" - continue to search
-                    except ImportError:
-                        pass  # questionary not installed - skip prompt
-
-            except ImportError:
-                pass  # questionary not installed -- skip wizard (dev mode without extras)
-            except Exception:
-                pass  # Wizard failure is non-critical -- user can still use --profile flag
+                    except ImportError as e:
+                        _log_nonfatal("questionary not installed; skipping CLI profile prompt", e)
+            except ImportError as e:
+                _log_nonfatal("Wizard dependencies unavailable; continuing to search", e)
+            except Exception as e:
+                _log_nonfatal("Wizard failed during startup; continuing to search", e)
 
         # Run search
         from job_radar.search import main as search_main

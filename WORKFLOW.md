@@ -7,7 +7,7 @@ A desktop job search tool that fetches listings from 11 API sources and 4 manual
 ## Prerequisites
 
 - Python 3.10+
-- Install with `pip install -e .` (see [README](README.md#install))
+- Install with `pip install -e .[dev]` for source development (see [README](README.md#development))
 
 Or download a standalone executable from the [Releases page](https://github.com/BrandedTamarasu-glitch/Job-Radar/releases/latest) (no Python required).
 
@@ -82,15 +82,15 @@ The wizard creates `~/.job-radar/profile.json` with your settings.
 You can customize how jobs are scored using the GUI Settings tab:
 
 **Scoring Weights:**
-- Adjust the 6 scoring component weights (skills, seniority, job type, salary alignment, response likelihood, description quality) using sliders
+- Adjust the 6 scoring component weights (skills, title relevance, seniority, location/arrangement, domain relevance, response likelihood) using sliders
 - Live preview shows how weight changes affect a sample job's score
 - Normalize button automatically adjusts all weights to sum to 1.0 while preserving relative ratios
 - Reset button restores default weights
 
 **Staffing Firm Preference:**
-- **Boost** (+30%) — Prefer staffing firms (higher callback rates, more opportunities)
+- **Boost** (+0.5 points) — Prefer staffing firms (higher callback rates, more opportunities)
 - **Neutral** (0%) — No preference (default for new profiles)
-- **Penalize** (-80%) — Avoid staffing firms (prefer direct employers)
+- **Penalize** (-1.0 point) — Avoid staffing firms (prefer direct employers)
 
 Changes are saved to your profile and apply to all future searches. The scoring rubric section below shows the default weights.
 
@@ -196,15 +196,15 @@ API keys significantly expand job coverage but are entirely optional.
 
 | Criteria | Weight | What it measures |
 |---|---|---|
-| Stack/skill match | 30% | Core + secondary skills found in job description (word-boundary matching) |
-| Seniority alignment | 20% | Level and years of experience match |
-| Job type alignment | 15% | Target titles, job type preferences |
-| Salary alignment | 15% | Compensation vs. your floor |
-| Response likelihood | 10% | Direct email, company size signals |
-| Description quality | 10% | Structured data, confidence score |
+| Stack/skill match | 25% | Core and secondary skills found in title, company, and description |
+| Title relevance | 15% | Job title similarity to your target titles |
+| Seniority alignment | 15% | Level and years of experience fit |
+| Location/arrangement fit | 15% | Remote, hybrid, onsite, and location preferences |
+| Domain relevance | 10% | Domain expertise keywords from your profile |
+| Response likelihood | 20% | Source quality, directness, staffing signals, and listing quality |
 
 **Adjustments applied after scoring:**
-- **Staffing firm preference** — Boost (+30%), Neutral (0%), or Penalize (-80%) based on your preference in Settings
+- **Staffing firm preference** — Boost (+0.5 points), Neutral (0), or Penalize (-1.0 point) based on your preference in Settings
 - **Comp floor penalty** — Jobs below your `comp_floor` lose 0.5-1.5 points based on gap size
 - **Parse confidence** — Low-confidence parsed listings lose 0.3 points
 - **Dealbreakers** — Hard disqualification (score 0, excluded from report)
@@ -333,7 +333,6 @@ Job-Radar/
 │   ├── __main__.py         # python -m job_radar entry point (GUI/CLI dual mode)
 │   ├── search.py           # CLI entry point (job-radar command)
 │   ├── sources.py          # Dice + HN Hiring + RemoteOK + WWR fetchers
-│   ├── api_sources.py      # Adzuna + Authentic Jobs + JSearch + USAJobs + SerpAPI + Jobicy fetchers
 │   ├── scoring.py          # Weighted scoring engine with configurable weights
 │   ├── report.py           # HTML + Markdown report generator
 │   ├── tracker.py          # Cross-run dedup, stats, application tracking
@@ -345,7 +344,7 @@ Job-Radar/
 │   ├── profile_editor.py   # Interactive profile field editor
 │   ├── paths.py            # Path resolution for data, backup, and config dirs
 │   ├── pdf_parser.py       # PDF resume parser (pdfplumber)
-│   ├── dedup.py            # Cross-source exact-match URL deduplication
+│   ├── deduplication.py    # Cross-source fuzzy deduplication and richness scoring
 │   ├── rate_limits.py      # SQLite-backed API rate limiting with shared backends
 │   ├── api_config.py       # API key storage and validation
 │   ├── uninstaller.py      # Platform-specific app data removal
@@ -353,23 +352,20 @@ Job-Radar/
 │   ├── deps.py             # OS detection utility
 │   ├── staffing_firms.py   # Known staffing firm list for response scoring
 │   └── gui/                # Desktop GUI modules (v2.0.0+)
-│       ├── app.py          # Main GUI application window
+│       ├── main_window.py  # Main GUI application window
 │       ├── profile_form.py # Profile creation/editing form
 │       ├── search_controls.py # Search tab controls and progress
-│       ├── settings_tab.py # API config, scoring config, uninstall
-│       ├── scoring_config_widget.py # Scoring weights and staffing preference UI
-│       └── tag_chips.py    # Reusable tag chip widget for list fields
-├── tests/                  # 664 automated tests (21 test files)
+│       ├── scoring_config.py # Scoring weights and staffing preference UI
+│       └── tag_chip_widget.py # Reusable tag chip widget for list fields
+├── tests/                  # 675 automated tests (23 test files)
 ├── scripts/                # Build scripts for standalone executables
 ├── installers/             # Platform-native installers (v2.1.0+)
 │   ├── macos/             # DMG installer build scripts
 │   └── windows/           # NSIS installer build scripts
-├── results/                # Generated reports (auto-created)
-│   └── tracker.json        # Cross-run dedup and stats
-├── .cache/                 # HTTP response cache (auto-created)
-├── .rate_limits/           # SQLite rate limit databases (auto-created)
 ├── pyproject.toml          # Package metadata and dependencies
 ├── README.md               # Quick-start guide and command reference
 ├── CHANGELOG.md            # Version history and release notes
 └── WORKFLOW.md             # Full documentation and workflow details
 ```
+
+Runtime data such as `profile.json`, `config.json`, reports, tracker data, HTTP cache, and backups lives in the platform-specific user data directory resolved by `job_radar.paths.get_data_dir()`.

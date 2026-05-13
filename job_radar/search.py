@@ -199,7 +199,7 @@ def parse_args(config: dict | None = None):
           Set NO_COLOR=1 to disable all terminal colors.
           Use --profile to bypass the interactive wizard with screen readers.
 
-        Docs: https://github.com/coryebert/job-radar
+        Docs: https://github.com/BrandedTamarasu-glitch/Job-Radar
     """)
 
     parser = argparse.ArgumentParser(
@@ -873,7 +873,7 @@ def main():
     # Step 1: Fetch
     print(f"{C.BOLD}Step 1:{C.RESET} Fetching job listings...")
 
-    def _on_source_progress(source_name, count, total, status):
+    def _on_source_progress(source_name, count, total, status, job_count=0):
         """Display source-level progress — plain text, one line per event.
 
         Called TWICE per source:
@@ -886,7 +886,8 @@ def main():
         if status == "started":
             print(f"  Fetching {source_name}... ({count}/{total})", flush=True)
         elif status == "complete":
-            print(f"  {source_name} complete", flush=True)
+            count_text = f" ({job_count} jobs)" if job_count else ""
+            print(f"  {source_name} complete{count_text}", flush=True)
 
     # Temporarily suppress fetch-level log output so it doesn't interleave with progress
     fetch_loggers = [logging.getLogger(n) for n in ("sources", "cache")]

@@ -387,8 +387,8 @@ If you're a developer who wants to run from source or contribute to the project:
 git clone https://github.com/BrandedTamarasu-glitch/Job-Radar.git
 cd Job-Radar
 
-# Install in development mode
-pip install -e .
+# Install in development mode with test dependencies
+pip install -e .[dev]
 
 # Run the GUI
 python -m job_radar
@@ -401,11 +401,11 @@ python -m job_radar --help
 
 ### Running Tests
 
-The project includes a comprehensive test suite with 664 automated tests:
+The project includes a comprehensive test suite with 675 automated tests:
 
 ```bash
 # Install dev dependencies
-pip install pytest pytest-mock
+pip install -e .[dev]
 
 # Run all tests
 pytest tests/
@@ -416,6 +416,23 @@ pytest tests/ -v
 # Run specific test file
 pytest tests/test_scoring.py
 ```
+
+### Validation Checklist
+
+Before opening a PR or cutting a release:
+
+```bash
+# Confirm runtime metadata
+python -m job_radar --version
+
+# Run all tests
+pytest tests/
+
+# Smoke-test CLI help
+python -m job_radar --help
+```
+
+For release builds, also run the platform build script and smoke-test the generated `job-radar --version` executable from `dist/`.
 
 **Test coverage:**
 - Scoring functions (37 tests) - validates all `_score_*` functions with parametrized edge cases

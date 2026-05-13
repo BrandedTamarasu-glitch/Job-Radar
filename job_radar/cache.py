@@ -3,34 +3,39 @@
 import hashlib
 import json
 import logging
-import os
 import time
+from pathlib import Path
 from typing import Optional
 
 import requests
 
+from .paths import get_data_dir
+
 log = logging.getLogger(__name__)
 
-_CACHE_DIR = os.path.join(os.getcwd(), ".cache")
 _CACHE_MAX_AGE_SECONDS = 4 * 3600  # 4 hours
 
 
-def _cache_path(url: str) -> str:
+def get_cache_dir() -> Path:
+    """Return the platform-specific HTTP cache directory."""
+    return get_data_dir() / "cache"
+
+
+def _cache_path(url: str) -> Path:
     """Return a filesystem-safe cache path for a URL."""
     url_hash = hashlib.sha256(url.encode()).hexdigest()[:16]
-    return os.path.join(_CACHE_DIR, f"{url_hash}.json")
+    return get_cache_dir() / f"{url_hash}.json"
 
 
 def _read_cache(url: str) -> Optional[str]:
     """Read cached response if it exists and is fresh."""
     path = _cache_path(url)
-    if not os.path.exists(path):
+    if not path.exists():
         return None
     try:
-        with open(path, encoding="utf-8") as f:
-            entry = json.load(f)
+        entry = json.loads(path.read_text(encoding="utf-8"))
         if time.time() - entry["ts"] > _CACHE_MAX_AGE_SECONDS:
-            os.remove(path)
+            path.unlink()
             return None
         log.debug("Cache hit: %s", url[:80])
         return entry["body"]
@@ -40,11 +45,14 @@ def _read_cache(url: str) -> Optional[str]:
 
 def _write_cache(url: str, body: str):
     """Write a response to cache."""
-    os.makedirs(_CACHE_DIR, exist_ok=True)
+    cache_dir = get_cache_dir()
+    cache_dir.mkdir(parents=True, exist_ok=True)
     path = _cache_path(url)
     try:
-        with open(path, "w", encoding="utf-8") as f:
-            json.dump({"url": url, "ts": time.time(), "body": body}, f)
+        path.write_text(
+            json.dumps({"url": url, "ts": time.time(), "body": body}),
+            encoding="utf-8",
+        )
     except OSError as e:
         log.debug("Cache write failed: %s", e)
 
@@ -93,9 +101,9 @@ def fetch_with_retry(
 
 def clear_cache():
     """Remove all cached responses."""
-    if os.path.isdir(_CACHE_DIR):
-        for f in os.listdir(_CACHE_DIR):
-            path = os.path.join(_CACHE_DIR, f)
-            if f.endswith(".json"):
-                os.remove(path)
+    cache_dir = get_cache_dir()
+    if cache_dir.is_dir():
+        for path in cache_dir.iterdir():
+            if path.suffix == ".json":
+                path.unlink()
         log.info("Cache cleared")

@@ -40,7 +40,7 @@ Code signing certificates cost $100-400/year per platform. As an open-source
 project, we prioritize features over certificates. Signed installers are planned
 for a future release.
 
-The source code is fully available at https://github.com/coryebert/Job-Radar
+The source code is fully available at https://github.com/BrandedTamarasu-glitch/Job-Radar
 for verification.
 
 ## Building Installers Locally

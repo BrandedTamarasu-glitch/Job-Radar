@@ -187,15 +187,15 @@ Jobs are scored on a 1.0-5.0 scale using 6 weighted components (default weights,
 
 | Component | Weight | What it measures |
 |-----------|--------|------------------|
-| Skills match | 30% | Core + secondary skills found in description |
-| Seniority alignment | 20% | Level and years of experience match |
-| Job type alignment | 15% | Target titles, preferences |
-| Salary alignment | 15% | Compensation vs. your floor |
-| Response likelihood | 10% | Direct email, company size |
-| Description quality | 10% | Structured data, confidence |
+| Skills match | 25% | Core skills and secondary skills found in the title, company, and description |
+| Title relevance | 15% | How closely the job title matches your target titles |
+| Seniority alignment | 15% | Level and years of experience fit |
+| Location/arrangement fit | 15% | Remote, hybrid, onsite, and location preferences |
+| Domain relevance | 10% | Domain expertise keywords from your profile |
+| Response likelihood | 20% | Source quality, directness, staffing signals, and listing quality |
 
 After scoring, adjustments are applied:
-- **Staffing firm preference** — Boost (+30%), Neutral (0%), or Penalize (-80%)
+- **Staffing firm preference** — Boost (+0.5 points), Neutral (0), or Penalize (-1.0 point)
 - **Comp floor penalty** — Jobs below your floor lose 0.5-1.5 points
 - **Parse confidence** — Low-confidence listings lose 0.3 points
 - **Dealbreakers** — Hard disqualification (score 0, excluded)
@@ -214,9 +214,9 @@ Yes! (v2.1.0+) GUI Settings tab → Scoring Configuration:
 
 Some job listings come from staffing/consulting firms rather than direct employers. You can control how these are scored:
 
-- **Boost (+30%)** — Prefer staffing firms (higher callback rates, more opportunities)
+- **Boost (+0.5 points)** — Prefer staffing firms (higher callback rates, more opportunities)
 - **Neutral (0%)** — No preference (default for new profiles)
-- **Penalize (-80%)** — Avoid staffing firms (prefer direct employers)
+- **Penalize (-1.0 point)** — Avoid staffing firms (prefer direct employers)
 
 Set this in GUI Settings → Scoring Configuration.
 
@@ -458,9 +458,9 @@ See WORKFLOW.md for development setup instructions.
 
 ### How do I add a new job source?
 
-1. Add fetcher function in `job_radar/sources.py` (scraper) or `job_radar/api_sources.py` (API)
-2. Map response to standard `JobListing` dict
-3. Add to `SOURCES` list in `job_radar/search.py`
+1. Add a fetcher function and mapper in `job_radar/sources.py`
+2. Map response data to the standard `JobResult` dataclass
+3. Add the source to `build_search_queries()` and `fetch_all()` in `job_radar/sources.py`
 4. Add rate limit config in `job_radar/rate_limits.py`
 5. Write tests in `tests/test_sources_api.py`
 6. Submit a pull request!
