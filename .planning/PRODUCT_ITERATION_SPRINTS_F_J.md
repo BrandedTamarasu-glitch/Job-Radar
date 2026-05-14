@@ -10,7 +10,7 @@ Continue the post-v2.5.0 product iteration by making Job Radar easier to start, 
 
 Goal: help a new job seeker understand value quickly and create a useful first profile without trial and error.
 
-- Add GUI access to the existing no-network demo report experience.
+- Add GUI access to the existing no-network demo report experience from both first-run onboarding and the Search tab.
 - Add profile readiness checks for fields that strongly affect match quality.
 - Ensure GUI-created profiles get the same default scoring and staffing settings as CLI wizard profiles.
 - Surface first-search guidance without requiring users to read docs first.

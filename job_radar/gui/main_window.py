@@ -102,6 +102,7 @@ class MainWindow(ctk.CTk):
         self._report_path = None
         self._tabview = None
         self._success_message_label = None
+        self._welcome_status_label = None
 
         # Update checker state
         self._update_banner = None
@@ -223,6 +224,27 @@ class MainWindow(ctk.CTk):
             command=self._on_get_started
         )
         get_started_btn.pack()
+
+        preview_btn = ctk.CTkButton(
+            content_frame,
+            text="Preview Demo Report",
+            height=36,
+            width=200,
+            command=self._open_demo_report,
+            fg_color="transparent",
+            border_width=2,
+        )
+        preview_btn.pack(pady=(12, 0))
+
+        self._welcome_status_label = ctk.CTkLabel(
+            content_frame,
+            text="",
+            font=ctk.CTkFont(size=12),
+            text_color="gray",
+            wraplength=500,
+            justify="center",
+        )
+        self._welcome_status_label.pack(pady=(14, 0))
 
     def _on_get_started(self):
         """Handle Get Started button click - show profile form in create mode."""
@@ -721,9 +743,30 @@ class MainWindow(ctk.CTk):
             message = "Demo report generated."
             if not browser_result["opened"]:
                 message += f" Open manually: {self._report_path}"
-            self._show_success_message(message)
+            self._show_demo_report_message(message, "green")
         except Exception as e:
-            self._show_search_error(f"Could not generate demo report: {e}")
+            message = f"Could not generate demo report: {e}"
+            if self._has_search_content():
+                self._show_search_error(message)
+            else:
+                self._show_error_dialog(message)
+
+    def _show_demo_report_message(self, message: str, text_color: str = "green"):
+        """Show demo-report feedback in the active GUI context."""
+        if self._has_search_content():
+            self._show_success_message(message)
+            return
+
+        if self._welcome_status_label is not None and self._welcome_status_label.winfo_exists():
+            self._welcome_status_label.configure(text=message, text_color=text_color)
+
+    def _has_search_content(self) -> bool:
+        """Return True when the Search tab content frame is available."""
+        return (
+            hasattr(self, "_search_content")
+            and self._search_content is not None
+            and self._search_content.winfo_exists()
+        )
 
     def _show_search_progress(self):
         """Display progress state with progress bar, per-source job counts, and cancel button."""
