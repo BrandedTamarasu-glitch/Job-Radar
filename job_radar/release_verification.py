@@ -81,7 +81,11 @@ def verify_release_artifacts(
     for check in checks:
         artifact_path = root_path / check.path
         if not artifact_path.exists():
-            failures.append(f"missing {check.description}: {artifact_path}")
+            similar = _similar_artifacts(root_path, check.path)
+            detail = f"missing {check.description}: {artifact_path}"
+            if similar:
+                detail += f" (found similar: {', '.join(str(path) for path in similar)})"
+            failures.append(detail)
             continue
         if artifact_path.is_file() and artifact_path.stat().st_size <= 0:
             failures.append(f"empty {check.description}: {artifact_path}")
@@ -101,6 +105,29 @@ def verify_release_artifacts(
 
 def _has_execute_bit(path: Path) -> bool:
     return bool(path.stat().st_mode & 0o111)
+
+
+def _similar_artifacts(root: Path, expected_path: Path) -> list[Path]:
+    """Return nearby artifact paths that can explain filename drift."""
+    parent = root / expected_path.parent
+    if not parent.is_dir():
+        return []
+
+    expected_name = expected_path.name
+    tokens = [
+        token
+        for token in expected_name.replace(".", "-").replace("_", "-").split("-")
+        if token and not token.startswith("v")
+    ]
+    matches = []
+    for candidate in parent.iterdir():
+        if candidate.name == expected_name:
+            continue
+        candidate_lower = candidate.name.casefold()
+        if tokens and all(token.casefold() in candidate_lower for token in tokens[:2]):
+            matches.append(candidate.relative_to(root))
+
+    return sorted(matches, key=lambda path: path.as_posix())[:5]
 
 
 def main(argv: list[str] | None = None) -> int:
