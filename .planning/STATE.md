@@ -7,15 +7,15 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Accurate job-candidate scoring — if the scoring is wrong, nothing else matters.
-**Current focus:** Next product iteration, Sprint M source health controls
+**Current focus:** Next product iteration, Sprint N data portability and recovery
 
 ## Current Position
 
 **Milestone:** Product Iteration K-O — ACTIVE
-**Status:** Sprint M started
-**Last activity:** 2026-05-14 — completed Sprint L search review workspace and advanced Sprint M source health recommendations, source-priority diagnostics, cache freshness visibility, and source-control guidance
+**Status:** Sprint N started
+**Last activity:** 2026-05-14 — completed Sprint M source health controls and started Sprint N portable app-data exports
 
-**Next step:** continue Sprint M with remaining source-health Settings polish or move to Sprint N data portability.
+**Next step:** continue Sprint N with GUI export access and import validation.
 
 ## Performance Metrics
 
@@ -122,8 +122,8 @@ See `.planning/PRODUCT_ITERATION_SPRINTS_K_O.md`.
 
 - Sprint K: Application Editing & Templates — complete
 - Sprint L: Search Review Workspace — complete
-- Sprint M: Source Health Controls — in progress
-- Sprint N: Data Portability & Recovery — pending
+- Sprint M: Source Health Controls — complete
+- Sprint N: Data Portability & Recovery — in progress
 - Sprint O: Performance & Release Trust — pending
 
 ### Blockers/Concerns

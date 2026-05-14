@@ -43,7 +43,7 @@ Goal: give users clearer control over unreliable or slow job sources.
 
 Deliverable: users can understand source failures and keep searching without restarting or editing config files.
 
-Status: in progress. Settings source diagnostics now label source health, prioritize unhealthy sources above slow-but-working sources, include source-control guidance and recommended actions for failed, warning-heavy, slow, and healthy sources, and summarize cache freshness across recent source runs.
+Status: complete. Settings source diagnostics now label source health, prioritize unhealthy sources above slow-but-working sources, include source-control guidance and recommended actions for failed, warning-heavy, slow, and healthy sources, and summarize cache freshness across recent source runs.
 
 ## Sprint N: Data Portability & Recovery
 
@@ -56,7 +56,7 @@ Goal: make local data safer and easier to move between machines.
 
 Deliverable: users can back up, migrate, and recover Job Radar data confidently.
 
-Status: pending.
+Status: in progress. Portable app-data export bundles now include profile, config, saved searches, review state, tracker data, and a manifest while safely skipping missing files.
 
 ## Sprint O: Performance & Release Trust
 
