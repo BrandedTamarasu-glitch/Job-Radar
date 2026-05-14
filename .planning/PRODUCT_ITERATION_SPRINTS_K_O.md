@@ -17,7 +17,7 @@ Goal: make the application tracker feel editable and useful directly from the de
 
 Deliverable: users can manage follow-up details from the GUI with fewer manual file edits.
 
-Status: in progress. Applications tab rows now support timeline-preserving template note insertion, direct status updates from an in-row status menu, and quick next-action, due-date, and notes edits.
+Status: complete. Applications tab rows now support timeline-preserving template note insertion, direct status updates from an in-row status menu, and quick next-action, due-date, and notes edits.
 
 ## Sprint L: Search Review Workspace
 
@@ -30,7 +30,7 @@ Goal: make search results easier to triage after a run.
 
 Deliverable: users can quickly turn a search result list into a practical review queue.
 
-Status: pending.
+Status: in progress. Persistent app-data review state now supports shortlisted, dismissed, and maybe-later states as the foundation for GUI/report review workflows.
 
 ## Sprint M: Source Health Controls
 

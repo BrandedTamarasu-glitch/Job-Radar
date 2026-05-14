@@ -7,15 +7,15 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Accurate job-candidate scoring — if the scoring is wrong, nothing else matters.
-**Current focus:** Next product iteration, Sprint K application editing and templates
+**Current focus:** Next product iteration, Sprint L search review workspace
 
 ## Current Position
 
 **Milestone:** Product Iteration K-O — ACTIVE
-**Status:** Sprint K started
-**Last activity:** 2026-05-14 — completed Sprints F-J, committed release artifact verification, and documented Sprints K-O
+**Status:** Sprint L started
+**Last activity:** 2026-05-14 — completed Sprint K application editing and started Sprint L review-state persistence
 
-**Next step:** continue Sprint K with GUI application edit controls and template insertion.
+**Next step:** continue Sprint L by carrying persistent review state into GUI search results and reports.
 
 ## Performance Metrics
 
@@ -120,8 +120,8 @@ Full decision log: PROJECT.md Key Decisions table (143 decisions)
 
 See `.planning/PRODUCT_ITERATION_SPRINTS_K_O.md`.
 
-- Sprint K: Application Editing & Templates — in progress
-- Sprint L: Search Review Workspace — pending
+- Sprint K: Application Editing & Templates — complete
+- Sprint L: Search Review Workspace — in progress
 - Sprint M: Source Health Controls — pending
 - Sprint N: Data Portability & Recovery — pending
 - Sprint O: Performance & Release Trust — pending

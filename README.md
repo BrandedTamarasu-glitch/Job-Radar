@@ -441,7 +441,7 @@ python -m job_radar --help
 
 ### Running Tests
 
-The project includes a comprehensive test suite with 871 automated tests:
+The project includes a comprehensive test suite with 876 automated tests:
 
 ```bash
 # Install dev dependencies
@@ -479,6 +479,7 @@ For release builds, also run the platform build script and smoke-test the genera
 - Scoring config (25 tests) - validates scoring weights, staffing preference, normalization, live preview
 - Match calibration (5 tests) - validates broader, balanced, strict, and custom search calibration behavior
 - Saved searches (16 tests) - validates recent search storage, named search storage, run metadata, previous-run deltas, run summary display, config normalization, deduplication, deletion, history caps, and labels
+- Review state (5 tests) - validates persisted shortlist, dismissed, and maybe-later search-result review states
 - Applications export (3 tests) - validates application pipeline CSV rows, timeline summaries, CSV import normalization, and UTF-8 CSV output
 - Application templates (5 tests) - validates follow-up, recruiter response, and cover-letter note template rendering
 - Applications view model (9 tests) - validates grouped pipeline statuses, note-only entries, template note appending, status-menu mappings, and GUI detail-input normalization
