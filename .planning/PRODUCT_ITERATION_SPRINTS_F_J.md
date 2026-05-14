@@ -48,7 +48,7 @@ Goal: give users practical control over ranking behavior without making them tun
 
 Deliverable: users can understand and tune why jobs appear, rank, or get filtered.
 
-Status: in progress. Match-calibration presets are defined for broader, balanced, and strict searches; the Search tab exposes them, applies the matching minimum-score/location controls, and saved searches persist inferred calibration state. Reports now include bounded filtered-out sections in HTML and Markdown with concise explanations for below-threshold and dealbreaker-filtered jobs.
+Status: in progress. Match-calibration presets are defined for broader, balanced, and strict searches; the Search tab exposes them, applies the matching minimum-score/location controls, and saved searches persist inferred calibration state. Reports now include bounded filtered-out sections in HTML and Markdown with concise explanations for below-threshold and dealbreaker-filtered jobs. Profile readiness now includes scoring-signal recommendations for title relevance, skill match, seniority, location, domain relevance, and filtering quality.
 
 ## Sprint I: Application Workflow Upgrade
 

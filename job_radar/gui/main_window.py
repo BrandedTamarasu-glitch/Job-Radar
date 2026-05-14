@@ -23,7 +23,11 @@ from job_radar.browser import open_report_in_browser
 from job_radar.demo_report import generate_demo_report
 from job_radar.paths import get_data_dir
 from job_radar.paths import get_results_dir
-from job_radar.profile_readiness import assess_profile_readiness, readiness_guidance_lines
+from job_radar.profile_readiness import (
+    assess_profile_readiness,
+    readiness_guidance_lines,
+    scoring_signal_guidance_lines,
+)
 from job_radar.profile_manager import load_profile
 from job_radar.config import load_config
 from job_radar.tracker import get_all_application_statuses, get_source_health_history
@@ -422,6 +426,7 @@ class MainWindow(ctk.CTk):
             row += 1
 
             readiness_items = list(readiness.missing_required or readiness.recommendations[:3])
+            scoring_items = scoring_signal_guidance_lines(readiness, limit=3)
             if readiness_items:
                 readiness_label = ctk.CTkLabel(
                     scroll_frame,
@@ -432,6 +437,9 @@ class MainWindow(ctk.CTk):
                     anchor="w",
                 )
                 readiness_label.grid(row=row, column=0, columnspan=2, sticky="ew", pady=(0, 12))
+                row += 1
+            if scoring_items:
+                self._add_profile_field(scroll_frame, row, "Scoring Signals:", "\n".join(scoring_items))
                 row += 1
 
             # Name
@@ -757,6 +765,11 @@ class MainWindow(ctk.CTk):
             return
 
         guidance_lines = readiness_guidance_lines(readiness)
+        signal_lines = scoring_signal_guidance_lines(
+            readiness,
+            limit=max(0, 3 - len(guidance_lines)),
+        )
+        guidance_lines = guidance_lines + signal_lines
         if not guidance_lines:
             return
 
