@@ -23,7 +23,7 @@ from job_radar.browser import open_report_in_browser
 from job_radar.demo_report import generate_demo_report
 from job_radar.paths import get_data_dir
 from job_radar.paths import get_results_dir
-from job_radar.profile_readiness import assess_profile_readiness
+from job_radar.profile_readiness import assess_profile_readiness, readiness_guidance_lines
 from job_radar.profile_manager import load_profile
 from job_radar.config import load_config
 from job_radar.tracker import get_all_application_statuses, get_source_health_history
@@ -700,6 +700,8 @@ class MainWindow(ctk.CTk):
         self._search_controls = SearchControls(content_frame)
         self._search_controls.pack(pady=(0, 20))
 
+        self._add_search_readiness_guidance(content_frame)
+
         # Run Search button
         self._search_button = ctk.CTkButton(
             content_frame,
@@ -730,6 +732,56 @@ class MainWindow(ctk.CTk):
                 text_color="red"
             )
             warning_label.pack()
+
+    def _add_search_readiness_guidance(self, parent):
+        """Add optional profile quality guidance above the search action."""
+        if not self._profile_exists:
+            return
+
+        try:
+            profile = load_profile(get_data_dir() / "profile.json")
+            readiness = assess_profile_readiness(profile)
+        except Exception:
+            return
+
+        guidance_lines = readiness_guidance_lines(readiness)
+        if not guidance_lines:
+            return
+
+        guidance_frame = ctk.CTkFrame(parent)
+        guidance_frame.pack(fill="x", pady=(0, 16))
+        guidance_frame.grid_columnconfigure(0, weight=1)
+
+        ctk.CTkLabel(
+            guidance_frame,
+            text=f"Profile readiness: {readiness.status} ({readiness.score}/{readiness.max_score})",
+            font=ctk.CTkFont(size=13, weight="bold"),
+            anchor="w",
+        ).grid(row=0, column=0, sticky="w", padx=12, pady=(10, 4))
+
+        ctk.CTkLabel(
+            guidance_frame,
+            text="\n".join(f"- {line}" for line in guidance_lines),
+            font=ctk.CTkFont(size=12),
+            text_color="gray",
+            wraplength=520,
+            justify="left",
+            anchor="w",
+        ).grid(row=1, column=0, sticky="ew", padx=12, pady=(0, 10))
+
+        ctk.CTkButton(
+            guidance_frame,
+            text="Review Profile",
+            width=130,
+            command=self._show_profile_tab,
+            fg_color="transparent",
+            border_width=2,
+        ).grid(row=0, column=1, rowspan=2, sticky="e", padx=12, pady=10)
+
+    def _show_profile_tab(self):
+        """Navigate to the Profile tab when available."""
+        if self._tabview is not None:
+            self._tabview.set("Profile")
 
     def _open_demo_report(self):
         """Generate and open the no-network demo report from the GUI."""

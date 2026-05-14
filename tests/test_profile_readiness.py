@@ -1,4 +1,4 @@
-from job_radar.profile_readiness import assess_profile_readiness
+from job_radar.profile_readiness import assess_profile_readiness, readiness_guidance_lines
 
 
 def test_profile_readiness_flags_missing_required_fields():
@@ -46,3 +46,28 @@ def test_profile_readiness_recommends_match_quality_fields():
     assert readiness.missing_required == ()
     assert any("years of experience" in item for item in readiness.recommendations)
     assert any("target location" in item for item in readiness.recommendations)
+
+
+def test_readiness_guidance_prioritizes_missing_required_fields():
+    readiness = assess_profile_readiness({})
+
+    lines = readiness_guidance_lines(readiness, limit=2)
+
+    assert lines == ["Add your name", "Add at least one target title"]
+
+
+def test_readiness_guidance_omits_strong_profiles():
+    readiness = assess_profile_readiness(
+        {
+            "name": "Test User",
+            "target_titles": ["Backend Engineer"],
+            "core_skills": ["Python", "PostgreSQL"],
+            "secondary_skills": ["Docker"],
+            "years_experience": 6,
+            "location": "Remote",
+            "arrangement": ["remote"],
+            "dealbreakers": ["relocation required"],
+        }
+    )
+
+    assert readiness_guidance_lines(readiness) == []

@@ -15,3 +15,17 @@ def test_demo_report_feedback_supports_welcome_and_search_contexts():
 
     assert "_show_demo_report_message" in source
     assert "_has_search_content" in source
+
+
+def test_search_idle_includes_profile_readiness_guidance():
+    source = inspect.getsource(MainWindow._show_search_idle)
+
+    assert "_add_search_readiness_guidance" in source
+
+
+def test_profile_readiness_guidance_links_to_profile_tab():
+    source = inspect.getsource(MainWindow._add_search_readiness_guidance)
+
+    assert "Profile readiness:" in source
+    assert "Review Profile" in source
+    assert "command=self._show_profile_tab" in source

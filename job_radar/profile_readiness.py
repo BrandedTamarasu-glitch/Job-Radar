@@ -86,6 +86,15 @@ def assess_profile_readiness(profile: dict | None) -> ProfileReadiness:
     )
 
 
+def readiness_guidance_lines(readiness: ProfileReadiness, limit: int = 3) -> list[str]:
+    """Return concise next-action guidance for a readiness summary."""
+    if readiness.missing_required:
+        return list(readiness.missing_required[:limit])
+    if readiness.status == "Strong":
+        return []
+    return list(readiness.recommendations[:limit])
+
+
 def _has_text(value) -> bool:
     return isinstance(value, str) and bool(value.strip())
 
