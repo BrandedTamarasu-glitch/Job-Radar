@@ -152,6 +152,22 @@ def test_record_search_run_updates_matching_recent_and_saved(tmp_path):
     }
 
 
+def test_record_search_run_rolls_last_stats_to_previous(tmp_path):
+    path = tmp_path / "saved_searches.json"
+    config = {"preset": "remote-backend"}
+
+    save_named_search("Remote", config, path=path)
+    record_search_run(config, {"total": 8, "new": 4, "high_score": 2}, path=path)
+    state = record_search_run(config, {"total": 12, "new": 5, "high_score": 3}, path=path)
+
+    assert state["saved"][0]["previous_result_stats"] == {
+        "total": 8,
+        "new": 4,
+        "high_score": 2,
+    }
+    assert state["saved"][0]["last_result_stats"]["total"] == 12
+
+
 def test_record_search_run_ignores_non_matching_configs(tmp_path):
     path = tmp_path / "saved_searches.json"
 
@@ -172,3 +188,15 @@ def test_format_run_summary_includes_result_counts():
     }
 
     assert format_run_summary(item) == "Last run: 12 results, 5 new, 3 high-score | 2 runs"
+
+
+def test_format_run_summary_includes_previous_total_delta():
+    item = {
+        "run_count": 2,
+        "previous_result_stats": {"total": 8, "new": 2, "high_score": 1},
+        "last_result_stats": {"total": 12, "new": 5, "high_score": 3},
+    }
+
+    assert format_run_summary(item) == (
+        "Last run: 12 results, +4 vs previous, 5 new, 3 high-score | 2 runs"
+    )

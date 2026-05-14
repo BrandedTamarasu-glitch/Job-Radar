@@ -35,7 +35,7 @@ Goal: make repeated job searching fast and comparable.
 
 Deliverable: daily users can rerun targeted searches and immediately see what changed.
 
-Status: in progress. Backend storage for recent search configs has started, successful GUI searches now record recent search configs without blocking search execution, the Search tab can reapply the latest recent searches, named saved-search storage is available, the Search tab can save/reapply named searches, GUI search completion records result metadata, and saved/recent searches display last-run summaries.
+Status: complete. Backend storage for recent and named saved searches is in place; successful GUI searches record recent configs and result metadata without blocking search execution; the Search tab can save and reapply saved/recent searches; and saved/recent searches show last-run summaries with previous-run result deltas.
 
 ## Sprint H: Match Tuning & Explainability
 

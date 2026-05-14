@@ -152,6 +152,8 @@ def record_search_run(
         for item in state[collection_name]:
             if item.get("config") != normalized_config:
                 continue
+            if "last_result_stats" in item:
+                item["previous_result_stats"] = item["last_result_stats"]
             item["last_run_at"] = timestamp
             item["last_result_stats"] = run_stats
             item["run_count"] = int(item.get("run_count") or 0) + 1
@@ -209,7 +211,11 @@ def format_run_summary(item: dict[str, Any]) -> str:
     new = int(stats.get("new") or 0)
     high_score = int(stats.get("high_score") or 0)
     run_word = "run" if run_count == 1 else "runs"
-    return f"Last run: {total} results, {new} new, {high_score} high-score | {run_count} {run_word}"
+    delta = _format_total_delta(stats, item.get("previous_result_stats") or {})
+    return (
+        f"Last run: {total} results{delta}, {new} new, "
+        f"{high_score} high-score | {run_count} {run_word}"
+    )
 
 
 def _empty_state() -> dict:
@@ -230,6 +236,17 @@ def _normalize_run_stats(stats: dict[str, Any] | None) -> dict[str, int]:
         "new": int(stats.get("new") or 0),
         "high_score": int(stats.get("high_score") or 0),
     }
+
+
+def _format_total_delta(current: dict[str, Any], previous: dict[str, Any]) -> str:
+    if not previous:
+        return ""
+
+    delta = int(current.get("total") or 0) - int(previous.get("total") or 0)
+    if delta == 0:
+        return ", no change"
+    sign = "+" if delta > 0 else ""
+    return f", {sign}{delta} vs previous"
 
 
 def _write_state(path: Path, state: dict) -> None:
