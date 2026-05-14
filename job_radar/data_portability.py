@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 import zipfile
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -27,6 +28,14 @@ class PortableBundleValidation:
     is_valid: bool
     files: list[str]
     errors: list[str]
+
+
+@dataclass(frozen=True)
+class PortableRestoreResult:
+    """Result of restoring files from a portability bundle."""
+
+    restored_files: list[str]
+    backup_files: list[str]
 
 
 PORTABLE_DATA_FILES = (
@@ -139,8 +148,45 @@ def validate_app_data_bundle(bundle_path: str | Path) -> PortableBundleValidatio
     return PortableBundleValidation(not errors, files, errors)
 
 
+def restore_app_data_bundle(
+    bundle_path: str | Path,
+    *,
+    data_dir: Path | None = None,
+    backup_existing: bool = True,
+    now: datetime | None = None,
+) -> PortableRestoreResult:
+    """Restore a validated app-data bundle into the app data directory."""
+    validation = validate_app_data_bundle(bundle_path)
+    if not validation.is_valid:
+        raise ValueError("; ".join(validation.errors))
+
+    root = data_dir or get_data_dir()
+    backup_files: list[str] = []
+    timestamp = _compact_timestamp(now)
+
+    with zipfile.ZipFile(bundle_path) as archive:
+        for archive_name in validation.files:
+            destination = root / archive_name
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            if backup_existing and destination.exists():
+                backup_path = destination.with_name(f"{destination.name}.{timestamp}.bak")
+                shutil.copy2(destination, backup_path)
+                backup_files.append(str(backup_path.relative_to(root)))
+            with archive.open(archive_name) as source, destination.open("wb") as target:
+                shutil.copyfileobj(source, target)
+
+    return PortableRestoreResult(
+        restored_files=list(validation.files),
+        backup_files=backup_files,
+    )
+
+
 def _timestamp(now: datetime | None = None) -> str:
     now = now or datetime.now(timezone.utc)
     if now.tzinfo is None:
         now = now.replace(tzinfo=timezone.utc)
     return now.astimezone(timezone.utc).isoformat()
+
+
+def _compact_timestamp(now: datetime | None = None) -> str:
+    return _timestamp(now).replace("+00:00", "Z").replace(":", "").replace("-", "")

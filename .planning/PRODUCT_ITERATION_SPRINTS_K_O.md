@@ -56,7 +56,7 @@ Goal: make local data safer and easier to move between machines.
 
 Deliverable: users can back up, migrate, and recover Job Radar data confidently.
 
-Status: in progress. Portable app-data export bundles now include profile, config, saved searches, review state, tracker data, and a manifest while safely skipping missing files. Settings now exposes an Export App Data action that writes the bundle to the results directory, and bundle validation now checks manifests, supported paths, and missing files before restore work mutates app data.
+Status: in progress. Portable app-data export bundles now include profile, config, saved searches, review state, tracker data, and a manifest while safely skipping missing files. Settings now exposes an Export App Data action that writes the bundle to the results directory, bundle validation checks manifests, supported paths, and missing files before restore work mutates app data, and restore helpers back up replaced files.
 
 ## Sprint O: Performance & Release Trust
 

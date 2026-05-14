@@ -13,9 +13,9 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Milestone:** Product Iteration K-O — ACTIVE
 **Status:** Sprint N started
-**Last activity:** 2026-05-14 — completed Sprint M source health controls and advanced Sprint N portable app-data exports, Settings access, and restore preflight validation
+**Last activity:** 2026-05-14 — completed Sprint M source health controls and advanced Sprint N portable app-data exports, Settings access, restore preflight validation, and backup-aware restore helpers
 
-**Next step:** continue Sprint N with restore implementation or GUI import validation access.
+**Next step:** continue Sprint N with GUI import validation access or mark Sprint N complete and move to Sprint O.
 
 ## Performance Metrics
 
