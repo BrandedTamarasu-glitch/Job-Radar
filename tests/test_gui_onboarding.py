@@ -68,3 +68,23 @@ def test_recent_search_recording_is_non_blocking():
 
     assert "record_recent_search(search_config)" in source
     assert "except Exception" in source
+
+
+def test_search_idle_includes_recent_searches_panel():
+    source = inspect.getsource(MainWindow._show_search_idle)
+
+    assert "_add_recent_searches_panel" in source
+
+
+def test_recent_search_panel_loads_and_applies_configs():
+    source = inspect.getsource(MainWindow._add_recent_searches_panel)
+
+    assert "load_search_history()" in source
+    assert "_apply_recent_search" in source
+    assert "recent_searches[:3]" in source
+
+
+def test_apply_recent_search_uses_search_controls_defaults():
+    source = inspect.getsource(MainWindow._apply_recent_search)
+
+    assert "self._search_controls.set_defaults(config)" in source

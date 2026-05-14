@@ -53,7 +53,7 @@ from job_radar.gui.uninstall_dialog import (
     DeletionProgressDialog,
 )
 from job_radar.rate_limits import get_quota_usage
-from job_radar.saved_searches import record_recent_search
+from job_radar.saved_searches import load_search_history, record_recent_search
 from job_radar.uninstaller import (
     get_uninstall_paths,
     create_backup,
@@ -702,6 +702,7 @@ class MainWindow(ctk.CTk):
         self._search_controls.pack(pady=(0, 20))
 
         self._add_search_readiness_guidance(content_frame)
+        self._add_recent_searches_panel(content_frame)
 
         # Run Search button
         self._search_button = ctk.CTkButton(
@@ -783,6 +784,42 @@ class MainWindow(ctk.CTk):
         """Navigate to the Profile tab when available."""
         if self._tabview is not None:
             self._tabview.set("Profile")
+
+    def _add_recent_searches_panel(self, parent):
+        """Show recent searches with one-click apply controls."""
+        try:
+            recent_searches = load_search_history().get("recent", [])[:3]
+        except Exception:
+            return
+
+        if not recent_searches:
+            return
+
+        panel = ctk.CTkFrame(parent)
+        panel.pack(fill="x", pady=(0, 16))
+        panel.grid_columnconfigure(0, weight=1)
+
+        ctk.CTkLabel(
+            panel,
+            text="Recent Searches",
+            font=ctk.CTkFont(size=13, weight="bold"),
+            anchor="w",
+        ).grid(row=0, column=0, sticky="w", padx=12, pady=(10, 4))
+
+        for index, item in enumerate(recent_searches[:3], start=1):
+            name = item.get("name") or "Custom search"
+            config = item.get("config") or {}
+            ctk.CTkButton(
+                panel,
+                text=name,
+                height=30,
+                command=lambda cfg=config: self._apply_recent_search(cfg),
+            ).grid(row=index, column=0, sticky="ew", padx=12, pady=(0, 6))
+
+    def _apply_recent_search(self, config: dict):
+        """Apply a recent search config to the current Search controls."""
+        if hasattr(self, "_search_controls") and self._search_controls is not None:
+            self._search_controls.set_defaults(config)
 
     def _open_demo_report(self):
         """Generate and open the no-network demo report from the GUI."""
