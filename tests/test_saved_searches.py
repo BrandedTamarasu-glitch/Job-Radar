@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 
 from job_radar.saved_searches import (
     delete_named_search,
+    format_run_summary,
     load_search_history,
     normalize_search_config,
     record_search_run,
@@ -158,3 +159,16 @@ def test_record_search_run_ignores_non_matching_configs(tmp_path):
     state = record_search_run({"preset": "contract"}, {"total": 2}, path=path)
 
     assert "run_count" not in state["saved"][0]
+
+
+def test_format_run_summary_handles_never_run_item():
+    assert format_run_summary({}) == "Not run yet"
+
+
+def test_format_run_summary_includes_result_counts():
+    item = {
+        "run_count": 2,
+        "last_result_stats": {"total": 12, "new": 5, "high_score": 3},
+    }
+
+    assert format_run_summary(item) == "Last run: 12 results, 5 new, 3 high-score | 2 runs"

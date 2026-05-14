@@ -54,6 +54,7 @@ from job_radar.gui.uninstall_dialog import (
 )
 from job_radar.rate_limits import get_quota_usage
 from job_radar.saved_searches import (
+    format_run_summary,
     load_search_history,
     record_search_run,
     record_recent_search,
@@ -824,6 +825,13 @@ class MainWindow(ctk.CTk):
                 height=30,
                 command=lambda cfg=config: self._apply_recent_search(cfg),
             ).grid(row=index, column=0, sticky="ew", padx=12, pady=(0, 6))
+            ctk.CTkLabel(
+                panel,
+                text=format_run_summary(item),
+                font=ctk.CTkFont(size=11),
+                text_color="gray",
+                anchor="w",
+            ).grid(row=index, column=1, sticky="w", padx=(8, 12), pady=(0, 6))
 
     def _apply_recent_search(self, config: dict):
         """Apply a recent search config to the current Search controls."""
@@ -873,7 +881,14 @@ class MainWindow(ctk.CTk):
                     text=name,
                     height=30,
                     command=lambda cfg=config: self._apply_saved_search(cfg),
-                ).grid(row=index, column=0, columnspan=2, sticky="ew", padx=12, pady=(0, 6))
+                ).grid(row=index, column=0, sticky="ew", padx=12, pady=(0, 6))
+                ctk.CTkLabel(
+                    panel,
+                    text=format_run_summary(item),
+                    font=ctk.CTkFont(size=11),
+                    text_color="gray",
+                    anchor="w",
+                ).grid(row=index, column=1, sticky="w", padx=(8, 12), pady=(0, 6))
 
         self._saved_search_status_label = ctk.CTkLabel(
             panel,

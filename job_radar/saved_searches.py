@@ -198,6 +198,20 @@ def summarize_search_config(config: dict[str, Any]) -> str:
     return " | ".join(parts) if parts else "Custom search"
 
 
+def format_run_summary(item: dict[str, Any]) -> str:
+    """Return compact last-run metadata for display."""
+    run_count = int(item.get("run_count") or 0)
+    stats = item.get("last_result_stats") or {}
+    if not run_count or not stats:
+        return "Not run yet"
+
+    total = int(stats.get("total") or 0)
+    new = int(stats.get("new") or 0)
+    high_score = int(stats.get("high_score") or 0)
+    run_word = "run" if run_count == 1 else "runs"
+    return f"Last run: {total} results, {new} new, {high_score} high-score | {run_count} {run_word}"
+
+
 def _empty_state() -> dict:
     return {"version": 1, "recent": [], "saved": []}
 
