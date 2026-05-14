@@ -17,7 +17,7 @@ Goal: make the application tracker feel editable and useful directly from the de
 
 Deliverable: users can manage follow-up details from the GUI with fewer manual file edits.
 
-Status: in progress. Applications tab rows now support timeline-preserving template note insertion and direct status updates from an in-row status menu.
+Status: in progress. Applications tab rows now support timeline-preserving template note insertion, direct status updates from an in-row status menu, and quick next-action/due-date edits.
 
 ## Sprint L: Search Review Workspace
 

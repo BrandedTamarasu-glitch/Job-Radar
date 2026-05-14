@@ -47,6 +47,7 @@ from job_radar.gui.applications_view_model import (
     application_status_from_label,
     application_status_menu_labels,
     build_applications_view_model,
+    normalize_application_detail_input,
 )
 from job_radar.gui.profile_form import ProfileForm
 from job_radar.gui.search_controls import SearchControls
@@ -719,6 +720,20 @@ class MainWindow(ctk.CTk):
                 )
                 status_menu.set(item.status_label)
                 status_menu.pack(side="left", padx=(0, 10))
+                ctk.CTkButton(
+                    edit_frame,
+                    text="Set Next",
+                    width=100,
+                    height=28,
+                    command=lambda row=item: self._prompt_application_next_action(parent, row),
+                ).pack(side="left", padx=(0, 6))
+                ctk.CTkButton(
+                    edit_frame,
+                    text="Set Due",
+                    width=90,
+                    height=28,
+                    command=lambda row=item: self._prompt_application_due_date(parent, row),
+                ).pack(side="left", padx=(0, 10))
                 for template in templates:
                     ctk.CTkButton(
                         edit_frame,
@@ -826,6 +841,62 @@ class MainWindow(ctk.CTk):
             if self._applications_export_status_label is not None:
                 self._applications_export_status_label.configure(
                     text=f"Status update failed: {e}",
+                    text_color="red",
+                )
+
+    def _prompt_application_next_action(self, parent, application_row):
+        """Prompt for next-action text and persist it to the tracker."""
+        dialog = ctk.CTkInputDialog(
+            text="Next action",
+            title=f"{application_row.title or 'Application'} next action",
+        )
+        value = normalize_application_detail_input(dialog.get_input())
+        if value is None:
+            return
+        self._update_application_details_from_gui(
+            parent,
+            application_row,
+            next_action=value,
+            next_action_date=application_row.next_action_date,
+        )
+
+    def _prompt_application_due_date(self, parent, application_row):
+        """Prompt for due-date text and persist it to the tracker."""
+        dialog = ctk.CTkInputDialog(
+            text="Due date (YYYY-MM-DD)",
+            title=f"{application_row.title or 'Application'} due date",
+        )
+        value = normalize_application_detail_input(dialog.get_input())
+        if value is None:
+            return
+        self._update_application_details_from_gui(
+            parent,
+            application_row,
+            next_action=application_row.next_action,
+            next_action_date=value,
+        )
+
+    def _update_application_details_from_gui(
+        self,
+        parent,
+        application_row,
+        *,
+        next_action: str | None = None,
+        next_action_date: str | None = None,
+    ):
+        """Persist GUI application detail edits and refresh the grouped view."""
+        try:
+            update_application_details(
+                application_row.title,
+                application_row.company,
+                next_action=next_action,
+                next_action_date=next_action_date,
+            )
+            self._build_applications_tab(parent)
+        except Exception as e:
+            if self._applications_export_status_label is not None:
+                self._applications_export_status_label.configure(
+                    text=f"Application update failed: {e}",
                     text_color="red",
                 )
 

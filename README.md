@@ -441,7 +441,7 @@ python -m job_radar --help
 
 ### Running Tests
 
-The project includes a comprehensive test suite with 869 automated tests:
+The project includes a comprehensive test suite with 870 automated tests:
 
 ```bash
 # Install dev dependencies
@@ -481,7 +481,7 @@ For release builds, also run the platform build script and smoke-test the genera
 - Saved searches (16 tests) - validates recent search storage, named search storage, run metadata, previous-run deltas, run summary display, config normalization, deduplication, deletion, history caps, and labels
 - Applications export (3 tests) - validates application pipeline CSV rows, timeline summaries, CSV import normalization, and UTF-8 CSV output
 - Application templates (5 tests) - validates follow-up, recruiter response, and cover-letter note template rendering
-- Applications view model (8 tests) - validates grouped pipeline statuses, note-only entries, template note appending, and status-menu mappings
+- Applications view model (9 tests) - validates grouped pipeline statuses, note-only entries, template note appending, status-menu mappings, and GUI detail-input normalization
 - Tracker functions (27 tests) - validates deduplication, pruning, app-data storage, application notes/next actions, timeline recording, follow-up queueing, application import merging, application-status report filtering, source health history, and stats aggregation with tmp_path isolation
 - Config module (24 tests) - validates config file parsing, CLI override, defaults, validation
 - Wizard (38 tests) - validates setup flow, PDF integration, navigation, error handling

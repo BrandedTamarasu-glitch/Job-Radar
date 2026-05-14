@@ -139,3 +139,10 @@ def application_status_from_label(label: str) -> str:
         if APPLICATION_STATUS_LABELS[status].casefold() == normalized:
             return status
     raise ValueError(f"Unknown application status label: {label}")
+
+
+def normalize_application_detail_input(value: str | None) -> str | None:
+    """Normalize optional free-text application detail input from GUI dialogs."""
+    if value is None:
+        return None
+    return value.strip()

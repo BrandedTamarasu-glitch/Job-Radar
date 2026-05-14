@@ -6,6 +6,7 @@ from job_radar.gui.applications_view_model import (
     application_status_from_label,
     application_status_menu_labels,
     build_applications_view_model,
+    normalize_application_detail_input,
     normalize_application_status,
 )
 
@@ -130,3 +131,9 @@ def test_application_status_menu_labels_defaults_to_editable_statuses():
 def test_application_status_from_label_maps_display_labels_to_tracker_values():
     assert application_status_from_label(" Applied ") == "applied"
     assert application_status_from_label("INTERVIEWING") == "interviewing"
+
+
+def test_normalize_application_detail_input_strips_text_and_preserves_cancel():
+    assert normalize_application_detail_input("  Follow up tomorrow  ") == "Follow up tomorrow"
+    assert normalize_application_detail_input("   ") == ""
+    assert normalize_application_detail_input(None) is None
