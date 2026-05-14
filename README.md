@@ -7,7 +7,7 @@ A desktop job search tool that searches multiple job boards, scores listings aga
 - **More precise GUI searches:** Presets, source toggles, company filters, must-have and nice-to-have skill controls, location strictness, and freshness presets are now available directly from the GUI.
 - **Application follow-through:** The GUI now includes an Applications tab, application notes/next actions, CSV export, and report filtering for rejected/skipped entries.
 - **Performance visibility:** Search summaries and Settings now show source timing, source health history, cache hit/miss counters, slowest-source diagnostics, source-specific cache TTLs, and improved cancellation boundaries.
-- **Faster report review:** Reports now include shortlist state, keyboard navigation, compact/detail mode, mobile review improvements, why-this-matched summaries, and grouped must-have/nice-to-have skill callouts.
+- **Faster report review:** Reports now include shortlist state, keyboard navigation, compact/detail mode, mobile review improvements, why-this-matched summaries, filtered-out explanations, and grouped must-have/nice-to-have skill callouts.
 
 ## Installation
 
@@ -441,7 +441,7 @@ python -m job_radar --help
 
 ### Running Tests
 
-The project includes a comprehensive test suite with 830 automated tests:
+The project includes a comprehensive test suite with 833 automated tests:
 
 ```bash
 # Install dev dependencies
@@ -490,7 +490,7 @@ For release builds, also run the platform build script and smoke-test the genera
 - Rate limits (16 tests) - validates rate limiter cleanup, shared backends, config loading, quota queries
 - Source diagnostics view model (4 tests) - validates slowest-source diagnostics and cache totals for Settings
 - PDF parser (34 tests) - validates extraction, validation, Unicode support, error handling
-- Report generation (46 tests) - validates HTML/Markdown output, clipboard UI, status tracking, shortlist state, keyboard navigation, compact/detail view, match summaries, grouped skill callouts, mobile layout, accessibility
+- Report generation (49 tests) - validates HTML/Markdown output, clipboard UI, status tracking, shortlist state, keyboard navigation, compact/detail view, match summaries, filtered-out explanations, grouped skill callouts, mobile layout, accessibility
 - UX polish (69 tests) - validates banner, help text, progress messages, maintenance commands, error handling
 - GUI search summary (23 tests) - validates search completion, source warnings, per-source timing, cache counters, cache controls, GUI preset application, automated/manual source selection, company filters, application-status report filtering, must-have and nice-to-have skill controls, location strictness, freshness presets, and profile-aware zero-result guidance
 - GUI onboarding (18 tests) - validates first-run demo report access, welcome/search feedback handling, Search tab profile-readiness guidance, profile-form field hints, profile-aware zero-result guidance wiring, non-blocking recent-search recording, recent-search reapply controls, named saved-search controls, and run metadata recording

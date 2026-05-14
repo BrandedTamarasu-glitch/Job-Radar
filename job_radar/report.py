@@ -143,8 +143,11 @@ def _generate_markdown_report(
     name = profile["name"]
     today = date.today().isoformat()
 
+    all_scored_results = list(scored_results)
+    filtered_out = _filtered_out_results(all_scored_results, min_score)
+
     # Filter out dealbreakers and poor matches
-    scored_results = [r for r in scored_results if r["score"]["overall"] >= min_score]
+    scored_results = [r for r in all_scored_results if r["score"]["overall"] >= min_score]
     total = len(scored_results)
     recommended = [r for r in scored_results if r["score"]["overall"] >= 3.5]
     new_count = sum(1 for r in scored_results if r.get("is_new", True))
@@ -240,6 +243,8 @@ def _generate_markdown_report(
     if source_warnings:
         lines.extend(_markdown_source_warnings(source_warnings))
 
+    lines.extend(_markdown_filtered_out_section(filtered_out, min_score))
+
     # Manual check URLs (grouped by source)
     lines.append("## Manual Check URLs")
     lines.append("_Open these in your browser to check sources that block automated access._")
@@ -311,6 +316,71 @@ def _markdown_source_warnings(source_warnings: list[dict]) -> list[str]:
 def _markdown_cell(value: str) -> str:
     """Escape a value for use inside a Markdown table cell."""
     return value.replace("|", "\\|").replace("\n", " ").strip()
+
+
+def _filtered_out_results(scored_results: list[dict], min_score: float) -> list[dict]:
+    """Return jobs rejected by dealbreaker or minimum score threshold."""
+    return [
+        result for result in scored_results
+        if result.get("score", {}).get("overall", 0.0) < min_score
+    ]
+
+
+def _filter_explanation_text(result: dict, min_score: float) -> str:
+    """Build a concise explanation for why a job was filtered out."""
+    score = result.get("score", {})
+    dealbreaker = score.get("dealbreaker")
+    if dealbreaker:
+        return f"Rejected by dealbreaker: {dealbreaker}"
+
+    overall = score.get("overall", 0.0)
+    components = score.get("components", {})
+    reasons = []
+
+    skill = components.get("skill_match", {})
+    missing_core = skill.get("missing_core") or []
+    if missing_core:
+        reasons.append(f"missing core skills: {', '.join(missing_core[:3])}")
+    elif skill.get("ratio"):
+        reasons.append(f"{skill['ratio']} core skills")
+
+    title = components.get("title_relevance", {})
+    if title.get("reason"):
+        reasons.append(f"title: {title['reason']}")
+
+    seniority = components.get("seniority", {})
+    if seniority.get("reason"):
+        reasons.append(f"seniority: {seniority['reason']}")
+
+    location = components.get("location", {})
+    if location.get("score", 5.0) < 3.0 and location.get("reason"):
+        reasons.append(f"location: {location['reason']}")
+
+    if not reasons:
+        reasons.append("score below the selected threshold")
+
+    return f"Below {min_score:g} threshold at {overall}/5.0: " + "; ".join(reasons[:3])
+
+
+def _markdown_filtered_out_section(filtered_out: list[dict], min_score: float) -> list[str]:
+    """Return a concise Markdown section for filtered-out jobs."""
+    if not filtered_out:
+        return []
+
+    lines = ["", "## Filtered Out", ""]
+    lines.append("| Title | Company | Score | Why |")
+    lines.append("|-------|---------|-------|-----|")
+    for result in filtered_out[:10]:
+        job = result["job"]
+        score = result.get("score", {}).get("overall", 0.0)
+        lines.append(
+            f"| {_markdown_cell(job.title)} | {_markdown_cell(job.company)} | "
+            f"{score}/5.0 | {_markdown_cell(_filter_explanation_text(result, min_score))} |"
+        )
+    if len(filtered_out) > 10:
+        lines.append(f"| ... | ... | ... | {len(filtered_out) - 10} more filtered jobs omitted |")
+    lines.append("")
+    return lines
 
 
 def _format_detailed_result(lines: list, rank: int, result: dict, profile: dict):
@@ -413,8 +483,11 @@ def _generate_html_report(
     name = html.escape(profile["name"])
     today = date.today().isoformat()
 
+    all_scored_results = list(scored_results)
+    filtered_out = _filtered_out_results(all_scored_results, min_score)
+
     # Filter results
-    scored_results = [r for r in scored_results if r["score"]["overall"] >= min_score]
+    scored_results = [r for r in all_scored_results if r["score"]["overall"] >= min_score]
     total = len(scored_results)
     hero_jobs = [r for r in scored_results if r["score"]["overall"] >= 4.0]
     recommended = [r for r in scored_results if 3.5 <= r["score"]["overall"] < 4.0]
@@ -1121,6 +1194,8 @@ def _generate_html_report(
       {_html_recommended_section(recommended, profile)}
 
       {_html_results_table(scored_results)}
+
+      {_html_filtered_out_section(filtered_out, min_score)}
 
       {_html_manual_urls_section(manual_urls)}
 
@@ -2828,6 +2903,58 @@ def _html_results_table(scored_results: list[dict]) -> str:
           </table>
         </div>
         {collapsed_rows_html}
+      </div>
+    </section>
+    """
+
+
+def _html_filtered_out_section(filtered_out: list[dict], min_score: float) -> str:
+    """Generate HTML for rejected and below-threshold jobs."""
+    if not filtered_out:
+        return ""
+
+    rows = []
+    for result in filtered_out[:10]:
+        job = result["job"]
+        score = result.get("score", {}).get("overall", 0.0)
+        rows.append(f"""
+        <tr>
+          <td data-label="Title"><strong>{html.escape(job.title)}</strong></td>
+          <td data-label="Company">{html.escape(job.company)}</td>
+          <td data-label="Score">{score}/5.0</td>
+          <td data-label="Why">{html.escape(_filter_explanation_text(result, min_score))}</td>
+        </tr>
+        """)
+
+    omitted = ""
+    if len(filtered_out) > 10:
+        omitted = (
+            f'<p class="text-muted small mb-0">'
+            f'{len(filtered_out) - 10} more filtered jobs omitted.</p>'
+        )
+
+    return f"""
+    <section aria-labelledby="filtered-heading">
+      <div class="mb-4">
+        <h2 id="filtered-heading" class="h4 mb-3">Filtered Out</h2>
+        <p class="text-muted">These jobs were hidden by dealbreakers or the selected minimum score.</p>
+        <div class="table-responsive">
+          <table class="table table-sm table-striped">
+            <caption class="visually-hidden">Jobs filtered out with concise rejection reasons</caption>
+            <thead>
+              <tr>
+                <th scope="col">Title</th>
+                <th scope="col">Company</th>
+                <th scope="col">Score</th>
+                <th scope="col">Why</th>
+              </tr>
+            </thead>
+            <tbody>
+              {"".join(rows)}
+            </tbody>
+          </table>
+        </div>
+        {omitted}
       </div>
     </section>
     """

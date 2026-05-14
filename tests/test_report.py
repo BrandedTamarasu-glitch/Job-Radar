@@ -7,6 +7,7 @@ from pathlib import Path
 from job_radar.sources import JobResult
 from job_radar.report import (
     COLLAPSE_RESULTS_AFTER,
+    _filter_explanation_text,
     _html_external_scripts,
     _html_external_stylesheets,
     _match_summary_text,
@@ -2228,6 +2229,33 @@ def test_match_summary_text_uses_score_components(sample_scored_results):
     assert "High response likelihood" in summary
 
 
+def test_filter_explanation_text_describes_below_threshold_job(sample_scored_results):
+    """Filtered-out explanations summarize the weakest scoring signals."""
+    explanation = _filter_explanation_text(sample_scored_results[2], min_score=3.5)
+
+    assert "Below 3.5 threshold at 2.8/5.0" in explanation
+    assert "1/3 core skills" in explanation
+    assert "title: Mismatch" in explanation
+    assert "seniority: Too junior" in explanation
+
+
+def test_filter_explanation_text_prioritizes_dealbreakers(sample_scored_results):
+    """Dealbreaker hits explain the hard rejection reason first."""
+    result = {
+        **sample_scored_results[0],
+        "score": {
+            "overall": 0.0,
+            "components": {},
+            "recommendation": "Dealbreaker",
+            "dealbreaker": "relocation required",
+        },
+    }
+
+    assert _filter_explanation_text(result, min_score=3.5) == (
+        "Rejected by dealbreaker: relocation required"
+    )
+
+
 def test_html_report_match_summary_callout(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
     """Hero/recommended cards show a concise why-this-matched summary."""
     result = generate_report(
@@ -2246,6 +2274,28 @@ def test_html_report_match_summary_callout(sample_profile, sample_scored_results
     assert 'class="match-summary small mb-3"' in html
     assert "Why this matched:" in html
     assert "3/3 core skills" in html
+
+
+def test_report_includes_filtered_out_explanations(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """HTML and Markdown reports explain jobs hidden below the selected threshold."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+        min_score=3.5,
+    )
+
+    html_content = Path(result["html"]).read_text(encoding="utf-8")
+    markdown_content = Path(result["markdown"]).read_text(encoding="utf-8")
+
+    assert "Filtered Out" in html_content
+    assert "Below 3.5 threshold at 2.8/5.0" in html_content
+    assert "Filtered Out" in markdown_content
+    assert "Junior Python Developer" in markdown_content
 
 
 def test_html_report_filter_aria_announcements(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
