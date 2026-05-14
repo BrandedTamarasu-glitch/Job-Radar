@@ -6,7 +6,11 @@ import json
 import zipfile
 from datetime import datetime, timezone
 
-from job_radar.data_portability import export_app_data_bundle, list_portable_data_files
+from job_radar.data_portability import (
+    export_app_data_bundle,
+    list_portable_data_files,
+    validate_app_data_bundle,
+)
 
 
 def test_list_portable_data_files_includes_existing_app_data(tmp_path):
@@ -66,3 +70,54 @@ def test_export_app_data_bundle_allows_empty_bundle_with_manifest(tmp_path):
         assert archive.namelist() == ["manifest.json"]
         manifest = json.loads(archive.read("manifest.json").decode("utf-8"))
         assert manifest["files"] == []
+
+
+def test_validate_app_data_bundle_accepts_exported_bundle(tmp_path):
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    (data_dir / "profile.json").write_text('{"name": "Cory"}', encoding="utf-8")
+    bundle_path = tmp_path / "job-radar-data.zip"
+    export_app_data_bundle(bundle_path, data_dir=data_dir)
+
+    result = validate_app_data_bundle(bundle_path)
+
+    assert result.is_valid is True
+    assert result.files == ["profile.json"]
+    assert result.errors == []
+
+
+def test_validate_app_data_bundle_rejects_missing_manifest(tmp_path):
+    bundle_path = tmp_path / "bad.zip"
+    with zipfile.ZipFile(bundle_path, "w") as archive:
+        archive.writestr("profile.json", "{}")
+
+    result = validate_app_data_bundle(bundle_path)
+
+    assert result.is_valid is False
+    assert result.errors == ["Bundle is missing manifest.json"]
+
+
+def test_validate_app_data_bundle_rejects_unsupported_and_missing_files(tmp_path):
+    bundle_path = tmp_path / "bad.zip"
+    manifest = {
+        "version": 1,
+        "files": [
+            {"path": "profile.json", "description": "Profile"},
+            {"path": "../escape.json", "description": "Bad"},
+            {"path": "config.json", "description": "Missing"},
+        ],
+    }
+    with zipfile.ZipFile(bundle_path, "w") as archive:
+        archive.writestr("manifest.json", json.dumps(manifest))
+        archive.writestr("profile.json", "{}")
+        archive.writestr("extra.json", "{}")
+
+    result = validate_app_data_bundle(bundle_path)
+
+    assert result.is_valid is False
+    assert result.files == ["profile.json"]
+    assert result.errors == [
+        "Unsupported bundle file path: ../escape.json",
+        "Manifest file missing from bundle: config.json",
+        "Unexpected bundle file: extra.json",
+    ]

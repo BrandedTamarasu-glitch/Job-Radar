@@ -20,6 +20,15 @@ class PortableDataFile:
     description: str
 
 
+@dataclass(frozen=True)
+class PortableBundleValidation:
+    """Validation result for an app-data portability bundle."""
+
+    is_valid: bool
+    files: list[str]
+    errors: list[str]
+
+
 PORTABLE_DATA_FILES = (
     ("profile.json", "profile.json", "Profile and scoring preferences"),
     ("config.json", "config.json", "App settings"),
@@ -27,6 +36,7 @@ PORTABLE_DATA_FILES = (
     ("review_state.json", "review_state.json", "Search review queue"),
     ("results/tracker.json", "results/tracker.json", "Tracker, applications, and diagnostics"),
 )
+SUPPORTED_ARCHIVE_PATHS = {archive_name for _, archive_name, _ in PORTABLE_DATA_FILES}
 
 
 def list_portable_data_files(data_dir: Path | None = None) -> list[PortableDataFile]:
@@ -74,6 +84,59 @@ def export_app_data_bundle(
             archive.write(file.source, file.archive_name)
 
     return destination
+
+
+def validate_app_data_bundle(bundle_path: str | Path) -> PortableBundleValidation:
+    """Validate a portability ZIP before restore code mutates app data."""
+    path = Path(bundle_path)
+    errors: list[str] = []
+    files: list[str] = []
+
+    if not path.is_file():
+        return PortableBundleValidation(False, [], [f"Bundle not found: {path}"])
+
+    try:
+        with zipfile.ZipFile(path) as archive:
+            names = set(archive.namelist())
+            if "manifest.json" not in names:
+                return PortableBundleValidation(False, [], ["Bundle is missing manifest.json"])
+
+            try:
+                manifest = json.loads(archive.read("manifest.json").decode("utf-8"))
+            except (UnicodeDecodeError, json.JSONDecodeError):
+                return PortableBundleValidation(False, [], ["Bundle manifest is not valid JSON"])
+
+            if manifest.get("version") != 1:
+                errors.append("Unsupported bundle manifest version")
+
+            manifest_files = manifest.get("files")
+            if not isinstance(manifest_files, list):
+                errors.append("Bundle manifest files must be a list")
+                manifest_files = []
+
+            for item in manifest_files:
+                if not isinstance(item, dict):
+                    errors.append("Bundle manifest contains an invalid file entry")
+                    continue
+                archive_name = str(item.get("path") or "")
+                if archive_name not in SUPPORTED_ARCHIVE_PATHS:
+                    errors.append(f"Unsupported bundle file path: {archive_name}")
+                    continue
+                if archive_name not in names:
+                    errors.append(f"Manifest file missing from bundle: {archive_name}")
+                    continue
+                files.append(archive_name)
+
+            unexpected = sorted(
+                name for name in names
+                if name != "manifest.json" and name not in SUPPORTED_ARCHIVE_PATHS
+            )
+            for name in unexpected:
+                errors.append(f"Unexpected bundle file: {name}")
+    except zipfile.BadZipFile:
+        return PortableBundleValidation(False, [], ["Bundle is not a valid ZIP file"])
+
+    return PortableBundleValidation(not errors, files, errors)
 
 
 def _timestamp(now: datetime | None = None) -> str:
