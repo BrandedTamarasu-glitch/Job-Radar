@@ -24,6 +24,7 @@ from job_radar.application_templates import (
 )
 from job_radar.applications_export import export_applications_csv
 from job_radar.browser import open_report_in_browser
+from job_radar.data_portability import export_app_data_bundle
 from job_radar.demo_report import generate_demo_report
 from job_radar.paths import get_data_dir
 from job_radar.paths import get_results_dir
@@ -2025,6 +2026,18 @@ class MainWindow(ctk.CTk):
         if self._cache_status_label:
             self._cache_status_label.configure(text=message)
 
+    def _on_export_app_data(self):
+        """Export portable app data bundle from Settings."""
+        try:
+            output_path = get_results_dir() / f"job-radar-data-{date.today().isoformat()}.zip"
+            export_path = export_app_data_bundle(output_path)
+            message = f"Exported app data to {export_path}"
+        except OSError as e:
+            message = f"Failed to export app data: {e}"
+
+        if self._cache_status_label:
+            self._cache_status_label.configure(text=message)
+
     def _source_diagnostics_text(self) -> str:
         """Return current source diagnostics text for the Settings tab."""
         history = get_source_health_history(limit=20)
@@ -2559,6 +2572,16 @@ class MainWindow(ctk.CTk):
             command=self._on_clear_cache
         )
         clear_cache_btn.pack(pady=(0, 5), anchor="w", padx=10)
+
+        export_data_btn = ctk.CTkButton(
+            scroll_frame,
+            text="Export App Data",
+            width=180,
+            fg_color="transparent",
+            border_width=1,
+            command=self._on_export_app_data
+        )
+        export_data_btn.pack(pady=(0, 5), anchor="w", padx=10)
 
         self._cache_status_label = ctk.CTkLabel(
             scroll_frame,

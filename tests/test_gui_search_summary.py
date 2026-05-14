@@ -328,6 +328,30 @@ def test_clear_cache_settings_handler_updates_status_label(tmp_path):
     assert "Removed 1 cached response file" in window._cache_status_label.text
 
 
+def test_export_app_data_settings_handler_updates_status_label(tmp_path):
+    """Settings app-data export action reports the generated bundle path."""
+    from job_radar.gui.main_window import MainWindow
+
+    class StatusLabel:
+        def __init__(self):
+            self.text = ""
+
+        def configure(self, **kwargs):
+            self.text = kwargs["text"]
+
+    window = type("Window", (), {"_cache_status_label": StatusLabel()})()
+    export_path = tmp_path / "job-radar-data.zip"
+
+    with patch("job_radar.gui.main_window.get_results_dir", return_value=tmp_path), patch(
+        "job_radar.gui.main_window.export_app_data_bundle",
+        return_value=export_path,
+    ) as exporter:
+        MainWindow._on_export_app_data(window)
+
+    assert exporter.called
+    assert f"Exported app data to {export_path}" == window._cache_status_label.text
+
+
 def test_search_worker_emits_completion_summary(tmp_path, source_health_recorder):
     """SearchWorker includes source warnings, counts, and timings on completion."""
     result_queue = queue.Queue()
