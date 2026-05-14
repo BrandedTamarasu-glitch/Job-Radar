@@ -135,6 +135,31 @@ def delete_named_search(name: str, path: Path | None = None) -> dict:
     return deepcopy(state)
 
 
+def record_search_run(
+    config: dict[str, Any],
+    stats: dict[str, Any] | None,
+    path: Path | None = None,
+    now: datetime | None = None,
+) -> dict:
+    """Attach last-run metadata to matching recent and saved searches."""
+    path = path or get_saved_searches_path()
+    state = load_search_history(path)
+    normalized_config = normalize_search_config(config)
+    timestamp = _timestamp(now)
+    run_stats = _normalize_run_stats(stats)
+
+    for collection_name in ("recent", "saved"):
+        for item in state[collection_name]:
+            if item.get("config") != normalized_config:
+                continue
+            item["last_run_at"] = timestamp
+            item["last_result_stats"] = run_stats
+            item["run_count"] = int(item.get("run_count") or 0) + 1
+
+    _write_state(path, state)
+    return deepcopy(state)
+
+
 def normalize_search_config(config: dict[str, Any]) -> dict:
     """Return a stable, JSON-safe subset of a search config."""
     normalized: dict[str, Any] = {}
@@ -182,6 +207,15 @@ def _timestamp(now: datetime | None = None) -> str:
     if now.tzinfo is None:
         now = now.replace(tzinfo=timezone.utc)
     return now.astimezone(timezone.utc).isoformat()
+
+
+def _normalize_run_stats(stats: dict[str, Any] | None) -> dict[str, int]:
+    stats = stats or {}
+    return {
+        "total": int(stats.get("total") or 0),
+        "new": int(stats.get("new") or 0),
+        "high_score": int(stats.get("high_score") or 0),
+    }
 
 
 def _write_state(path: Path, state: dict) -> None:

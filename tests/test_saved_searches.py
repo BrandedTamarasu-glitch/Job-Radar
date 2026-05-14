@@ -5,6 +5,7 @@ from job_radar.saved_searches import (
     delete_named_search,
     load_search_history,
     normalize_search_config,
+    record_search_run,
     record_recent_search,
     save_named_search,
     summarize_search_config,
@@ -124,3 +125,36 @@ def test_delete_named_search_removes_matching_name(tmp_path):
     state = delete_named_search("remote", path=path)
 
     assert [item["name"] for item in state["saved"]] == ["Contract"]
+
+
+def test_record_search_run_updates_matching_recent_and_saved(tmp_path):
+    path = tmp_path / "saved_searches.json"
+    config = {"preset": "remote-backend"}
+    run_time = datetime(2026, 5, 14, 15, 0, tzinfo=timezone.utc)
+
+    record_recent_search(config, path=path)
+    save_named_search("Remote", config, path=path)
+    state = record_search_run(
+        config,
+        {"total": 12, "new": 5, "high_score": 3},
+        path=path,
+        now=run_time,
+    )
+
+    assert state["recent"][0]["run_count"] == 1
+    assert state["saved"][0]["run_count"] == 1
+    assert state["recent"][0]["last_run_at"] == run_time.isoformat()
+    assert state["saved"][0]["last_result_stats"] == {
+        "total": 12,
+        "new": 5,
+        "high_score": 3,
+    }
+
+
+def test_record_search_run_ignores_non_matching_configs(tmp_path):
+    path = tmp_path / "saved_searches.json"
+
+    save_named_search("Remote", {"preset": "remote-backend"}, path=path)
+    state = record_search_run({"preset": "contract"}, {"total": 2}, path=path)
+
+    assert "run_count" not in state["saved"][0]
