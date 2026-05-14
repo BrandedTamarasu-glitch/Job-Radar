@@ -54,3 +54,17 @@ def test_search_complete_loads_profile_for_zero_result_guidance():
     source = inspect.getsource(MainWindow._show_search_complete)
 
     assert "zero_result_lines(job_count, self._load_current_profile_for_guidance())" in source
+
+
+def test_real_search_records_recent_search_before_progress():
+    source = inspect.getsource(MainWindow._start_real_search)
+
+    assert "self._record_recent_search(search_config)" in source
+    assert source.index("self._record_recent_search(search_config)") < source.index("self._show_search_progress()")
+
+
+def test_recent_search_recording_is_non_blocking():
+    source = inspect.getsource(MainWindow._record_recent_search)
+
+    assert "record_recent_search(search_config)" in source
+    assert "except Exception" in source

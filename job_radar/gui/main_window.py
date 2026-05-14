@@ -53,6 +53,7 @@ from job_radar.gui.uninstall_dialog import (
     DeletionProgressDialog,
 )
 from job_radar.rate_limits import get_quota_usage
+from job_radar.saved_searches import record_recent_search
 from job_radar.uninstaller import (
     get_uninstall_paths,
     create_backup,
@@ -1641,6 +1642,7 @@ class MainWindow(ctk.CTk):
             return
 
         # Show progress state
+        self._record_recent_search(search_config)
         self._show_search_progress()
 
         # Create and start real search worker
@@ -1650,6 +1652,13 @@ class MainWindow(ctk.CTk):
             search_config
         )
         self._worker_thread.start()
+
+    def _record_recent_search(self, search_config: dict):
+        """Persist recent search config without blocking search execution."""
+        try:
+            record_recent_search(search_config)
+        except Exception:
+            log.debug("Could not record recent search", exc_info=True)
 
     def _cancel_search(self):
         """Cancel the currently running search operation."""
