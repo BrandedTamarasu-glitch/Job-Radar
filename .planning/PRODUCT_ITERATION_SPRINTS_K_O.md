@@ -30,7 +30,7 @@ Goal: make search results easier to triage after a run.
 
 Deliverable: users can quickly turn a search result list into a practical review queue.
 
-Status: in progress. Persistent app-data review state now supports shortlisted, dismissed, and maybe-later states as the foundation for GUI/report review workflows.
+Status: in progress. Persistent app-data review state now supports shortlisted, dismissed, and maybe-later states as the foundation for GUI/report review workflows, and HTML reports now embed persisted review state to hydrate shortlist controls.
 
 ## Sprint M: Source Health Controls
 

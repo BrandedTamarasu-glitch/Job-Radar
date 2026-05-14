@@ -2183,6 +2183,48 @@ def test_html_report_shortlist_javascript(sample_profile, sample_scored_results,
     assert 'showShortlistOnly' in html
 
 
+def test_html_report_embeds_persisted_review_state(
+    sample_profile,
+    sample_scored_results,
+    sample_manual_urls,
+    tmp_path,
+    monkeypatch,
+):
+    """Persisted review state can hydrate report shortlist controls."""
+    review_state_path = tmp_path / "review_state.json"
+    monkeypatch.setattr(
+        "job_radar.review_state.get_review_state_path",
+        lambda: review_state_path,
+    )
+
+    from job_radar.review_state import set_job_review_state
+
+    set_job_review_state(
+        "Backend Developer",
+        "StartupCo",
+        "shortlisted",
+        path=review_state_path,
+    )
+
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_path = result["html"]
+    with open(html_path, encoding='utf-8') as f:
+        html = f.read()
+
+    assert '<script type="application/json" id="review-state">' in html
+    assert '"backend developer||startupco"' in html
+    assert '"state": "shortlisted"' in html
+    assert 'loadEmbeddedShortlistState' in html
+
+
 def test_html_report_keyboard_navigation_javascript(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
     """Report supports keyboard navigation between visible job items."""
     result = generate_report(

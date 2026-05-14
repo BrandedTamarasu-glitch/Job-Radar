@@ -494,10 +494,15 @@ def _generate_html_report(
     recommended = [r for r in scored_results if 3.5 <= r["score"]["overall"] < 4.0]
     new_count = sum(1 for r in scored_results if r.get("is_new", True))
 
-    # Load application statuses for embedding
+    # Load application statuses and review state for embedding
     import json as json_module
     all_statuses = tracker.get_all_application_statuses()
     embedded_status_json = json_module.dumps(all_statuses, indent=2)
+    try:
+        from .review_state import load_review_state
+        embedded_review_state_json = json_module.dumps(load_review_state(), indent=2)
+    except Exception:
+        embedded_review_state_json = json_module.dumps({"version": 1, "jobs": {}}, indent=2)
 
     # Generate HTML content
     html_content = f"""<!DOCTYPE html>
@@ -1161,6 +1166,9 @@ def _generate_html_report(
   <!-- Embedded tracker status (source of truth) -->
   <script type="application/json" id="tracker-status">
 {embedded_status_json}
+  </script>
+  <script type="application/json" id="review-state">
+{embedded_review_state_json}
   </script>
 </head>
 <body>
@@ -1971,13 +1979,41 @@ def _generate_html_report(
     }});
 
     function loadShortlistState() {{
+      var shortlistMap = loadEmbeddedShortlistState();
       try {{
         var data = localStorage.getItem('job-radar-shortlist-state');
-        return data ? JSON.parse(data) : {{}};
+        if (data) {{
+          var localMap = JSON.parse(data);
+          for (var key in localMap) {{
+            if (Object.prototype.hasOwnProperty.call(localMap, key)) {{
+              shortlistMap[key] = localMap[key];
+            }}
+          }}
+        }}
       }} catch (err) {{
         console.warn('[shortlist] Failed to load localStorage:', err);
-        return {{}};
       }}
+      return shortlistMap;
+    }}
+
+    function loadEmbeddedShortlistState() {{
+      var shortlistMap = {{}};
+      try {{
+        var stateEl = document.getElementById('review-state');
+        var data = stateEl ? JSON.parse(stateEl.textContent || '{{}}') : {{}};
+        var jobs = data.jobs || {{}};
+        for (var key in jobs) {{
+          if (
+            Object.prototype.hasOwnProperty.call(jobs, key) &&
+            jobs[key].state === 'shortlisted'
+          ) {{
+            shortlistMap[key] = true;
+          }}
+        }}
+      }} catch (err) {{
+        console.warn('[shortlist] Failed to load embedded review state:', err);
+      }}
+      return shortlistMap;
     }}
 
     function saveShortlistState(shortlistMap) {{
