@@ -61,7 +61,7 @@ Goal: make the application pipeline useful after the search is complete.
 
 Deliverable: users can manage follow-through inside Job Radar instead of treating reports as one-off artifacts.
 
-Status: in progress. Tracker-level next-action queueing now ranks application follow-ups across statuses, prioritizing overdue and due actions before dated future actions and unscheduled reminders. The Applications tab now surfaces the top follow-ups above grouped pipeline statuses with compact due-date labels. Application status/detail changes now record a compact per-entry timeline, and CSV export includes timeline summaries for portability.
+Status: in progress. Tracker-level next-action queueing now ranks application follow-ups across statuses, prioritizing overdue and due actions before dated future actions and unscheduled reminders. The Applications tab now surfaces the top follow-ups above grouped pipeline statuses with compact due-date labels. Application status/detail changes now record a compact per-entry timeline, CSV export includes timeline summaries, and CSV import/merge helpers restore portable application status data without clobbering newer local edits.
 
 ## Sprint J: Performance & Packaging Hardening
 

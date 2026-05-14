@@ -355,6 +355,54 @@ def get_all_application_statuses() -> dict:
     return tracker.get("applications", {})
 
 
+def merge_application_entries(imported_applications: dict[str, dict]) -> int:
+    """Merge imported application entries into tracker storage.
+
+    Existing populated fields win unless the imported entry has a newer
+    `updated` timestamp. Returns the number of entries created or changed.
+    """
+    tracker = _load_tracker()
+    applications = tracker.setdefault("applications", {})
+    changed_count = 0
+
+    for key, imported in imported_applications.items():
+        existing = applications.get(key, {})
+        should_replace = _is_newer_application_entry(imported, existing)
+        merged = dict(existing)
+        for field in (
+            "title",
+            "company",
+            "status",
+            "notes",
+            "next_action",
+            "next_action_date",
+            "updated",
+        ):
+            value = imported.get(field)
+            if value in (None, ""):
+                continue
+            if should_replace or not merged.get(field):
+                merged[field] = value
+
+        imported_timeline = imported.get("timeline")
+        if imported_timeline and should_replace:
+            merged["timeline"] = imported_timeline
+
+        if merged != existing:
+            applications[key] = merged
+            changed_count += 1
+
+    if changed_count:
+        _save_tracker(tracker)
+    return changed_count
+
+
+def _is_newer_application_entry(imported: dict, existing: dict) -> bool:
+    imported_updated = str(imported.get("updated") or "")
+    existing_updated = str(existing.get("updated") or "")
+    return bool(imported_updated and imported_updated > existing_updated)
+
+
 def get_application_next_actions(
     *,
     today: date | None = None,

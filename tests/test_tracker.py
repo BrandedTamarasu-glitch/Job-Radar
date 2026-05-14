@@ -18,6 +18,7 @@ from job_radar.tracker import (
     filter_scored_by_application_status,
     job_key,
     mark_seen,
+    merge_application_entries,
     record_source_health,
     update_application_details,
     update_application_status,
@@ -465,6 +466,65 @@ def test_get_application_next_actions_respects_limit():
     )
 
     assert [action["company"] for action in actions] == ["Co 0", "Co 1"]
+
+
+def test_merge_application_entries_preserves_existing_newer_data(tmp_path):
+    """Imported application data fills gaps without clobbering newer local data."""
+    with patch("job_radar.tracker._TRACKER_PATH", str(tmp_path / "tracker.json")):
+        update_application_status(
+            "Backend Engineer",
+            "Acme",
+            "interviewing",
+            notes="Local note",
+        )
+        entry = get_application_entry("Backend Engineer", "Acme")
+        local_updated = entry["updated"]
+
+        changed = merge_application_entries({
+            job_key("Backend Engineer", "Acme"): {
+                "title": "Backend Engineer",
+                "company": "Acme",
+                "status": "applied",
+                "notes": "Imported older note",
+                "next_action": "Follow up",
+                "updated": "2020-01-01T00:00:00",
+            }
+        })
+        merged = get_application_entry("Backend Engineer", "Acme")
+
+    assert changed == 1
+    assert merged["status"] == "interviewing"
+    assert merged["notes"] == "Local note"
+    assert merged["next_action"] == "Follow up"
+    assert merged["updated"] == local_updated
+
+
+def test_merge_application_entries_replaces_with_newer_import(tmp_path):
+    """Newer imported application data can update local portable fields."""
+    with patch("job_radar.tracker._TRACKER_PATH", str(tmp_path / "tracker.json")):
+        update_application_status(
+            "Backend Engineer",
+            "Acme",
+            "applied",
+            notes="Local older note",
+        )
+        changed = merge_application_entries({
+            job_key("Backend Engineer", "Acme"): {
+                "title": "Backend Engineer",
+                "company": "Acme",
+                "status": "interviewing",
+                "notes": "Imported newer note",
+                "next_action": "Prepare panel",
+                "updated": "2999-01-01T00:00:00",
+            }
+        })
+        merged = get_application_entry("Backend Engineer", "Acme")
+
+    assert changed == 1
+    assert merged["status"] == "interviewing"
+    assert merged["notes"] == "Imported newer note"
+    assert merged["next_action"] == "Prepare panel"
+    assert merged["updated"] == "2999-01-01T00:00:00"
 
 
 # ---------------------------------------------------------------------------

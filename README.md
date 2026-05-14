@@ -441,7 +441,7 @@ python -m job_radar --help
 
 ### Running Tests
 
-The project includes a comprehensive test suite with 846 automated tests:
+The project includes a comprehensive test suite with 849 automated tests:
 
 ```bash
 # Install dev dependencies
@@ -479,9 +479,9 @@ For release builds, also run the platform build script and smoke-test the genera
 - Scoring config (25 tests) - validates scoring weights, staffing preference, normalization, live preview
 - Match calibration (5 tests) - validates broader, balanced, strict, and custom search calibration behavior
 - Saved searches (16 tests) - validates recent search storage, named search storage, run metadata, previous-run deltas, run summary display, config normalization, deduplication, deletion, history caps, and labels
-- Applications export (2 tests) - validates application pipeline CSV rows, timeline summaries, and UTF-8 CSV output
+- Applications export (3 tests) - validates application pipeline CSV rows, timeline summaries, CSV import normalization, and UTF-8 CSV output
 - Applications view model (3 tests) - validates grouped pipeline statuses and note-only entries
-- Tracker functions (25 tests) - validates deduplication, pruning, app-data storage, application notes/next actions, timeline recording, follow-up queueing, application-status report filtering, source health history, and stats aggregation with tmp_path isolation
+- Tracker functions (27 tests) - validates deduplication, pruning, app-data storage, application notes/next actions, timeline recording, follow-up queueing, application import merging, application-status report filtering, source health history, and stats aggregation with tmp_path isolation
 - Config module (24 tests) - validates config file parsing, CLI override, defaults, validation
 - Wizard (38 tests) - validates setup flow, PDF integration, navigation, error handling
 - API integration (58 tests) - validates all 11 API sources, mappers, rate limiting, source selection, cache stats propagation, per-source cache TTLs, source cancellation boundaries, manual source links, deduplication

@@ -3,7 +3,12 @@
 import csv
 from pathlib import Path
 
-from job_radar.gui.applications_view_model import build_applications_view_model
+from job_radar.gui.applications_view_model import (
+    APPLICATION_STATUS_LABELS,
+    build_applications_view_model,
+    normalize_application_status,
+)
+from job_radar.tracker import job_key
 
 
 APPLICATION_EXPORT_COLUMNS = [
@@ -60,3 +65,45 @@ def export_applications_csv(applications: dict, output_path: str | Path) -> Path
         writer.writerows(application_rows_for_export(applications))
 
     return path
+
+
+def import_applications_csv(input_path: str | Path) -> dict[str, dict[str, str]]:
+    """Read an applications CSV export into tracker application entries."""
+    path = Path(input_path)
+    imported: dict[str, dict[str, str]] = {}
+    with path.open(encoding="utf-8-sig", newline="") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            title = (row.get("title") or "").strip()
+            company = (row.get("company") or "").strip()
+            key = (row.get("job_key") or "").strip() or job_key(title, company)
+            if not key:
+                continue
+
+            entry = {
+                "title": title,
+                "company": company,
+                "status": _status_value_from_export(row.get("status")),
+                "notes": (row.get("notes") or "").strip(),
+                "next_action": (row.get("next_action") or "").strip(),
+                "next_action_date": (row.get("next_action_date") or "").strip(),
+                "updated": (row.get("updated") or "").strip(),
+            }
+            imported[key] = {
+                field: value for field, value in entry.items()
+                if value not in ("", "needs_status")
+            }
+    return imported
+
+
+def _status_value_from_export(value: str | None) -> str:
+    """Convert a display status label or raw status into tracker status value."""
+    normalized = normalize_application_status(value)
+    if normalized != "needs_status":
+        return normalized
+
+    display_to_value = {
+        label.casefold(): status
+        for status, label in APPLICATION_STATUS_LABELS.items()
+    }
+    return display_to_value.get(str(value or "").strip().casefold(), "needs_status")

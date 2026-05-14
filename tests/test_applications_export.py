@@ -6,6 +6,7 @@ from job_radar.applications_export import (
     APPLICATION_EXPORT_COLUMNS,
     application_rows_for_export,
     export_applications_csv,
+    import_applications_csv,
 )
 
 
@@ -103,3 +104,32 @@ def test_export_applications_csv_writes_utf8_csv(tmp_path):
             "job_key": "backend engineer||acme",
         }
     ]
+
+
+def test_import_applications_csv_restores_tracker_entries(tmp_path):
+    """Application CSV import maps display labels back to tracker entries."""
+    path = tmp_path / "applications.csv"
+    path.write_text(
+        "status,title,company,notes,next_action,next_action_date,updated,timeline,job_key\n"
+        "Interviewing,Backend Engineer,\"Acme, Inc.\",Panel scheduled,"
+        "Send thank-you,2026-05-21,2026-05-13T10:00:00,,backend engineer||acme\n"
+        "Needs Status,Review Role,Northstar,Review later,,,,,\n",
+        encoding="utf-8",
+    )
+
+    imported = import_applications_csv(path)
+
+    assert imported["backend engineer||acme"] == {
+        "title": "Backend Engineer",
+        "company": "Acme, Inc.",
+        "status": "interviewing",
+        "notes": "Panel scheduled",
+        "next_action": "Send thank-you",
+        "next_action_date": "2026-05-21",
+        "updated": "2026-05-13T10:00:00",
+    }
+    assert imported["review role||northstar"] == {
+        "title": "Review Role",
+        "company": "Northstar",
+        "notes": "Review later",
+    }
