@@ -2,9 +2,11 @@ import json
 from datetime import datetime, timezone
 
 from job_radar.saved_searches import (
+    delete_named_search,
     load_search_history,
     normalize_search_config,
     record_recent_search,
+    save_named_search,
     summarize_search_config,
 )
 
@@ -79,3 +81,46 @@ def test_summarize_search_config_prefers_meaningful_parts():
     )
 
     assert label == "remote-backend | past 48h | remote only | must: Python, FastAPI"
+
+
+def test_save_named_search_adds_saved_entry_without_clearing_recent(tmp_path):
+    path = tmp_path / "saved_searches.json"
+    record_recent_search({"preset": "remote-backend"}, path=path)
+
+    state = save_named_search("Morning remote", {"preset": "remote-backend"}, path=path)
+
+    assert len(state["recent"]) == 1
+    assert state["saved"][0]["name"] == "Morning remote"
+    assert state["saved"][0]["config"]["preset"] == "remote-backend"
+
+
+def test_save_named_search_replaces_case_insensitive_name(tmp_path):
+    path = tmp_path / "saved_searches.json"
+
+    save_named_search("Remote", {"preset": "remote-backend"}, path=path)
+    state = save_named_search("remote", {"preset": "contract"}, path=path)
+
+    assert len(state["saved"]) == 1
+    assert state["saved"][0]["name"] == "remote"
+    assert state["saved"][0]["config"]["preset"] == "contract"
+
+
+def test_save_named_search_rejects_blank_name(tmp_path):
+    path = tmp_path / "saved_searches.json"
+
+    try:
+        save_named_search("   ", {"preset": "remote-backend"}, path=path)
+    except ValueError as exc:
+        assert "cannot be empty" in str(exc)
+    else:
+        raise AssertionError("Expected ValueError")
+
+
+def test_delete_named_search_removes_matching_name(tmp_path):
+    path = tmp_path / "saved_searches.json"
+    save_named_search("Remote", {"preset": "remote-backend"}, path=path)
+    save_named_search("Contract", {"preset": "contract"}, path=path)
+
+    state = delete_named_search("remote", path=path)
+
+    assert [item["name"] for item in state["saved"]] == ["Contract"]

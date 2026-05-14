@@ -88,6 +88,53 @@ def record_recent_search(
     return deepcopy(state)
 
 
+def save_named_search(
+    name: str,
+    config: dict[str, Any],
+    path: Path | None = None,
+    now: datetime | None = None,
+) -> dict:
+    """Create or replace a named saved search."""
+    clean_name = name.strip()
+    if not clean_name:
+        raise ValueError("Saved search name cannot be empty")
+
+    path = path or get_saved_searches_path()
+    state = load_search_history(path)
+    timestamp = _timestamp(now)
+    normalized_config = normalize_search_config(config)
+
+    saved = [
+        item for item in state["saved"]
+        if str(item.get("name", "")).casefold() != clean_name.casefold()
+    ]
+    saved.insert(
+        0,
+        {
+            "name": clean_name,
+            "created_at": timestamp,
+            "updated_at": timestamp,
+            "config": normalized_config,
+        },
+    )
+    state["saved"] = saved
+    _write_state(path, state)
+    return deepcopy(state)
+
+
+def delete_named_search(name: str, path: Path | None = None) -> dict:
+    """Delete a named saved search if present."""
+    clean_name = name.strip()
+    path = path or get_saved_searches_path()
+    state = load_search_history(path)
+    state["saved"] = [
+        item for item in state["saved"]
+        if str(item.get("name", "")).casefold() != clean_name.casefold()
+    ]
+    _write_state(path, state)
+    return deepcopy(state)
+
+
 def normalize_search_config(config: dict[str, Any]) -> dict:
     """Return a stable, JSON-safe subset of a search config."""
     normalized: dict[str, Any] = {}
