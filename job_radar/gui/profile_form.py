@@ -18,6 +18,17 @@ from job_radar.paths import get_data_dir
 from job_radar.gui.tag_chip_widget import TagChipWidget
 
 
+PROFILE_FIELD_HINTS = {
+    "target_titles": "Use the job titles you would actually apply for; these drive search queries and title matching.",
+    "core_skills": "List must-have skills you want jobs to mention. These carry the strongest match weight.",
+    "secondary_skills": "Add nice-to-have skills for tie-breakers and clearer report explanations.",
+    "location": "Use Remote, a city, or a region. This helps location matching and search steering.",
+    "arrangement": "Add Remote, Hybrid, or On-site so Job Radar can avoid poor arrangement matches.",
+    "comp_floor": "Optional salary floor filters lower-compensation roles when listings include pay.",
+    "dealbreakers": "Add phrases that should remove a role, such as relocation required or unpaid.",
+}
+
+
 # Validation functions extracted from wizard.py logic
 def validate_name(text: str) -> tuple[bool, str]:
     """Validate name field (non-empty).
@@ -438,6 +449,7 @@ class ProfileForm(ctk.CTkFrame):
             form_frame, text="Target Titles (required):", anchor="w"
         )
         titles_label.pack(fill="x", padx=10, pady=(10, 0))
+        self._add_field_hint(form_frame, "target_titles")
 
         self._fields["target_titles"] = TagChipWidget(
             form_frame, placeholder="e.g., Software Engineer, Full Stack Developer"
@@ -454,6 +466,7 @@ class ProfileForm(ctk.CTkFrame):
             form_frame, text="Core Skills (required):", anchor="w"
         )
         skills_label.pack(fill="x", padx=10, pady=(10, 0))
+        self._add_field_hint(form_frame, "core_skills")
 
         self._fields["core_skills"] = TagChipWidget(
             form_frame, placeholder="e.g., Python, JavaScript, React, AWS"
@@ -470,6 +483,7 @@ class ProfileForm(ctk.CTkFrame):
             form_frame, text="Secondary Skills (optional):", anchor="w"
         )
         secondary_label.pack(fill="x", padx=10, pady=(10, 0))
+        self._add_field_hint(form_frame, "secondary_skills")
 
         self._fields["secondary_skills"] = TagChipWidget(
             form_frame, placeholder="Additional skills"
@@ -484,6 +498,7 @@ class ProfileForm(ctk.CTkFrame):
             form_frame, text="Location (optional):", anchor="w"
         )
         location_label.pack(fill="x", padx=10, pady=(10, 0))
+        self._add_field_hint(form_frame, "location")
 
         self._fields["location"] = ctk.CTkEntry(
             form_frame, placeholder_text="e.g., Remote, New York, Boston area"
@@ -495,6 +510,7 @@ class ProfileForm(ctk.CTkFrame):
             form_frame, text="Work Arrangement (optional):", anchor="w"
         )
         arrangement_label.pack(fill="x", padx=10, pady=(10, 0))
+        self._add_field_hint(form_frame, "arrangement")
 
         self._fields["arrangement"] = TagChipWidget(
             form_frame, placeholder="e.g., Remote, Hybrid, On-site"
@@ -517,6 +533,7 @@ class ProfileForm(ctk.CTkFrame):
             form_frame, text="Minimum Compensation (optional):", anchor="w"
         )
         comp_label.pack(fill="x", padx=10, pady=(10, 0))
+        self._add_field_hint(form_frame, "comp_floor")
 
         self._fields["comp_floor"] = ctk.CTkEntry(
             form_frame, placeholder_text="e.g., 120000, 150k"
@@ -539,6 +556,7 @@ class ProfileForm(ctk.CTkFrame):
             form_frame, text="Dealbreakers (optional):", anchor="w"
         )
         dealbreakers_label.pack(fill="x", padx=10, pady=(10, 0))
+        self._add_field_hint(form_frame, "dealbreakers")
 
         self._fields["dealbreakers"] = TagChipWidget(
             form_frame, placeholder="e.g., relocation required, on-site only"
@@ -576,6 +594,22 @@ class ProfileForm(ctk.CTkFrame):
 
         # Capture original values for dirty tracking
         self._capture_original_values()
+
+    def _add_field_hint(self, parent, field_name: str) -> None:
+        """Add concise onboarding guidance for a profile field."""
+        hint = PROFILE_FIELD_HINTS.get(field_name)
+        if not hint:
+            return
+
+        ctk.CTkLabel(
+            parent,
+            text=hint,
+            font=ctk.CTkFont(size=11),
+            text_color="gray",
+            wraplength=620,
+            justify="left",
+            anchor="w",
+        ).pack(fill="x", padx=10, pady=(2, 0))
 
     def _add_section_header(self, parent, title: str) -> None:
         """Add a section header to the form.

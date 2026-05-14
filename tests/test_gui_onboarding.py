@@ -1,6 +1,7 @@
 import inspect
 
 from job_radar.gui.main_window import MainWindow
+from job_radar.gui.profile_form import PROFILE_FIELD_HINTS, ProfileForm
 
 
 def test_welcome_screen_exposes_demo_report_preview():
@@ -29,3 +30,21 @@ def test_profile_readiness_guidance_links_to_profile_tab():
     assert "Profile readiness:" in source
     assert "Review Profile" in source
     assert "command=self._show_profile_tab" in source
+
+
+def test_profile_form_hints_cover_match_quality_fields():
+    assert "target_titles" in PROFILE_FIELD_HINTS
+    assert "core_skills" in PROFILE_FIELD_HINTS
+    assert "secondary_skills" in PROFILE_FIELD_HINTS
+    assert "location" in PROFILE_FIELD_HINTS
+    assert "arrangement" in PROFILE_FIELD_HINTS
+    assert "comp_floor" in PROFILE_FIELD_HINTS
+    assert "dealbreakers" in PROFILE_FIELD_HINTS
+
+
+def test_profile_form_renders_field_hints():
+    source = inspect.getsource(ProfileForm._show_form)
+
+    assert 'self._add_field_hint(form_frame, "target_titles")' in source
+    assert 'self._add_field_hint(form_frame, "core_skills")' in source
+    assert 'self._add_field_hint(form_frame, "dealbreakers")' in source
