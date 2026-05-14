@@ -113,7 +113,7 @@ jobs:
           zip -r --symlinks ../job-radar-${{ github.ref_name }}-macos.zip JobRadar.app
 
       - name: Verify release bundle artifacts
-        run: python -m job_radar.release_verification --platform ${{ matrix.platform }} --version ${{ github.ref_name }}
+        run: python -m job_radar.release_verification --platform ${{ matrix.platform }} --version ${{ github.ref_name }} --checksum-manifest job-radar-${{ github.ref_name }}-${{ matrix.platform }}.sha256
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -199,21 +199,25 @@ jobs:
           WINDOWS_CERT_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
 
       - name: Verify installer artifact
-        run: python -m job_radar.release_verification --platform ${{ matrix.platform }} --version ${{ github.ref_name }} --kind installer
+        run: python -m job_radar.release_verification --platform ${{ matrix.platform }} --version ${{ github.ref_name }} --kind installer --checksum-manifest installer-${{ matrix.platform }}.sha256
 
       - name: Upload DMG artifact (macOS)
         if: runner.os == 'macOS'
         uses: actions/upload-artifact@v4
         with:
           name: installer-macos
-          path: "*.dmg"
+          path: |
+            "*.dmg"
+            "*.sha256"
 
       - name: Upload installer artifact (Windows)
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4
         with:
           name: installer-windows
-          path: "installers/windows/Job-Radar-Setup-*.exe"
+          path: |
+            "installers/windows/Job-Radar-Setup-*.exe"
+            "*.sha256"
 
   release:
     name: Create Release
@@ -230,4 +234,6 @@ jobs:
           files: |
             job-radar-*/job-radar-${{ github.ref_name }}-*
             installer-macos/*.dmg
+            installer-macos/*.sha256
             installer-windows/*.exe
+            installer-windows/*.sha256

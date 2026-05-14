@@ -13,7 +13,7 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Milestone:** Product Iteration K-O — ACTIVE
 **Status:** Sprint O started
-**Last activity:** 2026-05-14 — completed Sprint N data portability and started Sprint O release artifact diagnostics
+**Last activity:** 2026-05-14 — completed Sprint N data portability and advanced Sprint O release artifact diagnostics and checksum manifests
 
 **Next step:** continue Sprint O with release diagnostics and large-workflow performance hardening.
 

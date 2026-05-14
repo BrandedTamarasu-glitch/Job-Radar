@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -103,8 +104,33 @@ def verify_release_artifacts(
     return verified
 
 
+def write_checksum_manifest(paths: list[Path], output_path: str | Path, *, root: str | Path = ".") -> Path:
+    """Write SHA256 checksums for release artifacts."""
+    root_path = Path(root)
+    destination = Path(output_path)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    lines = []
+    for path in paths:
+        digest = _sha256(path)
+        try:
+            display_path = path.relative_to(root_path)
+        except ValueError:
+            display_path = path
+        lines.append(f"{digest}  {display_path.as_posix()}")
+    destination.write_text("\n".join(lines) + ("\n" if lines else ""), encoding="utf-8")
+    return destination
+
+
 def _has_execute_bit(path: Path) -> bool:
     return bool(path.stat().st_mode & 0o111)
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def _similar_artifacts(root: Path, expected_path: Path) -> list[Path]:
@@ -137,11 +163,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--platform", required=True, choices=["linux", "windows", "macos"])
     parser.add_argument("--version", required=True, help="Release version/tag, for example v2.6.0")
     parser.add_argument("--kind", default="bundle", choices=["bundle", "installer"])
+    parser.add_argument("--checksum-manifest", help="Optional path to write SHA256 checksums")
     args = parser.parse_args(argv)
 
     verified = verify_release_artifacts(args.root, args.platform, args.version, kind=args.kind)
     for path in verified:
         print(f"OK: {path}")
+    if args.checksum_manifest:
+        manifest_path = write_checksum_manifest(verified, args.checksum_manifest, root=args.root)
+        print(f"OK: wrote checksums to {manifest_path}")
     return 0
 
 

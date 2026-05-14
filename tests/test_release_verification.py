@@ -8,6 +8,7 @@ from job_radar.release_verification import (
     ReleaseArtifactError,
     expected_release_artifacts,
     verify_release_artifacts,
+    write_checksum_manifest,
 )
 
 
@@ -75,3 +76,17 @@ def test_verify_release_artifacts_reports_similar_files_for_name_drift(tmp_path)
     message = str(exc.value)
     assert "missing Linux archive" in message
     assert "found similar: job-radar-v2.6.1-linux.tar.gz" in message
+
+
+def test_write_checksum_manifest_records_verified_artifact_hashes(tmp_path):
+    artifact = tmp_path / "job-radar-v2.6.0-linux.tar.gz"
+    artifact.write_text("archive", encoding="utf-8")
+    manifest = tmp_path / "job-radar-v2.6.0-linux.sha256"
+
+    result = write_checksum_manifest([artifact], manifest, root=tmp_path)
+
+    assert result == manifest
+    assert manifest.read_text(encoding="utf-8") == (
+        "0eb3e36bfb24dcd9bb1d1bece1531216b59539a8fde17ee80224af0653c92aa3  "
+        "job-radar-v2.6.0-linux.tar.gz\n"
+    )
