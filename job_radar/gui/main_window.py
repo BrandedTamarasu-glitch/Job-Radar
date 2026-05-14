@@ -18,6 +18,10 @@ import customtkinter as ctk
 import requests
 
 from job_radar import __version__
+from job_radar.application_templates import (
+    get_application_note_templates,
+    render_application_note_template,
+)
 from job_radar.applications_export import export_applications_csv
 from job_radar.browser import open_report_in_browser
 from job_radar.demo_report import generate_demo_report
@@ -34,9 +38,13 @@ from job_radar.tracker import (
     get_all_application_statuses,
     get_application_next_actions,
     get_source_health_history,
+    update_application_details,
 )
 from job_radar.update_checker import UpdateChecker, launch_installer, cleanup_old_installers, extract_summary
-from job_radar.gui.applications_view_model import build_applications_view_model
+from job_radar.gui.applications_view_model import (
+    append_application_note,
+    build_applications_view_model,
+)
 from job_radar.gui.profile_form import ProfileForm
 from job_radar.gui.search_controls import SearchControls
 from job_radar.gui.search_summary import (
@@ -665,6 +673,7 @@ class MainWindow(ctk.CTk):
                 ).grid(row=1, column=0, sticky="w", padx=10, pady=(0, 8))
                 continue
 
+            templates = get_application_note_templates()
             for item_index, item in enumerate(group.rows, start=1):
                 details = []
                 if item.next_action:
@@ -682,7 +691,7 @@ class MainWindow(ctk.CTk):
                     text=f"{item.title or 'Untitled'} — {item.company or 'Unknown company'}",
                     font=ctk.CTkFont(size=13, weight="bold"),
                     anchor="w",
-                ).grid(row=item_index * 2 - 1, column=0, sticky="ew", padx=16, pady=(4, 0))
+                ).grid(row=item_index * 3 - 2, column=0, sticky="ew", padx=16, pady=(4, 0))
 
                 ctk.CTkLabel(
                     group_frame,
@@ -691,7 +700,22 @@ class MainWindow(ctk.CTk):
                     wraplength=760,
                     anchor="w",
                     justify="left",
-                ).grid(row=item_index * 2, column=0, sticky="ew", padx=16, pady=(0, 6))
+                ).grid(row=item_index * 3 - 1, column=0, sticky="ew", padx=16, pady=(0, 4))
+
+                template_frame = ctk.CTkFrame(group_frame, fg_color="transparent")
+                template_frame.grid(row=item_index * 3, column=0, sticky="w", padx=16, pady=(0, 8))
+                for template in templates:
+                    ctk.CTkButton(
+                        template_frame,
+                        text=f"Add {template.label}",
+                        width=140,
+                        height=28,
+                        command=lambda row=item, key=template.key: self._insert_application_note_template(
+                            parent,
+                            row,
+                            key,
+                        ),
+                    ).pack(side="left", padx=(0, 6))
 
     def _add_application_next_action_queue(self, parent, row_index: int, next_actions: list[dict]):
         """Add a compact follow-up queue to the Applications tab."""
@@ -739,6 +763,34 @@ class MainWindow(ctk.CTk):
         if action.get("next_action_date"):
             return f"Due {action['next_action_date']}"
         return "No due date"
+
+    def _insert_application_note_template(self, parent, application_row, template_key: str):
+        """Append a rendered application note template and refresh the Applications tab."""
+        try:
+            profile = self._load_current_profile_for_guidance() or {}
+            application = {
+                "title": application_row.title,
+                "company": application_row.company,
+                "notes": application_row.notes,
+            }
+            rendered_note = render_application_note_template(
+                template_key,
+                application=application,
+                profile=profile,
+            )
+            updated_notes = append_application_note(application_row.notes, rendered_note)
+            update_application_details(
+                application_row.title,
+                application_row.company,
+                notes=updated_notes,
+            )
+            self._build_applications_tab(parent)
+        except Exception as e:
+            if self._applications_export_status_label is not None:
+                self._applications_export_status_label.configure(
+                    text=f"Template insert failed: {e}",
+                    text_color="red",
+                )
 
     def _export_applications_csv(self):
         """Export tracked application pipeline entries to CSV."""

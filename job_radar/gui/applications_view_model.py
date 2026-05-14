@@ -101,3 +101,14 @@ def build_applications_view_model(applications: dict[str, dict[str, Any]]) -> li
         )
 
     return groups
+
+
+def append_application_note(existing_notes: str | None, note: str) -> str:
+    """Append a rendered note template to an application's existing notes."""
+    existing = (existing_notes or "").strip()
+    rendered = note.strip()
+    if not rendered:
+        return existing
+    if not existing:
+        return rendered
+    return f"{existing}\n\n{rendered}"

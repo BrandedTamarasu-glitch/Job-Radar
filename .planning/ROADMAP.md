@@ -12,7 +12,8 @@
 - ✅ **v2.1 Sources & Installers** - Phases 34-37 (shipped 2026-01-31)
 - ✅ **v2.2.0 Auto-Update & Source Expansion** - Phases 38-42 (shipped 2026-02-16)
 - ✅ **v2.5.0 Product Iteration** - GUI search controls, application pipeline, performance diagnostics, and report review UX (shipped 2026-05-13)
-- 🚧 **Next Product Iteration** - Sprints F-J: onboarding, saved searches, match tuning, application workflow, performance hardening
+- ✅ **Product Iteration F-J** - onboarding, saved searches, match tuning, application workflow, performance hardening (completed 2026-05-14)
+- 🚧 **Next Product Iteration** - Sprints K-O: application editing, search review, source health, data recovery, performance/release trust
 
 ## Phases
 
@@ -37,15 +38,28 @@ Phase details available in git history.
 </details>
 
 <details>
-<summary>🚧 Next Product Iteration (Sprints F-J) - ACTIVE 2026-05-14</summary>
+<summary>✅ Product Iteration F-J - COMPLETED 2026-05-14</summary>
 
 See `.planning/PRODUCT_ITERATION_SPRINTS_F_J.md` for the full sprint list.
 
-- [ ] Sprint F: Onboarding & First-Run Experience
-- [ ] Sprint G: Saved Searches & Search History
-- [ ] Sprint H: Match Tuning & Explainability
-- [ ] Sprint I: Application Workflow Upgrade
-- [ ] Sprint J: Performance & Packaging Hardening
+- [x] Sprint F: Onboarding & First-Run Experience
+- [x] Sprint G: Saved Searches & Search History
+- [x] Sprint H: Match Tuning & Explainability
+- [x] Sprint I: Application Workflow Upgrade
+- [x] Sprint J: Performance & Packaging Hardening
+
+</details>
+
+<details open>
+<summary>🚧 Next Product Iteration (Sprints K-O) - ACTIVE 2026-05-14</summary>
+
+See `.planning/PRODUCT_ITERATION_SPRINTS_K_O.md` for the full sprint list.
+
+- [ ] Sprint K: Application Editing & Templates
+- [ ] Sprint L: Search Review Workspace
+- [ ] Sprint M: Source Health Controls
+- [ ] Sprint N: Data Portability & Recovery
+- [ ] Sprint O: Performance & Release Trust
 
 </details>
 

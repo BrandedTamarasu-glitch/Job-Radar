@@ -441,7 +441,7 @@ python -m job_radar --help
 
 ### Running Tests
 
-The project includes a comprehensive test suite with 864 automated tests:
+The project includes a comprehensive test suite with 866 automated tests:
 
 ```bash
 # Install dev dependencies
@@ -481,7 +481,7 @@ For release builds, also run the platform build script and smoke-test the genera
 - Saved searches (16 tests) - validates recent search storage, named search storage, run metadata, previous-run deltas, run summary display, config normalization, deduplication, deletion, history caps, and labels
 - Applications export (3 tests) - validates application pipeline CSV rows, timeline summaries, CSV import normalization, and UTF-8 CSV output
 - Application templates (5 tests) - validates follow-up, recruiter response, and cover-letter note template rendering
-- Applications view model (3 tests) - validates grouped pipeline statuses and note-only entries
+- Applications view model (5 tests) - validates grouped pipeline statuses, note-only entries, and template note appending
 - Tracker functions (27 tests) - validates deduplication, pruning, app-data storage, application notes/next actions, timeline recording, follow-up queueing, application import merging, application-status report filtering, source health history, and stats aggregation with tmp_path isolation
 - Config module (24 tests) - validates config file parsing, CLI override, defaults, validation
 - Wizard (38 tests) - validates setup flow, PDF integration, navigation, error handling
@@ -511,13 +511,13 @@ For release builds, also run the platform build script and smoke-test the genera
 
 ## Active Product Iteration
 
-The next product iteration is tracked in `.planning/PRODUCT_ITERATION_SPRINTS_F_J.md`:
+The next product iteration is tracked in `.planning/PRODUCT_ITERATION_SPRINTS_K_O.md`:
 
-- **Sprint F:** onboarding and first-run experience
-- **Sprint G:** saved searches and search history
-- **Sprint H:** match tuning and explainability
-- **Sprint I:** application workflow upgrades
-- **Sprint J:** performance and packaging hardening
+- **Sprint K:** application editing and templates
+- **Sprint L:** search review workspace
+- **Sprint M:** source health controls
+- **Sprint N:** data portability and recovery
+- **Sprint O:** performance and release trust
 
 ### Building Executables
 

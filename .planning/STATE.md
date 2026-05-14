@@ -7,15 +7,15 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Accurate job-candidate scoring — if the scoring is wrong, nothing else matters.
-**Current focus:** Next product iteration, Sprint F onboarding and first-run experience
+**Current focus:** Next product iteration, Sprint K application editing and templates
 
 ## Current Position
 
-**Milestone:** Post-v2.5.0 Product Iteration — ACTIVE
-**Status:** Sprint F started
-**Last activity:** 2026-05-14 — documented Sprints F-J and started onboarding improvements
+**Milestone:** Product Iteration K-O — ACTIVE
+**Status:** Sprint K started
+**Last activity:** 2026-05-14 — completed Sprints F-J, committed release artifact verification, and documented Sprints K-O
 
-**Next step:** continue Sprint F with first-run profile guidance, demo report access, and empty-state improvements
+**Next step:** continue Sprint K with GUI application edit controls and template insertion.
 
 ## Performance Metrics
 
@@ -118,25 +118,25 @@ Full decision log: PROJECT.md Key Decisions table (143 decisions)
 
 ### Active Sprint Plan
 
-See `.planning/PRODUCT_ITERATION_SPRINTS_F_J.md`.
+See `.planning/PRODUCT_ITERATION_SPRINTS_K_O.md`.
 
-- Sprint F: Onboarding & First-Run Experience — in progress
-- Sprint G: Saved Searches & Search History — pending
-- Sprint H: Match Tuning & Explainability — pending
-- Sprint I: Application Workflow Upgrade — pending
-- Sprint J: Performance & Packaging Hardening — pending
+- Sprint K: Application Editing & Templates — in progress
+- Sprint L: Search Review Workspace — pending
+- Sprint M: Source Health Controls — pending
+- Sprint N: Data Portability & Recovery — pending
+- Sprint O: Performance & Release Trust — pending
 
 ### Blockers/Concerns
 
-None - Phase 42 (hiring.cafe Integration) complete. Milestone v2.2.0 complete.
+None. Sprints F-J are complete and the K-O product iteration is active.
 
 ## Session Continuity
 
 Last session: 2026-05-14
-Stopped at: v2.5.0 release completed; next product iteration started
+Stopped at: Sprints F-J completed; Sprints K-O documented and Sprint K started
 Resume file: None
 
-**Next step:** Continue Sprint F implementation and validation
+**Next step:** Continue Sprint K implementation and validation
 
 ---
 *State initialized: 2026-02-13*

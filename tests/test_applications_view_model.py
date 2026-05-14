@@ -2,6 +2,7 @@
 
 from job_radar.gui.applications_view_model import (
     APPLICATION_STATUS_ORDER,
+    append_application_note,
     build_applications_view_model,
     normalize_application_status,
 )
@@ -88,3 +89,20 @@ def test_normalize_application_status_accepts_known_statuses_case_insensitively(
     assert normalize_application_status("skipped") == "skipped"
     assert normalize_application_status("") == "needs_status"
     assert normalize_application_status(None) == "needs_status"
+
+
+def test_append_application_note_adds_template_after_existing_notes():
+    combined = append_application_note(
+        "Sent application through careers page.",
+        "Follow up with recruiter next week.",
+    )
+
+    assert combined == (
+        "Sent application through careers page.\n\n"
+        "Follow up with recruiter next week."
+    )
+
+
+def test_append_application_note_handles_empty_notes_and_blank_template():
+    assert append_application_note("", "  Draft cover letter.  ") == "Draft cover letter."
+    assert append_application_note("Existing note.", "   ") == "Existing note."
