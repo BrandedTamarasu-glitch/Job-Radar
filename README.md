@@ -36,6 +36,16 @@ Each release includes two executables:
 - **`job-radar-gui`** (or `job-radar-gui.exe`) — Desktop GUI application (recommended for most users)
 - **`job-radar`** (or `job-radar.exe`) — Command-line interface for power users and scripting
 
+### Verify Downloads
+
+Release assets include `.sha256` checksum files for packaged bundles and installers. After downloading an asset and its matching checksum file, verify the file before running it:
+
+```bash
+sha256sum -c job-radar-vX.X.X-linux.sha256
+```
+
+On macOS, use `shasum -a 256 -c <checksum-file>`. On Windows, compare `Get-FileHash <downloaded-file> -Algorithm SHA256` with the value in the `.sha256` file.
+
 ### Windows
 
 **Option 1: NSIS Installer (Recommended)**

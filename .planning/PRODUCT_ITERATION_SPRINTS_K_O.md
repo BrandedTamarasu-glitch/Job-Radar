@@ -69,7 +69,7 @@ Goal: keep large daily workflows responsive and make releases easier to verify.
 
 Deliverable: the app remains responsive under larger local datasets and release failures are easier to diagnose.
 
-Status: in progress. Release artifact verification now reports nearby similarly named artifacts when expected release filenames drift, and release workflows publish SHA256 checksum manifests for verified bundle and installer artifacts.
+Status: in progress. Release artifact verification now reports nearby similarly named artifacts when expected release filenames drift, release workflows publish SHA256 checksum manifests for verified bundle and installer artifacts, and README installation docs explain how to verify downloads.
 
 ## Execution Order
 
