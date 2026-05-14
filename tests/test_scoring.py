@@ -302,6 +302,107 @@ def test_score_job_overall_range(job_factory, sample_profile):
     assert "recommendation" in result
 
 
+@pytest.mark.parametrize(
+    "case_name,job_kwargs,expected_min,expected_max,expected_recommendation",
+    [
+        (
+            "ideal_remote_backend",
+            {
+                "description": (
+                    "Senior Python Developer role building FastAPI Python services "
+                    "with pytest, PostgreSQL, Docker in healthcare fintech."
+                ),
+            },
+            4.4,
+            4.8,
+            "Strong Recommend",
+        ),
+        (
+            "adjacent_backend",
+            {
+                "title": "Backend Software Engineer",
+                "description": "Build APIs with Python and PostgreSQL. Docker helpful.",
+                "salary": "$125k",
+            },
+            3.4,
+            3.8,
+            "Recommend",
+        ),
+        (
+            "junior_partial",
+            {
+                "title": "Junior Python Developer",
+                "description": "Entry level Python scripting role.",
+                "location": "New York, NY",
+                "arrangement": "onsite",
+                "salary": "$90k",
+            },
+            1.0,
+            1.6,
+            "Poor Match",
+        ),
+        (
+            "dealbreaker",
+            {
+                "description": "Senior Python role. relocation required for this role.",
+            },
+            0.0,
+            0.0,
+            "Dealbreaker",
+        ),
+        (
+            "low_confidence_good_match",
+            {
+                "description": "Python FastAPI pytest backend role.",
+                "parse_confidence": "low",
+            },
+            3.9,
+            4.3,
+            "Strong Recommend",
+        ),
+        (
+            "non_matching_onsite",
+            {
+                "title": "Marketing Manager",
+                "description": "Own campaigns and brand strategy.",
+                "location": "New York, NY",
+                "arrangement": "onsite",
+                "salary": "$80k",
+            },
+            1.0,
+            1.2,
+            "Poor Match",
+        ),
+    ],
+    ids=[
+        "ideal_remote_backend",
+        "adjacent_backend",
+        "junior_partial",
+        "dealbreaker",
+        "low_confidence_good_match",
+        "non_matching_onsite",
+    ],
+)
+def test_score_job_expected_bands_for_common_role_patterns(
+    job_factory,
+    sample_profile,
+    case_name,
+    job_kwargs,
+    expected_min,
+    expected_max,
+    expected_recommendation,
+):
+    """Common role patterns stay within expected scoring bands."""
+    job = job_factory(**job_kwargs)
+
+    result = score_job(job, sample_profile)
+
+    assert expected_min <= result["overall"] <= expected_max, (
+        f"{case_name} expected {expected_min}-{expected_max}, got {result['overall']}"
+    )
+    assert result["recommendation"] == expected_recommendation
+
+
 # ---------------------------------------------------------------------------
 # Configurable scoring weights (Phase 33-02)
 # ---------------------------------------------------------------------------

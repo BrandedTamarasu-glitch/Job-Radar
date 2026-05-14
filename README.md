@@ -441,7 +441,7 @@ python -m job_radar --help
 
 ### Running Tests
 
-The project includes a comprehensive test suite with 835 automated tests:
+The project includes a comprehensive test suite with 841 automated tests:
 
 ```bash
 # Install dev dependencies
@@ -475,7 +475,7 @@ python -m job_radar --help
 For release builds, also run the platform build script and smoke-test the generated `job-radar --version` executable from `dist/`.
 
 **Test coverage:**
-- Scoring functions (38 tests) - validates all `_score_*` functions, required-skill matching, and parametrized edge cases
+- Scoring functions (44 tests) - validates all `_score_*` functions, required-skill matching, expected score bands, and parametrized edge cases
 - Scoring config (25 tests) - validates scoring weights, staffing preference, normalization, live preview
 - Match calibration (5 tests) - validates broader, balanced, strict, and custom search calibration behavior
 - Saved searches (16 tests) - validates recent search storage, named search storage, run metadata, previous-run deltas, run summary display, config normalization, deduplication, deletion, history caps, and labels
