@@ -2162,7 +2162,11 @@ class MainWindow(ctk.CTk):
             return
         try:
             result_stats = (summary or {}).get("result_stats") or {}
-            record_search_run(self._active_search_config, result_stats)
+            record_search_run(
+                self._active_search_config,
+                result_stats,
+                review_counts=review_state_counts(),
+            )
         except Exception:
             log.debug("Could not record search run metadata", exc_info=True)
 

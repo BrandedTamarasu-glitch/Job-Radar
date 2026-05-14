@@ -56,6 +56,12 @@ def test_search_complete_includes_review_state_summary():
     assert "Review queue:" in source
 
 
+def test_search_run_metadata_records_review_counts():
+    source = inspect.getsource(MainWindow._record_search_run_metadata)
+
+    assert "review_counts=review_state_counts()" in source
+
+
 def test_next_action_due_text_formats_queue_states():
     assert MainWindow._format_next_action_due_text(None, {
         "is_overdue": True,
@@ -164,5 +170,7 @@ def test_search_completion_records_run_metadata():
 def test_run_metadata_recording_is_non_blocking():
     source = inspect.getsource(MainWindow._record_search_run_metadata)
 
-    assert "record_search_run(self._active_search_config, result_stats)" in source
+    assert "record_search_run(" in source
+    assert "self._active_search_config" in source
+    assert "result_stats" in source
     assert "except Exception" in source

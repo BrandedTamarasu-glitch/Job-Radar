@@ -154,6 +154,25 @@ def test_record_search_run_updates_matching_recent_and_saved(tmp_path):
     }
 
 
+def test_record_search_run_can_store_review_counts(tmp_path):
+    path = tmp_path / "saved_searches.json"
+    config = {"preset": "remote-backend"}
+
+    save_named_search("Remote", config, path=path)
+    state = record_search_run(
+        config,
+        {"total": 12, "new": 5, "high_score": 3},
+        path=path,
+        review_counts={"shortlisted": 2, "maybe_later": 1, "dismissed": 4},
+    )
+
+    assert state["saved"][0]["last_result_stats"]["review"] == {
+        "shortlisted": 2,
+        "maybe_later": 1,
+        "dismissed": 4,
+    }
+
+
 def test_record_search_run_rolls_last_stats_to_previous(tmp_path):
     path = tmp_path / "saved_searches.json"
     config = {"preset": "remote-backend"}
@@ -190,6 +209,23 @@ def test_format_run_summary_includes_result_counts():
     }
 
     assert format_run_summary(item) == "Last run: 12 results, 5 new, 3 high-score | 2 runs"
+
+
+def test_format_run_summary_includes_review_counts_when_present():
+    item = {
+        "run_count": 2,
+        "last_result_stats": {
+            "total": 12,
+            "new": 5,
+            "high_score": 3,
+            "review": {"shortlisted": 2, "maybe_later": 1, "dismissed": 0},
+        },
+    }
+
+    assert format_run_summary(item) == (
+        "Last run: 12 results, 5 new, 3 high-score, "
+        "2 shortlisted, 1 maybe later | 2 runs"
+    )
 
 
 def test_format_run_summary_includes_previous_total_delta():

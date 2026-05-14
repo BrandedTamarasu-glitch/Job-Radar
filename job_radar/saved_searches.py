@@ -141,6 +141,7 @@ def record_search_run(
     stats: dict[str, Any] | None,
     path: Path | None = None,
     now: datetime | None = None,
+    review_counts: dict[str, Any] | None = None,
 ) -> dict:
     """Attach last-run metadata to matching recent and saved searches."""
     path = path or get_saved_searches_path()
@@ -148,6 +149,8 @@ def record_search_run(
     normalized_config = normalize_search_config(config)
     timestamp = _timestamp(now)
     run_stats = _normalize_run_stats(stats)
+    if review_counts is not None:
+        run_stats["review"] = _normalize_review_counts(review_counts)
 
     for collection_name in ("recent", "saved"):
         for item in state[collection_name]:
@@ -213,9 +216,11 @@ def format_run_summary(item: dict[str, Any]) -> str:
     high_score = int(stats.get("high_score") or 0)
     run_word = "run" if run_count == 1 else "runs"
     delta = _format_total_delta(stats, item.get("previous_result_stats") or {})
+    review = _format_review_counts(stats.get("review") or {})
+    review_text = f", {review}" if review else ""
     return (
         f"Last run: {total} results{delta}, {new} new, "
-        f"{high_score} high-score | {run_count} {run_word}"
+        f"{high_score} high-score{review_text} | {run_count} {run_word}"
     )
 
 
@@ -237,6 +242,28 @@ def _normalize_run_stats(stats: dict[str, Any] | None) -> dict[str, int]:
         "new": int(stats.get("new") or 0),
         "high_score": int(stats.get("high_score") or 0),
     }
+
+
+def _normalize_review_counts(counts: dict[str, Any]) -> dict[str, int]:
+    return {
+        "shortlisted": int(counts.get("shortlisted") or 0),
+        "maybe_later": int(counts.get("maybe_later") or 0),
+        "dismissed": int(counts.get("dismissed") or 0),
+    }
+
+
+def _format_review_counts(counts: dict[str, Any]) -> str:
+    shortlisted = int(counts.get("shortlisted") or 0)
+    maybe_later = int(counts.get("maybe_later") or 0)
+    dismissed = int(counts.get("dismissed") or 0)
+    parts = []
+    if shortlisted:
+        parts.append(f"{shortlisted} shortlisted")
+    if maybe_later:
+        parts.append(f"{maybe_later} maybe later")
+    if dismissed:
+        parts.append(f"{dismissed} dismissed")
+    return ", ".join(parts)
 
 
 def _format_total_delta(current: dict[str, Any], previous: dict[str, Any]) -> str:
