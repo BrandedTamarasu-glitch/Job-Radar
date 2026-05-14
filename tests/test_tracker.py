@@ -11,6 +11,7 @@ from job_radar.tracker import (
     _prune_old_seen_jobs,
     _tracker_path,
     get_application_entry,
+    get_application_next_actions,
     get_application_status,
     get_source_health_history,
     get_stats,
@@ -357,6 +358,87 @@ def test_filter_scored_by_application_status_hides_rejected_and_skipped(job_fact
     )
 
     assert [item["job"].company for item in filtered] == ["Acme"]
+
+
+def test_get_application_next_actions_orders_due_followups_first():
+    """Application next-action queue prioritizes overdue and due follow-ups."""
+    applications = {
+        "future||co": {
+            "title": "Future Role",
+            "company": "FutureCo",
+            "status": "applied",
+            "next_action": "Follow up next week",
+            "next_action_date": "2026-05-20",
+            "updated": "2026-05-10T10:00:00",
+        },
+        "overdue||co": {
+            "title": "Overdue Role",
+            "company": "OverdueCo",
+            "status": "interviewing",
+            "next_action": "Send prep notes",
+            "next_action_date": "2026-05-12",
+            "updated": "2026-05-11T10:00:00",
+        },
+        "today||co": {
+            "title": "Today Role",
+            "company": "TodayCo",
+            "status": "applied",
+            "next_action": "Email recruiter",
+            "next_action_date": "2026-05-14",
+            "updated": "2026-05-13T10:00:00",
+        },
+        "later||co": {
+            "title": "Later Role",
+            "company": "LaterCo",
+            "status": "needs_status",
+            "next_action": "Review listing",
+            "updated": "2026-05-09T10:00:00",
+        },
+        "empty||co": {
+            "title": "Empty Role",
+            "company": "EmptyCo",
+            "status": "applied",
+            "next_action": "",
+        },
+    }
+
+    actions = get_application_next_actions(
+        today=date(2026, 5, 14),
+        applications=applications,
+    )
+
+    assert [action["company"] for action in actions] == [
+        "OverdueCo",
+        "TodayCo",
+        "FutureCo",
+        "LaterCo",
+    ]
+    assert actions[0]["is_overdue"] is True
+    assert actions[0]["days_until"] == -2
+    assert actions[1]["days_until"] == 0
+    assert actions[3]["days_until"] is None
+
+
+def test_get_application_next_actions_respects_limit():
+    """Application next-action queue can be bounded for dashboard previews."""
+    applications = {
+        f"role-{index}||co": {
+            "title": f"Role {index}",
+            "company": f"Co {index}",
+            "status": "applied",
+            "next_action": "Follow up",
+            "next_action_date": f"2026-05-{15 + index:02d}",
+        }
+        for index in range(3)
+    }
+
+    actions = get_application_next_actions(
+        today=date(2026, 5, 14),
+        limit=2,
+        applications=applications,
+    )
+
+    assert [action["company"] for action in actions] == ["Co 0", "Co 1"]
 
 
 # ---------------------------------------------------------------------------

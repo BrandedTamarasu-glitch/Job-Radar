@@ -61,6 +61,8 @@ Goal: make the application pipeline useful after the search is complete.
 
 Deliverable: users can manage follow-through inside Job Radar instead of treating reports as one-off artifacts.
 
+Status: in progress. Tracker-level next-action queueing now ranks application follow-ups across statuses, prioritizing overdue and due actions before dated future actions and unscheduled reminders.
+
 ## Sprint J: Performance & Packaging Hardening
 
 Goal: keep the app fast and trustworthy as usage and result volume grow.

@@ -311,6 +311,60 @@ def get_all_application_statuses() -> dict:
     return tracker.get("applications", {})
 
 
+def get_application_next_actions(
+    *,
+    today: date | None = None,
+    limit: int | None = None,
+    applications: dict | None = None,
+) -> list[dict]:
+    """Return tracked application entries ordered as a follow-up queue."""
+    current_date = today or date.today()
+    application_entries = applications if applications is not None else get_all_application_statuses()
+    queued: list[tuple[tuple[int, date, str], dict]] = []
+
+    for key, entry in application_entries.items():
+        next_action = str(entry.get("next_action") or "").strip()
+        if not next_action:
+            continue
+
+        action_date = _parse_iso_date(entry.get("next_action_date"))
+        priority_bucket = _next_action_priority(entry, action_date, current_date)
+        sort_date = action_date or date.max
+        queued.append((
+            (priority_bucket, sort_date, str(entry.get("updated") or "")),
+            {
+                "key": key,
+                "title": entry.get("title", ""),
+                "company": entry.get("company", ""),
+                "status": entry.get("status") or "needs_status",
+                "next_action": next_action,
+                "next_action_date": entry.get("next_action_date"),
+                "days_until": (action_date - current_date).days if action_date else None,
+                "is_overdue": bool(action_date and action_date < current_date),
+                "notes": entry.get("notes", ""),
+                "updated": entry.get("updated", ""),
+            },
+        ))
+
+    queued.sort(key=lambda item: item[0])
+    actions = [item[1] for item in queued]
+    if limit is not None:
+        return actions[:limit]
+    return actions
+
+
+def _next_action_priority(entry: dict, action_date: date | None, today: date) -> int:
+    """Return a stable priority bucket for application next actions."""
+    if action_date and action_date < today:
+        return 0
+    if action_date == today:
+        return 1
+    status = (entry.get("status") or "").casefold()
+    if status in {"applied", "interviewing", "offer"}:
+        return 2
+    return 3
+
+
 def filter_scored_by_application_status(
     scored_results: list[dict],
     hidden_statuses: set[str] | tuple[str, ...] | list[str],
