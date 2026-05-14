@@ -21,16 +21,21 @@ Goal: help a new job seeker understand value quickly and create a useful first p
 
 Deliverable: a first-time user can preview a realistic report, create a stronger profile, and understand what to fix before running their first real search.
 
+Status: complete. GUI onboarding now includes first-run demo report access, shared demo-report generation, profile readiness checks, Search tab readiness guidance, profile-form hints, GUI profile scoring defaults, and profile-aware zero-result next actions.
+
 ## Sprint G: Saved Searches & Search History
 
 Goal: make repeated job searching fast and comparable.
 
+- Add saved/recent search storage in the app data directory.
 - Save named GUI searches with presets, source selections, filters, and freshness settings.
 - Show recent searches and one-click rerun from the GUI.
 - Track "new since last run" for saved searches.
 - Add lightweight comparison between the last two runs for a saved search.
 
 Deliverable: daily users can rerun targeted searches and immediately see what changed.
+
+Status: in progress. Backend storage for recent search configs has started.
 
 ## Sprint H: Match Tuning & Explainability
 
