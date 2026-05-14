@@ -30,7 +30,7 @@ Goal: make search results easier to triage after a run.
 
 Deliverable: users can quickly turn a search result list into a practical review queue.
 
-Status: in progress. Persistent app-data review state now supports shortlisted, dismissed, and maybe-later states as the foundation for GUI/report review workflows, HTML reports now embed persisted review state to hydrate shortlist controls and expose maybe-later/dismiss controls, the GUI Search completion screen summarizes the saved review queue, and saved-search run metadata carries review counts for comparison.
+Status: complete. Persistent app-data review state now supports shortlisted, dismissed, and maybe-later states as the foundation for GUI/report review workflows, HTML reports now embed persisted review state to hydrate shortlist controls and expose maybe-later/dismiss controls, the GUI Search completion screen summarizes the saved review queue, and saved-search run metadata carries review counts for comparison.
 
 ## Sprint M: Source Health Controls
 
@@ -43,7 +43,7 @@ Goal: give users clearer control over unreliable or slow job sources.
 
 Deliverable: users can understand source failures and keep searching without restarting or editing config files.
 
-Status: pending.
+Status: in progress. Settings source diagnostics now label source health and include recommended actions for failed, warning-heavy, slow, and healthy sources.
 
 ## Sprint N: Data Portability & Recovery
 

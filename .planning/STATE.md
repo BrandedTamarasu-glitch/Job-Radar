@@ -7,15 +7,15 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Accurate job-candidate scoring — if the scoring is wrong, nothing else matters.
-**Current focus:** Next product iteration, Sprint L search review workspace
+**Current focus:** Next product iteration, Sprint M source health controls
 
 ## Current Position
 
 **Milestone:** Product Iteration K-O — ACTIVE
-**Status:** Sprint L started
-**Last activity:** 2026-05-14 — completed Sprint K application editing and advanced Sprint L review-state persistence, report hydration, GUI review summaries, report controls, and saved-search review-count metadata
+**Status:** Sprint M started
+**Last activity:** 2026-05-14 — completed Sprint L search review workspace and started Sprint M source health recommendations
 
-**Next step:** continue Sprint L by adding bulk review actions or marking Sprint L complete if the review workflow scope is sufficient.
+**Next step:** continue Sprint M with richer source health controls and retry/disable guidance.
 
 ## Performance Metrics
 
@@ -121,8 +121,8 @@ Full decision log: PROJECT.md Key Decisions table (143 decisions)
 See `.planning/PRODUCT_ITERATION_SPRINTS_K_O.md`.
 
 - Sprint K: Application Editing & Templates — complete
-- Sprint L: Search Review Workspace — in progress
-- Sprint M: Source Health Controls — pending
+- Sprint L: Search Review Workspace — complete
+- Sprint M: Source Health Controls — in progress
 - Sprint N: Data Portability & Recovery — pending
 - Sprint O: Performance & Release Trust — pending
 

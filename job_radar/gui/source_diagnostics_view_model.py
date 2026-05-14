@@ -29,6 +29,28 @@ class SourceDiagnosticRow:
             return None
         return max(self.durations)
 
+    @property
+    def health_label(self) -> str:
+        """Return a compact source-health label for Settings diagnostics."""
+        if self.failure_count:
+            return "Needs attention"
+        if self.warning_count:
+            return "Watch"
+        if self.average_duration is not None and self.average_duration >= 30:
+            return "Slow"
+        return "Healthy"
+
+    @property
+    def recommended_action(self) -> str:
+        """Return a concise user-facing source-health recommendation."""
+        if self.failure_count:
+            return "retry later or temporarily disable if failures continue"
+        if self.warning_count:
+            return "review warnings before relying on results"
+        if self.average_duration is not None and self.average_duration >= 30:
+            return "consider cache freshness or source timeout tuning"
+        return "no action needed"
+
 
 def build_source_diagnostics(history: list[dict[str, Any]], limit: int = 5) -> list[SourceDiagnosticRow]:
     """Aggregate source health history into slowest-source diagnostics."""
@@ -92,9 +114,9 @@ def format_source_diagnostics_lines(
         warning_noun = "warning" if row.warning_count == 1 else "warnings"
         failure_noun = "failure" if row.failure_count == 1 else "failures"
         lines.append(
-            f"{row.name}: {duration_text}; {row.runs} {run_noun}; "
+            f"{row.name} ({row.health_label}): {duration_text}; {row.runs} {run_noun}; "
             f"{row.total_jobs} jobs; {row.warning_count} {warning_noun}; "
-            f"{row.failure_count} {failure_noun}"
+            f"{row.failure_count} {failure_noun}; {row.recommended_action}"
         )
 
     cache_totals = build_cache_totals(history)

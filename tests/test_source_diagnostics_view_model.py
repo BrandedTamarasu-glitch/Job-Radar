@@ -35,6 +35,8 @@ def test_source_diagnostics_groups_slowest_sources_first():
     assert rows[0].failure_count == 1
     assert rows[0].average_duration == 3.0
     assert rows[0].max_duration == 4.0
+    assert rows[0].health_label == "Needs attention"
+    assert rows[0].recommended_action == "retry later or temporarily disable if failures continue"
 
 
 def test_source_diagnostics_tracks_failed_source_without_timing():
@@ -48,6 +50,29 @@ def test_source_diagnostics_tracks_failed_source_without_timing():
     assert rows[0].runs == 0
     assert rows[0].failure_count == 1
     assert rows[0].average_duration is None
+
+
+def test_source_diagnostics_labels_warning_slow_and_healthy_sources():
+    """Source health labels make source diagnostics easier to scan."""
+    history = [
+        {
+            "sources": [
+                {"name": "WarningSource", "job_count": 1, "warning_count": 1, "duration_seconds": 2.0},
+                {"name": "SlowSource", "job_count": 1, "warning_count": 0, "duration_seconds": 45.0},
+                {"name": "HealthySource", "job_count": 1, "warning_count": 0, "duration_seconds": 1.0},
+            ],
+            "failed_sources": [],
+        },
+    ]
+
+    rows = {row.name: row for row in build_source_diagnostics(history)}
+
+    assert rows["WarningSource"].health_label == "Watch"
+    assert rows["WarningSource"].recommended_action == "review warnings before relying on results"
+    assert rows["SlowSource"].health_label == "Slow"
+    assert rows["SlowSource"].recommended_action == "consider cache freshness or source timeout tuning"
+    assert rows["HealthySource"].health_label == "Healthy"
+    assert rows["HealthySource"].recommended_action == "no action needed"
 
 
 def test_cache_totals_sum_history_cache_stats():
@@ -82,6 +107,7 @@ def test_format_source_diagnostics_lines_handles_empty_and_cache_totals():
     ])
 
     assert lines == [
-        "RemoteOK: avg 1m 05s, max 1m 05s; 1 run; 3 jobs; 0 warnings; 0 failures",
+        "RemoteOK (Slow): avg 1m 05s, max 1m 05s; 1 run; 3 jobs; "
+        "0 warnings; 0 failures; consider cache freshness or source timeout tuning",
         "Cache totals: 2 hits, 1 misses, 1 writes, 0 uncached requests",
     ]
