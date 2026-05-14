@@ -350,7 +350,10 @@ def test_search_worker_emits_completion_summary(tmp_path, source_health_recorder
                     with patch("job_radar.tracker.mark_seen", side_effect=lambda scored: scored):
                         with patch("job_radar.tracker.get_stats", return_value=None):
                             with patch("job_radar.gui.worker_thread.time.monotonic", side_effect=[10.0, 10.25, 20.0, 21.5]):
-                                with patch("job_radar.report.generate_report", return_value={"html": str(tmp_path / "jobs.html")}):
+                                with patch("job_radar.report.generate_report", return_value={
+                                    "html": str(tmp_path / "jobs.html"),
+                                    "stats": {"total": 0, "new": 0, "high_score": 0},
+                                }):
                                     worker = SearchWorker(result_queue, stop_event, profile, {"min_score": 2.8})
                                     worker.run()
 
@@ -365,6 +368,7 @@ def test_search_worker_emits_completion_summary(tmp_path, source_health_recorder
     assert summary["query_failures"] == 1
     assert summary["failed_sources"] == ["Dice"]
     assert summary["cache_stats"] == {"hits": 2, "misses": 1, "writes": 1, "disabled": 0}
+    assert summary["result_stats"] == {"total": 0, "new": 0, "high_score": 0}
     assert summary["sources"] == [
         {"name": "Dice", "job_count": 0, "warning_count": 1, "duration_seconds": 0.25},
         {"name": "RemoteOK", "job_count": 3, "warning_count": 0, "duration_seconds": 1.5},

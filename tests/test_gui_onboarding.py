@@ -70,6 +70,12 @@ def test_recent_search_recording_is_non_blocking():
     assert "except Exception" in source
 
 
+def test_real_search_stores_active_config_for_completion_metadata():
+    source = inspect.getsource(MainWindow._start_real_search)
+
+    assert "self._active_search_config = search_config.copy()" in source
+
+
 def test_search_idle_includes_recent_searches_panel():
     source = inspect.getsource(MainWindow._show_search_idle)
 
@@ -111,3 +117,16 @@ def test_apply_saved_search_uses_search_controls_defaults():
     source = inspect.getsource(MainWindow._apply_saved_search)
 
     assert "self._search_controls.set_defaults(config)" in source
+
+
+def test_search_completion_records_run_metadata():
+    source = inspect.getsource(MainWindow._on_search_complete)
+
+    assert "self._record_search_run_metadata(summary)" in source
+
+
+def test_run_metadata_recording_is_non_blocking():
+    source = inspect.getsource(MainWindow._record_search_run_metadata)
+
+    assert "record_search_run(self._active_search_config, result_stats)" in source
+    assert "except Exception" in source

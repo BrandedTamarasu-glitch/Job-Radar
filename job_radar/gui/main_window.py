@@ -55,6 +55,7 @@ from job_radar.gui.uninstall_dialog import (
 from job_radar.rate_limits import get_quota_usage
 from job_radar.saved_searches import (
     load_search_history,
+    record_search_run,
     record_recent_search,
     save_named_search,
     summarize_search_config,
@@ -126,6 +127,7 @@ class MainWindow(ctk.CTk):
         self._source_diagnostics_textbox = None  # Settings source diagnostics text reference
         self._applications_export_status_label = None  # Applications tab export status
         self._saved_search_status_label = None  # Search tab saved-search feedback
+        self._active_search_config = None  # Search config for completion metadata
 
         # Download worker state
         self._download_worker = None
@@ -1765,6 +1767,7 @@ class MainWindow(ctk.CTk):
 
         # Show progress state
         self._record_recent_search(search_config)
+        self._active_search_config = search_config.copy()
         self._show_search_progress()
 
         # Create and start real search worker
@@ -1855,8 +1858,19 @@ class MainWindow(ctk.CTk):
             Optional per-source completion and warning summary.
         """
         self._report_path = report_path
+        self._record_search_run_metadata(summary)
         self._show_search_complete(job_count, summary)
         self.update_quota_display()
+
+    def _record_search_run_metadata(self, summary: dict | None):
+        """Persist result stats for the active saved/recent search config."""
+        if not self._active_search_config:
+            return
+        try:
+            result_stats = (summary or {}).get("result_stats") or {}
+            record_search_run(self._active_search_config, result_stats)
+        except Exception:
+            log.debug("Could not record search run metadata", exc_info=True)
 
     def _on_search_cancelled(self):
         """Handle search cancellation."""

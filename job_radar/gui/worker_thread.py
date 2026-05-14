@@ -557,6 +557,7 @@ class SearchWorker:
 
             report_path = report_result["html"]
             job_count = len(scored)
+            run_summary["result_stats"] = report_result.get("stats", {})
 
             # Step 9: Send completion message
             self._queue.put(("search_complete", job_count, report_path, run_summary))
