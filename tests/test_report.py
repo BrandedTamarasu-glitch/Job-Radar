@@ -7,6 +7,7 @@ from pathlib import Path
 from job_radar.sources import JobResult
 from job_radar.report import (
     COLLAPSE_RESULTS_AFTER,
+    COLLAPSED_RESULTS_RENDER_LIMIT,
     _filter_explanation_text,
     _html_external_scripts,
     _html_external_stylesheets,
@@ -663,6 +664,55 @@ def test_html_report_collapses_lower_score_rows_for_large_reports(sample_profile
     assert 'id="lower-score-results"' in html_content
     assert "Show 3 additional lower-score results" in html_content
     assert "Additional lower-score job results" in html_content
+
+
+def test_html_report_omits_excess_collapsed_rows_for_very_large_reports(sample_profile, sample_manual_urls, tmp_path):
+    """Very large reports cap lower-score DOM rows to keep HTML responsive."""
+    scored_results = []
+    total_results = COLLAPSE_RESULTS_AFTER + COLLAPSED_RESULTS_RENDER_LIMIT + 2
+    for index in range(total_results):
+        scored_results.append({
+            "job": JobResult(
+                title=f"Large Report Engineer {index}",
+                company=f"LargeCo {index}",
+                location="Remote",
+                arrangement="remote",
+                salary="Not listed",
+                date_posted="2026-02-08",
+                description="Build backend services with Python",
+                url=f"https://example.com/large/{index}",
+                source="Dice",
+                employment_type="Full-time",
+                parse_confidence="high",
+            ),
+            "score": {
+                "overall": 2.8,
+                "recommendation": "Worth reviewing",
+                "components": {
+                    "skill_match": {"ratio": "1/3", "matched_core": ["Python"]},
+                    "title_relevance": {"reason": "Related"},
+                    "seniority": {"reason": "Appropriate"},
+                    "response": {"likelihood": "Medium", "reason": "Possible fit"},
+                },
+            },
+            "is_new": True,
+        })
+
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+
+    html_content = Path(result["html"]).read_text(encoding="utf-8")
+
+    assert "2 additional lower-score rows omitted from the HTML view" in html_content
+    assert "Large Report Engineer 219" in html_content
+    assert "Large Report Engineer 220" not in html_content
 
 
 def test_html_report_contains_clipboard_javascript(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):

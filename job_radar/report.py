@@ -50,6 +50,7 @@ ZERO_RESULTS_TIPS = [
     "Open the manual check URLs below for sources that block automation.",
 ]
 COLLAPSE_RESULTS_AFTER = 20
+COLLAPSED_RESULTS_RENDER_LIMIT = 200
 
 
 def generate_report(
@@ -2809,6 +2810,17 @@ def _html_results_table(scored_results: list[dict]) -> str:
     hidden_count = max(0, len(rows) - COLLAPSE_RESULTS_AFTER)
     if hidden_count:
         visible_rows_html = "".join(rows[:COLLAPSE_RESULTS_AFTER])
+        collapsed_rows = rows[
+            COLLAPSE_RESULTS_AFTER:COLLAPSE_RESULTS_AFTER + COLLAPSED_RESULTS_RENDER_LIMIT
+        ]
+        omitted_count = max(0, hidden_count - len(collapsed_rows))
+        omitted_note = ""
+        if omitted_count:
+            omitted_note = (
+                f'<p class="text-muted small mt-2 mb-0">'
+                f'{omitted_count} additional lower-score rows omitted from the HTML view '
+                f'to keep large reports responsive.</p>'
+            )
         collapsed_rows_html = f"""
         <details class="mt-3" id="lower-score-results">
           <summary class="btn btn-outline-secondary btn-sm">
@@ -2833,10 +2845,11 @@ def _html_results_table(scored_results: list[dict]) -> str:
                 </tr>
               </thead>
               <tbody>
-                {"".join(rows[COLLAPSE_RESULTS_AFTER:])}
+                {"".join(collapsed_rows)}
               </tbody>
             </table>
           </div>
+          {omitted_note}
         </details>
         """
 
