@@ -44,12 +44,23 @@ class SourceDiagnosticRow:
     def recommended_action(self) -> str:
         """Return a concise user-facing source-health recommendation."""
         if self.failure_count:
-            return "retry later or temporarily disable if failures continue"
+            return "retry later or uncheck this source in Search > Sources if failures continue"
         if self.warning_count:
             return "review warnings before relying on results"
         if self.average_duration is not None and self.average_duration >= 30:
             return "consider cache freshness or source timeout tuning"
         return "no action needed"
+
+    @property
+    def health_priority(self) -> int:
+        """Return sort priority so unhealthy sources stay visible."""
+        if self.failure_count:
+            return 3
+        if self.warning_count:
+            return 2
+        if self.average_duration is not None and self.average_duration >= 30:
+            return 1
+        return 0
 
 
 def build_source_diagnostics(history: list[dict[str, Any]], limit: int = 5) -> list[SourceDiagnosticRow]:
@@ -73,9 +84,10 @@ def build_source_diagnostics(history: list[dict[str, Any]], limit: int = 5) -> l
     rows = list(by_source.values())
     rows.sort(
         key=lambda row: (
-            row.average_duration or -1,
+            row.health_priority,
             row.failure_count,
             row.warning_count,
+            row.average_duration or -1,
             row.name.casefold(),
         ),
         reverse=True,

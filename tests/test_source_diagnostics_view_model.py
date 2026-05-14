@@ -36,7 +36,8 @@ def test_source_diagnostics_groups_slowest_sources_first():
     assert rows[0].average_duration == 3.0
     assert rows[0].max_duration == 4.0
     assert rows[0].health_label == "Needs attention"
-    assert rows[0].recommended_action == "retry later or temporarily disable if failures continue"
+    assert rows[0].recommended_action == "retry later or uncheck this source in Search > Sources if failures continue"
+    assert rows[0].health_priority == 3
 
 
 def test_source_diagnostics_tracks_failed_source_without_timing():
@@ -50,6 +51,22 @@ def test_source_diagnostics_tracks_failed_source_without_timing():
     assert rows[0].runs == 0
     assert rows[0].failure_count == 1
     assert rows[0].average_duration is None
+
+
+def test_source_diagnostics_prioritizes_failures_before_slow_sources():
+    """Failed sources stay visible even when slow sources have timing data."""
+    history = [
+        {
+            "sources": [
+                {"name": "SlowSource", "job_count": 1, "warning_count": 0, "duration_seconds": 90.0},
+            ],
+            "failed_sources": ["BrokenSource"],
+        },
+    ]
+
+    rows = build_source_diagnostics(history)
+
+    assert [row.name for row in rows[:2]] == ["BrokenSource", "SlowSource"]
 
 
 def test_source_diagnostics_labels_warning_slow_and_healthy_sources():
@@ -69,10 +86,13 @@ def test_source_diagnostics_labels_warning_slow_and_healthy_sources():
 
     assert rows["WarningSource"].health_label == "Watch"
     assert rows["WarningSource"].recommended_action == "review warnings before relying on results"
+    assert rows["WarningSource"].health_priority == 2
     assert rows["SlowSource"].health_label == "Slow"
     assert rows["SlowSource"].recommended_action == "consider cache freshness or source timeout tuning"
+    assert rows["SlowSource"].health_priority == 1
     assert rows["HealthySource"].health_label == "Healthy"
     assert rows["HealthySource"].recommended_action == "no action needed"
+    assert rows["HealthySource"].health_priority == 0
 
 
 def test_cache_totals_sum_history_cache_stats():
