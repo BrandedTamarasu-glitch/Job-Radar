@@ -441,7 +441,7 @@ python -m job_radar --help
 
 ### Running Tests
 
-The project includes a comprehensive test suite with 854 automated tests:
+The project includes a comprehensive test suite with 856 automated tests:
 
 ```bash
 # Install dev dependencies
@@ -493,7 +493,7 @@ For release builds, also run the platform build script and smoke-test the genera
 - PDF parser (34 tests) - validates extraction, validation, Unicode support, error handling
 - Report generation (49 tests) - validates HTML/Markdown output, clipboard UI, status tracking, shortlist state, keyboard navigation, compact/detail view, match summaries, filtered-out explanations, grouped skill callouts, mobile layout, accessibility
 - UX polish (69 tests) - validates banner, help text, progress messages, maintenance commands, error handling
-- GUI search summary (23 tests) - validates search completion, source warnings, per-source timing, cache counters, cache controls, GUI preset application, automated/manual source selection, company filters, application-status report filtering, must-have and nice-to-have skill controls, location strictness, freshness presets, and profile-aware zero-result guidance
+- GUI search summary (25 tests) - validates search completion, source warnings, per-source timing, cache counters, cache controls, cancellation boundaries, progress normalization, GUI preset application, automated/manual source selection, company filters, application-status report filtering, must-have and nice-to-have skill controls, location strictness, freshness presets, and profile-aware zero-result guidance
 - GUI onboarding (20 tests) - validates first-run demo report access, welcome/search feedback handling, Search tab profile-readiness guidance, profile-form field hints, profile-aware zero-result guidance wiring, non-blocking recent-search recording, recent-search reapply controls, named saved-search controls, Applications next-action queue wiring, and run metadata recording
 - Demo report (2 tests) - validates no-network sample profile/jobs and report generation
 - Profile readiness (7 tests) - validates onboarding readiness status, missing required fields, scoring-signal recommendations, match-quality recommendations, and guidance prioritization

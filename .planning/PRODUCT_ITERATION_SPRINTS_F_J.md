@@ -74,6 +74,8 @@ Goal: keep the app fast and trustworthy as usage and result volume grow.
 
 Deliverable: faster large searches, clearer build health, and fewer surprises in packaged desktop releases.
 
+Status: in progress. GUI search worker progress counters are now clamped to safe display bounds, and cancellation requested during source fetch stops before source-health persistence or report generation.
+
 ## Execution Order
 
 Start with Sprint F because it improves first impression and lowers support burden. Then move to Sprint G to improve daily reuse, Sprint H to improve trust in matching, Sprint I to deepen follow-through value, and Sprint J to harden the product as usage grows.

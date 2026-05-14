@@ -24,6 +24,22 @@ FRESHNESS_DAY_WINDOWS = {
 }
 
 
+def normalize_source_progress(current: int | float | None, total: int | float | None) -> tuple[int, int]:
+    """Clamp source progress counters to a safe display range."""
+    try:
+        safe_total = int(total or 0)
+    except (TypeError, ValueError):
+        safe_total = 0
+    safe_total = max(1, safe_total)
+
+    try:
+        safe_current = int(current or 0)
+    except (TypeError, ValueError):
+        safe_current = 0
+    safe_current = min(max(0, safe_current), safe_total)
+    return safe_current, safe_total
+
+
 def parse_company_filter(value: str | list[str] | None) -> list[str]:
     """Parse comma-separated company filter text into normalized terms."""
     if not value:
@@ -389,6 +405,7 @@ class SearchWorker:
 
             def on_source_progress(source_name, current, total, status, job_count):
                 """Callback for source-level progress updates."""
+                current, total = normalize_source_progress(current, total)
                 if status == "started":
                     started_at = time.monotonic()
                     source_runs.setdefault(source_name, {

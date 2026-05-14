@@ -22,6 +22,7 @@ from job_radar.gui.worker_thread import (
     filter_by_company,
     filter_by_location_strictness,
     filter_by_required_skills,
+    normalize_source_progress,
     resolve_date_filter,
 )
 from job_radar.sources import JobResult
@@ -128,6 +129,14 @@ def test_interruption_messages_explain_report_state():
     assert "No new report was generated" in cancellation_message()
     assert "before a report could be generated" in error_message("network down")
     assert "network down" in error_message("network down")
+
+
+def test_normalize_source_progress_clamps_display_bounds():
+    """Source progress counters are safe for GUI progress bars."""
+    assert normalize_source_progress(2, 5) == (2, 5)
+    assert normalize_source_progress(9, 3) == (3, 3)
+    assert normalize_source_progress(-1, 0) == (0, 1)
+    assert normalize_source_progress("bad", "bad") == (0, 1)
 
 
 def test_filter_by_company_applies_include_and_exclude_terms():
@@ -374,6 +383,41 @@ def test_search_worker_emits_completion_summary(tmp_path, source_health_recorder
         {"name": "RemoteOK", "job_count": 3, "warning_count": 0, "duration_seconds": 1.5},
     ]
     source_health_recorder.assert_called_once_with(summary)
+
+
+def test_search_worker_cancellation_after_fetch_skips_report(tmp_path, source_health_recorder):
+    """Worker stops cleanly if cancellation is requested during fetch."""
+    result_queue = queue.Queue()
+    stop_event = threading.Event()
+    profile = {
+        "name": "Test User",
+        "target_titles": ["Backend Engineer"],
+        "core_skills": ["Python"],
+    }
+
+    def fake_fetch_all(_profile, on_source_progress=None, selected_sources=None, cancellation_event=None):
+        on_source_progress("Dice", 9, 3, "started", 0)
+        stop_event.set()
+        return [], {
+            "query_failures": 0,
+            "failed_sources": [],
+            "query_failure_details": [],
+        }
+
+    with patch("job_radar.api_config.load_api_credentials"):
+        with patch("job_radar.sources.fetch_all", side_effect=fake_fetch_all):
+            with patch("job_radar.report.generate_report") as generate_report:
+                worker = SearchWorker(result_queue, stop_event, profile, {"min_score": 2.8})
+                worker.run()
+
+    messages = []
+    while not result_queue.empty():
+        messages.append(result_queue.get())
+
+    assert ("source_started", "Dice", 3, 3) in messages
+    assert messages[-1] == ("cancelled",)
+    generate_report.assert_not_called()
+    source_health_recorder.assert_not_called()
 
 
 def test_search_worker_applies_gui_search_preset(tmp_path):
