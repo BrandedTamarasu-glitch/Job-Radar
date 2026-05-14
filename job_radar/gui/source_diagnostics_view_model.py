@@ -133,7 +133,9 @@ def format_source_diagnostics_lines(
     if not history:
         return ["No source diagnostics recorded yet. Run a search to populate this section."]
 
-    lines = []
+    lines = [
+        "Source controls: use Search > Sources to temporarily disable unreliable sources, then refresh diagnostics after reruns."
+    ]
     for row in build_source_diagnostics(history, limit=limit):
         duration_text = "timing unavailable"
         if row.average_duration is not None and row.max_duration is not None:

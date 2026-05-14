@@ -43,7 +43,7 @@ Goal: give users clearer control over unreliable or slow job sources.
 
 Deliverable: users can understand source failures and keep searching without restarting or editing config files.
 
-Status: in progress. Settings source diagnostics now label source health, prioritize unhealthy sources above slow-but-working sources, include recommended actions for failed, warning-heavy, slow, and healthy sources, and summarize cache freshness across recent source runs.
+Status: in progress. Settings source diagnostics now label source health, prioritize unhealthy sources above slow-but-working sources, include source-control guidance and recommended actions for failed, warning-heavy, slow, and healthy sources, and summarize cache freshness across recent source runs.
 
 ## Sprint N: Data Portability & Recovery
 

@@ -139,8 +139,26 @@ def test_format_source_diagnostics_lines_handles_empty_and_cache_totals():
     ])
 
     assert lines == [
+        "Source controls: use Search > Sources to temporarily disable unreliable sources, then refresh diagnostics after reruns.",
         "RemoteOK (Slow): avg 1m 05s, max 1m 05s; 1 run; 3 jobs; "
         "0 warnings; 0 failures; consider cache freshness or source timeout tuning",
         "Cache totals: 2 hits, 1 misses, 1 writes, 0 uncached requests",
         "Cache freshness: 67% served from cache, 1 live refreshes",
     ]
+
+
+def test_format_source_diagnostics_lines_includes_source_control_guidance():
+    """Diagnostics explain how source health maps to existing source controls."""
+    lines = format_source_diagnostics_lines([
+        {
+            "sources": [
+                {"name": "Dice", "job_count": 1, "warning_count": 0, "duration_seconds": 1.0},
+            ],
+            "failed_sources": [],
+        }
+    ])
+
+    assert lines[0] == (
+        "Source controls: use Search > Sources to temporarily disable unreliable sources, "
+        "then refresh diagnostics after reruns."
+    )

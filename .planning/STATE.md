@@ -13,9 +13,9 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Milestone:** Product Iteration K-O — ACTIVE
 **Status:** Sprint M started
-**Last activity:** 2026-05-14 — completed Sprint L search review workspace and advanced Sprint M source health recommendations, source-priority diagnostics, and cache freshness visibility
+**Last activity:** 2026-05-14 — completed Sprint L search review workspace and advanced Sprint M source health recommendations, source-priority diagnostics, cache freshness visibility, and source-control guidance
 
-**Next step:** continue Sprint M with richer source retry/disable guidance and source-health Settings polish.
+**Next step:** continue Sprint M with remaining source-health Settings polish or move to Sprint N data portability.
 
 ## Performance Metrics
 
