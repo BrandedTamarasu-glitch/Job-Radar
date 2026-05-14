@@ -13,9 +13,9 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Milestone:** Product Iteration K-O — ACTIVE
 **Status:** Sprint L started
-**Last activity:** 2026-05-14 — completed Sprint K application editing and started Sprint L review-state persistence, report hydration, and GUI review queue summaries
+**Last activity:** 2026-05-14 — completed Sprint K application editing and started Sprint L review-state persistence, report hydration, GUI review queue summaries, and report review controls
 
-**Next step:** continue Sprint L by adding explicit shortlist, dismissed, and maybe-later controls to the report review workflow.
+**Next step:** continue Sprint L by carrying review-state counts into saved-search comparison metadata.
 
 ## Performance Metrics
 

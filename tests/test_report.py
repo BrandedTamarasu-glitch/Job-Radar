@@ -2161,6 +2161,29 @@ def test_html_report_shortlist_controls(sample_profile, sample_scored_results, s
     assert 'Toggle shortlist for this job' in html
 
 
+def test_html_report_includes_full_review_state_controls(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Report includes shortlist, maybe-later, and dismiss review controls."""
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=sample_scored_results,
+        manual_urls=sample_manual_urls,
+        sources_searched=["Dice"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+    html_path = result["html"]
+    with open(html_path, encoding='utf-8') as f:
+        html = f.read()
+
+    assert 'class="review-state-controls' in html
+    assert 'data-review-state="shortlisted"' in html
+    assert 'data-review-state="maybe_later"' in html
+    assert 'data-review-state="dismissed"' in html
+    assert 'Maybe Later' in html
+    assert 'Dismiss' in html
+
+
 def test_html_report_shortlist_javascript(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
     """Shortlist state persists independently from application status."""
     result = generate_report(
@@ -2181,6 +2204,10 @@ def test_html_report_shortlist_javascript(sample_profile, sample_scored_results,
     assert 'saveShortlistState' in html
     assert 'toggleShortlist' in html
     assert 'showShortlistOnly' in html
+    assert 'job-radar-review-state' in html
+    assert 'loadReviewState' in html
+    assert 'saveReviewState' in html
+    assert 'toggleReviewState' in html
 
 
 def test_html_report_embeds_persisted_review_state(

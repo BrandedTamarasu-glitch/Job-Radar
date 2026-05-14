@@ -2027,6 +2027,47 @@ def _generate_html_report(
       }}
     }}
 
+    function loadReviewState() {{
+      var reviewMap = {{}};
+      try {{
+        var stateEl = document.getElementById('review-state');
+        var data = stateEl ? JSON.parse(stateEl.textContent || '{{}}') : {{}};
+        var jobs = data.jobs || {{}};
+        for (var key in jobs) {{
+          if (Object.prototype.hasOwnProperty.call(jobs, key) && jobs[key].state) {{
+            reviewMap[key] = jobs[key].state;
+          }}
+        }}
+      }} catch (err) {{
+        console.warn('[review] Failed to load embedded review state:', err);
+      }}
+      try {{
+        var localData = localStorage.getItem('job-radar-review-state');
+        if (localData) {{
+          var localMap = JSON.parse(localData);
+          for (var localKey in localMap) {{
+            if (Object.prototype.hasOwnProperty.call(localMap, localKey)) {{
+              reviewMap[localKey] = localMap[localKey];
+            }}
+          }}
+        }}
+      }} catch (err) {{
+        console.warn('[review] Failed to load localStorage:', err);
+      }}
+      return reviewMap;
+    }}
+
+    function saveReviewState(reviewMap) {{
+      try {{
+        localStorage.setItem('job-radar-review-state', JSON.stringify(reviewMap));
+      }} catch (err) {{
+        if (err.name === 'QuotaExceededError') {{
+          notyf.error('Storage quota exceeded');
+        }}
+        console.error('[review] Failed to save localStorage:', err);
+      }}
+    }}
+
     function setShortlistButtonState(button, isShortlisted) {{
       button.classList.toggle('is-shortlisted', isShortlisted);
       button.setAttribute('aria-pressed', isShortlisted ? 'true' : 'false');
@@ -2042,24 +2083,66 @@ def _generate_html_report(
       }}
     }}
 
+    function refreshReviewStateButtons() {{
+      var reviewMap = loadReviewState();
+      var buttons = document.querySelectorAll('.review-state-btn[data-review-key]');
+      for (var i = 0; i < buttons.length; i++) {{
+        var button = buttons[i];
+        var key = button.getAttribute('data-review-key');
+        var state = button.getAttribute('data-review-state');
+        var isActive = reviewMap[key] === state;
+        button.classList.toggle('active', isActive);
+        button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      }}
+    }}
+
     function toggleShortlist(jobKey) {{
       var shortlistMap = loadShortlistState();
+      var reviewMap = loadReviewState();
       if (shortlistMap[jobKey]) {{
         delete shortlistMap[jobKey];
+        if (reviewMap[jobKey] === 'shortlisted') {{
+          delete reviewMap[jobKey];
+        }}
       }} else {{
         shortlistMap[jobKey] = true;
+        reviewMap[jobKey] = 'shortlisted';
       }}
       saveShortlistState(shortlistMap);
+      saveReviewState(reviewMap);
       refreshShortlistButtons();
+      refreshReviewStateButtons();
+      applyFilter();
+    }}
+
+    function toggleReviewState(jobKey, state) {{
+      var reviewMap = loadReviewState();
+      if (reviewMap[jobKey] === state) {{
+        delete reviewMap[jobKey];
+      }} else {{
+        reviewMap[jobKey] = state;
+      }}
+      saveReviewState(reviewMap);
+      refreshReviewStateButtons();
       applyFilter();
     }}
 
     function initializeShortlistControls() {{
       refreshShortlistButtons();
+      refreshReviewStateButtons();
       document.addEventListener('click', function(event) {{
-        if (!event.target.matches('.shortlist-btn[data-shortlist-key]')) return;
-        event.preventDefault();
-        toggleShortlist(event.target.getAttribute('data-shortlist-key'));
+        if (event.target.matches('.shortlist-btn[data-shortlist-key]')) {{
+          event.preventDefault();
+          toggleShortlist(event.target.getAttribute('data-shortlist-key'));
+          return;
+        }}
+        if (event.target.matches('.review-state-btn[data-review-key]')) {{
+          event.preventDefault();
+          toggleReviewState(
+            event.target.getAttribute('data-review-key'),
+            event.target.getAttribute('data-review-state')
+          );
+        }}
       }});
     }}
 
@@ -2503,12 +2586,20 @@ def _skill_callout_groups(skill: dict, profile: dict) -> list[tuple[str, list[st
 
 
 def _html_shortlist_button(job_key_val: str, *, compact: bool = False) -> str:
-    """Generate an accessible shortlist toggle button."""
+    """Generate accessible review-state controls."""
     margin_class = " mt-1" if compact else ""
     return (
-        f'<button type="button" class="btn btn-sm btn-outline-warning shortlist-btn{margin_class}" '
-        f'data-shortlist-key="{html.escape(job_key_val)}" aria-pressed="false" '
-        'aria-label="Toggle shortlist for this job">Shortlist</button>'
+        f'<span class="review-state-controls{margin_class}">'
+        f'<button type="button" class="btn btn-sm btn-outline-warning shortlist-btn" '
+        f'data-shortlist-key="{html.escape(job_key_val)}" data-review-state="shortlisted" '
+        'aria-pressed="false" aria-label="Toggle shortlist for this job">Shortlist</button> '
+        f'<button type="button" class="btn btn-sm btn-outline-secondary review-state-btn" '
+        f'data-review-key="{html.escape(job_key_val)}" data-review-state="maybe_later" '
+        'aria-pressed="false" aria-label="Mark this job as maybe later">Maybe Later</button> '
+        f'<button type="button" class="btn btn-sm btn-outline-danger review-state-btn" '
+        f'data-review-key="{html.escape(job_key_val)}" data-review-state="dismissed" '
+        'aria-pressed="false" aria-label="Dismiss this job from review">Dismiss</button>'
+        '</span>'
     )
 
 
