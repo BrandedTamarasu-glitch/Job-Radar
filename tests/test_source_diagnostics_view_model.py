@@ -3,6 +3,7 @@
 from job_radar.gui.source_diagnostics_view_model import (
     build_cache_totals,
     build_source_diagnostics,
+    format_cache_freshness_line,
     format_source_diagnostics_lines,
 )
 
@@ -110,6 +111,17 @@ def test_cache_totals_sum_history_cache_stats():
     }
 
 
+def test_cache_freshness_line_summarizes_cache_vs_live_requests():
+    """Cache freshness copy explains how much recent source data came from cache."""
+    assert format_cache_freshness_line({
+        "hits": 6,
+        "misses": 3,
+        "writes": 2,
+        "disabled": 1,
+    }) == "Cache freshness: 60% served from cache, 3 live refreshes, 1 uncached requests"
+    assert format_cache_freshness_line({"hits": 0, "misses": 0, "disabled": 0}) is None
+
+
 def test_format_source_diagnostics_lines_handles_empty_and_cache_totals():
     """Formatted diagnostics are plain text for the Settings tab."""
     assert format_source_diagnostics_lines([]) == [
@@ -130,4 +142,5 @@ def test_format_source_diagnostics_lines_handles_empty_and_cache_totals():
         "RemoteOK (Slow): avg 1m 05s, max 1m 05s; 1 run; 3 jobs; "
         "0 warnings; 0 failures; consider cache freshness or source timeout tuning",
         "Cache totals: 2 hits, 1 misses, 1 writes, 0 uncached requests",
+        "Cache freshness: 67% served from cache, 1 live refreshes",
     ]

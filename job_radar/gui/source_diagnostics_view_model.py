@@ -105,6 +105,25 @@ def build_cache_totals(history: list[dict[str, Any]]) -> dict[str, int]:
     return totals
 
 
+def format_cache_freshness_line(cache_totals: dict[str, int]) -> str | None:
+    """Return a compact cache freshness summary from aggregate counters."""
+    hits = int(cache_totals.get("hits") or 0)
+    misses = int(cache_totals.get("misses") or 0)
+    disabled = int(cache_totals.get("disabled") or 0)
+    total_reads = hits + misses + disabled
+    if total_reads == 0:
+        return None
+
+    cache_percent = round((hits / total_reads) * 100)
+    parts = [
+        f"{cache_percent}% served from cache",
+        f"{misses} live refreshes",
+    ]
+    if disabled:
+        parts.append(f"{disabled} uncached requests")
+    return "Cache freshness: " + ", ".join(parts)
+
+
 def format_source_diagnostics_lines(
     history: list[dict[str, Any]],
     *,
@@ -140,6 +159,9 @@ def format_source_diagnostics_lines(
             f"{cache_totals['writes']} writes, "
             f"{cache_totals['disabled']} uncached requests"
         )
+        freshness_line = format_cache_freshness_line(cache_totals)
+        if freshness_line:
+            lines.append(freshness_line)
     return lines
 
 
