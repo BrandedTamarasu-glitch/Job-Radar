@@ -53,7 +53,12 @@ from job_radar.gui.uninstall_dialog import (
     DeletionProgressDialog,
 )
 from job_radar.rate_limits import get_quota_usage
-from job_radar.saved_searches import load_search_history, record_recent_search
+from job_radar.saved_searches import (
+    load_search_history,
+    record_recent_search,
+    save_named_search,
+    summarize_search_config,
+)
 from job_radar.uninstaller import (
     get_uninstall_paths,
     create_backup,
@@ -120,6 +125,7 @@ class MainWindow(ctk.CTk):
         self._cache_status_label = None  # Settings cache maintenance status label reference
         self._source_diagnostics_textbox = None  # Settings source diagnostics text reference
         self._applications_export_status_label = None  # Applications tab export status
+        self._saved_search_status_label = None  # Search tab saved-search feedback
 
         # Download worker state
         self._download_worker = None
@@ -702,6 +708,7 @@ class MainWindow(ctk.CTk):
         self._search_controls.pack(pady=(0, 20))
 
         self._add_search_readiness_guidance(content_frame)
+        self._add_saved_searches_panel(content_frame)
         self._add_recent_searches_panel(content_frame)
 
         # Run Search button
@@ -820,6 +827,84 @@ class MainWindow(ctk.CTk):
         """Apply a recent search config to the current Search controls."""
         if hasattr(self, "_search_controls") and self._search_controls is not None:
             self._search_controls.set_defaults(config)
+
+    def _add_saved_searches_panel(self, parent):
+        """Show named saved searches and a save-current control."""
+        try:
+            saved_searches = load_search_history().get("saved", [])
+        except Exception:
+            saved_searches = []
+
+        panel = ctk.CTkFrame(parent)
+        panel.pack(fill="x", pady=(0, 16))
+        panel.grid_columnconfigure(0, weight=1)
+
+        ctk.CTkLabel(
+            panel,
+            text="Saved Searches",
+            font=ctk.CTkFont(size=13, weight="bold"),
+            anchor="w",
+        ).grid(row=0, column=0, sticky="w", padx=12, pady=(10, 4))
+
+        ctk.CTkButton(
+            panel,
+            text="Save Current",
+            width=130,
+            command=self._save_current_search,
+            fg_color="transparent",
+            border_width=2,
+        ).grid(row=0, column=1, sticky="e", padx=12, pady=(10, 4))
+
+        if not saved_searches:
+            ctk.CTkLabel(
+                panel,
+                text="No saved searches yet.",
+                font=ctk.CTkFont(size=12),
+                text_color="gray",
+            ).grid(row=1, column=0, sticky="w", padx=12, pady=(0, 8))
+        else:
+            for index, item in enumerate(saved_searches[:3], start=1):
+                name = item.get("name") or "Saved search"
+                config = item.get("config") or {}
+                ctk.CTkButton(
+                    panel,
+                    text=name,
+                    height=30,
+                    command=lambda cfg=config: self._apply_saved_search(cfg),
+                ).grid(row=index, column=0, columnspan=2, sticky="ew", padx=12, pady=(0, 6))
+
+        self._saved_search_status_label = ctk.CTkLabel(
+            panel,
+            text="",
+            font=ctk.CTkFont(size=12),
+            text_color="gray",
+        )
+        self._saved_search_status_label.grid(row=5, column=0, columnspan=2, sticky="w", padx=12, pady=(0, 8))
+
+    def _apply_saved_search(self, config: dict):
+        """Apply a named saved search config to the current Search controls."""
+        if hasattr(self, "_search_controls") and self._search_controls is not None:
+            self._search_controls.set_defaults(config)
+
+    def _save_current_search(self):
+        """Save the current search config using its generated summary label."""
+        if not hasattr(self, "_search_controls") or self._search_controls is None:
+            return
+        is_valid, error_msg = self._search_controls.validate()
+        if not is_valid:
+            if self._saved_search_status_label is not None:
+                self._saved_search_status_label.configure(text=error_msg, text_color="red")
+            return
+
+        config = self._search_controls.get_config()
+        name = summarize_search_config(config)
+        try:
+            save_named_search(name, config)
+            if self._saved_search_status_label is not None:
+                self._saved_search_status_label.configure(text=f"Saved: {name}", text_color="green")
+        except Exception as e:
+            if self._saved_search_status_label is not None:
+                self._saved_search_status_label.configure(text=f"Save failed: {e}", text_color="red")
 
     def _open_demo_report(self):
         """Generate and open the no-network demo report from the GUI."""

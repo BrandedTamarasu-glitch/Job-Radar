@@ -74,6 +74,7 @@ def test_search_idle_includes_recent_searches_panel():
     source = inspect.getsource(MainWindow._show_search_idle)
 
     assert "_add_recent_searches_panel" in source
+    assert "_add_saved_searches_panel" in source
 
 
 def test_recent_search_panel_loads_and_applies_configs():
@@ -86,5 +87,27 @@ def test_recent_search_panel_loads_and_applies_configs():
 
 def test_apply_recent_search_uses_search_controls_defaults():
     source = inspect.getsource(MainWindow._apply_recent_search)
+
+    assert "self._search_controls.set_defaults(config)" in source
+
+
+def test_saved_search_panel_loads_and_applies_named_searches():
+    source = inspect.getsource(MainWindow._add_saved_searches_panel)
+
+    assert "Saved Searches" in source
+    assert "Save Current" in source
+    assert "_apply_saved_search" in source
+
+
+def test_save_current_search_persists_named_search():
+    source = inspect.getsource(MainWindow._save_current_search)
+
+    assert "summarize_search_config(config)" in source
+    assert "save_named_search(name, config)" in source
+    assert "self._search_controls.validate()" in source
+
+
+def test_apply_saved_search_uses_search_controls_defaults():
+    source = inspect.getsource(MainWindow._apply_saved_search)
 
     assert "self._search_controls.set_defaults(config)" in source
