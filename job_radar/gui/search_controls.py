@@ -10,6 +10,13 @@ from typing import Optional
 import customtkinter as ctk
 
 from job_radar.config import load_config
+from job_radar.match_calibration import (
+    apply_match_calibration,
+    get_match_calibration,
+    infer_match_calibration,
+    match_calibration_choices,
+    match_calibration_label,
+)
 from job_radar.search_presets import SEARCH_PRESETS, preset_choices
 from job_radar.sources import MANUAL_SOURCE_REGISTRY, SOURCE_PHASE_ORDER, SOURCE_REGISTRY
 
@@ -120,9 +127,29 @@ class SearchControls(ctk.CTkFrame):
         score_section.grid(row=1, column=0, sticky="ew", padx=10, pady=10)
         score_section.grid_columnconfigure(1, weight=1)
 
-        ctk.CTkLabel(score_section, text="Minimum Score:").grid(row=0, column=0, sticky="w", padx=(0, 10))
+        ctk.CTkLabel(score_section, text="Match Calibration:").grid(row=0, column=0, sticky="w", padx=(0, 10))
+        self._match_calibration_var = ctk.StringVar(value="Balanced")
+        self._match_calibration_menu = ctk.CTkOptionMenu(
+            score_section,
+            values=match_calibration_choices(),
+            variable=self._match_calibration_var,
+            command=self._on_match_calibration_changed,
+        )
+        self._match_calibration_menu.grid(row=0, column=1, sticky="ew")
+
+        self._match_calibration_description = ctk.CTkLabel(
+            score_section,
+            text="Use the default threshold for a practical mix of reach and quality.",
+            font=ctk.CTkFont(size=11),
+            text_color="gray",
+            wraplength=520,
+            justify="left",
+        )
+        self._match_calibration_description.grid(row=1, column=0, columnspan=2, sticky="w", pady=(5, 8))
+
+        ctk.CTkLabel(score_section, text="Minimum Score:").grid(row=2, column=0, sticky="w", padx=(0, 10))
         self._min_score = ctk.CTkEntry(score_section, width=100)
-        self._min_score.grid(row=0, column=1, sticky="w")
+        self._min_score.grid(row=2, column=1, sticky="w")
         self._min_score.bind("<FocusOut>", self._validate_score)
 
         # Score error label (hidden initially)
@@ -132,7 +159,7 @@ class SearchControls(ctk.CTkFrame):
             text_color="red",
             font=ctk.CTkFont(size=11)
         )
-        self._score_error_label.grid(row=1, column=0, columnspan=2, sticky="w", pady=(2, 0))
+        self._score_error_label.grid(row=3, column=0, columnspan=2, sticky="w", pady=(2, 0))
 
         # Search preset section
         preset_section = ctk.CTkFrame(self, fg_color="transparent")
@@ -364,6 +391,17 @@ class SearchControls(ctk.CTkFrame):
             self._from_date.configure(state="disabled")
             self._to_date.configure(state="disabled")
 
+    def _on_match_calibration_changed(self, value: str):
+        """Apply a match calibration preset to visible search controls."""
+        self._set_match_calibration_description(value)
+        calibrated = apply_match_calibration({}, value)
+        if calibrated.get("match_calibration") == "custom":
+            return
+
+        self._min_score.delete(0, "end")
+        self._min_score.insert(0, str(calibrated["min_score"]))
+        self._set_location_strictness(calibrated["location_strictness"])
+
     def _validate_score(self, event=None):
         """Validate min_score on FocusOut event.
 
@@ -474,6 +512,13 @@ class SearchControls(ctk.CTkFrame):
                 location_strictness_label,
                 "profile",
             ),
+            "match_calibration": infer_match_calibration({
+                "min_score": min_score,
+                "location_strictness": LOCATION_STRICTNESS_OPTIONS.get(
+                    location_strictness_label,
+                    "profile",
+                ),
+            }),
         }
 
     def set_defaults(self, config: dict):
@@ -525,11 +570,7 @@ class SearchControls(ctk.CTkFrame):
             self._preferred_skills.insert(0, config["preferred_skills"] or "")
 
         if "location_strictness" in config:
-            strictness = config["location_strictness"] or "profile"
-            for label, value in LOCATION_STRICTNESS_OPTIONS.items():
-                if value == strictness:
-                    self._location_strictness_var.set(label)
-                    break
+            self._set_location_strictness(config["location_strictness"] or "profile")
 
         if "freshness" in config:
             freshness = config["freshness"] or "any"
@@ -550,3 +591,27 @@ class SearchControls(ctk.CTkFrame):
             self._toggle_date_filter()
             self._to_date.delete(0, "end")
             self._to_date.insert(0, config["to_date"])
+
+        calibration = infer_match_calibration(self.get_config())
+        calibration_label = match_calibration_label(config.get("match_calibration") or calibration)
+        if calibration_label == "Custom":
+            calibration_label = match_calibration_label(calibration)
+        self._match_calibration_var.set(calibration_label)
+        self._set_match_calibration_description(calibration_label)
+
+    def _set_location_strictness(self, strictness: str):
+        """Set location strictness option by stored value."""
+        for label, value in LOCATION_STRICTNESS_OPTIONS.items():
+            if value == strictness:
+                self._location_strictness_var.set(label)
+                break
+
+    def _set_match_calibration_description(self, value: str):
+        """Refresh calibration helper text."""
+        preset = get_match_calibration(value)
+        if preset:
+            self._match_calibration_description.configure(text=str(preset["description"]))
+        else:
+            self._match_calibration_description.configure(
+                text="Use the current score and location controls as a custom calibration."
+            )

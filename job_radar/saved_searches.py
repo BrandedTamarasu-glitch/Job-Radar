@@ -27,6 +27,7 @@ SEARCH_CONFIG_KEYS = (
     "required_skills",
     "preferred_skills",
     "location_strictness",
+    "match_calibration",
 )
 
 

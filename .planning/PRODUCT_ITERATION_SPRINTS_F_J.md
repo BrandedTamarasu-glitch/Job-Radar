@@ -48,6 +48,8 @@ Goal: give users practical control over ranking behavior without making them tun
 
 Deliverable: users can understand and tune why jobs appear, rank, or get filtered.
 
+Status: in progress. Match-calibration presets are defined for broader, balanced, and strict searches; the Search tab exposes them, applies the matching minimum-score/location controls, and saved searches persist inferred calibration state.
+
 ## Sprint I: Application Workflow Upgrade
 
 Goal: make the application pipeline useful after the search is complete.

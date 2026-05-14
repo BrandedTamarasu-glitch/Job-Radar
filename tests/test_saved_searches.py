@@ -34,6 +34,7 @@ def test_normalize_search_config_keeps_known_json_safe_keys():
         "min_score": 3.2,
         "new_only": True,
         "selected_sources": ["remoteok", "", "dice"],
+        "match_calibration": "strict",
         "unknown": "ignored",
     }
 
@@ -43,6 +44,7 @@ def test_normalize_search_config_keeps_known_json_safe_keys():
     assert normalized["min_score"] == 3.2
     assert normalized["new_only"] is True
     assert normalized["selected_sources"] == ["remoteok", "dice"]
+    assert normalized["match_calibration"] == "strict"
     assert "unknown" not in normalized
 
 
