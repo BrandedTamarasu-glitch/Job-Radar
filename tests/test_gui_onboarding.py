@@ -48,3 +48,9 @@ def test_profile_form_renders_field_hints():
     assert 'self._add_field_hint(form_frame, "target_titles")' in source
     assert 'self._add_field_hint(form_frame, "core_skills")' in source
     assert 'self._add_field_hint(form_frame, "dealbreakers")' in source
+
+
+def test_search_complete_loads_profile_for_zero_result_guidance():
+    source = inspect.getsource(MainWindow._show_search_complete)
+
+    assert "zero_result_lines(job_count, self._load_current_profile_for_guidance())" in source

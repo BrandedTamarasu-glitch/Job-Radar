@@ -15,6 +15,7 @@ Goal: help a new job seeker understand value quickly and create a useful first p
 - Ensure GUI-created profiles get the same default scoring and staffing settings as CLI wizard profiles.
 - Surface profile-readiness guidance in the Search tab with a direct path back to Profile.
 - Add profile-form field hints for titles, skills, location, compensation, and dealbreakers.
+- Tailor GUI zero-result next actions with profile-readiness recommendations.
 - Surface first-search guidance without requiring users to read docs first.
 - Improve empty and incomplete profile states with concrete next actions.
 

@@ -915,7 +915,7 @@ class MainWindow(ctk.CTk):
             )
             warning_label.pack(pady=(0, 12))
 
-        next_actions = zero_result_lines(job_count)
+        next_actions = zero_result_lines(job_count, self._load_current_profile_for_guidance())
         if next_actions:
             next_action_text = "Try next:\n" + "\n".join(f"- {line}" for line in next_actions)
             next_action_label = ctk.CTkLabel(
@@ -964,6 +964,15 @@ class MainWindow(ctk.CTk):
             border_width=2
         )
         new_search_btn.pack()
+
+    def _load_current_profile_for_guidance(self) -> dict | None:
+        """Load the saved profile for non-blocking guidance text."""
+        if not self._profile_exists:
+            return None
+        try:
+            return load_profile(get_data_dir() / "profile.json")
+        except Exception:
+            return None
 
     def _check_queue(self):
         """Process messages from worker thread queue (runs in main GUI thread)."""

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from job_radar.profile_readiness import assess_profile_readiness, readiness_guidance_lines
 from job_radar.report import ZERO_RESULTS_TIPS
 
 
@@ -87,11 +88,20 @@ def _format_duration(seconds: float) -> str:
     return f"{minutes}m {remaining_seconds:02d}s"
 
 
-def zero_result_lines(job_count: int) -> list[str]:
+def zero_result_lines(job_count: int, profile: dict | None = None) -> list[str]:
     """Return next-action guidance for an empty search result."""
     if job_count != 0:
         return []
-    return list(ZERO_RESULTS_TIPS)
+
+    lines: list[str] = []
+    if profile:
+        readiness = assess_profile_readiness(profile)
+        lines.extend(readiness_guidance_lines(readiness, limit=2))
+
+    for tip in ZERO_RESULTS_TIPS:
+        if tip not in lines:
+            lines.append(tip)
+    return lines
 
 
 def cancellation_message() -> str:

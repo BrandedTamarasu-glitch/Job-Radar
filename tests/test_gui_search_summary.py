@@ -108,6 +108,21 @@ def test_zero_result_lines_reuse_next_action_guidance():
     assert any("minimum score" in line for line in lines)
 
 
+def test_zero_result_lines_prioritize_profile_readiness_guidance():
+    """Zero-result GUI guidance starts with profile-specific next actions when available."""
+    profile = {
+        "name": "Test User",
+        "target_titles": ["Backend Engineer"],
+        "core_skills": ["Python"],
+    }
+
+    lines = zero_result_lines(0, profile)
+
+    assert lines[0] == "Add years of experience so seniority matching is more accurate"
+    assert lines[1] == "Add a target location or work arrangement to reduce weak matches"
+    assert any("minimum score" in line for line in lines)
+
+
 def test_interruption_messages_explain_report_state():
     """Cancel and error messages explain whether a report exists."""
     assert "No new report was generated" in cancellation_message()
