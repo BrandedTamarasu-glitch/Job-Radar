@@ -39,10 +39,13 @@ from job_radar.tracker import (
     get_application_next_actions,
     get_source_health_history,
     update_application_details,
+    update_application_status,
 )
 from job_radar.update_checker import UpdateChecker, launch_installer, cleanup_old_installers, extract_summary
 from job_radar.gui.applications_view_model import (
     append_application_note,
+    application_status_from_label,
+    application_status_menu_labels,
     build_applications_view_model,
 )
 from job_radar.gui.profile_form import ProfileForm
@@ -702,11 +705,23 @@ class MainWindow(ctk.CTk):
                     justify="left",
                 ).grid(row=item_index * 3 - 1, column=0, sticky="ew", padx=16, pady=(0, 4))
 
-                template_frame = ctk.CTkFrame(group_frame, fg_color="transparent")
-                template_frame.grid(row=item_index * 3, column=0, sticky="w", padx=16, pady=(0, 8))
+                edit_frame = ctk.CTkFrame(group_frame, fg_color="transparent")
+                edit_frame.grid(row=item_index * 3, column=0, sticky="w", padx=16, pady=(0, 8))
+                status_menu = ctk.CTkOptionMenu(
+                    edit_frame,
+                    values=application_status_menu_labels(item.status),
+                    width=150,
+                    command=lambda selected, row=item: self._update_application_status_from_menu(
+                        parent,
+                        row,
+                        selected,
+                    ),
+                )
+                status_menu.set(item.status_label)
+                status_menu.pack(side="left", padx=(0, 10))
                 for template in templates:
                     ctk.CTkButton(
-                        template_frame,
+                        edit_frame,
                         text=f"Add {template.label}",
                         width=140,
                         height=28,
@@ -789,6 +804,28 @@ class MainWindow(ctk.CTk):
             if self._applications_export_status_label is not None:
                 self._applications_export_status_label.configure(
                     text=f"Template insert failed: {e}",
+                    text_color="red",
+                )
+
+    def _update_application_status_from_menu(self, parent, application_row, selected_label: str):
+        """Update an application's status from a GUI menu selection."""
+        try:
+            status = application_status_from_label(selected_label)
+            if status == application_row.status:
+                return
+            update_application_status(
+                application_row.title,
+                application_row.company,
+                status,
+                notes=application_row.notes,
+                next_action=application_row.next_action,
+                next_action_date=application_row.next_action_date,
+            )
+            self._build_applications_tab(parent)
+        except Exception as e:
+            if self._applications_export_status_label is not None:
+                self._applications_export_status_label.configure(
+                    text=f"Status update failed: {e}",
                     text_color="red",
                 )
 

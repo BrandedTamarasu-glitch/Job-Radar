@@ -3,6 +3,8 @@
 from job_radar.gui.applications_view_model import (
     APPLICATION_STATUS_ORDER,
     append_application_note,
+    application_status_from_label,
+    application_status_menu_labels,
     build_applications_view_model,
     normalize_application_status,
 )
@@ -106,3 +108,25 @@ def test_append_application_note_adds_template_after_existing_notes():
 def test_append_application_note_handles_empty_notes_and_blank_template():
     assert append_application_note("", "  Draft cover letter.  ") == "Draft cover letter."
     assert append_application_note("Existing note.", "   ") == "Existing note."
+
+
+def test_application_status_menu_labels_puts_current_status_first():
+    labels = application_status_menu_labels("interviewing")
+
+    assert labels[0] == "Interviewing"
+    assert labels == ["Interviewing", "Applied", "Offer", "Rejected", "Skipped"]
+
+
+def test_application_status_menu_labels_defaults_to_editable_statuses():
+    assert application_status_menu_labels("needs_status") == [
+        "Applied",
+        "Interviewing",
+        "Offer",
+        "Rejected",
+        "Skipped",
+    ]
+
+
+def test_application_status_from_label_maps_display_labels_to_tracker_values():
+    assert application_status_from_label(" Applied ") == "applied"
+    assert application_status_from_label("INTERVIEWING") == "interviewing"

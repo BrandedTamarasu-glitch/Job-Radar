@@ -24,6 +24,14 @@ APPLICATION_STATUS_ORDER = [
     "needs_status",
 ]
 
+APPLICATION_EDITABLE_STATUS_ORDER = [
+    "applied",
+    "interviewing",
+    "offer",
+    "rejected",
+    "skipped",
+]
+
 
 @dataclass(frozen=True)
 class ApplicationRow:
@@ -112,3 +120,22 @@ def append_application_note(existing_notes: str | None, note: str) -> str:
     if not existing:
         return rendered
     return f"{existing}\n\n{rendered}"
+
+
+def application_status_menu_labels(current_status: str | None) -> list[str]:
+    """Return status menu labels with the current editable status first."""
+    current = normalize_application_status(current_status)
+    statuses = list(APPLICATION_EDITABLE_STATUS_ORDER)
+    if current in statuses:
+        statuses.remove(current)
+        statuses.insert(0, current)
+    return [APPLICATION_STATUS_LABELS[status] for status in statuses]
+
+
+def application_status_from_label(label: str) -> str:
+    """Map a display label selected in the GUI back to a tracker status value."""
+    normalized = label.strip().casefold()
+    for status in APPLICATION_EDITABLE_STATUS_ORDER:
+        if APPLICATION_STATUS_LABELS[status].casefold() == normalized:
+            return status
+    raise ValueError(f"Unknown application status label: {label}")
