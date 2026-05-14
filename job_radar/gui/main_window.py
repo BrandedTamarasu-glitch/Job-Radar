@@ -30,7 +30,11 @@ from job_radar.profile_readiness import (
 )
 from job_radar.profile_manager import load_profile
 from job_radar.config import load_config
-from job_radar.tracker import get_all_application_statuses, get_source_health_history
+from job_radar.tracker import (
+    get_all_application_statuses,
+    get_application_next_actions,
+    get_source_health_history,
+)
 from job_radar.update_checker import UpdateChecker, launch_installer, cleanup_old_installers, extract_summary
 from job_radar.gui.applications_view_model import build_applications_view_model
 from job_radar.gui.profile_form import ProfileForm
@@ -620,6 +624,10 @@ class MainWindow(ctk.CTk):
         self._applications_export_status_label.grid(row=1, column=0, sticky="w", pady=(0, 8))
 
         applications = get_all_application_statuses()
+        next_actions = get_application_next_actions(
+            applications=applications,
+            limit=5,
+        )
         groups = build_applications_view_model(applications)
         total_rows = sum(group.count for group in groups)
 
@@ -633,6 +641,10 @@ class MainWindow(ctk.CTk):
             return
 
         row_index = 2
+        if next_actions:
+            self._add_application_next_action_queue(scroll_frame, row_index, next_actions)
+            row_index += 1
+
         for group in groups:
             group_frame = ctk.CTkFrame(scroll_frame)
             group_frame.grid(row=row_index, column=0, sticky="ew", pady=(0, 10))
@@ -680,6 +692,53 @@ class MainWindow(ctk.CTk):
                     anchor="w",
                     justify="left",
                 ).grid(row=item_index * 2, column=0, sticky="ew", padx=16, pady=(0, 6))
+
+    def _add_application_next_action_queue(self, parent, row_index: int, next_actions: list[dict]):
+        """Add a compact follow-up queue to the Applications tab."""
+        queue_frame = ctk.CTkFrame(parent)
+        queue_frame.grid(row=row_index, column=0, sticky="ew", pady=(0, 12))
+        queue_frame.grid_columnconfigure(0, weight=1)
+
+        ctk.CTkLabel(
+            queue_frame,
+            text="Next Actions",
+            font=ctk.CTkFont(size=14, weight="bold"),
+        ).grid(row=0, column=0, sticky="w", padx=10, pady=(8, 4))
+
+        for index, action in enumerate(next_actions, start=1):
+            due_text = self._format_next_action_due_text(action)
+            title = action.get("title") or "Untitled"
+            company = action.get("company") or "Unknown company"
+            status = str(action.get("status") or "needs_status").replace("_", " ").title()
+
+            ctk.CTkLabel(
+                queue_frame,
+                text=f"{index}. {action['next_action']} — {title} at {company}",
+                font=ctk.CTkFont(size=13, weight="bold"),
+                anchor="w",
+            ).grid(row=index * 2 - 1, column=0, sticky="ew", padx=16, pady=(4, 0))
+
+            ctk.CTkLabel(
+                queue_frame,
+                text=f"{due_text} | {status}",
+                text_color="gray",
+                wraplength=760,
+                anchor="w",
+                justify="left",
+            ).grid(row=index * 2, column=0, sticky="ew", padx=16, pady=(0, 6))
+
+    def _format_next_action_due_text(self, action: dict) -> str:
+        """Return a compact due-date label for an application next action."""
+        days_until = action.get("days_until")
+        if action.get("is_overdue"):
+            return f"Overdue by {abs(int(days_until or 0))} day(s)"
+        if days_until == 0:
+            return "Due today"
+        if isinstance(days_until, int) and days_until > 0:
+            return f"Due in {days_until} day(s)"
+        if action.get("next_action_date"):
+            return f"Due {action['next_action_date']}"
+        return "No due date"
 
     def _export_applications_csv(self):
         """Export tracked application pipeline entries to CSV."""

@@ -32,6 +32,24 @@ def test_profile_readiness_guidance_links_to_profile_tab():
     assert "command=self._show_profile_tab" in source
 
 
+def test_applications_tab_includes_next_action_queue():
+    source = inspect.getsource(MainWindow._build_applications_tab)
+
+    assert "get_application_next_actions" in source
+    assert "_add_application_next_action_queue" in source
+    assert "limit=5" in source
+
+
+def test_next_action_due_text_formats_queue_states():
+    assert MainWindow._format_next_action_due_text(None, {
+        "is_overdue": True,
+        "days_until": -2,
+    }) == "Overdue by 2 day(s)"
+    assert MainWindow._format_next_action_due_text(None, {"days_until": 0}) == "Due today"
+    assert MainWindow._format_next_action_due_text(None, {"days_until": 3}) == "Due in 3 day(s)"
+    assert MainWindow._format_next_action_due_text(None, {}) == "No due date"
+
+
 def test_profile_form_hints_cover_match_quality_fields():
     assert "target_titles" in PROFILE_FIELD_HINTS
     assert "core_skills" in PROFILE_FIELD_HINTS
