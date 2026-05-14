@@ -158,6 +158,24 @@ def test_save_adds_schema_version(valid_profile, profile_path, mock_backup_dir):
     assert loaded["schema_version"] == CURRENT_SCHEMA_VERSION
 
 
+def test_save_adds_default_scoring_weights(valid_profile, profile_path, mock_backup_dir):
+    """Saved profiles include default scoring weights even from minimal GUI data."""
+    assert "scoring_weights" not in valid_profile
+    save_profile(valid_profile, profile_path)
+
+    loaded = json.loads(profile_path.read_text(encoding="utf-8"))
+    assert loaded["scoring_weights"] == DEFAULT_SCORING_WEIGHTS
+
+
+def test_save_adds_default_staffing_preference(valid_profile, profile_path, mock_backup_dir):
+    """Saved profiles include neutral staffing preference even from minimal GUI data."""
+    assert "staffing_preference" not in valid_profile
+    save_profile(valid_profile, profile_path)
+
+    loaded = json.loads(profile_path.read_text(encoding="utf-8"))
+    assert loaded["staffing_preference"] == "neutral"
+
+
 # ---------------------------------------------------------------------------
 # 3. Backup tests
 # ---------------------------------------------------------------------------

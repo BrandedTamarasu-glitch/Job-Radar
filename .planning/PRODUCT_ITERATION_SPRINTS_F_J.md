@@ -12,6 +12,7 @@ Goal: help a new job seeker understand value quickly and create a useful first p
 
 - Add GUI access to the existing no-network demo report experience.
 - Add profile readiness checks for fields that strongly affect match quality.
+- Ensure GUI-created profiles get the same default scoring and staffing settings as CLI wizard profiles.
 - Surface first-search guidance without requiring users to read docs first.
 - Improve empty and incomplete profile states with concrete next actions.
 

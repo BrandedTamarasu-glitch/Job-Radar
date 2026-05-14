@@ -286,9 +286,11 @@ def save_profile(profile_data: dict, profile_path: Path) -> None:
     4. Rotates old backups (keeps ``MAX_BACKUPS`` most recent).
     5. Atomically writes the new profile.
     """
-    validate_profile(profile_data)
-
     profile_data.setdefault("schema_version", CURRENT_SCHEMA_VERSION)
+    profile_data.setdefault("scoring_weights", dict(DEFAULT_SCORING_WEIGHTS))
+    profile_data.setdefault("staffing_preference", "neutral")
+
+    validate_profile(profile_data)
 
     # Backup existing file
     file_existed = profile_path.exists()
