@@ -734,6 +734,13 @@ class MainWindow(ctk.CTk):
                     height=28,
                     command=lambda row=item: self._prompt_application_due_date(parent, row),
                 ).pack(side="left", padx=(0, 10))
+                ctk.CTkButton(
+                    edit_frame,
+                    text="Edit Notes",
+                    width=110,
+                    height=28,
+                    command=lambda row=item: self._prompt_application_notes(parent, row),
+                ).pack(side="left", padx=(0, 10))
                 for template in templates:
                     ctk.CTkButton(
                         edit_frame,
@@ -876,11 +883,29 @@ class MainWindow(ctk.CTk):
             next_action_date=value,
         )
 
+    def _prompt_application_notes(self, parent, application_row):
+        """Prompt for replacement notes and persist them to the tracker."""
+        dialog = ctk.CTkInputDialog(
+            text="Notes",
+            title=f"{application_row.title or 'Application'} notes",
+        )
+        value = normalize_application_detail_input(dialog.get_input())
+        if value is None:
+            return
+        self._update_application_details_from_gui(
+            parent,
+            application_row,
+            notes=value,
+            next_action=application_row.next_action,
+            next_action_date=application_row.next_action_date,
+        )
+
     def _update_application_details_from_gui(
         self,
         parent,
         application_row,
         *,
+        notes: str | None = None,
         next_action: str | None = None,
         next_action_date: str | None = None,
     ):
@@ -889,6 +914,7 @@ class MainWindow(ctk.CTk):
             update_application_details(
                 application_row.title,
                 application_row.company,
+                notes=notes,
                 next_action=next_action,
                 next_action_date=next_action_date,
             )

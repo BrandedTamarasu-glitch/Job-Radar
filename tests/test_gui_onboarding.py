@@ -40,6 +40,15 @@ def test_applications_tab_includes_next_action_queue():
     assert "limit=5" in source
 
 
+def test_applications_tab_includes_direct_edit_controls():
+    source = inspect.getsource(MainWindow._build_applications_tab)
+
+    assert "_prompt_application_next_action" in source
+    assert "_prompt_application_due_date" in source
+    assert "_prompt_application_notes" in source
+    assert "Edit Notes" in source
+
+
 def test_next_action_due_text_formats_queue_states():
     assert MainWindow._format_next_action_due_text(None, {
         "is_overdue": True,
