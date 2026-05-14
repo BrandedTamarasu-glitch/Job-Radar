@@ -5,7 +5,7 @@ A desktop job search tool that searches multiple job boards, scores listings aga
 ## What's New in v2.5.0
 
 - **More precise GUI searches:** Presets, source toggles, company filters, must-have and nice-to-have skill controls, location strictness, and freshness presets are now available directly from the GUI.
-- **Application follow-through:** The GUI now includes an Applications tab, application notes/next actions, follow-up queueing, CSV export, and report filtering for rejected/skipped entries.
+- **Application follow-through:** The GUI now includes an Applications tab, application notes/next actions, follow-up queueing, timeline-aware CSV export, and report filtering for rejected/skipped entries.
 - **Performance visibility:** Search summaries and Settings now show source timing, source health history, cache hit/miss counters, slowest-source diagnostics, source-specific cache TTLs, and improved cancellation boundaries.
 - **Faster report review:** Reports now include shortlist state, keyboard navigation, compact/detail mode, mobile review improvements, why-this-matched summaries, filtered-out explanations, and grouped must-have/nice-to-have skill callouts.
 
@@ -441,7 +441,7 @@ python -m job_radar --help
 
 ### Running Tests
 
-The project includes a comprehensive test suite with 845 automated tests:
+The project includes a comprehensive test suite with 846 automated tests:
 
 ```bash
 # Install dev dependencies
@@ -479,9 +479,9 @@ For release builds, also run the platform build script and smoke-test the genera
 - Scoring config (25 tests) - validates scoring weights, staffing preference, normalization, live preview
 - Match calibration (5 tests) - validates broader, balanced, strict, and custom search calibration behavior
 - Saved searches (16 tests) - validates recent search storage, named search storage, run metadata, previous-run deltas, run summary display, config normalization, deduplication, deletion, history caps, and labels
-- Applications export (2 tests) - validates application pipeline CSV rows and UTF-8 CSV output
+- Applications export (2 tests) - validates application pipeline CSV rows, timeline summaries, and UTF-8 CSV output
 - Applications view model (3 tests) - validates grouped pipeline statuses and note-only entries
-- Tracker functions (24 tests) - validates deduplication, pruning, app-data storage, application notes/next actions, follow-up queueing, application-status report filtering, source health history, and stats aggregation with tmp_path isolation
+- Tracker functions (25 tests) - validates deduplication, pruning, app-data storage, application notes/next actions, timeline recording, follow-up queueing, application-status report filtering, source health history, and stats aggregation with tmp_path isolation
 - Config module (24 tests) - validates config file parsing, CLI override, defaults, validation
 - Wizard (38 tests) - validates setup flow, PDF integration, navigation, error handling
 - API integration (58 tests) - validates all 11 API sources, mappers, rate limiting, source selection, cache stats propagation, per-source cache TTLs, source cancellation boundaries, manual source links, deduplication

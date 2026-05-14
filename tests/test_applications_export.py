@@ -20,6 +20,12 @@ def test_application_rows_for_export_flattens_grouped_pipeline_entries():
             "next_action": "Follow up",
             "next_action_date": "2026-05-20",
             "updated": "2026-05-13T10:00:00",
+            "timeline": [
+                {
+                    "timestamp": "2026-05-13T10:00:00",
+                    "changes": {"status": {}, "next_action": {}},
+                }
+            ],
         },
         "platform engineer||northstar": {
             "title": "Platform Engineer",
@@ -40,6 +46,7 @@ def test_application_rows_for_export_flattens_grouped_pipeline_entries():
             "next_action": "Follow up",
             "next_action_date": "2026-05-20",
             "updated": "2026-05-13T10:00:00",
+            "timeline": "2026-05-13: next_action, status",
             "job_key": "backend engineer||acme",
         },
         {
@@ -50,6 +57,7 @@ def test_application_rows_for_export_flattens_grouped_pipeline_entries():
             "next_action": "",
             "next_action_date": "",
             "updated": "2026-05-14T10:00:00",
+            "timeline": "",
             "job_key": "platform engineer||northstar",
         },
     ]
@@ -66,6 +74,12 @@ def test_export_applications_csv_writes_utf8_csv(tmp_path):
             "next_action": "Send thank-you note",
             "next_action_date": "2026-05-21",
             "updated": "2026-05-13T10:00:00",
+            "timeline": [
+                {
+                    "timestamp": "2026-05-13T10:00:00",
+                    "changes": {"status": {}, "notes": {}},
+                }
+            ],
         },
     }
 
@@ -85,6 +99,7 @@ def test_export_applications_csv_writes_utf8_csv(tmp_path):
             "next_action": "Send thank-you note",
             "next_action_date": "2026-05-21",
             "updated": "2026-05-13T10:00:00",
+            "timeline": "2026-05-13: notes, status",
             "job_key": "backend engineer||acme",
         }
     ]

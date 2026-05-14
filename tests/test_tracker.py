@@ -294,6 +294,8 @@ def test_update_application_status_persists_notes_and_next_action(tmp_path):
     assert entry["next_action"] == "Follow up with recruiter"
     assert entry["next_action_date"] == "2026-05-20"
     assert "updated" in entry
+    assert entry["timeline"][0]["changes"]["status"]["to"] == "applied"
+    assert entry["timeline"][0]["changes"]["notes"]["to"] == "Submitted through referral"
 
 
 def test_update_application_details_preserves_existing_status(tmp_path):
@@ -316,6 +318,10 @@ def test_update_application_details_preserves_existing_status(tmp_path):
     assert entry["notes"] == "Panel scheduled"
     assert entry["next_action"] == "Prepare system design examples"
     assert entry["next_action_date"] == "2026-05-21"
+    assert len(entry["timeline"]) == 2
+    assert "status" in entry["timeline"][0]["changes"]
+    assert "notes" in entry["timeline"][1]["changes"]
+    assert "next_action" in entry["timeline"][1]["changes"]
 
 
 def test_update_application_details_can_create_unstatused_entry(tmp_path):
@@ -334,6 +340,26 @@ def test_update_application_details_can_create_unstatused_entry(tmp_path):
     assert entry["notes"] == "Interesting role; review later"
     assert entry["title"] == "Backend Engineer"
     assert entry["company"] == "Acme"
+    assert entry["timeline"][0]["changes"]["notes"]["to"] == "Interesting role; review later"
+
+
+def test_application_timeline_skips_unchanged_detail_updates(tmp_path):
+    """Application timeline only records fields that actually changed."""
+    with patch("job_radar.tracker._TRACKER_PATH", str(tmp_path / "tracker.json")):
+        update_application_details(
+            "Backend Engineer",
+            "Acme",
+            notes="Same note",
+        )
+        update_application_details(
+            "Backend Engineer",
+            "Acme",
+            notes="Same note",
+        )
+
+        entry = get_application_entry("Backend Engineer", "Acme")
+
+    assert len(entry["timeline"]) == 1
 
 
 def test_filter_scored_by_application_status_hides_rejected_and_skipped(job_factory):

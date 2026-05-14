@@ -14,6 +14,7 @@ APPLICATION_EXPORT_COLUMNS = [
     "next_action",
     "next_action_date",
     "updated",
+    "timeline",
     "job_key",
 ]
 
@@ -31,9 +32,21 @@ def application_rows_for_export(applications: dict) -> list[dict[str, str]]:
                 "next_action": row.next_action,
                 "next_action_date": row.next_action_date,
                 "updated": row.updated,
+                "timeline": _format_timeline_summary(applications.get(row.key, {})),
                 "job_key": row.key,
             })
     return rows
+
+
+def _format_timeline_summary(entry: dict) -> str:
+    """Return a compact timeline summary for CSV portability."""
+    parts = []
+    for event in entry.get("timeline") or []:
+        timestamp = str(event.get("timestamp") or "")[:10]
+        changed = ", ".join(sorted((event.get("changes") or {}).keys()))
+        if timestamp and changed:
+            parts.append(f"{timestamp}: {changed}")
+    return " | ".join(parts)
 
 
 def export_applications_csv(applications: dict, output_path: str | Path) -> Path:

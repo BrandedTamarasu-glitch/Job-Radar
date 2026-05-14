@@ -238,12 +238,13 @@ def update_application_status(
     tracker = _load_tracker()
     key = job_key(title, company)
     existing = tracker["applications"].get(key, {})
+    timestamp = datetime.now().isoformat()
     entry = {
         **existing,
         "title": title,
         "company": company,
         "status": status,
-        "updated": datetime.now().isoformat(),
+        "updated": timestamp,
     }
     if notes is not None:
         entry["notes"] = notes
@@ -251,6 +252,12 @@ def update_application_status(
         entry["next_action"] = next_action
     if next_action_date is not None:
         entry["next_action_date"] = next_action_date
+    _append_application_timeline(
+        entry,
+        existing,
+        timestamp=timestamp,
+        changed_fields=("status", "notes", "next_action", "next_action_date"),
+    )
 
     tracker["applications"][key] = entry
     _save_tracker(tracker)
@@ -276,11 +283,12 @@ def update_application_details(
     tracker = _load_tracker()
     key = job_key(title, company)
     existing = tracker["applications"].get(key, {})
+    timestamp = datetime.now().isoformat()
     entry = {
         **existing,
         "title": title,
         "company": company,
-        "updated": datetime.now().isoformat(),
+        "updated": timestamp,
     }
     if notes is not None:
         entry["notes"] = notes
@@ -288,6 +296,12 @@ def update_application_details(
         entry["next_action"] = next_action
     if next_action_date is not None:
         entry["next_action_date"] = next_action_date
+    _append_application_timeline(
+        entry,
+        existing,
+        timestamp=timestamp,
+        changed_fields=("notes", "next_action", "next_action_date"),
+    )
 
     tracker["applications"][key] = entry
     _save_tracker(tracker)
@@ -299,6 +313,36 @@ def get_application_entry(title: str, company: str) -> dict | None:
     key = job_key(title, company)
     entry = tracker["applications"].get(key)
     return entry.copy() if entry else None
+
+
+def _append_application_timeline(
+    entry: dict,
+    existing: dict,
+    *,
+    timestamp: str,
+    changed_fields: tuple[str, ...],
+) -> None:
+    """Append a compact timeline event for changed application fields."""
+    changes = {}
+    for field in changed_fields:
+        if entry.get(field) == existing.get(field):
+            continue
+        if field not in entry:
+            continue
+        changes[field] = {
+            "from": existing.get(field),
+            "to": entry.get(field),
+        }
+
+    if not changes:
+        return
+
+    timeline = list(existing.get("timeline") or [])
+    timeline.append({
+        "timestamp": timestamp,
+        "changes": changes,
+    })
+    entry["timeline"] = timeline[-50:]
 
 
 def get_all_application_statuses() -> dict:
