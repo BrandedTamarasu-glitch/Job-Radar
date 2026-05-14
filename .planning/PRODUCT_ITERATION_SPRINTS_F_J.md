@@ -74,7 +74,7 @@ Goal: keep the app fast and trustworthy as usage and result volume grow.
 
 Deliverable: faster large searches, clearer build health, and fewer surprises in packaged desktop releases.
 
-Status: in progress. GUI search worker progress counters are now clamped to safe display bounds, and cancellation requested during source fetch stops before source-health persistence or report generation. Large HTML reports now cap lower-score DOM rows while preserving the top results and showing an explicit omitted-row note.
+Status: in progress. GUI search worker progress counters are now clamped to safe display bounds, and cancellation requested during source fetch stops before source-health persistence or report generation. Large HTML reports now cap lower-score DOM rows while preserving the top results and showing an explicit omitted-row note. Source cache TTLs now support validated global and per-source environment overrides so diagnostics can tune freshness without code changes.
 
 ## Execution Order
 

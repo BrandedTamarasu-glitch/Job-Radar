@@ -669,6 +669,32 @@ def test_source_cache_ttl_uses_source_specific_values():
     assert source_cache_ttl("unknown") == 4 * 3600
 
 
+def test_source_cache_ttl_reads_global_environment_override(monkeypatch):
+    """Cache freshness can be tuned globally from diagnostics."""
+    monkeypatch.setenv("JOB_RADAR_SOURCE_CACHE_TTL_SECONDS", "600")
+
+    assert source_cache_ttl("dice") == 600
+    assert source_cache_ttl("unknown") == 600
+
+
+def test_source_cache_ttl_source_override_beats_global(monkeypatch):
+    """Specific source TTL overrides beat the global override."""
+    monkeypatch.setenv("JOB_RADAR_SOURCE_CACHE_TTL_SECONDS", "600")
+    monkeypatch.setenv("JOB_RADAR_SOURCE_CACHE_TTL_USAJOBS_SECONDS", "1800")
+
+    assert source_cache_ttl("usajobs") == 1800
+    assert source_cache_ttl("dice") == 600
+
+
+def test_source_cache_ttl_falls_back_for_invalid_environment(monkeypatch):
+    """Invalid source TTL overrides fall back instead of crashing."""
+    monkeypatch.setenv("JOB_RADAR_SOURCE_CACHE_TTL_SECONDS", "not-a-number")
+    assert source_cache_ttl("dice") == 3600
+
+    monkeypatch.setenv("JOB_RADAR_SOURCE_CACHE_TTL_DICE_SECONDS", "0")
+    assert source_cache_ttl("dice") == 3600
+
+
 def test_fetch_all_honors_cancellation_before_query_submission(monkeypatch):
     """fetch_all skips query submission when cancellation is already requested."""
     profile = {

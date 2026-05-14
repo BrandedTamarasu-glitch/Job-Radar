@@ -78,6 +78,8 @@ DEFAULT_MAX_WORKERS = 6
 MAX_WORKERS_ENV = "JOB_RADAR_MAX_WORKERS"
 DEFAULT_SLOW_QUERY_SECONDS = 8.0
 SLOW_QUERY_ENV = "JOB_RADAR_SLOW_QUERY_SECONDS"
+SOURCE_CACHE_TTL_ENV = "JOB_RADAR_SOURCE_CACHE_TTL_SECONDS"
+SOURCE_CACHE_TTL_SOURCE_ENV_PREFIX = "JOB_RADAR_SOURCE_CACHE_TTL_"
 SOURCE_CACHE_TTL_SECONDS = {
     "dice": 60 * 60,
     "hn_hiring": 6 * 3600,
@@ -153,7 +155,33 @@ def resolve_slow_query_threshold(value: int | float | str | None = None) -> floa
 
 def source_cache_ttl(source_key: str) -> int:
     """Return cache TTL seconds for a source key."""
-    return SOURCE_CACHE_TTL_SECONDS.get(source_key, 4 * 3600)
+    source_env = _source_cache_ttl_env_name(source_key)
+    raw_value = os.environ.get(source_env) or os.environ.get(SOURCE_CACHE_TTL_ENV)
+    fallback = SOURCE_CACHE_TTL_SECONDS.get(source_key, 4 * 3600)
+    if raw_value in (None, ""):
+        return fallback
+    return _resolve_positive_int(
+        raw_value,
+        fallback=fallback,
+        setting=source_env if os.environ.get(source_env) else SOURCE_CACHE_TTL_ENV,
+    )
+
+
+def _source_cache_ttl_env_name(source_key: str) -> str:
+    normalized = re.sub(r"[^A-Z0-9]+", "_", str(source_key).upper()).strip("_")
+    return f"{SOURCE_CACHE_TTL_SOURCE_ENV_PREFIX}{normalized}_SECONDS"
+
+
+def _resolve_positive_int(value, *, fallback: int, setting: str) -> int:
+    try:
+        resolved = int(value)
+    except (TypeError, ValueError):
+        log.warning("%s must be a positive integer, got %r; using default %s", setting, value, fallback)
+        return fallback
+    if resolved < 1:
+        log.warning("%s must be at least 1, got %s; using default %s", setting, resolved, fallback)
+        return fallback
+    return resolved
 
 
 def _clean_field(text: str, max_len: int) -> str:

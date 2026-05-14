@@ -441,7 +441,7 @@ python -m job_radar --help
 
 ### Running Tests
 
-The project includes a comprehensive test suite with 857 automated tests:
+The project includes a comprehensive test suite with 860 automated tests:
 
 ```bash
 # Install dev dependencies
@@ -485,7 +485,7 @@ For release builds, also run the platform build script and smoke-test the genera
 - Tracker functions (27 tests) - validates deduplication, pruning, app-data storage, application notes/next actions, timeline recording, follow-up queueing, application import merging, application-status report filtering, source health history, and stats aggregation with tmp_path isolation
 - Config module (24 tests) - validates config file parsing, CLI override, defaults, validation
 - Wizard (38 tests) - validates setup flow, PDF integration, navigation, error handling
-- API integration (58 tests) - validates all 11 API sources, mappers, rate limiting, source selection, cache stats propagation, per-source cache TTLs, source cancellation boundaries, manual source links, deduplication
+- API integration (61 tests) - validates all 11 API sources, mappers, rate limiting, source selection, cache stats propagation, per-source cache TTLs, diagnostics-driven TTL overrides, source cancellation boundaries, manual source links, deduplication
 - API config (18 tests) - validates API key storage, validation, GUI integration, quota tracking
 - Cache (14 tests) - validates HTTP cache lifecycle, request timeout handling, cache counters, and custom TTL expiry
 - Rate limits (16 tests) - validates rate limiter cleanup, shared backends, config loading, quota queries
