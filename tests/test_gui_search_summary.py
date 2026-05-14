@@ -352,6 +352,77 @@ def test_export_app_data_settings_handler_updates_status_label(tmp_path):
     assert f"Exported app data to {export_path}" == window._cache_status_label.text
 
 
+def test_validate_app_data_bundle_settings_handler_reports_valid_bundle():
+    """Settings app-data validation reports valid import bundles without restoring."""
+    from job_radar.gui.main_window import MainWindow
+
+    class StatusLabel:
+        def __init__(self):
+            self.text = ""
+
+        def configure(self, **kwargs):
+            self.text = kwargs["text"]
+
+    class Dialog:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def get_input(self):
+            return "/tmp/job-radar-data.zip"
+
+    result = type("Result", (), {
+        "is_valid": True,
+        "files": ["profile.json", "config.json"],
+        "errors": [],
+    })()
+    window = type("Window", (), {"_cache_status_label": StatusLabel()})()
+
+    with patch("job_radar.gui.main_window.ctk.CTkInputDialog", Dialog), patch(
+        "job_radar.gui.main_window.validate_app_data_bundle",
+        return_value=result,
+    ) as validator:
+        MainWindow._on_validate_app_data_bundle(window)
+
+    validator.assert_called_once_with("/tmp/job-radar-data.zip")
+    assert window._cache_status_label.text == "Bundle is valid: 2 files ready to restore"
+
+
+def test_validate_app_data_bundle_settings_handler_reports_errors():
+    """Settings app-data validation surfaces bundle validation errors."""
+    from job_radar.gui.main_window import MainWindow
+
+    class StatusLabel:
+        def __init__(self):
+            self.text = ""
+
+        def configure(self, **kwargs):
+            self.text = kwargs["text"]
+
+    class Dialog:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def get_input(self):
+            return "/tmp/bad.zip"
+
+    result = type("Result", (), {
+        "is_valid": False,
+        "files": [],
+        "errors": ["Bundle is missing manifest.json"],
+    })()
+    window = type("Window", (), {"_cache_status_label": StatusLabel()})()
+
+    with patch("job_radar.gui.main_window.ctk.CTkInputDialog", Dialog), patch(
+        "job_radar.gui.main_window.validate_app_data_bundle",
+        return_value=result,
+    ):
+        MainWindow._on_validate_app_data_bundle(window)
+
+    assert window._cache_status_label.text == (
+        "Bundle validation failed: Bundle is missing manifest.json"
+    )
+
+
 def test_search_worker_emits_completion_summary(tmp_path, source_health_recorder):
     """SearchWorker includes source warnings, counts, and timings on completion."""
     result_queue = queue.Queue()

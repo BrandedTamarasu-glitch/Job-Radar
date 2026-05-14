@@ -24,7 +24,7 @@ from job_radar.application_templates import (
 )
 from job_radar.applications_export import export_applications_csv
 from job_radar.browser import open_report_in_browser
-from job_radar.data_portability import export_app_data_bundle
+from job_radar.data_portability import export_app_data_bundle, validate_app_data_bundle
 from job_radar.demo_report import generate_demo_report
 from job_radar.paths import get_data_dir
 from job_radar.paths import get_results_dir
@@ -2038,6 +2038,26 @@ class MainWindow(ctk.CTk):
         if self._cache_status_label:
             self._cache_status_label.configure(text=message)
 
+    def _on_validate_app_data_bundle(self):
+        """Prompt for and validate a portable app-data bundle."""
+        dialog = ctk.CTkInputDialog(
+            text="Path to Job Radar app-data ZIP",
+            title="Validate App Data Bundle",
+        )
+        value = (dialog.get_input() or "").strip()
+        if not value:
+            return
+
+        result = validate_app_data_bundle(value)
+        if result.is_valid:
+            file_noun = "file" if len(result.files) == 1 else "files"
+            message = f"Bundle is valid: {len(result.files)} {file_noun} ready to restore"
+        else:
+            message = "Bundle validation failed: " + "; ".join(result.errors)
+
+        if self._cache_status_label:
+            self._cache_status_label.configure(text=message)
+
     def _source_diagnostics_text(self) -> str:
         """Return current source diagnostics text for the Settings tab."""
         history = get_source_health_history(limit=20)
@@ -2582,6 +2602,16 @@ class MainWindow(ctk.CTk):
             command=self._on_export_app_data
         )
         export_data_btn.pack(pady=(0, 5), anchor="w", padx=10)
+
+        validate_data_btn = ctk.CTkButton(
+            scroll_frame,
+            text="Validate App Data Bundle",
+            width=220,
+            fg_color="transparent",
+            border_width=1,
+            command=self._on_validate_app_data_bundle
+        )
+        validate_data_btn.pack(pady=(0, 5), anchor="w", padx=10)
 
         self._cache_status_label = ctk.CTkLabel(
             scroll_frame,
