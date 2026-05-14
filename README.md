@@ -441,7 +441,7 @@ python -m job_radar --help
 
 ### Running Tests
 
-The project includes a comprehensive test suite with 781 automated tests:
+The project includes a comprehensive test suite with 786 automated tests:
 
 ```bash
 # Install dev dependencies
@@ -491,6 +491,8 @@ For release builds, also run the platform build script and smoke-test the genera
 - Report generation (46 tests) - validates HTML/Markdown output, clipboard UI, status tracking, shortlist state, keyboard navigation, compact/detail view, match summaries, grouped skill callouts, mobile layout, accessibility
 - UX polish (69 tests) - validates banner, help text, progress messages, maintenance commands, error handling
 - GUI search summary (22 tests) - validates search completion, source warnings, per-source timing, cache counters, cache controls, GUI preset application, automated/manual source selection, company filters, application-status report filtering, must-have and nice-to-have skill controls, location strictness, and freshness presets
+- Demo report (2 tests) - validates no-network sample profile/jobs and report generation
+- Profile readiness (3 tests) - validates onboarding readiness status, missing required fields, and match-quality recommendations
 - Profile manager (22 tests) - validates atomic writes, backups, rotation, schema migration, validation
 - Profile display (16 tests) - validates formatted output, field filtering, NO_COLOR compliance
 - Profile editor (23 tests) - validates field menu, diff preview, editing, validator reuse
@@ -501,6 +503,16 @@ For release builds, also run the platform build script and smoke-test the genera
 - Auto-update (42 tests) - validates detection, download, SHA256 verification, installer launch, skip version
 - Browser (12 tests) - validates report opening, platform detection, error handling
 - Paths (16 tests) - validates config directory resolution, platform compatibility
+
+## Active Product Iteration
+
+The next product iteration is tracked in `.planning/PRODUCT_ITERATION_SPRINTS_F_J.md`:
+
+- **Sprint F:** onboarding and first-run experience
+- **Sprint G:** saved searches and search history
+- **Sprint H:** match tuning and explainability
+- **Sprint I:** application workflow upgrades
+- **Sprint J:** performance and packaging hardening
 
 ### Building Executables
 

@@ -1,0 +1,48 @@
+from job_radar.profile_readiness import assess_profile_readiness
+
+
+def test_profile_readiness_flags_missing_required_fields():
+    readiness = assess_profile_readiness({})
+
+    assert readiness.status == "Needs setup"
+    assert readiness.is_search_ready is False
+    assert "Add your name" in readiness.missing_required
+    assert "Add at least one target title" in readiness.missing_required
+    assert "Add at least one core skill" in readiness.missing_required
+
+
+def test_profile_readiness_marks_complete_profile_strong():
+    readiness = assess_profile_readiness(
+        {
+            "name": "Test User",
+            "target_titles": ["Backend Engineer"],
+            "core_skills": ["Python", "PostgreSQL"],
+            "secondary_skills": ["Docker"],
+            "years_experience": 6,
+            "location": "Remote",
+            "arrangement": ["remote"],
+            "dealbreakers": ["relocation required"],
+            "comp_floor": 130000,
+        }
+    )
+
+    assert readiness.status == "Strong"
+    assert readiness.score == readiness.max_score
+    assert readiness.is_search_ready is True
+    assert readiness.missing_required == ()
+
+
+def test_profile_readiness_recommends_match_quality_fields():
+    readiness = assess_profile_readiness(
+        {
+            "name": "Test User",
+            "target_titles": ["Backend Engineer"],
+            "core_skills": ["Python"],
+        }
+    )
+
+    assert readiness.status == "Basic"
+    assert readiness.is_search_ready is True
+    assert readiness.missing_required == ()
+    assert any("years of experience" in item for item in readiness.recommendations)
+    assert any("target location" in item for item in readiness.recommendations)

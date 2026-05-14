@@ -19,8 +19,11 @@ import requests
 
 from job_radar import __version__
 from job_radar.applications_export import export_applications_csv
+from job_radar.browser import open_report_in_browser
+from job_radar.demo_report import generate_demo_report
 from job_radar.paths import get_data_dir
 from job_radar.paths import get_results_dir
+from job_radar.profile_readiness import assess_profile_readiness
 from job_radar.profile_manager import load_profile
 from job_radar.config import load_config
 from job_radar.tracker import get_all_application_statuses, get_source_health_history
@@ -372,12 +375,32 @@ class MainWindow(ctk.CTk):
         try:
             profile_path = get_data_dir() / "profile.json"
             profile = load_profile(profile_path)
+            readiness = assess_profile_readiness(profile)
 
             # Configure grid for label-value pairs
             scroll_frame.grid_columnconfigure(0, weight=0)  # Labels (left)
             scroll_frame.grid_columnconfigure(1, weight=1)  # Values (right)
 
             row = 0
+
+            readiness_text = (
+                f"{readiness.status} ({readiness.score}/{readiness.max_score})"
+            )
+            self._add_profile_field(scroll_frame, row, "Profile Readiness:", readiness_text)
+            row += 1
+
+            readiness_items = list(readiness.missing_required or readiness.recommendations[:3])
+            if readiness_items:
+                readiness_label = ctk.CTkLabel(
+                    scroll_frame,
+                    text="\n".join(f"- {item}" for item in readiness_items),
+                    text_color="gray",
+                    wraplength=680,
+                    justify="left",
+                    anchor="w",
+                )
+                readiness_label.grid(row=row, column=0, columnspan=2, sticky="ew", pady=(0, 12))
+                row += 1
 
             # Name
             self._add_profile_field(scroll_frame, row, "Name:", profile.get("name", "N/A"))
@@ -666,6 +689,17 @@ class MainWindow(ctk.CTk):
         )
         self._search_button.pack(pady=(0, 10))
 
+        preview_btn = ctk.CTkButton(
+            content_frame,
+            text="Preview Demo Report",
+            height=36,
+            width=200,
+            command=self._open_demo_report,
+            fg_color="transparent",
+            border_width=2,
+        )
+        preview_btn.pack(pady=(0, 10))
+
         # Warning label (only visible when no profile)
         if not self._profile_exists:
             warning_label = ctk.CTkLabel(
@@ -674,6 +708,22 @@ class MainWindow(ctk.CTk):
                 text_color="red"
             )
             warning_label.pack()
+
+    def _open_demo_report(self):
+        """Generate and open the no-network demo report from the GUI."""
+        try:
+            report_result = generate_demo_report(output_dir=str(get_results_dir()))
+            self._report_path = report_result["html"]
+            browser_result = open_report_in_browser(
+                self._report_path,
+                auto_open=load_config().get("auto_open_browser", True),
+            )
+            message = "Demo report generated."
+            if not browser_result["opened"]:
+                message += f" Open manually: {self._report_path}"
+            self._show_success_message(message)
+        except Exception as e:
+            self._show_search_error(f"Could not generate demo report: {e}")
 
     def _show_search_progress(self):
         """Display progress state with progress bar, per-source job counts, and cancel button."""

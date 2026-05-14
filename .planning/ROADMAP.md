@@ -11,6 +11,8 @@
 - ✅ **v2.0 Desktop GUI** - Phases 31-33 (shipped 2025-12-15)
 - ✅ **v2.1 Sources & Installers** - Phases 34-37 (shipped 2026-01-31)
 - ✅ **v2.2.0 Auto-Update & Source Expansion** - Phases 38-42 (shipped 2026-02-16)
+- ✅ **v2.5.0 Product Iteration** - GUI search controls, application pipeline, performance diagnostics, and report review UX (shipped 2026-05-13)
+- 🚧 **Next Product Iteration** - Sprints F-J: onboarding, saved searches, match tuning, application workflow, performance hardening
 
 ## Phases
 
@@ -34,5 +36,18 @@ Phase details available in git history.
 
 </details>
 
+<details>
+<summary>🚧 Next Product Iteration (Sprints F-J) - ACTIVE 2026-05-14</summary>
+
+See `.planning/PRODUCT_ITERATION_SPRINTS_F_J.md` for the full sprint list.
+
+- [ ] Sprint F: Onboarding & First-Run Experience
+- [ ] Sprint G: Saved Searches & Search History
+- [ ] Sprint H: Match Tuning & Explainability
+- [ ] Sprint I: Application Workflow Upgrade
+- [ ] Sprint J: Performance & Packaging Hardening
+
+</details>
+
 ---
-*Last updated: 2026-02-16*
+*Last updated: 2026-05-14*

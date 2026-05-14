@@ -1,21 +1,21 @@
 # Project State: Job Radar
 
-**Last Updated:** 2026-02-16T20:48:44Z
+**Last Updated:** 2026-05-14T00:00:00-07:00
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Accurate job-candidate scoring — if the scoring is wrong, nothing else matters.
-**Current focus:** Planning next milestone
+**Current focus:** Next product iteration, Sprint F onboarding and first-run experience
 
 ## Current Position
 
-**Milestone:** v2.2.0 Auto-Update & Source Expansion — SHIPPED
-**Status:** Milestone complete, archived
-**Last activity:** 2026-02-16 — v2.2.0 milestone completed and archived
+**Milestone:** Post-v2.5.0 Product Iteration — ACTIVE
+**Status:** Sprint F started
+**Last activity:** 2026-05-14 — documented Sprints F-J and started onboarding improvements
 
-**Next step:** `/gsd:new-milestone` to start next milestone
+**Next step:** continue Sprint F with first-run profile guidance, demo report access, and empty-state improvements
 
 ## Performance Metrics
 
@@ -116,11 +116,15 @@ Full decision log: PROJECT.md Key Decisions table (143 decisions)
 - Single-file HTML reports (file:// portability)
 - Cross-platform (macOS, Linux, Windows)
 
-### Pending Todos
+### Active Sprint Plan
 
-[From .planning/todos/pending/]
+See `.planning/PRODUCT_ITERATION_SPRINTS_F_J.md`.
 
-None yet for v2.2.0.
+- Sprint F: Onboarding & First-Run Experience — in progress
+- Sprint G: Saved Searches & Search History — pending
+- Sprint H: Match Tuning & Explainability — pending
+- Sprint I: Application Workflow Upgrade — pending
+- Sprint J: Performance & Packaging Hardening — pending
 
 ### Blockers/Concerns
 
@@ -128,11 +132,11 @@ None - Phase 42 (hiring.cafe Integration) complete. Milestone v2.2.0 complete.
 
 ## Session Continuity
 
-Last session: 2026-02-16
-Stopped at: Completed 42-02 hiring.cafe Pipeline Integration (Phase 42 complete, v2.2.0 complete)
+Last session: 2026-05-14
+Stopped at: v2.5.0 release completed; next product iteration started
 Resume file: None
 
-**Next step:** Plan next milestone or feature work
+**Next step:** Continue Sprint F implementation and validation
 
 ---
 *State initialized: 2026-02-13*
