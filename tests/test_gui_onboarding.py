@@ -49,6 +49,13 @@ def test_applications_tab_includes_direct_edit_controls():
     assert "Edit Notes" in source
 
 
+def test_search_complete_includes_review_state_summary():
+    source = inspect.getsource(MainWindow._show_search_complete)
+
+    assert "_review_state_summary_lines" in source
+    assert "Review queue:" in source
+
+
 def test_next_action_due_text_formats_queue_states():
     assert MainWindow._format_next_action_due_text(None, {
         "is_overdue": True,

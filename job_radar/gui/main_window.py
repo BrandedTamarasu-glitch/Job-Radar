@@ -50,6 +50,7 @@ from job_radar.gui.applications_view_model import (
     normalize_application_detail_input,
 )
 from job_radar.gui.profile_form import ProfileForm
+from job_radar.gui.review_state_view_model import format_review_state_summary
 from job_radar.gui.search_controls import SearchControls
 from job_radar.gui.search_summary import (
     cancellation_message,
@@ -73,6 +74,7 @@ from job_radar.gui.uninstall_dialog import (
     DeletionProgressDialog,
 )
 from job_radar.rate_limits import get_quota_usage
+from job_radar.review_state import review_state_counts
 from job_radar.saved_searches import (
     format_run_summary,
     load_search_history,
@@ -1341,6 +1343,18 @@ class MainWindow(ctk.CTk):
             summary_box.configure(state="disabled")
             summary_box.pack(pady=(0, 20))
 
+        review_lines = self._review_state_summary_lines()
+        if review_lines:
+            review_box = ctk.CTkLabel(
+                content_frame,
+                text="Review queue: " + " | ".join(review_lines),
+                font=ctk.CTkFont(size=12),
+                text_color="gray",
+                wraplength=420,
+                justify="center",
+            )
+            review_box.pack(pady=(0, 16))
+
         # Open Report button
         open_report_btn = ctk.CTkButton(
             content_frame,
@@ -1362,6 +1376,13 @@ class MainWindow(ctk.CTk):
             border_width=2
         )
         new_search_btn.pack()
+
+    def _review_state_summary_lines(self) -> list[str]:
+        """Return persisted review-state summary lines for the Search completion screen."""
+        try:
+            return format_review_state_summary(review_state_counts())
+        except Exception:
+            return []
 
     def _load_current_profile_for_guidance(self) -> dict | None:
         """Load the saved profile for non-blocking guidance text."""
