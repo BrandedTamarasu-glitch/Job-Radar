@@ -12,6 +12,7 @@ from .report_assets import (
 )
 from .report_filtering import filter_explanation_text as _filter_explanation_text
 from .report_filtering import filtered_out_results as _filtered_out_results
+from .report_manual import html_manual_urls_section as _html_manual_urls_section
 from .report_matching import match_highlights as _match_highlights
 from .report_matching import match_summary_text as _match_summary_text
 from .report_matching import skill_callout_groups as _skill_callout_groups
@@ -2801,49 +2802,3 @@ def _html_filtered_out_section(filtered_out: list[dict], min_score: float) -> st
     </section>
     """
 
-
-def _html_manual_urls_section(manual_urls: list[dict]) -> str:
-    """Generate HTML for manual check URLs section."""
-    if not manual_urls:
-        return ""
-
-    groups = {}
-    for u in manual_urls:
-        source = u["source"]
-        if source not in groups:
-            groups[source] = []
-        groups[source].append(u)
-
-    sections = []
-    for source, urls in groups.items():
-        links = []
-        for u in urls:
-            safe_url = _safe_external_url(u.get("url"))
-            if safe_url:
-                links.append(f'<li>{html.escape(u["title"])}: <a href="{html.escape(safe_url)}" target="_blank" rel="noopener" aria-label="{html.escape(u["title"])} on {html.escape(u["source"])}, opens in new tab">{html.escape(u["source"])} Search</a></li>')
-            else:
-                links.append(f'<li>{html.escape(u["title"])}: {html.escape(u["source"])} Search URL unavailable</li>')
-        links_html = "".join(links)
-        sections.append(f"""
-        <div class="mb-3">
-          <h4 class="h6"><strong>{html.escape(source)}:</strong></h4>
-          <ul>
-            {links_html}
-          </ul>
-        </div>
-        """)
-
-    sections_html = "".join(sections)
-    return f"""
-    <section aria-labelledby="manual-heading">
-      <div class="card mb-4">
-        <div class="card-header">
-          <h2 id="manual-heading" class="h4 mb-0">Manual Check URLs</h2>
-        </div>
-        <div class="card-body">
-          <p class="text-muted"><em>Open these in your browser to check sources that block automated access.</em></p>
-          {sections_html}
-        </div>
-      </div>
-    </section>
-    """
