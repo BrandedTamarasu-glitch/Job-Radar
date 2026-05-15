@@ -501,12 +501,13 @@ For release builds, also run the platform build script and smoke-test the genera
 - Cache (14 tests) - validates HTTP cache lifecycle, request timeout handling, cache counters, and custom TTL expiry
 - Rate limits (16 tests) - validates rate limiter cleanup, shared backends, config loading, quota queries
 - Review state view model (3 tests) - validates compact GUI review queue summary text
+- Dashboard view model (5 tests) - validates Profile-tab next-step prioritization from readiness, follow-up, review queue, and search-history state
 - Source diagnostics view model (8 tests) - validates source-health priority, diagnostics, source-control guidance, recommendations, cache freshness, and cache totals for Settings
 - PDF parser (34 tests) - validates extraction, validation, Unicode support, error handling
 - Report generation (53 tests) - validates HTML/Markdown output, clipboard UI, status tracking, persisted shortlist/maybe-later/dismiss review state, keyboard navigation, compact/detail view, match summaries, filtered-out explanations, grouped skill callouts, large-report row caps and render skipping, mobile layout, accessibility
 - UX polish (69 tests) - validates banner, help text, progress messages, maintenance commands, error handling
 - GUI search summary (29 tests) - validates search completion, source warnings, per-source timing, cache counters, cache controls, app-data export/validation controls, cancellation boundaries through final report preparation, progress normalization, GUI preset application, automated/manual source selection, company filters, application-status report filtering, must-have and nice-to-have skill controls, location strictness, freshness presets, and profile-aware zero-result guidance
-- GUI onboarding (23 tests) - validates first-run demo report access, welcome/search feedback handling, Search tab profile-readiness guidance, profile-form field hints, profile-aware zero-result guidance wiring, non-blocking recent-search recording, recent-search reapply controls, named saved-search controls, review queue summaries, Applications next-action queue/direct edit wiring, and run metadata recording
+- GUI onboarding (27 tests) - validates first-run demo report access, welcome/search feedback handling, Search tab profile-readiness guidance, Profile-tab dashboard next steps, profile-form field hints, profile-aware zero-result guidance wiring, non-blocking recent-search recording, recent-search reapply controls, named saved-search controls, review queue summaries, Applications next-action queue/direct edit wiring, and run metadata recording
 - Demo report (2 tests) - validates no-network sample profile/jobs and report generation
 - Data portability (9 tests) - validates portable app-data export bundles, manifests, restore preflight validation, and restore backups
 - Profile readiness (7 tests) - validates onboarding readiness status, missing required fields, scoring-signal recommendations, match-quality recommendations, and guidance prioritization
@@ -533,6 +534,14 @@ The K-O product iteration is complete and tracked in `.planning/PRODUCT_ITERATIO
 - **Sprint M:** source health controls — complete
 - **Sprint N:** data portability and recovery — complete
 - **Sprint O:** performance and release trust — complete
+
+The next product iteration is tracked in `.planning/PRODUCT_ITERATION_SPRINTS_P_T.md`:
+
+- **Sprint P:** daily dashboard and next steps — in progress
+- **Sprint Q:** search comparison and insight recap — planned
+- **Sprint R:** follow-up workflow automation — planned
+- **Sprint S:** source quality and coverage controls — planned
+- **Sprint T:** local performance and maintenance insights — planned
 
 ### Building Executables
 

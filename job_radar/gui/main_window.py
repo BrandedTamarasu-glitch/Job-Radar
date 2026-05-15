@@ -50,6 +50,7 @@ from job_radar.gui.applications_view_model import (
     build_applications_view_model,
     normalize_application_detail_input,
 )
+from job_radar.gui.dashboard_view_model import build_dashboard_actions
 from job_radar.gui.profile_form import ProfileForm
 from job_radar.gui.review_state_view_model import format_review_state_summary
 from job_radar.gui.search_controls import SearchControls
@@ -438,6 +439,9 @@ class MainWindow(ctk.CTk):
 
             row = 0
 
+            dashboard_actions = self._dashboard_actions(readiness)
+            row = self._add_dashboard_next_steps(scroll_frame, row, dashboard_actions)
+
             readiness_text = (
                 f"{readiness.status} ({readiness.score}/{readiness.max_score})"
             )
@@ -523,6 +527,84 @@ class MainWindow(ctk.CTk):
                 text_color="red"
             )
             error_label.pack(pady=20)
+
+    def _dashboard_actions(self, readiness):
+        """Build profile dashboard actions without blocking the profile view."""
+        try:
+            applications = get_all_application_statuses()
+        except Exception:
+            applications = {}
+
+        try:
+            next_actions = get_application_next_actions(
+                applications=applications,
+                limit=5,
+            )
+        except Exception:
+            next_actions = []
+
+        try:
+            review_counts = review_state_counts()
+        except Exception:
+            review_counts = {}
+
+        try:
+            search_history = load_search_history()
+        except Exception:
+            search_history = {"recent": [], "saved": []}
+
+        return build_dashboard_actions(
+            readiness=readiness,
+            review_counts=review_counts,
+            next_actions=next_actions,
+            search_history=search_history,
+        )
+
+    def _add_dashboard_next_steps(self, parent, row, actions):
+        """Render the profile dashboard next-step queue."""
+        if not actions:
+            return row
+
+        dashboard_frame = ctk.CTkFrame(parent)
+        dashboard_frame.grid(row=row, column=0, columnspan=2, sticky="ew", pady=(0, 16))
+        dashboard_frame.grid_columnconfigure(0, weight=1)
+
+        ctk.CTkLabel(
+            dashboard_frame,
+            text="Next Steps",
+            font=ctk.CTkFont(size=16, weight="bold"),
+            anchor="w",
+        ).grid(row=0, column=0, sticky="w", padx=12, pady=(10, 4))
+
+        for index, action in enumerate(actions, start=1):
+            action_frame = ctk.CTkFrame(dashboard_frame, fg_color="transparent")
+            action_frame.grid(row=index, column=0, sticky="ew", padx=12, pady=(0, 10))
+            action_frame.grid_columnconfigure(0, weight=1)
+
+            ctk.CTkLabel(
+                action_frame,
+                text=action.title,
+                font=ctk.CTkFont(size=13, weight="bold"),
+                anchor="w",
+            ).grid(row=0, column=0, sticky="w")
+
+            ctk.CTkLabel(
+                action_frame,
+                text=action.detail,
+                text_color="gray",
+                wraplength=560,
+                justify="left",
+                anchor="w",
+            ).grid(row=1, column=0, sticky="ew", pady=(2, 0))
+
+            ctk.CTkButton(
+                action_frame,
+                text=action.target,
+                width=120,
+                command=lambda target=action.target: self._show_tab(target),
+            ).grid(row=0, column=1, rowspan=2, sticky="e", padx=(12, 0))
+
+        return row + 1
 
     def _on_edit_profile(self, profile: dict):
         """Handle Edit Profile button click.
@@ -1053,8 +1135,22 @@ class MainWindow(ctk.CTk):
 
     def _show_profile_tab(self):
         """Navigate to the Profile tab when available."""
+        self._show_tab("Profile")
+
+    def _show_tab(self, tab_name: str):
+        """Navigate to a tab, building lazy content first when needed."""
         if self._tabview is not None:
-            self._tabview.set("Profile")
+            if tab_name not in self._tabs_built:
+                if tab_name == "Profile":
+                    self._build_profile_tab(self._tabview.tab("Profile"))
+                elif tab_name == "Search":
+                    self._build_search_tab(self._tabview.tab("Search"))
+                elif tab_name == "Applications":
+                    self._build_applications_tab(self._tabview.tab("Applications"))
+                elif tab_name == "Settings":
+                    self._build_settings_tab(self._tabview.tab("Settings"))
+                self._tabs_built.add(tab_name)
+            self._tabview.set(tab_name)
 
     def _add_recent_searches_panel(self, parent):
         """Show recent searches with one-click apply controls."""

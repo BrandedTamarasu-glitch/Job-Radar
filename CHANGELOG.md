@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### New Features
+- **Daily dashboard foundation** - Added a Profile-tab next-step panel that prioritizes profile readiness, overdue follow-ups, review queue work, and saved/recent search shortcuts from local state.
+
+### Documentation
+- Documented Product Iteration P-T and Sprint P-T planning across README, roadmap, and project state memory.
+
 ## v2.6.0 — 2026-05-15
 
 ### New Features

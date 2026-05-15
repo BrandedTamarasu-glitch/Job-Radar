@@ -7,15 +7,15 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Accurate job-candidate scoring — if the scoring is wrong, nothing else matters.
-**Current focus:** v2.6.0 release readiness for completed Product Iteration K-O
+**Current focus:** Product Iteration P-T, starting with Sprint P daily dashboard and next steps
 
 ## Current Position
 
-**Milestone:** Product Iteration K-O — COMPLETE
-**Status:** Sprints K-O complete
-**Last activity:** 2026-05-15 — completed Sprint N data portability and Sprint O release artifact diagnostics, installer-directory drift checks, clean verifier CLI failures, noisy virtualenv-match suppression, checksum manifests, download verification docs, large-report render skipping, final-prep search cancellation, v2.6.0 release notes, build metadata drift guards, release-aligned local archive naming, changelog-backed GitHub release body extraction, and Linux release build smoke verification
+**Milestone:** Product Iteration P-T — IN PROGRESS
+**Status:** Sprint P in progress; Sprints Q-T planned
+**Last activity:** 2026-05-15 — shipped v2.6.0 for completed Product Iteration K-O, documented Product Iteration P-T, and started Sprint P by adding a local Profile-tab next-step dashboard foundation.
 
-**Next step:** commit release build metadata guards, then tag/push v2.6.0 or plan the next product iteration.
+**Next step:** continue Sprint P by refining the daily dashboard action panel and validating the first-run/returning-user experience.
 
 ## Performance Metrics
 
@@ -118,25 +118,25 @@ Full decision log: PROJECT.md Key Decisions table (143 decisions)
 
 ### Active Sprint Plan
 
-See `.planning/PRODUCT_ITERATION_SPRINTS_K_O.md`.
+See `.planning/PRODUCT_ITERATION_SPRINTS_P_T.md`.
 
-- Sprint K: Application Editing & Templates — complete
-- Sprint L: Search Review Workspace — complete
-- Sprint M: Source Health Controls — complete
-- Sprint N: Data Portability & Recovery — complete
-- Sprint O: Performance & Release Trust — complete
+- Sprint P: Daily Dashboard & Next Steps — in progress
+- Sprint Q: Search Comparison & Insight Recap — planned
+- Sprint R: Follow-Up Workflow Automation — planned
+- Sprint S: Source Quality & Coverage Controls — planned
+- Sprint T: Local Performance & Maintenance Insights — planned
 
 ### Blockers/Concerns
 
-None. Sprints K-O are complete.
+None. Sprint P is active.
 
 ## Session Continuity
 
 Last session: 2026-05-15
-Stopped at: Sprints K-O completed and validated
+Stopped at: Sprint P dashboard foundation in progress
 Resume file: None
 
-**Next step:** Commit release build metadata guards, then tag/push v2.6.0 or plan the next product iteration.
+**Next step:** Continue Sprint P dashboard polish and validation.
 
 ---
 *State initialized: 2026-02-13*

@@ -32,6 +32,41 @@ def test_profile_readiness_guidance_links_to_profile_tab():
     assert "command=self._show_profile_tab" in source
 
 
+def test_profile_tab_includes_dashboard_next_steps():
+    source = inspect.getsource(MainWindow._build_profile_tab)
+
+    assert "_dashboard_actions(readiness)" in source
+    assert "_add_dashboard_next_steps" in source
+
+
+def test_dashboard_actions_use_local_state_sources():
+    source = inspect.getsource(MainWindow._dashboard_actions)
+
+    assert "get_all_application_statuses()" in source
+    assert "get_application_next_actions" in source
+    assert "review_state_counts()" in source
+    assert "load_search_history()" in source
+    assert "build_dashboard_actions" in source
+    assert "except Exception" in source
+
+
+def test_dashboard_next_steps_link_to_target_tabs():
+    source = inspect.getsource(MainWindow._add_dashboard_next_steps)
+
+    assert "Next Steps" in source
+    assert "action.detail" in source
+    assert "command=lambda target=action.target: self._show_tab(target)" in source
+
+
+def test_show_tab_builds_lazy_tabs_before_navigation():
+    source = inspect.getsource(MainWindow._show_tab)
+
+    assert 'tab_name not in self._tabs_built' in source
+    assert '_build_search_tab(self._tabview.tab("Search"))' in source
+    assert '_build_applications_tab(self._tabview.tab("Applications"))' in source
+    assert "self._tabview.set(tab_name)" in source
+
+
 def test_applications_tab_includes_next_action_queue():
     source = inspect.getsource(MainWindow._build_applications_tab)
 
