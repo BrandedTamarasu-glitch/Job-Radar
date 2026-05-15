@@ -253,8 +253,8 @@ def test_generate_report_surfaces_source_warnings(sample_profile, sample_scored_
     assert "9.5s" in html_report
 
 
-def test_html_report_contains_bootstrap(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
-    """Test that HTML report includes Bootstrap CDN and responsive metadata."""
+def test_html_report_contains_local_bootstrap_compatible_primitives(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
+    """Test that HTML report includes local Bootstrap-compatible primitives and responsive metadata."""
     result = generate_report(
         profile=sample_profile,
         scored_results=sample_scored_results,
@@ -554,7 +554,7 @@ def test_html_report_contains_data_attributes(sample_profile, sample_scored_resu
 
 
 def test_html_report_contains_notyf_cdn(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
-    """Test that HTML report includes Notyf CDN for toast notifications."""
+    """Test that HTML report includes local Notyf-compatible toast notifications."""
     result = generate_report(
         profile=sample_profile,
         scored_results=sample_scored_results,
@@ -567,20 +567,21 @@ def test_html_report_contains_notyf_cdn(sample_profile, sample_scored_results, s
 
     html_content = Path(result["html"]).read_text(encoding='utf-8')
 
-    # Check for Notyf CSS and JS CDN links
-    assert "notyf.min.css" in html_content
-    assert "notyf.min.js" in html_content
+    assert "window.Notyf" in html_content
+    assert "notyf-local" in html_content
+    assert "cdn.jsdelivr.net" not in html_content
 
 
 def test_report_external_asset_helpers_are_focused():
-    """External report assets are centralized for payload review."""
+    """Report asset helpers are centralized and local for payload review."""
     stylesheets = _html_external_stylesheets()
     scripts = _html_external_scripts()
 
-    assert "bootstrap.min.css" in stylesheets
-    assert "notyf.min.css" in stylesheets
-    assert "bootstrap.bundle.min.js" in scripts
-    assert "notyf.min.js" in scripts
+    assert "Bootstrap-compatible" in stylesheets
+    assert "notyf-local" in stylesheets
+    assert "window.Notyf" in scripts
+    assert "data-bs-toggle" in scripts
+    assert "cdn.jsdelivr.net" not in (stylesheets + scripts)
     assert "prism" not in (stylesheets + scripts).lower()
 
 

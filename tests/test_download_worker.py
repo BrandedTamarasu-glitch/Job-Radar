@@ -1,5 +1,6 @@
 """Tests for DownloadWorker — streaming, cancellation, SHA256 verification."""
 
+import hashlib
 import queue
 import tempfile
 import threading
@@ -32,6 +33,11 @@ def stop_event():
 def temp_download_path(tmp_path):
     """Temporary file path for download destination."""
     return str(tmp_path / "installer.exe")
+
+
+def _sha256_bytes(content: bytes) -> str:
+    """Return the SHA256 digest for test download content."""
+    return hashlib.sha256(content).hexdigest()
 
 
 # ---------------------------------------------------------------------------
@@ -87,12 +93,13 @@ def test_download_success_with_progress(mock_get, result_queue, stop_event, temp
     mock_response.iter_content.return_value = [chunk1, chunk2, chunk3]
     mock_response.raise_for_status = Mock()
     mock_get.return_value = mock_response
+    content = chunk1 + chunk2 + chunk3
 
     worker = DownloadWorker(
         result_queue,
         stop_event,
         "http://example.com/installer.exe",
-        None,  # No digest
+        _sha256_bytes(content),
         temp_download_path
     )
 
@@ -100,7 +107,7 @@ def test_download_success_with_progress(mock_get, result_queue, stop_event, temp
 
     # Verify file written
     downloaded_content = Path(temp_download_path).read_bytes()
-    assert downloaded_content == chunk1 + chunk2 + chunk3
+    assert downloaded_content == content
 
     # Verify queue messages
     messages = []
@@ -135,7 +142,7 @@ def test_download_cancellation_mid_download(mock_get, result_queue, stop_event, 
         result_queue,
         stop_event,
         "http://example.com/installer.exe",
-        None,
+        _sha256_bytes(chunk1 + chunk2),
         temp_download_path
     )
 
@@ -190,37 +197,26 @@ def test_download_sha256_mismatch(mock_get, result_queue, stop_event, temp_downl
     assert any("Hash verification" in msg[1] for msg in messages if msg[0] == "download_failed")
 
 
-@patch("job_radar.gui.worker_thread.requests.get")
-def test_download_null_digest_skips_verification(mock_get, result_queue, stop_event, temp_download_path):
-    """DownloadWorker skips verification when digest is None."""
-    chunk = b"A" * 1024
-
-    mock_response = Mock()
-    mock_response.headers.get.return_value = str(len(chunk))
-    mock_response.iter_content.return_value = [chunk]
-    mock_response.raise_for_status = Mock()
-    mock_get.return_value = mock_response
-
+def test_download_null_digest_fails_closed(result_queue, stop_event, temp_download_path):
+    """DownloadWorker rejects assets without a digest before downloading."""
     worker = DownloadWorker(
         result_queue,
         stop_event,
         "http://example.com/installer.exe",
-        None,  # No digest
+        None,
         temp_download_path
     )
 
     worker.run()
 
-    # Verify file exists (not deleted)
-    assert Path(temp_download_path).exists()
+    assert not Path(temp_download_path).exists()
 
-    # Verify completion message (not failure)
     messages = []
     while not result_queue.empty():
         messages.append(result_queue.get())
 
-    assert any(msg[0] == "download_complete" for msg in messages)
-    assert not any(msg[0] == "download_failed" for msg in messages)
+    assert any(msg[0] == "download_failed" for msg in messages)
+    assert any("missing a SHA256 digest" in msg[1] for msg in messages if msg[0] == "download_failed")
 
 
 @patch("job_radar.gui.worker_thread.requests.get")
@@ -233,7 +229,7 @@ def test_download_network_error(mock_get, result_queue, stop_event, temp_downloa
         result_queue,
         stop_event,
         "http://example.com/installer.exe",
-        None,
+        "0" * 64,
         temp_download_path
     )
 
@@ -257,7 +253,7 @@ def test_create_download_worker_returns_worker_and_thread(result_queue, temp_dow
     worker, thread = create_download_worker(
         result_queue,
         "http://example.com/installer.exe",
-        None,
+        "0" * 64,
         temp_download_path
     )
 
@@ -276,11 +272,12 @@ def test_create_download_worker_thread_runs(mock_get, result_queue, temp_downloa
     mock_response.iter_content.return_value = [chunk]
     mock_response.raise_for_status = Mock()
     mock_get.return_value = mock_response
+    digest = _sha256_bytes(chunk)
 
     worker, thread = create_download_worker(
         result_queue,
         "http://example.com/installer.exe",
-        None,
+        digest,
         temp_download_path
     )
 
@@ -463,25 +460,28 @@ def test_select_platform_asset_returns_none_when_no_match():
 
 
 def test_get_installer_download_path():
-    """get_installer_download_path returns Path in temp directory with correct extension."""
+    """get_installer_download_path returns a private temp Path with correct extension."""
     version = "2.2.0"
 
     with patch("job_radar.update_checker.sys", _make_mock_sys("darwin")):
         checker = UpdateChecker()
         path = checker.get_installer_download_path(version)
-        assert path.parent == Path(tempfile.gettempdir())
+        assert path.parent.parent == Path(tempfile.gettempdir())
+        assert path.parent.name.startswith("job-radar-update-")
         assert path.name == f"Job-Radar-v{version}-installer.dmg"
 
     with patch("job_radar.update_checker.sys", _make_mock_sys("win32")):
         checker = UpdateChecker()
         path = checker.get_installer_download_path(version)
-        assert path.parent == Path(tempfile.gettempdir())
+        assert path.parent.parent == Path(tempfile.gettempdir())
+        assert path.parent.name.startswith("job-radar-update-")
         assert path.name == f"Job-Radar-Setup-v{version}.exe"
 
     with patch("job_radar.update_checker.sys", _make_mock_sys("linux")):
         checker = UpdateChecker()
         path = checker.get_installer_download_path(version)
-        assert path.parent == Path(tempfile.gettempdir())
+        assert path.parent.parent == Path(tempfile.gettempdir())
+        assert path.parent.name.startswith("job-radar-update-")
         assert path.name == f"job-radar-v{version}-installer.tar.gz"
 
 

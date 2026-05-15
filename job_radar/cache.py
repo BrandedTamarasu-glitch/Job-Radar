@@ -8,6 +8,7 @@ import threading
 import time
 from pathlib import Path
 from typing import Optional
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 import requests
 
@@ -88,6 +89,23 @@ def _cache_path(url: str) -> Path:
     return get_cache_dir() / f"{url_hash}.json"
 
 
+def _redact_url(url: str) -> str:
+    """Return a log-safe URL with credential-like query values redacted."""
+    sensitive_tokens = ("key", "token", "secret", "password", "app_id", "client_id")
+    try:
+        parts = urlsplit(url)
+        query = []
+        for key, value in parse_qsl(parts.query, keep_blank_values=True):
+            lower_key = key.lower()
+            if any(token in lower_key for token in sensitive_tokens):
+                query.append((key, "REDACTED"))
+            else:
+                query.append((key, value))
+        return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(query), parts.fragment))
+    except Exception:
+        return "<unparseable-url>"
+
+
 def _read_cache(url: str, max_age_seconds: int | float | None = None) -> Optional[str]:
     """Read cached response if it exists and is fresh."""
     path = _cache_path(url)
@@ -99,7 +117,7 @@ def _read_cache(url: str, max_age_seconds: int | float | None = None) -> Optiona
         if time.time() - entry["ts"] > effective_max_age:
             path.unlink()
             return None
-        log.debug("Cache hit: %s", url[:80])
+        log.debug("Cache hit: %s", _redact_url(url)[:120])
         return entry["body"]
     except (json.JSONDecodeError, KeyError, OSError):
         return None
@@ -112,7 +130,7 @@ def _write_cache(url: str, body: str):
     path = _cache_path(url)
     try:
         path.write_text(
-            json.dumps({"url": url, "ts": time.time(), "body": body}),
+            json.dumps({"url_hash": hashlib.sha256(url.encode()).hexdigest(), "ts": time.time(), "body": body}),
             encoding="utf-8",
         )
     except OSError as e:
@@ -206,11 +224,11 @@ def fetch_with_retry(
                 wait = backoff ** attempt
                 log.warning(
                     "Fetch attempt %d/%d failed for %s: %s (retry in %.1fs)",
-                    attempt, retries, url[:80], e, wait,
+                    attempt, retries, _redact_url(url)[:120], e, wait,
                 )
                 time.sleep(wait)
             else:
-                log.error("All %d fetch attempts failed for %s: %s", retries, url[:80], e)
+                log.error("All %d fetch attempts failed for %s: %s", retries, _redact_url(url)[:120], e)
 
     return None
 

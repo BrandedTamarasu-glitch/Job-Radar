@@ -8,7 +8,6 @@ navigation, progress display, and report opening.
 import os
 import queue
 import sys
-import tempfile
 import threading
 import webbrowser
 from datetime import date
@@ -19,6 +18,12 @@ import customtkinter as ctk
 import requests
 
 from job_radar import __version__
+from job_radar.api_config import (
+    ApiCredentialError,
+    get_api_credentials_path,
+    read_api_credentials_file,
+    save_api_credentials,
+)
 from job_radar.application_templates import (
     get_application_note_templates,
     render_application_note_template,
@@ -108,7 +113,7 @@ from job_radar.uninstaller import (
     get_binary_path,
     create_cleanup_script,
 )
-from dotenv import find_dotenv, load_dotenv
+from dotenv import load_dotenv
 
 
 class MainWindow(ctk.CTk):
@@ -2761,8 +2766,8 @@ class MainWindow(ctk.CTk):
         )
         desc_label.pack(pady=(0, 20))
 
-        # Load current env values from CWD .env (don't search filesystem)
-        env_path = Path.cwd() / ".env"
+        # Load current env values from the app-data credential file.
+        env_path = get_api_credentials_path()
         if env_path.exists():
             load_dotenv(env_path, override=False)
 
@@ -3358,7 +3363,7 @@ class MainWindow(ctk.CTk):
             self.after(0, lambda: status_label.configure(text=f"⚠ Error: {e}", text_color="orange"))
 
     def _save_api_keys(self):
-        """Save API keys to .env file atomically."""
+        """Save API keys to the app-data credential file atomically."""
         # Collect all field values
         env_vars = {}
         for field_id, (entry, env_var) in self._api_fields.items():
@@ -3366,96 +3371,19 @@ class MainWindow(ctk.CTk):
             if value:  # Only save non-empty values
                 env_vars[env_var] = value
 
-        # Find or create .env path
-        dotenv_path = find_dotenv(usecwd=True)
-        if not dotenv_path:
-            dotenv_path = os.path.join(os.getcwd(), ".env")
-
-        # Read existing .env content
-        existing_vars = {}
-        if os.path.exists(dotenv_path):
-            with open(dotenv_path, "r", encoding="utf-8") as f:
-                for line in f:
-                    line = line.strip()
-                    if line and not line.startswith("#") and "=" in line:
-                        key, value = line.split("=", 1)
-                        existing_vars[key.strip()] = value.strip()
+        try:
+            existing_vars = read_api_credentials_file()
+        except ApiCredentialError as e:
+            self._show_error_dialog(f"Failed to read existing API keys: {e}")
+            return
 
         # Merge with new values
         existing_vars.update(env_vars)
 
-        # Build .env content
-        content_lines = ["# Job Radar API Configuration\n"]
-
-        # JSearch section
-        content_lines.append("\n# JSearch API (LinkedIn, Indeed, Glassdoor aggregator)")
-        content_lines.append("# Get your key from RapidAPI: https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch")
-        if "JSEARCH_API_KEY" in existing_vars:
-            content_lines.append(f"JSEARCH_API_KEY={existing_vars['JSEARCH_API_KEY']}")
-        else:
-            content_lines.append("JSEARCH_API_KEY=")
-
-        # USAJobs section
-        content_lines.append("\n# USAJobs API (Federal Government Jobs)")
-        content_lines.append("# Register at: https://developer.usajobs.gov/")
-        if "USAJOBS_EMAIL" in existing_vars:
-            content_lines.append(f"USAJOBS_EMAIL={existing_vars['USAJOBS_EMAIL']}")
-        else:
-            content_lines.append("USAJOBS_EMAIL=")
-        if "USAJOBS_API_KEY" in existing_vars:
-            content_lines.append(f"USAJOBS_API_KEY={existing_vars['USAJOBS_API_KEY']}")
-        else:
-            content_lines.append("USAJOBS_API_KEY=")
-
-        # Adzuna section
-        content_lines.append("\n# Adzuna API")
-        content_lines.append("# Sign up at: https://developer.adzuna.com/")
-        if "ADZUNA_APP_ID" in existing_vars:
-            content_lines.append(f"ADZUNA_APP_ID={existing_vars['ADZUNA_APP_ID']}")
-        else:
-            content_lines.append("ADZUNA_APP_ID=")
-        if "ADZUNA_APP_KEY" in existing_vars:
-            content_lines.append(f"ADZUNA_APP_KEY={existing_vars['ADZUNA_APP_KEY']}")
-        else:
-            content_lines.append("ADZUNA_APP_KEY=")
-
-        # Authentic Jobs section
-        content_lines.append("\n# Authentic Jobs API")
-        content_lines.append("# Get your key from: https://authenticjobs.com/api/")
-        if "AUTHENTIC_JOBS_API_KEY" in existing_vars:
-            content_lines.append(f"AUTHENTIC_JOBS_API_KEY={existing_vars['AUTHENTIC_JOBS_API_KEY']}")
-        else:
-            content_lines.append("AUTHENTIC_JOBS_API_KEY=")
-
-        # SerpAPI section
-        content_lines.append("\n# SerpAPI (Google Jobs)")
-        content_lines.append("# Sign up at: https://serpapi.com/")
-        if "SERPAPI_API_KEY" in existing_vars:
-            content_lines.append(f"SERPAPI_API_KEY={existing_vars['SERPAPI_API_KEY']}")
-        else:
-            content_lines.append("SERPAPI_API_KEY=")
-
-        content = "\n".join(content_lines) + "\n"
-
-        # Atomic write using tempfile + replace
         try:
-            fd, temp_path = tempfile.mkstemp(mode="w", encoding="utf-8", dir=os.path.dirname(dotenv_path) or ".")
-            try:
-                os.write(fd, content.encode("utf-8"))
-                os.close(fd)
-                Path(temp_path).replace(dotenv_path)
-
-                # Reload environment variables
-                load_dotenv(dotenv_path, override=True)
-
-                # Show success message
-                self._show_info_dialog("API keys saved successfully!")
-
-            except Exception as e:
-                os.close(fd)
-                os.unlink(temp_path)
-                raise
-        except Exception as e:
+            save_api_credentials(existing_vars)
+            self._show_info_dialog("API keys saved successfully!")
+        except ApiCredentialError as e:
             self._show_error_dialog(f"Failed to save API keys: {e}")
 
     def update_quota_display(self):

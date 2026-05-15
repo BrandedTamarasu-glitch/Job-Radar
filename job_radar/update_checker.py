@@ -516,7 +516,7 @@ class UpdateChecker:
     def get_installer_download_path(self, version: str) -> Path:
         """Get the destination path for downloaded installer.
 
-        Uses system temp directory with version-stamped filename.
+        Uses a private per-run temp directory with a version-stamped filename.
 
         Args:
             version: Version string (e.g., "2.2.0")
@@ -524,7 +524,7 @@ class UpdateChecker:
         Returns:
             Path to destination file
         """
-        temp_dir = tempfile.gettempdir()
+        temp_dir = Path(tempfile.mkdtemp(prefix="job-radar-update-"))
 
         # Determine filename based on platform
         if sys.platform == "darwin":
@@ -537,7 +537,7 @@ class UpdateChecker:
             # Fallback
             filename = f"job-radar-v{version}-installer"
 
-        return Path(temp_dir) / filename
+        return temp_dir / filename
 
 
 def launch_installer(installer_path: Path, platform: str | None = None) -> str:

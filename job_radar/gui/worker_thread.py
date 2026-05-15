@@ -622,7 +622,7 @@ class DownloadWorker:
 
     Communicates with GUI via queue.Queue. Supports cooperative cancellation via
     threading.Event. Deletes partial files on cancellation. Verifies SHA256 digest
-    after download (gracefully skips if digest is None).
+    after download. Missing digest metadata fails closed.
 
     Queue message protocol:
         - ("download_progress", downloaded: int, total_size: int)
@@ -659,9 +659,17 @@ class DownloadWorker:
 
         Downloads file in 8KB chunks with progress updates every ~100KB.
         Checks stop_event for cancellation and deletes partial file if cancelled.
-        Verifies SHA256 digest after download (skips if digest is None).
+        Verifies SHA256 digest after download and rejects unverifiable assets.
         """
         try:
+            expected_hash = self._normalized_expected_hash()
+            if expected_hash is None:
+                self._queue.put((
+                    "download_failed",
+                    "Download verification unavailable - release asset is missing a SHA256 digest"
+                ))
+                return
+
             # Step 1: Start streaming download
             response = requests.get(
                 self._asset_url,
@@ -701,28 +709,16 @@ class DownloadWorker:
             # Send final 100% progress
             self._queue.put(("download_progress", total_size, total_size))
 
-            # Step 4: Verify SHA256 if digest provided
-            if self._asset_digest:
-                computed_hash = self._compute_sha256(self._dest_path)
-
-                # Extract expected hash (strip "sha256:" prefix if present)
-                expected_hash = self._asset_digest
-                if expected_hash.startswith("sha256:"):
-                    expected_hash = expected_hash[7:]
-
-                if computed_hash.lower() != expected_hash.lower():
-                    # Hash mismatch - delete file
-                    Path(self._dest_path).unlink(missing_ok=True)
-                    self._queue.put((
-                        "download_failed",
-                        "Hash verification failed — file may be corrupted"
-                    ))
-                    return
-            else:
-                # No digest available - skip verification
-                import logging
-                log = logging.getLogger(__name__)
-                log.warning("Asset has no digest field - skipping verification")
+            # Step 4: Verify SHA256
+            computed_hash = self._compute_sha256(self._dest_path)
+            if computed_hash.lower() != expected_hash:
+                # Hash mismatch - delete file
+                Path(self._dest_path).unlink(missing_ok=True)
+                self._queue.put((
+                    "download_failed",
+                    "Hash verification failed - file may be corrupted"
+                ))
+                return
 
             # Step 5: Download complete
             self._queue.put(("download_complete", self._dest_path))
@@ -745,6 +741,18 @@ class DownloadWorker:
             for chunk in iter(lambda: f.read(4096), b""):
                 sha256_hash.update(chunk)
         return sha256_hash.hexdigest()
+
+    def _normalized_expected_hash(self) -> str | None:
+        """Return a lowercase SHA256 digest, or None when the asset is unverifiable."""
+        if not self._asset_digest:
+            return None
+        expected_hash = self._asset_digest.strip()
+        if expected_hash.startswith("sha256:"):
+            expected_hash = expected_hash[7:]
+        expected_hash = expected_hash.strip().lower()
+        if len(expected_hash) != 64 or any(char not in "0123456789abcdef" for char in expected_hash):
+            return None
+        return expected_hash
 
     def cancel(self):
         """Request cancellation of the download operation."""

@@ -7,15 +7,15 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Accurate job-candidate scoring — if the scoring is wrong, nothing else matters.
-**Current focus:** Product Iteration U-Y completion checkpoint
+**Current focus:** Audit remediation release blockers
 
 ## Current Position
 
-**Milestone:** Product Iteration U-Y — COMPLETE
-**Status:** Product Iteration U-Y complete
-**Last activity:** 2026-05-15 — completed Product Iteration U-Y, including adaptive command center, workflow shortcuts, source strategy intelligence, release readiness, local Linux artifact build verification, and copyable privacy-safe feedback diagnostics with next-product-slice candidates.
+**Milestone:** v2.7.x audit remediation
+**Status:** Sprint 0 in progress
+**Last activity:** 2026-05-15 — Review Squad completed a top-to-bottom quality, security, UX, and rebase-readiness audit after v2.7.0. The next production release is blocked until runtime trust/privacy fixes are complete.
 
-**Next step:** commit the U-Y completion checkpoint, then decide the next product iteration from `.planning/POST_RELEASE_FEEDBACK_U_Y.md`.
+**Next step:** complete Sprint 0 in `.planning/AUDIT_REMEDIATION_SPRINTS.md`, then run full tests and release-readiness validation before tagging again.
 
 ## Performance Metrics
 
@@ -118,25 +118,26 @@ Full decision log: PROJECT.md Key Decisions table (143 decisions)
 
 ### Active Sprint Plan
 
-See `.planning/PRODUCT_ITERATION_SPRINTS_U_Y.md`.
+See `.planning/AUDIT_REMEDIATION_SPRINTS.md`.
 
-- Sprint U: Adaptive Command Center — complete
-- Sprint V: Workflow Shortcuts & Bulk Actions — complete
-- Sprint W: Source Strategy & Preset Intelligence — complete
-- Sprint X: Release Readiness & Regression Sweep — complete
-- Sprint Y: Post-Release Feedback Loop — complete
+- Sprint 0: Release Blockers — in progress
+- Sprint 1: Must-Fix Trust, State, And Release Hygiene — pending
+- Sprint 2: Persistence And Schema Consolidation — pending
+- Sprint 3: Rebase-Nimble Architecture — pending
+- Sprint 4: UX, Accessibility, And Product Polish — pending
 
 ### Blockers/Concerns
 
-None. Product Iteration U-Y is complete.
+- Next production release is blocked until updater integrity, local report assets, and app-data credential storage are complete and validated.
+- Release workflow hardening, URL allowlisting, report/app status sync, and installer metadata identity cleanup are must-fix before the next tag.
 
 ## Session Continuity
 
 Last session: 2026-05-15
-Stopped at: Product Iteration U-Y completion checkpoint
+Stopped at: Audit remediation Sprint 0 in progress
 Resume file: None
 
-**Next step:** Commit U-Y completion checkpoint and choose the next product iteration.
+**Next step:** Finish Sprint 0 validation, then proceed to Sprint 1 trust/state/release hygiene.
 
 ---
 *State initialized: 2026-02-13*

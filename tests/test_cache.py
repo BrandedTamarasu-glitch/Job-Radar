@@ -177,6 +177,39 @@ def test_fetch_with_retry_tracks_cache_hits_misses_and_writes(tmp_path, monkeypa
     }
 
 
+def test_cache_entry_omits_raw_credential_bearing_url(tmp_path, monkeypatch):
+    """Cached response metadata does not persist full API URLs with secrets."""
+    data_dir = tmp_path / "data"
+
+    class Response:
+        text = "cached body"
+
+        def raise_for_status(self):
+            return None
+
+    url = "https://example.com/jobs?app_key=secret-value&q=python"
+    monkeypatch.setattr("job_radar.cache.get_data_dir", lambda: data_dir)
+    monkeypatch.setattr("job_radar.cache.requests.get", lambda *args, **kwargs: Response())
+
+    assert cache.fetch_with_retry(url, headers={}) == "cached body"
+
+    entry = json.loads(cache._cache_path(url).read_text(encoding="utf-8"))
+    assert "url" not in entry
+    assert entry["url_hash"]
+    assert "secret-value" not in json.dumps(entry)
+
+
+def test_redact_url_masks_credential_query_values():
+    """Log-safe URLs retain shape without leaking key values."""
+    redacted = cache._redact_url("https://example.com/jobs?app_key=secret&q=python&token=abc")
+
+    assert "secret" not in redacted
+    assert "abc" not in redacted
+    assert "app_key=REDACTED" in redacted
+    assert "token=REDACTED" in redacted
+    assert "q=python" in redacted
+
+
 def test_fetch_with_retry_tracks_disabled_cache_requests(monkeypatch):
     """fetch_with_retry records uncached requests when cache is disabled."""
     class Response:
