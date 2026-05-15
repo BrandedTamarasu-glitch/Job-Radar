@@ -7,6 +7,11 @@ results/
 profiles/*.json
 !profiles/_template.json
 dist/
+job-radar-v*-linux.tar.gz
+job-radar-v*-macos.zip
+job-radar-v*-windows.zip
+job-radar-v*.sha256
+installer-*.sha256
 *.egg-info/
 build/
 .env
