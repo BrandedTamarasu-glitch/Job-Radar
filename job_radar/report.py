@@ -27,6 +27,7 @@ from .report_text import make_snippet as _make_snippet
 from .report_text import markdown_cell as _markdown_cell
 from .report_tiers import score_tier as _score_tier
 from .report_tiers import tier_icon_class as _tier_icon_class
+from .report_tracker import html_tracker_stats as _html_tracker_stats
 
 
 log = logging.getLogger(__name__)
@@ -2248,17 +2249,6 @@ def _generate_html_report(
 </html>"""
 
     filepath.write_text(html_content, encoding="utf-8")
-
-
-def _html_tracker_stats(tracker_stats: dict) -> str:
-    """Generate HTML for tracker statistics."""
-    return f"""
-    <div class="alert alert-secondary">
-      <strong>Lifetime stats:</strong> {tracker_stats['total_unique_jobs_seen']} unique jobs seen
-      across {tracker_stats['total_runs']} runs |
-      Avg {tracker_stats['avg_new_per_run_last_7']} new/run (last 7)
-    </div>
-    """
 
 
 def _html_job_detail_items(result: dict, profile: dict) -> str:
