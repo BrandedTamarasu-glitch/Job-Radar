@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 import pytest
 from job_radar.tracker import (
+    TRACKER_SCHEMA_VERSION,
     TRACKER_SEEN_RETENTION_DAYS,
     _load_tracker,
     _prune_old_seen_jobs,
@@ -75,6 +76,8 @@ def test_mark_seen_new_job(tmp_path, job_factory):
         # Assert tracker file exists on disk
         tracker_path = tmp_path / "tracker.json"
         assert tracker_path.exists()
+        tracker = json.loads(tracker_path.read_text(encoding="utf-8"))
+        assert tracker["version"] == TRACKER_SCHEMA_VERSION
 
 
 def test_tracker_save_failure_preserves_existing_file(tmp_path):
@@ -90,6 +93,21 @@ def test_tracker_save_failure_preserves_existing_file(tmp_path):
         update_application_status("Backend Engineer", "Acme", "applied")
 
     assert json.loads(tracker_path.read_text(encoding="utf-8")) == original
+
+
+def test_load_tracker_normalizes_legacy_minimal_payload(tmp_path):
+    """Legacy tracker files gain required containers and schema metadata on load."""
+    tracker_path = tmp_path / "tracker.json"
+    tracker_path.write_text('{"applications": {"role||co": {"status": "applied"}}}', encoding="utf-8")
+
+    with patch("job_radar.tracker._TRACKER_PATH", str(tracker_path)):
+        tracker = _load_tracker()
+
+    assert tracker["version"] == TRACKER_SCHEMA_VERSION
+    assert tracker["seen_jobs"] == {}
+    assert tracker["run_history"] == []
+    assert tracker["source_health_history"] == []
+    assert tracker["applications"]["role||co"]["status"] == "applied"
 
 
 def test_mark_seen_repeat_job(tmp_path, job_factory):

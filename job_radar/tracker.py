@@ -16,6 +16,7 @@ log = logging.getLogger(__name__)
 
 _TRACKER_PATH: str | None = None
 _LEGACY_TRACKER_PATH = os.path.join(os.getcwd(), "results", "tracker.json")
+TRACKER_SCHEMA_VERSION = 1
 TRACKER_SEEN_RETENTION_DAYS = 180
 TRACKER_SOURCE_HEALTH_RETENTION_RUNS = 90
 
@@ -35,6 +36,35 @@ def _read_tracker_file(path: Path) -> dict:
         return json.load(f)
 
 
+def _empty_tracker() -> dict:
+    """Return the current tracker schema with empty state containers."""
+    return {
+        "version": TRACKER_SCHEMA_VERSION,
+        "seen_jobs": {},
+        "applications": {},
+        "run_history": [],
+        "source_health_history": [],
+    }
+
+
+def _normalize_tracker(data: dict | None) -> dict:
+    """Normalize legacy/minimal tracker payloads into the current schema."""
+    if not isinstance(data, dict):
+        return _empty_tracker()
+
+    tracker = dict(data)
+    tracker["version"] = TRACKER_SCHEMA_VERSION
+    if not isinstance(tracker.get("seen_jobs"), dict):
+        tracker["seen_jobs"] = {}
+    if not isinstance(tracker.get("applications"), dict):
+        tracker["applications"] = {}
+    if not isinstance(tracker.get("run_history"), list):
+        tracker["run_history"] = []
+    if not isinstance(tracker.get("source_health_history"), list):
+        tracker["source_health_history"] = []
+    return tracker
+
+
 def _load_tracker() -> dict:
     """Load tracker data from disk."""
     tracker_path = _tracker_path()
@@ -42,22 +72,22 @@ def _load_tracker() -> dict:
         legacy_path = Path(_LEGACY_TRACKER_PATH)
         if _TRACKER_PATH is None and legacy_path.exists():
             try:
-                return _read_tracker_file(legacy_path)
+                return _normalize_tracker(_read_tracker_file(legacy_path))
             except (json.JSONDecodeError, OSError) as e:
                 log.warning("Failed to load legacy tracker: %s", e)
-        return {"seen_jobs": {}, "applications": {}, "run_history": []}
+        return _empty_tracker()
     try:
-        return _read_tracker_file(tracker_path)
+        return _normalize_tracker(_read_tracker_file(tracker_path))
     except (json.JSONDecodeError, OSError) as e:
         log.warning("Failed to load tracker: %s", e)
-        return {"seen_jobs": {}, "applications": {}, "run_history": []}
+        return _empty_tracker()
 
 
 def _save_tracker(data: dict):
     """Save tracker data to disk."""
     tracker_path = _tracker_path()
     try:
-        _write_json_atomic(tracker_path, data)
+        _write_json_atomic(tracker_path, _normalize_tracker(data))
     except OSError as e:
         log.warning("Failed to save tracker: %s", e)
 
