@@ -224,6 +224,27 @@ def format_run_summary(item: dict[str, Any]) -> str:
     )
 
 
+def format_search_insight(item: dict[str, Any]) -> str:
+    """Return a concise previous-run comparison for display."""
+    stats = item.get("last_result_stats") or {}
+    if not stats:
+        return "Comparison starts after the first completed run."
+
+    previous = item.get("previous_result_stats") or {}
+    if not previous:
+        return "Comparison starts after the next completed run."
+
+    deltas = [
+        _format_stat_delta("total", stats, previous),
+        _format_stat_delta("new", stats, previous),
+        _format_stat_delta("high-score", stats, previous, key="high_score"),
+    ]
+    changed = [delta for delta in deltas if delta]
+    if not changed:
+        return "No result movement since the previous run."
+    return f"Change: {', '.join(changed)} vs previous."
+
+
 def _empty_state() -> dict:
     return {"version": 1, "recent": [], "saved": []}
 
@@ -275,6 +296,20 @@ def _format_total_delta(current: dict[str, Any], previous: dict[str, Any]) -> st
         return ", no change"
     sign = "+" if delta > 0 else ""
     return f", {sign}{delta} vs previous"
+
+
+def _format_stat_delta(
+    label: str,
+    current: dict[str, Any],
+    previous: dict[str, Any],
+    key: str | None = None,
+) -> str:
+    key = key or label
+    delta = int(current.get(key) or 0) - int(previous.get(key) or 0)
+    if delta == 0:
+        return ""
+    sign = "+" if delta > 0 else ""
+    return f"{sign}{delta} {label}"
 
 
 def _write_state(path: Path, state: dict) -> None:

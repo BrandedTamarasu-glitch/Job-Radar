@@ -78,6 +78,7 @@ from job_radar.gui.uninstall_dialog import (
 from job_radar.rate_limits import get_quota_usage
 from job_radar.review_state import review_state_counts
 from job_radar.saved_searches import (
+    format_search_insight,
     format_run_summary,
     load_search_history,
     record_search_run,
@@ -1241,10 +1242,14 @@ class MainWindow(ctk.CTk):
                 ).grid(row=index, column=0, sticky="ew", padx=12, pady=(0, 6))
                 ctk.CTkLabel(
                     panel,
-                    text=format_run_summary(item),
+                    text=(
+                        f"{format_run_summary(item)}\n"
+                        f"{format_search_insight(item)}"
+                    ),
                     font=ctk.CTkFont(size=11),
                     text_color="gray",
                     anchor="w",
+                    justify="left",
                 ).grid(row=index, column=1, sticky="w", padx=(8, 12), pady=(0, 6))
 
         self._saved_search_status_label = ctk.CTkLabel(

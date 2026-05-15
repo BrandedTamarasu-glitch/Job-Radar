@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 
 from job_radar.saved_searches import (
     delete_named_search,
+    format_search_insight,
     format_run_summary,
     load_search_history,
     normalize_search_config,
@@ -238,3 +239,30 @@ def test_format_run_summary_includes_previous_total_delta():
     assert format_run_summary(item) == (
         "Last run: 12 results, +4 vs previous, 5 new, 3 high-score | 2 runs"
     )
+
+
+def test_format_search_insight_waits_for_completed_runs():
+    assert format_search_insight({}) == "Comparison starts after the first completed run."
+    assert format_search_insight({"last_result_stats": {"total": 8}}) == (
+        "Comparison starts after the next completed run."
+    )
+
+
+def test_format_search_insight_summarizes_result_deltas():
+    item = {
+        "previous_result_stats": {"total": 8, "new": 2, "high_score": 1},
+        "last_result_stats": {"total": 12, "new": 5, "high_score": 3},
+    }
+
+    assert format_search_insight(item) == (
+        "Change: +4 total, +3 new, +2 high-score vs previous."
+    )
+
+
+def test_format_search_insight_handles_flat_runs():
+    item = {
+        "previous_result_stats": {"total": 8, "new": 2, "high_score": 1},
+        "last_result_stats": {"total": 8, "new": 2, "high_score": 1},
+    }
+
+    assert format_search_insight(item) == "No result movement since the previous run."

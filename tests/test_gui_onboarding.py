@@ -180,6 +180,7 @@ def test_saved_search_panel_loads_and_applies_named_searches():
     assert "Save Current" in source
     assert "_apply_saved_search" in source
     assert "format_run_summary(item)" in source
+    assert "format_search_insight(item)" in source
 
 
 def test_save_current_search_persists_named_search():

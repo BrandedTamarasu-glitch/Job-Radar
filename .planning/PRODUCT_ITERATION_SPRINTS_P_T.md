@@ -17,7 +17,7 @@ Goal: make the first authenticated screen answer "what should I do next?"
 
 Deliverable: returning users can immediately see the highest-value next action without inspecting every tab.
 
-Status: in progress.
+Status: complete. Profile now includes a local next-step panel that prioritizes profile readiness, application follow-ups, review queue work, and saved/recent search shortcuts with tab navigation.
 
 ## Sprint Q: Search Comparison & Insight Recap
 
@@ -30,7 +30,7 @@ Goal: help users understand how the latest run changed their opportunity landsca
 
 Deliverable: users can decide whether a search needs attention before opening a full report.
 
-Status: planned.
+Status: in progress. Saved searches now surface a bounded previous-run comparison line for total, new, and high-score result movement.
 
 ## Sprint R: Follow-Up Workflow Automation
 

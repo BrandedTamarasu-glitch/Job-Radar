@@ -7,15 +7,15 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Accurate job-candidate scoring — if the scoring is wrong, nothing else matters.
-**Current focus:** Product Iteration P-T, starting with Sprint P daily dashboard and next steps
+**Current focus:** Product Iteration P-T, Sprint Q search comparison and insight recap
 
 ## Current Position
 
 **Milestone:** Product Iteration P-T — IN PROGRESS
-**Status:** Sprint P in progress; Sprints Q-T planned
-**Last activity:** 2026-05-15 — shipped v2.6.0 for completed Product Iteration K-O, documented Product Iteration P-T, and started Sprint P by adding a local Profile-tab next-step dashboard foundation.
+**Status:** Sprint P complete; Sprint Q in progress; Sprints R-T planned
+**Last activity:** 2026-05-15 — shipped v2.6.0 for completed Product Iteration K-O, documented Product Iteration P-T, completed the Sprint P Profile-tab next-step dashboard foundation, and started Sprint Q with saved-search previous-run insight text.
 
-**Next step:** continue Sprint P by refining the daily dashboard action panel and validating the first-run/returning-user experience.
+**Next step:** continue Sprint Q by expanding search comparisons into bounded saved-search and recent-search recap surfaces.
 
 ## Performance Metrics
 
@@ -120,23 +120,23 @@ Full decision log: PROJECT.md Key Decisions table (143 decisions)
 
 See `.planning/PRODUCT_ITERATION_SPRINTS_P_T.md`.
 
-- Sprint P: Daily Dashboard & Next Steps — in progress
-- Sprint Q: Search Comparison & Insight Recap — planned
+- Sprint P: Daily Dashboard & Next Steps — complete
+- Sprint Q: Search Comparison & Insight Recap — in progress
 - Sprint R: Follow-Up Workflow Automation — planned
 - Sprint S: Source Quality & Coverage Controls — planned
 - Sprint T: Local Performance & Maintenance Insights — planned
 
 ### Blockers/Concerns
 
-None. Sprint P is active.
+None. Sprint Q is active.
 
 ## Session Continuity
 
 Last session: 2026-05-15
-Stopped at: Sprint P dashboard foundation in progress
+Stopped at: Sprint Q saved-search comparison foundation in progress
 Resume file: None
 
-**Next step:** Continue Sprint P dashboard polish and validation.
+**Next step:** Continue Sprint Q search comparison polish and validation.
 
 ---
 *State initialized: 2026-02-13*

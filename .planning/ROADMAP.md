@@ -69,8 +69,8 @@ See `.planning/PRODUCT_ITERATION_SPRINTS_K_O.md` for the full sprint list.
 
 See `.planning/PRODUCT_ITERATION_SPRINTS_P_T.md` for the full sprint list.
 
-- [ ] Sprint P: Daily Dashboard & Next Steps
-- [ ] Sprint Q: Search Comparison & Insight Recap
+- [x] Sprint P: Daily Dashboard & Next Steps
+- [ ] Sprint Q: Search Comparison & Insight Recap (in progress)
 - [ ] Sprint R: Follow-Up Workflow Automation
 - [ ] Sprint S: Source Quality & Coverage Controls
 - [ ] Sprint T: Local Performance & Maintenance Insights
