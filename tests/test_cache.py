@@ -199,6 +199,22 @@ def test_cache_entry_omits_raw_credential_bearing_url(tmp_path, monkeypatch):
     assert "secret-value" not in json.dumps(entry)
 
 
+def test_cache_write_failure_preserves_existing_entry(tmp_path, monkeypatch):
+    """Failed cache writes leave the prior cache entry intact."""
+    data_dir = tmp_path / "data"
+    url = "https://example.com/jobs"
+    monkeypatch.setattr("job_radar.cache.get_data_dir", lambda: data_dir)
+    path = cache._cache_path(url)
+    path.parent.mkdir(parents=True)
+    path.write_text(json.dumps({"ts": 1000, "body": "old body"}), encoding="utf-8")
+    monkeypatch.setattr("job_radar.cache.os.fsync", lambda _fd: (_ for _ in ()).throw(OSError("disk full")))
+
+    cache._write_cache(url, "new body")
+
+    assert json.loads(path.read_text(encoding="utf-8"))["body"] == "old body"
+    assert not list(path.parent.glob("*.tmp"))
+
+
 def test_redact_url_masks_credential_query_values():
     """Log-safe URLs retain shape without leaking key values."""
     redacted = cache._redact_url("https://example.com/jobs?app_key=secret&q=python&token=abc")

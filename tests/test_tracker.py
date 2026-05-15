@@ -77,6 +77,21 @@ def test_mark_seen_new_job(tmp_path, job_factory):
         assert tracker_path.exists()
 
 
+def test_tracker_save_failure_preserves_existing_file(tmp_path):
+    """Failed tracker writes do not overwrite the existing tracker file."""
+    tracker_path = tmp_path / "tracker.json"
+    original = {"seen_jobs": {}, "applications": {}, "run_history": []}
+    tracker_path.write_text(json.dumps(original), encoding="utf-8")
+
+    with patch("job_radar.tracker._TRACKER_PATH", str(tracker_path)), patch(
+        "job_radar.tracker._write_json_atomic",
+        side_effect=OSError("disk full"),
+    ):
+        update_application_status("Backend Engineer", "Acme", "applied")
+
+    assert json.loads(tracker_path.read_text(encoding="utf-8")) == original
+
+
 def test_mark_seen_repeat_job(tmp_path, job_factory):
     """Test mark_seen marks repeat jobs as is_new=False (TEST-05)."""
     with patch("job_radar.tracker._TRACKER_PATH", str(tmp_path / "tracker.json")):

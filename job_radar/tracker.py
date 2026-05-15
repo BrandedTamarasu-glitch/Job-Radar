@@ -10,6 +10,7 @@ from datetime import date, datetime
 from pathlib import Path
 
 from .paths import get_results_dir
+from .profile_manager import _write_json_atomic
 
 log = logging.getLogger(__name__)
 
@@ -55,10 +56,8 @@ def _load_tracker() -> dict:
 def _save_tracker(data: dict):
     """Save tracker data to disk."""
     tracker_path = _tracker_path()
-    tracker_path.parent.mkdir(parents=True, exist_ok=True)
     try:
-        with tracker_path.open("w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2)
+        _write_json_atomic(tracker_path, data)
     except OSError as e:
         log.warning("Failed to save tracker: %s", e)
 
