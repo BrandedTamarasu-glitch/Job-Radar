@@ -165,6 +165,7 @@ def test_recent_search_panel_loads_and_applies_configs():
     assert "_apply_recent_search" in source
     assert "recent_searches[:3]" in source
     assert "format_run_summary(item)" in source
+    assert "format_search_insight(item)" in source
 
 
 def test_apply_recent_search_uses_search_controls_defaults():

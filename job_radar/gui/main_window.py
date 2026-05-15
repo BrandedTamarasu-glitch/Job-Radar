@@ -1185,10 +1185,14 @@ class MainWindow(ctk.CTk):
             ).grid(row=index, column=0, sticky="ew", padx=12, pady=(0, 6))
             ctk.CTkLabel(
                 panel,
-                text=format_run_summary(item),
+                text=(
+                    f"{format_run_summary(item)}\n"
+                    f"{format_search_insight(item)}"
+                ),
                 font=ctk.CTkFont(size=11),
                 text_color="gray",
                 anchor="w",
+                justify="left",
             ).grid(row=index, column=1, sticky="w", padx=(8, 12), pady=(0, 6))
 
     def _apply_recent_search(self, config: dict):
