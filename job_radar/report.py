@@ -5,27 +5,11 @@ import logging
 import os
 from datetime import date, datetime
 from pathlib import Path
-from urllib.parse import urlsplit
+
+from .report_safety import safe_external_url as _safe_external_url
+
 
 log = logging.getLogger(__name__)
-
-SAFE_EXTERNAL_URL_SCHEMES = {"http", "https"}
-
-
-def _safe_external_url(url: str | None) -> str:
-    """Return a safe clickable external URL, or an empty string when unsafe."""
-    if not url:
-        return ""
-    candidate = str(url).strip()
-    try:
-        parsed = urlsplit(candidate)
-    except ValueError:
-        return ""
-    if parsed.scheme.lower() not in SAFE_EXTERNAL_URL_SCHEMES:
-        return ""
-    if not parsed.netloc:
-        return ""
-    return candidate
 
 
 def _make_snippet(text: str, max_len: int = 80) -> str:
