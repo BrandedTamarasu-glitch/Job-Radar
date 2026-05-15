@@ -502,7 +502,7 @@ For release builds, also run the platform build script and smoke-test the genera
 - Rate limits (16 tests) - validates rate limiter cleanup, shared backends, config loading, quota queries
 - Review state view model (3 tests) - validates compact GUI review queue summary text
 - Dashboard view model (6 tests) - validates Profile-tab next-step prioritization from readiness, follow-up, review queue, changed saved-search, and search-history state
-- Source diagnostics view model (8 tests) - validates source-health priority, diagnostics, source-control guidance, recommendations, cache freshness, and cache totals for Settings
+- Source diagnostics view model (8 tests) - validates source-health priority, reliability scoring, diagnostics, source-control guidance, recommendations, cache freshness, and cache totals for Settings
 - PDF parser (34 tests) - validates extraction, validation, Unicode support, error handling
 - Report generation (53 tests) - validates HTML/Markdown output, clipboard UI, status tracking, persisted shortlist/maybe-later/dismiss review state, keyboard navigation, compact/detail view, match summaries, filtered-out explanations, grouped skill callouts, large-report row caps and render skipping, mobile layout, accessibility
 - UX polish (69 tests) - validates banner, help text, progress messages, maintenance commands, error handling
@@ -539,8 +539,8 @@ The next product iteration is tracked in `.planning/PRODUCT_ITERATION_SPRINTS_P_
 
 - **Sprint P:** daily dashboard and next steps — complete
 - **Sprint Q:** search comparison and insight recap — complete
-- **Sprint R:** follow-up workflow automation — in progress
-- **Sprint S:** source quality and coverage controls — planned
+- **Sprint R:** follow-up workflow automation — complete
+- **Sprint S:** source quality and coverage controls — in progress
 - **Sprint T:** local performance and maintenance insights — planned
 
 ### Building Executables

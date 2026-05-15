@@ -62,6 +62,18 @@ class SourceDiagnosticRow:
             return 1
         return 0
 
+    @property
+    def reliability_score(self) -> int:
+        """Return a coarse 0-100 reliability score from recent source history."""
+        if self.runs <= 0 and self.failure_count <= 0:
+            return 0
+        total_observations = max(1, self.runs + self.failure_count)
+        penalty = (self.failure_count * 35) + (self.warning_count * 10)
+        if self.average_duration is not None and self.average_duration >= 30:
+            penalty += 10
+        score = round(100 - (penalty / total_observations))
+        return max(0, min(100, score))
+
 
 def build_source_diagnostics(history: list[dict[str, Any]], limit: int = 5) -> list[SourceDiagnosticRow]:
     """Aggregate source health history into slowest-source diagnostics."""
@@ -149,7 +161,8 @@ def format_source_diagnostics_lines(
         lines.append(
             f"{row.name} ({row.health_label}): {duration_text}; {row.runs} {run_noun}; "
             f"{row.total_jobs} jobs; {row.warning_count} {warning_noun}; "
-            f"{row.failure_count} {failure_noun}; {row.recommended_action}"
+            f"{row.failure_count} {failure_noun}; "
+            f"reliability {row.reliability_score}/100; {row.recommended_action}"
         )
 
     cache_totals = build_cache_totals(history)

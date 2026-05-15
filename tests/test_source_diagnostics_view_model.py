@@ -39,6 +39,7 @@ def test_source_diagnostics_groups_slowest_sources_first():
     assert rows[0].health_label == "Needs attention"
     assert rows[0].recommended_action == "retry later or uncheck this source in Search > Sources if failures continue"
     assert rows[0].health_priority == 3
+    assert rows[0].reliability_score == 85
 
 
 def test_source_diagnostics_tracks_failed_source_without_timing():
@@ -94,6 +95,7 @@ def test_source_diagnostics_labels_warning_slow_and_healthy_sources():
     assert rows["HealthySource"].health_label == "Healthy"
     assert rows["HealthySource"].recommended_action == "no action needed"
     assert rows["HealthySource"].health_priority == 0
+    assert rows["HealthySource"].reliability_score == 100
 
 
 def test_cache_totals_sum_history_cache_stats():
@@ -141,7 +143,7 @@ def test_format_source_diagnostics_lines_handles_empty_and_cache_totals():
     assert lines == [
         "Source controls: use Search > Sources to temporarily disable unreliable sources, then refresh diagnostics after reruns.",
         "RemoteOK (Slow): avg 1m 05s, max 1m 05s; 1 run; 3 jobs; "
-        "0 warnings; 0 failures; consider cache freshness or source timeout tuning",
+        "0 warnings; 0 failures; reliability 90/100; consider cache freshness or source timeout tuning",
         "Cache totals: 2 hits, 1 misses, 1 writes, 0 uncached requests",
         "Cache freshness: 67% served from cache, 1 live refreshes",
     ]

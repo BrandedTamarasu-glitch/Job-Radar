@@ -7,15 +7,15 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Accurate job-candidate scoring — if the scoring is wrong, nothing else matters.
-**Current focus:** Product Iteration P-T, Sprint R follow-up workflow automation
+**Current focus:** Product Iteration P-T, Sprint S source quality and coverage controls
 
 ## Current Position
 
 **Milestone:** Product Iteration P-T — IN PROGRESS
-**Status:** Sprints P-Q complete; Sprint R in progress; Sprints S-T planned
-**Last activity:** 2026-05-15 — shipped v2.6.0 for completed Product Iteration K-O, completed Sprint P dashboard next steps, completed Sprint Q search comparison recaps, and continued Sprint R with Applications follow-up queue filters, quick Complete/Snooze actions, and calendar-friendly follow-up export.
+**Status:** Sprints P-R complete; Sprint S in progress; Sprint T planned
+**Last activity:** 2026-05-15 — shipped v2.6.0 for completed Product Iteration K-O, completed Sprints P-R, and started Sprint S with source reliability scores in Settings diagnostics.
 
-**Next step:** continue Sprint R with quick complete/snooze actions for application follow-up rows.
+**Next step:** continue Sprint S with actionable source-toggle recommendations from reliability history.
 
 ## Performance Metrics
 
@@ -122,21 +122,21 @@ See `.planning/PRODUCT_ITERATION_SPRINTS_P_T.md`.
 
 - Sprint P: Daily Dashboard & Next Steps — complete
 - Sprint Q: Search Comparison & Insight Recap — complete
-- Sprint R: Follow-Up Workflow Automation — in progress
-- Sprint S: Source Quality & Coverage Controls — planned
+- Sprint R: Follow-Up Workflow Automation — complete
+- Sprint S: Source Quality & Coverage Controls — in progress
 - Sprint T: Local Performance & Maintenance Insights — planned
 
 ### Blockers/Concerns
 
-None. Sprint R is active.
+None. Sprint S is active.
 
 ## Session Continuity
 
 Last session: 2026-05-15
-Stopped at: Sprint R follow-up filter foundation in progress
+Stopped at: Sprint S source reliability scoring foundation in progress
 Resume file: None
 
-**Next step:** Continue Sprint R quick complete/snooze actions and validation.
+**Next step:** Continue Sprint S source recommendations and validation.
 
 ---
 *State initialized: 2026-02-13*
