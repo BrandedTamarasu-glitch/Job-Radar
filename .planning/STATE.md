@@ -13,7 +13,7 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Milestone:** Product Iteration U-Y — IN PROGRESS
 **Status:** Sprint U complete; Sprint V in progress; Sprints W-Y planned
-**Last activity:** 2026-05-15 — completed Product Iteration P-T, completed Sprint U adaptive dashboard signals, and started Sprint V with bounded review-state clearing helpers for future safe bulk actions.
+**Last activity:** 2026-05-15 — completed Product Iteration P-T, completed Sprint U adaptive dashboard signals, and continued Sprint V with bounded review-state clearing plus a Settings shortcut for dismissed-review cleanup.
 
 **Next step:** continue Sprint V by wiring safe workflow shortcuts into the GUI.
 

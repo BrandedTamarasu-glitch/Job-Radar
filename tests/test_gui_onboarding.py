@@ -179,6 +179,15 @@ def test_settings_tab_includes_local_maintenance_summary():
 
     assert "_local_maintenance_text()" in source
     assert "Storage Maintenance" in source
+    assert "Clear Dismissed Reviews" in source
+
+
+def test_clear_dismissed_reviews_uses_bounded_review_helper():
+    source = inspect.getsource(MainWindow._on_clear_dismissed_reviews)
+
+    assert 'clear_review_state_by_state("dismissed", limit=50)' in source
+    assert "review_state_counts()" in source
+    assert "Cleared" in source
 
 
 def test_real_search_records_recent_search_before_progress():

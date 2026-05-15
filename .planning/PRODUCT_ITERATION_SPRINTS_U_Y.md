@@ -30,7 +30,7 @@ Goal: reduce repeated manual work in search review and applications.
 
 Deliverable: users can process repeated workflow updates faster without losing control.
 
-Status: in progress. Review-state helpers now support bounded clearing by state for future safe bulk review actions.
+Status: in progress. Review-state helpers now support bounded clearing by state, and Settings exposes a bounded dismissed-review cleanup shortcut.
 
 ## Sprint W: Source Strategy & Preset Intelligence
 

@@ -87,7 +87,7 @@ from job_radar.gui.uninstall_dialog import (
     DeletionProgressDialog,
 )
 from job_radar.rate_limits import get_quota_usage
-from job_radar.review_state import review_state_counts
+from job_radar.review_state import clear_review_state_by_state, review_state_counts
 from job_radar.saved_searches import (
     format_search_insight,
     format_run_summary,
@@ -1175,6 +1175,22 @@ class MainWindow(ctk.CTk):
                     text=f"Calendar export failed: {e}",
                     text_color="red",
                 )
+
+    def _on_clear_dismissed_reviews(self):
+        """Clear a bounded batch of dismissed review-state entries."""
+        try:
+            before = review_state_counts().get("dismissed", 0)
+            clear_review_state_by_state("dismissed", limit=50)
+            after = review_state_counts().get("dismissed", 0)
+            removed = max(0, before - after)
+            message = f"Cleared {removed} dismissed review item(s)"
+            color = "green"
+        except Exception as e:
+            message = f"Dismissed review cleanup failed: {e}"
+            color = "red"
+
+        if self._cache_status_label:
+            self._cache_status_label.configure(text=message, text_color=color)
 
     def _show_search_idle(self):
         """Display idle state with search controls and Run Search button."""
@@ -2873,6 +2889,16 @@ class MainWindow(ctk.CTk):
             command=self._on_clear_cache
         )
         clear_cache_btn.pack(pady=(0, 5), anchor="w", padx=10)
+
+        clear_dismissed_btn = ctk.CTkButton(
+            scroll_frame,
+            text="Clear Dismissed Reviews",
+            width=210,
+            fg_color="transparent",
+            border_width=1,
+            command=self._on_clear_dismissed_reviews
+        )
+        clear_dismissed_btn.pack(pady=(0, 5), anchor="w", padx=10)
 
         export_data_btn = ctk.CTkButton(
             scroll_frame,
