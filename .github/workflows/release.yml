@@ -238,7 +238,7 @@ jobs:
           body_path: RELEASE_BODY.md
           files: |
             job-radar-*/job-radar-${{ github.ref_name }}-*
-            installer-macos/*.dmg
-            installer-macos/*.sha256
-            installer-windows/*.exe
-            installer-windows/*.sha256
+            installer-macos/**/*.dmg
+            installer-macos/**/*.sha256
+            installer-windows/**/*.exe
+            installer-windows/**/*.sha256
