@@ -20,6 +20,8 @@ from .report_source_warnings import markdown_source_failures as _markdown_source
 from .report_source_warnings import markdown_source_warnings as _markdown_source_warnings
 from .report_text import make_snippet as _make_snippet
 from .report_text import markdown_cell as _markdown_cell
+from .report_tiers import score_tier as _score_tier
+from .report_tiers import tier_icon_class as _tier_icon_class
 
 
 log = logging.getLogger(__name__)
@@ -337,21 +339,6 @@ def _match_highlights(highlights: list[str], matched_skills: list[str], job) -> 
         elif any(w in h_lower for w in searchable.split()[:20] if len(w) > 4):
             relevant.append(h)
     return relevant[:3]  # max 3 talking points
-
-
-def _score_tier(score: float) -> str:
-    """Return CSS tier class suffix based on score value."""
-    if score >= 4.0:
-        return "strong"
-    elif score >= 3.5:
-        return "rec"
-    else:
-        return "review"
-
-
-def _tier_icon_class(tier: str) -> str:
-    """Return CSS class for tier Unicode icon indicator."""
-    return f"tier-icon tier-icon-{tier}"
 
 
 def _generate_html_report(
