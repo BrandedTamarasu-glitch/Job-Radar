@@ -29,6 +29,7 @@ from .report_matching import match_summary_text as _match_summary_text
 from .report_matching import skill_callout_groups as _skill_callout_groups
 from .report_profile import html_profile_section as _html_profile_section
 from .report_results import html_results_table_header as _html_results_table_header
+from .report_results import html_zero_results_section as _html_zero_results_section
 from .report_safety import safe_external_url as _safe_external_url
 from .report_source_warnings import failed_source_names as _failed_source_names
 from .report_source_warnings import html_source_failures as _html_source_failures
@@ -2426,19 +2427,7 @@ def _html_recommended_section(recommended: list[dict], profile: dict) -> str:
 def _html_results_table(scored_results: list[dict]) -> str:
     """Generate HTML for all results table."""
     if not scored_results:
-        tips = "".join(f"<li>{html.escape(tip)}</li>" for tip in ZERO_RESULTS_TIPS)
-        return """
-        <section aria-labelledby="results-heading">
-          <div class="mb-4">
-            <h2 id="results-heading" class="h4 mb-3">All Results (sorted by score)</h2>
-            <p class="text-muted"><em>No results found.</em></p>
-            <h3 class="h5 mt-3">Try next</h3>
-            <ul>
-              """ + tips + """
-            </ul>
-          </div>
-        </section>
-        """
+        return _html_zero_results_section(ZERO_RESULTS_TIPS)
 
     visible_results = scored_results[:COLLAPSE_RESULTS_AFTER]
     visible_table_header = _html_results_table_header(

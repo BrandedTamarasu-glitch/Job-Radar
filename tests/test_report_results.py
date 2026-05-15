@@ -2,7 +2,25 @@
 
 from __future__ import annotations
 
-from job_radar.report_results import html_results_table_header
+from job_radar.report_results import html_results_table_header, html_zero_results_section
+
+
+def test_html_zero_results_section_renders_empty_state_tips():
+    html = html_zero_results_section(["Broaden titles", "Add Python"])
+
+    assert 'aria-labelledby="results-heading"' in html
+    assert "All Results (sorted by score)" in html
+    assert "No results found." in html
+    assert "Try next" in html
+    assert "<li>Broaden titles</li>" in html
+    assert "<li>Add Python</li>" in html
+
+
+def test_html_zero_results_section_escapes_tips():
+    html = html_zero_results_section(['Add <script>alert("x")</script>'])
+
+    assert "<script>" not in html
+    assert "&lt;script&gt;" in html
 
 
 def test_html_results_table_header_renders_common_columns():
