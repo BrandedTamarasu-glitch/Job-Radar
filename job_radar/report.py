@@ -33,8 +33,8 @@ from .report_source_warnings import markdown_source_warnings as _markdown_source
 from .report_stats import calculate_report_stats
 from .report_text import make_snippet as _make_snippet
 from .report_text import markdown_cell as _markdown_cell
+from .report_tiers import html_score_badge as _html_score_badge
 from .report_tiers import score_tier as _score_tier
-from .report_tiers import tier_icon_class as _tier_icon_class
 from .report_tracker import html_tracker_stats as _html_tracker_stats
 
 
@@ -2295,9 +2295,7 @@ def _html_hero_section(hero_jobs: list[dict], profile: dict) -> str:
 
         status_dropdown = _html_status_dropdown(extra_classes="ms-2")
 
-        # Score badge with "Top Match" label
-        tier_icon_html = f'<span class="{_tier_icon_class(tier)}" aria-hidden="true"></span>'
-        score_badge_html = f'{tier_icon_html}<span class="badge rounded-pill score-badge tier-badge-{tier}"><span class="visually-hidden">Score </span>{score_val:.1f}<span class="visually-hidden"> out of 5.0, </span><span class="badge-label">Top Match</span></span>'
+        score_badge_html = _html_score_badge(score_val, tier, label="Top Match")
 
         card = f"""
         <div {data_attrs}>
@@ -2390,9 +2388,7 @@ def _html_recommended_section(recommended: list[dict], profile: dict) -> str:
 
         status_dropdown = _html_status_dropdown(extra_classes="ms-2")
 
-        # Score badge with screen reader context and tier icon
-        tier_icon_html = f'<span class="{_tier_icon_class(tier)}" aria-hidden="true"></span>'
-        score_badge_html = f'{tier_icon_html}<span class="badge rounded-pill score-badge tier-badge-{tier}"><span class="visually-hidden">Score </span>{score_val:.1f}<span class="visually-hidden"> out of 5.0</span></span>'
+        score_badge_html = _html_score_badge(score_val, tier)
 
         card = f"""
         <div {data_attrs}>
@@ -2612,8 +2608,7 @@ def _html_result_row(result: dict, index: int) -> str:
     status_dropdown = _html_status_dropdown()
     new_badge_accessible = '<span class="badge bg-primary rounded-pill"><span class="visually-hidden">New listing, not seen in previous searches. </span>NEW</span>' if is_new else ''
     shortlist_button = _html_shortlist_button(job_key_val, compact=True)
-    tier_icon_html = f'<span class="{_tier_icon_class(tier)}" aria-hidden="true"></span>'
-    score_badge_accessible = f'{tier_icon_html}<span class="badge rounded-pill score-badge tier-badge-{tier}"><span class="visually-hidden">Score </span>{score:.1f}<span class="visually-hidden"> out of 5.0</span></span>'
+    score_badge_accessible = _html_score_badge(score, tier)
 
     return f"""
     <tr {row_attrs}>

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from job_radar.report_tiers import score_tier, tier_icon_class
+from job_radar.report_tiers import html_score_badge, score_tier, tier_icon_class
 
 
 def test_score_tier_classifies_report_thresholds():
@@ -14,3 +14,20 @@ def test_score_tier_classifies_report_thresholds():
 
 def test_tier_icon_class_matches_css_convention():
     assert tier_icon_class("strong") == "tier-icon tier-icon-strong"
+
+
+def test_html_score_badge_includes_accessible_score_and_optional_label():
+    badge = html_score_badge(4.25, "strong", label="Top Match")
+
+    assert 'tier-icon tier-icon-strong' in badge
+    assert 'tier-badge-strong' in badge
+    assert '<span class="visually-hidden">Score </span>4.2' in badge
+    assert '<span class="badge-label">Top Match</span>' in badge
+
+
+def test_html_score_badge_omits_label_when_not_provided():
+    badge = html_score_badge(3.5, "rec")
+
+    assert 'tier-badge-rec' in badge
+    assert "badge-label" not in badge
+    assert "out of 5.0" in badge
