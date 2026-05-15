@@ -15,6 +15,8 @@ from .report_controls import html_status_dropdown as _html_status_dropdown
 from .report_filtering import filter_explanation_text as _filter_explanation_text
 from .report_filtering import filtered_out_results as _filtered_out_results
 from .report_filtering import html_filtered_out_section as _html_filtered_out_section
+from .report_job_attrs import html_job_attrs as _html_job_attrs
+from .report_job_attrs import report_job_key as _report_job_key
 from .report_job_details import html_job_detail_items as _html_job_detail_items
 from .report_manual import html_manual_urls_section as _html_manual_urls_section
 from .report_matching import html_match_summary as _html_match_summary
@@ -2276,17 +2278,20 @@ def _html_hero_section(hero_jobs: list[dict], profile: dict) -> str:
         details_html = _html_job_detail_items(r, profile)
         match_summary_html = _html_match_summary(r)
 
-        # Generate job key for status tracking
-        job_key_val = f"{job.title.lower().strip()}||{job.company.lower().strip()}"
+        job_key_val = _report_job_key(job)
         shortlist_button = _html_shortlist_button(job_key_val)
 
         # Add data attributes (hero-job class IN ADDITION to tier-strong)
-        data_attrs = ""
         safe_job_url = _safe_external_url(job.url)
         if safe_job_url:
-            data_attrs = f'class="card mb-3 job-item hero-job tier-{tier}" tabindex="0" data-job-url="{html.escape(safe_job_url)}" data-score="{score_val:.1f}" data-job-key="{html.escape(job_key_val)}" data-job-title="{html.escape(job.title)}" data-job-company="{html.escape(job.company)}"'
+            data_attrs = _html_job_attrs(
+                job,
+                class_value=f"card mb-3 job-item hero-job tier-{tier}",
+                score=score_val,
+                include_tabindex=True,
+            )
         else:
-            data_attrs = f'class="card mb-3 hero-job tier-{tier}" data-job-key="{html.escape(job_key_val)}" data-job-title="{html.escape(job.title)}" data-job-company="{html.escape(job.company)}"'
+            data_attrs = _html_job_attrs(job, class_value=f"card mb-3 hero-job tier-{tier}")
 
         status_dropdown = _html_status_dropdown(extra_classes="ms-2")
 
@@ -2368,17 +2373,20 @@ def _html_recommended_section(recommended: list[dict], profile: dict) -> str:
         details_html = _html_job_detail_items(r, profile)
         match_summary_html = _html_match_summary(r)
 
-        # Generate job key for status tracking (matches tracker.job_key format)
-        job_key_val = f"{job.title.lower().strip()}||{job.company.lower().strip()}"
+        job_key_val = _report_job_key(job)
         shortlist_button = _html_shortlist_button(job_key_val)
 
         # Add data attributes for clipboard and status tracking functionality
-        data_attrs = ""
         safe_job_url = _safe_external_url(job.url)
         if safe_job_url:
-            data_attrs = f'class="card mb-3 job-item tier-{tier}" tabindex="0" data-job-url="{html.escape(safe_job_url)}" data-score="{score_val:.1f}" data-job-key="{html.escape(job_key_val)}" data-job-title="{html.escape(job.title)}" data-job-company="{html.escape(job.company)}"'
+            data_attrs = _html_job_attrs(
+                job,
+                class_value=f"card mb-3 job-item tier-{tier}",
+                score=score_val,
+                include_tabindex=True,
+            )
         else:
-            data_attrs = f'class="card mb-3 tier-{tier}" data-job-key="{html.escape(job_key_val)}" data-job-title="{html.escape(job.title)}" data-job-company="{html.escape(job.company)}"'
+            data_attrs = _html_job_attrs(job, class_value=f"card mb-3 tier-{tier}")
 
         status_dropdown = _html_status_dropdown(extra_classes="ms-2")
 
@@ -2585,16 +2593,21 @@ def _html_result_row(result: dict, index: int) -> str:
     salary = html.escape(job.salary) if job.salary != "Not listed" else "—"
     emp_type = getattr(job, "employment_type", "") or job.arrangement
     snippet = _make_snippet(job.description, 80)
-    job_key_val = f"{job.title.lower().strip()}||{job.company.lower().strip()}"
+    job_key_val = _report_job_key(job)
 
     safe_job_url = _safe_external_url(job.url)
     if safe_job_url:
         view_aria_label = f"View {job.title} at {job.company}, opens in new tab"
         link_html = f'<a href="{html.escape(safe_job_url)}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary" aria-label="{html.escape(view_aria_label)}">View</a> <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copySingleUrl(this)" data-url="{html.escape(safe_job_url)}">Copy</button>'
-        row_attrs = f'class="job-item tier-{tier}" tabindex="0" data-job-url="{html.escape(safe_job_url)}" data-score="{score:.1f}" data-job-key="{html.escape(job_key_val)}" data-job-title="{html.escape(job.title)}" data-job-company="{html.escape(job.company)}"'
+        row_attrs = _html_job_attrs(
+            job,
+            class_value=f"job-item tier-{tier}",
+            score=score,
+            include_tabindex=True,
+        )
     else:
         link_html = "URL unavailable" if job.url else html.escape(job.source)
-        row_attrs = f'class="tier-{tier}" data-job-key="{html.escape(job_key_val)}" data-job-title="{html.escape(job.title)}" data-job-company="{html.escape(job.company)}"'
+        row_attrs = _html_job_attrs(job, class_value=f"tier-{tier}")
 
     status_dropdown = _html_status_dropdown()
     new_badge_accessible = '<span class="badge bg-primary rounded-pill"><span class="visually-hidden">New listing, not seen in previous searches. </span>NEW</span>' if is_new else ''
