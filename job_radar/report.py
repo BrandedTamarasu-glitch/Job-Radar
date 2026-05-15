@@ -19,6 +19,7 @@ from .report_job_attrs import html_job_attrs as _html_job_attrs
 from .report_job_attrs import report_job_key as _report_job_key
 from .report_job_details import html_job_detail_items as _html_job_detail_items
 from .report_job_details import html_result_link as _html_result_link
+from .report_job_details import result_row_display_fields as _result_row_display_fields
 from .report_manual import html_manual_urls_section as _html_manual_urls_section
 from .report_matching import html_match_summary as _html_match_summary
 from .report_matching import match_highlights as _match_highlights
@@ -2588,9 +2589,7 @@ def _html_result_row(result: dict, index: int) -> str:
     is_new = result.get("is_new", True)
     tier = _score_tier(score)
 
-    salary = html.escape(job.salary) if job.salary != "Not listed" else "—"
-    emp_type = getattr(job, "employment_type", "") or job.arrangement
-    snippet = _make_snippet(job.description, 80)
+    display_fields = _result_row_display_fields(job)
     job_key_val = _report_job_key(job)
 
     safe_job_url = _safe_external_url(job.url)
@@ -2619,10 +2618,10 @@ def _html_result_row(result: dict, index: int) -> str:
       <td data-label="Status">{status_dropdown}<br>{shortlist_button}</td>
       <td data-label="Title"><strong>{html.escape(job.title)}</strong></td>
       <td data-label="Company">{html.escape(job.company)}</td>
-      <td data-label="Salary" class="col-salary">{salary}</td>
-      <td data-label="Type" class="col-type">{html.escape(emp_type)}</td>
+      <td data-label="Salary" class="col-salary">{display_fields["salary"]}</td>
+      <td data-label="Type" class="col-type">{display_fields["employment_type"]}</td>
       <td data-label="Location">{html.escape(job.location)}</td>
-      <td data-label="Snippet" class="col-snippet">{html.escape(snippet)}</td>
+      <td data-label="Snippet" class="col-snippet">{display_fields["snippet"]}</td>
       <td data-label="Link" class="no-label">{link_html}</td>
     </tr>
     """

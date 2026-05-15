@@ -6,6 +6,7 @@ import html
 
 from .report_matching import match_highlights, skill_callout_groups
 from .report_safety import safe_external_url
+from .report_text import make_snippet
 
 
 def html_job_detail_items(result: dict, profile: dict) -> str:
@@ -107,3 +108,12 @@ def html_result_link(job: object) -> str:
     if job.url:
         return "URL unavailable"
     return html.escape(job.source)
+
+
+def result_row_display_fields(job: object) -> dict[str, str]:
+    """Return escaped display fields for an all-results table row."""
+    return {
+        "salary": html.escape(job.salary) if job.salary != "Not listed" else "—",
+        "employment_type": html.escape(getattr(job, "employment_type", "") or job.arrangement),
+        "snippet": html.escape(make_snippet(job.description, 80)),
+    }

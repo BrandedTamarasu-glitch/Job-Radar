@@ -4,7 +4,11 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-from job_radar.report_job_details import html_job_detail_items, html_result_link
+from job_radar.report_job_details import (
+    html_job_detail_items,
+    html_result_link,
+    result_row_display_fields,
+)
 
 
 def _result(url: str = "https://example.com/job") -> dict:
@@ -79,3 +83,17 @@ def test_html_result_link_renders_view_and_copy_for_safe_url():
 def test_html_result_link_handles_missing_and_unsafe_urls():
     assert html_result_link(_result("")["job"]) == "Dice"
     assert html_result_link(_result("javascript:alert(1)")["job"]) == "URL unavailable"
+
+
+def test_result_row_display_fields_escapes_and_normalizes_values():
+    job = _result()["job"]
+    job.salary = "Not listed"
+    job.employment_type = ""
+    job.arrangement = "<remote>"
+    job.description = "Python|FastAPI\nRemote"
+
+    assert result_row_display_fields(job) == {
+        "salary": "—",
+        "employment_type": "&lt;remote&gt;",
+        "snippet": "Python FastAPI Remote",
+    }
