@@ -38,6 +38,42 @@ def html_copy_action_bar(section: str) -> str:
     """
 
 
+def html_filter_controls() -> str:
+    """Generate status filtering and export controls for the all-results table."""
+    return """
+    <div class="mb-4 no-print" role="region" aria-labelledby="filter-heading">
+      <h3 id="filter-heading" class="h5">Filter by Status</h3>
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <div class="btn-group" role="group" aria-label="Status filter checkboxes">
+          <input type="checkbox" class="btn-check" id="filter-applied" autocomplete="off">
+          <label class="btn btn-outline-secondary btn-sm" for="filter-applied">Hide Applied</label>
+
+          <input type="checkbox" class="btn-check" id="filter-rejected" autocomplete="off">
+          <label class="btn btn-outline-secondary btn-sm" for="filter-rejected">Hide Rejected</label>
+
+          <input type="checkbox" class="btn-check" id="filter-interviewing" autocomplete="off">
+          <label class="btn btn-outline-secondary btn-sm" for="filter-interviewing">Hide Interviewing</label>
+
+          <input type="checkbox" class="btn-check" id="filter-offer" autocomplete="off">
+          <label class="btn btn-outline-secondary btn-sm" for="filter-offer">Hide Offer</label>
+
+          <input type="checkbox" class="btn-check" id="filter-shortlist" autocomplete="off">
+          <label class="btn btn-outline-warning btn-sm" for="filter-shortlist">Show Shortlist</label>
+        </div>
+
+        <button class="btn btn-outline-primary btn-sm" id="clear-filters" aria-label="Clear all filters and show all jobs">Show All</button>
+
+        <button class="btn btn-outline-success btn-sm no-print" id="export-csv-btn" onclick="exportVisibleJobsToCSV()" aria-label="Export visible jobs to CSV file">Export CSV</button>
+
+        <button class="btn btn-outline-secondary btn-sm" id="view-mode-toggle" type="button" aria-pressed="false" aria-label="Toggle compact report view">Compact View</button>
+
+        <span id="filter-count" class="text-muted small ms-2" aria-hidden="true"></span>
+      </div>
+      <p class="text-muted small mt-2 mb-0">Filter applies to jobs with status set. Unset jobs are always visible.</p>
+    </div>
+    """
+
+
 def html_shortlist_button(job_key_val: str, *, compact: bool = False) -> str:
     """Generate accessible review-state controls."""
     margin_class = " mt-1" if compact else ""

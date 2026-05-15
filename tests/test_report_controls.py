@@ -6,6 +6,7 @@ import pytest
 
 from job_radar.report_controls import (
     html_copy_action_bar,
+    html_filter_controls,
     html_shortlist_button,
     html_status_dropdown,
 )
@@ -34,6 +35,22 @@ def test_html_copy_action_bar_renders_recommended_copy_and_export_controls():
 def test_html_copy_action_bar_rejects_unknown_sections():
     with pytest.raises(ValueError, match="Unknown copy action bar section"):
         html_copy_action_bar("saved")
+
+
+def test_html_filter_controls_render_status_filters_and_export_actions():
+    html = html_filter_controls()
+
+    assert 'role="region"' in html
+    assert 'aria-labelledby="filter-heading"' in html
+    assert 'id="filter-applied"' in html
+    assert 'id="filter-rejected"' in html
+    assert 'id="filter-interviewing"' in html
+    assert 'id="filter-offer"' in html
+    assert 'id="filter-shortlist"' in html
+    assert 'id="clear-filters"' in html
+    assert 'onclick="exportVisibleJobsToCSV()"' in html
+    assert 'id="view-mode-toggle"' in html
+    assert 'id="filter-count"' in html
 
 
 def test_html_shortlist_button_renders_all_review_states():
