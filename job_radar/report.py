@@ -10,6 +10,7 @@ from .report_assets import (
     html_external_scripts as _html_external_scripts,
     html_external_stylesheets as _html_external_stylesheets,
 )
+from .report_controls import html_copy_action_bar as _html_copy_action_bar
 from .report_controls import html_shortlist_button as _html_shortlist_button
 from .report_controls import html_status_dropdown as _html_status_dropdown
 from .report_filtering import filter_explanation_text as _filter_explanation_text
@@ -2322,15 +2323,7 @@ def _html_hero_section(hero_jobs: list[dict], profile: dict) -> str:
 
     cards_html = "".join(cards)
 
-    # Copy All button for hero section
-    copy_all_button = f"""
-    <div class="d-flex align-items-center mb-3">
-      <button class="btn btn-primary copy-all-btn" onclick="copyAllHeroUrls(this)">
-        Copy All Top Match URLs
-      </button>
-      <span class="shortcut-hint ms-2">Keyboard: <kbd>J</kbd>/<kbd>K</kbd> = navigate, <kbd>C</kbd> = copy focused, <kbd>A</kbd> = copy all</span>
-    </div>
-    """
+    copy_all_button = _html_copy_action_bar("hero")
 
     return f"""
     <section aria-labelledby="hero-heading" class="hero-jobs-section">
@@ -2415,19 +2408,7 @@ def _html_recommended_section(recommended: list[dict], profile: dict) -> str:
 
     cards_html = "".join(cards)
 
-    # Add Copy All button with keyboard hint and Export Status button
-    copy_all_button = f"""
-    <div class="d-flex align-items-center mb-3">
-      <button class="btn btn-primary copy-all-btn" onclick="copyAllRecommendedUrls(this)">
-        Copy All Recommended URLs
-      </button>
-      <button class="btn btn-sm btn-outline-info export-status-btn no-print"
-              onclick="exportPendingStatusUpdates()">
-        Export Status Updates
-      </button>
-      <span class="shortcut-hint ms-2">Keyboard: <kbd>J</kbd>/<kbd>K</kbd> = navigate, <kbd>C</kbd> = copy focused, <kbd>A</kbd> = copy all</span>
-    </div>
-    """
+    copy_all_button = _html_copy_action_bar("recommended")
 
     return f"""
     <section aria-labelledby="recommended-heading">

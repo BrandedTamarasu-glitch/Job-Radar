@@ -5,6 +5,39 @@ from __future__ import annotations
 import html
 
 
+_KEYBOARD_HINT = (
+    "Keyboard: <kbd>J</kbd>/<kbd>K</kbd> = navigate, "
+    "<kbd>C</kbd> = copy focused, <kbd>A</kbd> = copy all"
+)
+
+
+def html_copy_action_bar(section: str) -> str:
+    """Generate copy/export action controls for report job sections."""
+    if section == "hero":
+        copy_label = "Copy All Top Match URLs"
+        copy_handler = "copyAllHeroUrls(this)"
+        export_button = ""
+    elif section == "recommended":
+        copy_label = "Copy All Recommended URLs"
+        copy_handler = "copyAllRecommendedUrls(this)"
+        export_button = """
+      <button class="btn btn-sm btn-outline-info export-status-btn no-print"
+              onclick="exportPendingStatusUpdates()">
+        Export Status Updates
+      </button>"""
+    else:
+        raise ValueError(f"Unknown copy action bar section: {section}")
+
+    return f"""
+    <div class="d-flex align-items-center mb-3">
+      <button class="btn btn-primary copy-all-btn" onclick="{copy_handler}">
+        {copy_label}
+      </button>{export_button}
+      <span class="shortcut-hint ms-2">{_KEYBOARD_HINT}</span>
+    </div>
+    """
+
+
 def html_shortlist_button(job_key_val: str, *, compact: bool = False) -> str:
     """Generate accessible review-state controls."""
     margin_class = " mt-1" if compact else ""

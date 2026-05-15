@@ -2,7 +2,38 @@
 
 from __future__ import annotations
 
-from job_radar.report_controls import html_shortlist_button, html_status_dropdown
+import pytest
+
+from job_radar.report_controls import (
+    html_copy_action_bar,
+    html_shortlist_button,
+    html_status_dropdown,
+)
+
+
+def test_html_copy_action_bar_renders_hero_copy_controls():
+    html = html_copy_action_bar("hero")
+
+    assert "Copy All Top Match URLs" in html
+    assert 'onclick="copyAllHeroUrls(this)"' in html
+    assert "shortcut-hint" in html
+    assert "<kbd>J</kbd>/<kbd>K</kbd>" in html
+    assert "exportPendingStatusUpdates" not in html
+
+
+def test_html_copy_action_bar_renders_recommended_copy_and_export_controls():
+    html = html_copy_action_bar("recommended")
+
+    assert "Copy All Recommended URLs" in html
+    assert 'onclick="copyAllRecommendedUrls(this)"' in html
+    assert "Export Status Updates" in html
+    assert 'onclick="exportPendingStatusUpdates()"' in html
+    assert "shortcut-hint" in html
+
+
+def test_html_copy_action_bar_rejects_unknown_sections():
+    with pytest.raises(ValueError, match="Unknown copy action bar section"):
+        html_copy_action_bar("saved")
 
 
 def test_html_shortlist_button_renders_all_review_states():
