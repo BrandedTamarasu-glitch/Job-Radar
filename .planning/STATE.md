@@ -13,7 +13,7 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Milestone:** Product Iteration P-T — IN PROGRESS
 **Status:** Sprint P complete; Sprint Q in progress; Sprints R-T planned
-**Last activity:** 2026-05-15 — shipped v2.6.0 for completed Product Iteration K-O, documented Product Iteration P-T, completed the Sprint P Profile-tab next-step dashboard foundation, and continued Sprint Q with recent/saved search previous-run insight text plus completion-screen context for source failures, cache behavior, and active filters.
+**Last activity:** 2026-05-15 — shipped v2.6.0 for completed Product Iteration K-O, documented Product Iteration P-T, completed the Sprint P Profile-tab next-step dashboard foundation, and continued Sprint Q with recent/saved search previous-run insight text, completion-screen run context, and changed-search prioritization.
 
 **Next step:** continue Sprint Q by expanding search comparisons into bounded saved-search and recent-search recap surfaces.
 

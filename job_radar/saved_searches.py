@@ -251,6 +251,21 @@ def format_search_insight(item: dict[str, Any]) -> str:
     return f"Change: {', '.join(changed)} vs previous."
 
 
+def prioritize_changed_searches(
+    items: list[dict[str, Any]],
+    limit: int = 3,
+) -> list[dict[str, Any]]:
+    """Return saved/recent searches with changed runs first, preserving ties."""
+    indexed_items = list(enumerate(items))
+    indexed_items.sort(
+        key=lambda pair: (
+            -_search_change_score(pair[1]),
+            pair[0],
+        )
+    )
+    return [item for _, item in indexed_items[:max(1, limit)]]
+
+
 def _empty_state() -> dict:
     return {"version": 1, "recent": [], "saved": []}
 
@@ -328,6 +343,24 @@ def _format_review_delta(current: dict[str, Any], previous: dict[str, Any]) -> s
     if not changed:
         return ""
     return f"review: {', '.join(changed)}"
+
+
+def _search_change_score(item: dict[str, Any]) -> int:
+    current = item.get("last_result_stats") or {}
+    previous = item.get("previous_result_stats") or {}
+    if not current or not previous:
+        return 0
+
+    score = (
+        abs(int(current.get("total") or 0) - int(previous.get("total") or 0))
+        + abs(int(current.get("new") or 0) - int(previous.get("new") or 0)) * 2
+        + abs(int(current.get("high_score") or 0) - int(previous.get("high_score") or 0)) * 3
+    )
+    current_review = current.get("review") or {}
+    previous_review = previous.get("review") or {}
+    for key in ("shortlisted", "maybe_later", "dismissed"):
+        score += abs(int(current_review.get(key) or 0) - int(previous_review.get(key) or 0))
+    return score
 
 
 def _write_state(path: Path, state: dict) -> None:

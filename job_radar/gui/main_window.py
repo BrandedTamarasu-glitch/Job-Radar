@@ -82,6 +82,7 @@ from job_radar.saved_searches import (
     format_search_insight,
     format_run_summary,
     load_search_history,
+    prioritize_changed_searches,
     record_search_run,
     record_recent_search,
     save_named_search,
@@ -1236,7 +1237,10 @@ class MainWindow(ctk.CTk):
                 text_color="gray",
             ).grid(row=1, column=0, sticky="w", padx=12, pady=(0, 8))
         else:
-            for index, item in enumerate(saved_searches[:3], start=1):
+            for index, item in enumerate(
+                prioritize_changed_searches(saved_searches, limit=3),
+                start=1,
+            ):
                 name = item.get("name") or "Saved search"
                 config = item.get("config") or {}
                 ctk.CTkButton(

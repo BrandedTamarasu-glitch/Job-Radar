@@ -7,6 +7,7 @@ from job_radar.saved_searches import (
     format_run_summary,
     load_search_history,
     normalize_search_config,
+    prioritize_changed_searches,
     record_search_run,
     record_recent_search,
     save_named_search,
@@ -287,3 +288,45 @@ def test_format_search_insight_handles_flat_runs():
     }
 
     assert format_search_insight(item) == "No result movement since the previous run."
+
+
+def test_prioritize_changed_searches_surfaces_largest_changes_first():
+    items = [
+        {
+            "name": "No change",
+            "previous_result_stats": {"total": 5, "new": 1, "high_score": 1},
+            "last_result_stats": {"total": 5, "new": 1, "high_score": 1},
+        },
+        {
+            "name": "Small change",
+            "previous_result_stats": {"total": 5, "new": 1, "high_score": 1},
+            "last_result_stats": {"total": 6, "new": 1, "high_score": 1},
+        },
+        {
+            "name": "Large change",
+            "previous_result_stats": {
+                "total": 5,
+                "new": 1,
+                "high_score": 1,
+                "review": {"shortlisted": 0},
+            },
+            "last_result_stats": {
+                "total": 9,
+                "new": 3,
+                "high_score": 2,
+                "review": {"shortlisted": 2},
+            },
+        },
+    ]
+
+    prioritized = prioritize_changed_searches(items, limit=2)
+
+    assert [item["name"] for item in prioritized] == ["Large change", "Small change"]
+
+
+def test_prioritize_changed_searches_preserves_order_for_ties():
+    items = [{"name": "First"}, {"name": "Second"}, {"name": "Third"}]
+
+    prioritized = prioritize_changed_searches(items, limit=2)
+
+    assert [item["name"] for item in prioritized] == ["First", "Second"]
