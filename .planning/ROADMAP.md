@@ -13,7 +13,7 @@
 - ✅ **v2.2.0 Auto-Update & Source Expansion** - Phases 38-42 (shipped 2026-02-16)
 - ✅ **v2.5.0 Product Iteration** - GUI search controls, application pipeline, performance diagnostics, and report review UX (shipped 2026-05-13)
 - ✅ **Product Iteration F-J** - onboarding, saved searches, match tuning, application workflow, performance hardening (completed 2026-05-14)
-- 🚧 **Next Product Iteration** - Sprints K-O: application editing, search review, source health, data recovery, performance/release trust
+- ✅ **Product Iteration K-O** - application editing, search review, source health, data recovery, performance/release trust (completed 2026-05-15)
 
 ## Phases
 
@@ -50,18 +50,18 @@ See `.planning/PRODUCT_ITERATION_SPRINTS_F_J.md` for the full sprint list.
 
 </details>
 
-<details open>
-<summary>🚧 Next Product Iteration (Sprints K-O) - ACTIVE 2026-05-14</summary>
+<details>
+<summary>✅ Product Iteration K-O - COMPLETED 2026-05-15</summary>
 
 See `.planning/PRODUCT_ITERATION_SPRINTS_K_O.md` for the full sprint list.
 
-- [ ] Sprint K: Application Editing & Templates
-- [ ] Sprint L: Search Review Workspace
-- [ ] Sprint M: Source Health Controls
-- [ ] Sprint N: Data Portability & Recovery
-- [ ] Sprint O: Performance & Release Trust
+- [x] Sprint K: Application Editing & Templates
+- [x] Sprint L: Search Review Workspace
+- [x] Sprint M: Source Health Controls
+- [x] Sprint N: Data Portability & Recovery
+- [x] Sprint O: Performance & Release Trust
 
 </details>
 
 ---
-*Last updated: 2026-05-14*
+*Last updated: 2026-05-15*

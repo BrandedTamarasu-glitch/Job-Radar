@@ -1,5 +1,23 @@
 # Changelog
 
+## v2.6.0 — 2026-05-15
+
+### New Features
+- **Editable application workspace** — Applications rows now support direct status, next-action, due-date, notes, and template insertion workflows while preserving tracker timeline history.
+- **Search review state** — Search results now support persisted shortlist, maybe-later, and dismissed states across GUI summaries, saved-search comparisons, and HTML reports.
+- **Data portability** — Settings can export and validate portable app-data bundles with profile, config, saved searches, review state, tracker data, and manifest checks.
+
+### Improvements
+- **Source health clarity** — Settings now prioritizes unhealthy sources, shows cache freshness, and provides clearer recommended actions for failed, slow, warning-heavy, and healthy sources.
+- **Large workflow stability** — Large HTML reports skip rendering omitted lower-score rows after the visible/collapsed caps, and search cancellation now stops final report preparation before source-health writes or report generation.
+- **Release trust** — Release verification now diagnoses filename and installer-directory drift, validates executable permissions, suppresses noisy virtualenv matches, returns clean CLI failures, and publishes checksum manifests for release artifacts.
+
+### Documentation
+- Updated README installation guidance for checksum verification and refreshed roadmap/planning docs for the completed K-O iteration.
+
+### Validation
+- 910 automated tests collected: 902 passed, 8 skipped.
+
 ## v2.5.0 — 2026-05-13
 
 ### New Features

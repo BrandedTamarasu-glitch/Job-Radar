@@ -2,12 +2,12 @@
 
 A desktop job search tool that searches multiple job boards, scores listings against your profile, and generates ranked reports. Available as both a **desktop GUI application** (double-click to launch) and a **CLI** for power users and scripting. Features include multi-source search (11 API sources: Dice, HN Hiring, RemoteOK, We Work Remotely, Adzuna, Authentic Jobs, JSearch, USAJobs, SerpAPI, Jobicy, hiring.cafe + 4 manual URLs: Wellfound, Indeed, LinkedIn, Glassdoor), PDF resume import, fuzzy skill matching, user-configurable scoring weights, cross-source deduplication with richness scoring, real-time API quota tracking, in-app auto-updates, and dual-format HTML and Markdown reports with shortlist state, compact/detail review, keyboard navigation, application status tracking, and WCAG 2.1 Level AA accessibility.
 
-## What's New in v2.5.0
+## What's New in v2.6.0
 
-- **More precise GUI searches:** Presets, source toggles, company filters, must-have and nice-to-have skill controls, location strictness, and freshness presets are now available directly from the GUI.
-- **Application follow-through:** The GUI now includes an Applications tab, application notes/next actions, follow-up queueing, timeline-aware CSV export, and report filtering for rejected/skipped entries.
-- **Performance visibility:** Search summaries and Settings now show source timing, source health history, cache hit/miss counters, slowest-source diagnostics, source-specific cache TTLs, and improved cancellation boundaries.
-- **Faster report review:** Reports now include shortlist state, keyboard navigation, compact/detail mode, mobile review improvements, why-this-matched summaries, filtered-out explanations, and grouped must-have/nice-to-have skill callouts.
+- **Editable application workspace:** Applications rows now support direct status, next-action, due-date, notes, and template insertion workflows while preserving tracker timeline history.
+- **Persistent search review:** Reports and saved-search comparisons now carry shortlist, maybe-later, and dismissed review states so triage survives across runs.
+- **Data portability:** Settings can export and validate portable app-data bundles for profile, config, saved searches, review state, tracker data, and manifests.
+- **Performance and release trust:** Large reports skip rendering omitted rows, cancellation stops final report preparation cleanly, release diagnostics catch artifact drift and permission issues, and release assets include checksum manifests.
 
 ## Installation
 
@@ -522,15 +522,15 @@ For release builds, also run the platform build script and smoke-test the genera
 - Browser (12 tests) - validates report opening, platform detection, error handling
 - Paths (16 tests) - validates config directory resolution, platform compatibility
 
-## Active Product Iteration
+## Product Iteration Status
 
-The next product iteration is tracked in `.planning/PRODUCT_ITERATION_SPRINTS_K_O.md`:
+The K-O product iteration is complete and tracked in `.planning/PRODUCT_ITERATION_SPRINTS_K_O.md`:
 
-- **Sprint K:** application editing and templates
-- **Sprint L:** search review workspace
-- **Sprint M:** source health controls
-- **Sprint N:** data portability and recovery
-- **Sprint O:** performance and release trust
+- **Sprint K:** application editing and templates — complete
+- **Sprint L:** search review workspace — complete
+- **Sprint M:** source health controls — complete
+- **Sprint N:** data portability and recovery — complete
+- **Sprint O:** performance and release trust — complete
 
 ### Building Executables
 

@@ -7,15 +7,15 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Accurate job-candidate scoring — if the scoring is wrong, nothing else matters.
-**Current focus:** Product Iteration K-O complete; ready for release decision or next iteration planning
+**Current focus:** v2.6.0 release readiness for completed Product Iteration K-O
 
 ## Current Position
 
 **Milestone:** Product Iteration K-O — COMPLETE
 **Status:** Sprints K-O complete
-**Last activity:** 2026-05-15 — completed Sprint N data portability and Sprint O release artifact diagnostics, installer-directory drift checks, clean verifier CLI failures, noisy virtualenv-match suppression, checksum manifests, download verification docs, large-report render skipping, and final-prep search cancellation
+**Last activity:** 2026-05-15 — completed Sprint N data portability and Sprint O release artifact diagnostics, installer-directory drift checks, clean verifier CLI failures, noisy virtualenv-match suppression, checksum manifests, download verification docs, large-report render skipping, final-prep search cancellation, and v2.6.0 release notes
 
-**Next step:** decide whether to cut a release build for the completed K-O iteration or plan the next product iteration.
+**Next step:** cut and verify the v2.6.0 release build, then plan the next product iteration.
 
 ## Performance Metrics
 
@@ -136,7 +136,7 @@ Last session: 2026-05-15
 Stopped at: Sprints K-O completed and validated
 Resume file: None
 
-**Next step:** Cut a release build for the completed K-O iteration or plan the next product iteration.
+**Next step:** Cut and verify the v2.6.0 release build, then plan the next product iteration.
 
 ---
 *State initialized: 2026-02-13*
