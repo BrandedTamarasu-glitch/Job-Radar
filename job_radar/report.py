@@ -33,6 +33,7 @@ from .report_source_warnings import markdown_source_warnings as _markdown_source
 from .report_stats import calculate_report_stats
 from .report_text import make_snippet as _make_snippet
 from .report_text import markdown_cell as _markdown_cell
+from .report_tiers import html_new_badge as _html_new_badge
 from .report_tiers import html_score_badge as _html_score_badge
 from .report_tiers import score_tier as _score_tier
 from .report_tracker import html_tracker_stats as _html_tracker_stats
@@ -2269,7 +2270,7 @@ def _html_hero_section(hero_jobs: list[dict], profile: dict) -> str:
         job = r["job"]
         score = r["score"]
         is_new = r.get("is_new", True)
-        new_tag = ' <span class="badge bg-primary"><span class="visually-hidden">New listing, not seen in previous searches. </span>NEW</span>' if is_new else ""
+        new_tag = _html_new_badge(leading_space=True) if is_new else ""
 
         # Hero jobs are always tier-strong (score >= 4.0)
         tier = "strong"
@@ -2362,7 +2363,7 @@ def _html_recommended_section(recommended: list[dict], profile: dict) -> str:
         job = r["job"]
         score = r["score"]
         is_new = r.get("is_new", True)
-        new_tag = ' <span class="badge bg-primary"><span class="visually-hidden">New listing, not seen in previous searches. </span>NEW</span>' if is_new else ""
+        new_tag = _html_new_badge(leading_space=True) if is_new else ""
 
         # Determine tier based on score
         score_val = score["overall"]
@@ -2606,7 +2607,7 @@ def _html_result_row(result: dict, index: int) -> str:
         row_attrs = _html_job_attrs(job, class_value=f"tier-{tier}")
 
     status_dropdown = _html_status_dropdown()
-    new_badge_accessible = '<span class="badge bg-primary rounded-pill"><span class="visually-hidden">New listing, not seen in previous searches. </span>NEW</span>' if is_new else ''
+    new_badge_accessible = _html_new_badge(rounded=True) if is_new else ''
     shortlist_button = _html_shortlist_button(job_key_val, compact=True)
     score_badge_accessible = _html_score_badge(score, tier)
 

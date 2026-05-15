@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from job_radar.report_tiers import html_score_badge, score_tier, tier_icon_class
+from job_radar.report_tiers import html_new_badge, html_score_badge, score_tier, tier_icon_class
 
 
 def test_score_tier_classifies_report_thresholds():
@@ -31,3 +31,13 @@ def test_html_score_badge_omits_label_when_not_provided():
     assert 'tier-badge-rec' in badge
     assert "badge-label" not in badge
     assert "out of 5.0" in badge
+
+
+def test_html_new_badge_supports_card_and_table_variants():
+    card_badge = html_new_badge(leading_space=True)
+    row_badge = html_new_badge(rounded=True)
+
+    assert card_badge.startswith(" ")
+    assert 'class="badge bg-primary"' in card_badge
+    assert 'class="badge bg-primary rounded-pill"' in row_badge
+    assert "New listing, not seen in previous searches" in row_badge

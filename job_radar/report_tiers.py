@@ -30,3 +30,14 @@ def html_score_badge(score: float, tier: str, *, label: str | None = None) -> st
         f'<span class="visually-hidden">Score </span>{score:.1f}'
         f'<span class="visually-hidden"> out of 5.0{label_html}</span>'
     )
+
+
+def html_new_badge(*, rounded: bool = False, leading_space: bool = False) -> str:
+    """Return accessible NEW badge markup."""
+    classes = "badge bg-primary rounded-pill" if rounded else "badge bg-primary"
+    prefix = " " if leading_space else ""
+    return (
+        f'{prefix}<span class="{classes}">'
+        '<span class="visually-hidden">New listing, not seen in previous searches. </span>'
+        "NEW</span>"
+    )
