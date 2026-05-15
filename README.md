@@ -488,7 +488,7 @@ For release builds, also run the platform build script and smoke-test the genera
 - Scoring functions (44 tests) - validates all `_score_*` functions, required-skill matching, expected score bands, and parametrized edge cases
 - Scoring config (25 tests) - validates scoring weights, staffing preference, normalization, live preview
 - Match calibration (5 tests) - validates broader, balanced, strict, and custom search calibration behavior
-- Saved searches (21 tests) - validates recent search storage, named search storage, run metadata, review-count metadata, previous-run deltas, search insight text, run summary display, config normalization, deduplication, deletion, history caps, and labels
+- Saved searches (22 tests) - validates recent search storage, named search storage, run metadata, review-count metadata, previous-run deltas, search insight text, review-state comparison text, run summary display, config normalization, deduplication, deletion, history caps, and labels
 - Review state (5 tests) - validates persisted shortlist, dismissed, and maybe-later search-result review states
 - Applications export (3 tests) - validates application pipeline CSV rows, timeline summaries, CSV import normalization, and UTF-8 CSV output
 - Application templates (5 tests) - validates follow-up, recruiter response, and cover-letter note template rendering

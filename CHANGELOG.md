@@ -4,7 +4,7 @@
 
 ### New Features
 - **Daily dashboard foundation** - Added a Profile-tab next-step panel that prioritizes profile readiness, overdue follow-ups, review queue work, and saved/recent search shortcuts from local state.
-- **Saved-search insight recap** - Saved searches now show a bounded previous-run comparison for total, new, and high-score result movement.
+- **Saved-search insight recap** - Saved searches now show a bounded previous-run comparison for total, new, high-score, and review-state movement.
 
 ### Documentation
 - Documented Product Iteration P-T and Sprint P-T planning across README, roadmap, and project state memory.

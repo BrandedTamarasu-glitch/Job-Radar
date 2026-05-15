@@ -259,6 +259,27 @@ def test_format_search_insight_summarizes_result_deltas():
     )
 
 
+def test_format_search_insight_includes_review_state_deltas():
+    item = {
+        "previous_result_stats": {
+            "total": 12,
+            "new": 5,
+            "high_score": 3,
+            "review": {"shortlisted": 1, "maybe_later": 2, "dismissed": 4},
+        },
+        "last_result_stats": {
+            "total": 12,
+            "new": 5,
+            "high_score": 3,
+            "review": {"shortlisted": 3, "maybe_later": 1, "dismissed": 4},
+        },
+    }
+
+    assert format_search_insight(item) == (
+        "Change: review: +2 shortlisted, -1 maybe later vs previous."
+    )
+
+
 def test_format_search_insight_handles_flat_runs():
     item = {
         "previous_result_stats": {"total": 8, "new": 2, "high_score": 1},

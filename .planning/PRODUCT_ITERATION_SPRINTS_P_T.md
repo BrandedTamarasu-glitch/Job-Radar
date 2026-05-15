@@ -30,7 +30,7 @@ Goal: help users understand how the latest run changed their opportunity landsca
 
 Deliverable: users can decide whether a search needs attention before opening a full report.
 
-Status: in progress. Saved searches now surface a bounded previous-run comparison line for total, new, and high-score result movement.
+Status: in progress. Saved searches now surface a bounded previous-run comparison line for total, new, high-score, and review-state movement.
 
 ## Sprint R: Follow-Up Workflow Automation
 

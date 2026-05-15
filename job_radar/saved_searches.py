@@ -239,6 +239,12 @@ def format_search_insight(item: dict[str, Any]) -> str:
         _format_stat_delta("new", stats, previous),
         _format_stat_delta("high-score", stats, previous, key="high_score"),
     ]
+    review_delta = _format_review_delta(
+        stats.get("review") or {},
+        previous.get("review") or {},
+    )
+    if review_delta:
+        deltas.append(review_delta)
     changed = [delta for delta in deltas if delta]
     if not changed:
         return "No result movement since the previous run."
@@ -310,6 +316,18 @@ def _format_stat_delta(
         return ""
     sign = "+" if delta > 0 else ""
     return f"{sign}{delta} {label}"
+
+
+def _format_review_delta(current: dict[str, Any], previous: dict[str, Any]) -> str:
+    parts = [
+        _format_stat_delta("shortlisted", current, previous),
+        _format_stat_delta("maybe later", current, previous, key="maybe_later"),
+        _format_stat_delta("dismissed", current, previous),
+    ]
+    changed = [part for part in parts if part]
+    if not changed:
+        return ""
+    return f"review: {', '.join(changed)}"
 
 
 def _write_state(path: Path, state: dict) -> None:
