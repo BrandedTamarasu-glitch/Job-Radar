@@ -7,15 +7,15 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Accurate job-candidate scoring — if the scoring is wrong, nothing else matters.
-**Current focus:** Product Iteration U-Y, Sprint U adaptive command center
+**Current focus:** Product Iteration U-Y, Sprint V workflow shortcuts and bulk actions
 
 ## Current Position
 
 **Milestone:** Product Iteration U-Y — IN PROGRESS
-**Status:** Sprint U in progress; Sprints V-Y planned
-**Last activity:** 2026-05-15 — completed Product Iteration P-T and started Product Iteration U-Y by documenting Sprints U-Y and surfacing local maintenance/source-quality issues in Profile dashboard recommendations.
+**Status:** Sprint U complete; Sprint V in progress; Sprints W-Y planned
+**Last activity:** 2026-05-15 — completed Product Iteration P-T, completed Sprint U adaptive dashboard signals, and started Sprint V with bounded review-state clearing helpers for future safe bulk actions.
 
-**Next step:** continue Sprint U by adding source-quality dashboard signals and validating command-center prioritization.
+**Next step:** continue Sprint V by wiring safe workflow shortcuts into the GUI.
 
 ## Performance Metrics
 
@@ -120,23 +120,23 @@ Full decision log: PROJECT.md Key Decisions table (143 decisions)
 
 See `.planning/PRODUCT_ITERATION_SPRINTS_U_Y.md`.
 
-- Sprint U: Adaptive Command Center — in progress
-- Sprint V: Workflow Shortcuts & Bulk Actions — planned
+- Sprint U: Adaptive Command Center — complete
+- Sprint V: Workflow Shortcuts & Bulk Actions — in progress
 - Sprint W: Source Strategy & Preset Intelligence — planned
 - Sprint X: Release Readiness & Regression Sweep — planned
 - Sprint Y: Post-Release Feedback Loop — planned
 
 ### Blockers/Concerns
 
-None. Sprint U is active.
+None. Sprint V is active.
 
 ## Session Continuity
 
 Last session: 2026-05-15
-Stopped at: Sprint U dashboard maintenance-suggestion foundation in progress
+Stopped at: Sprint V bounded review-state helper foundation in progress
 Resume file: None
 
-**Next step:** Continue Sprint U source-quality dashboard signals and validation.
+**Next step:** Continue Sprint V GUI workflow shortcuts and validation.
 
 ---
 *State initialized: 2026-02-13*

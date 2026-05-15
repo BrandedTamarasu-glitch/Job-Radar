@@ -108,6 +108,32 @@ def review_state_counts(path: Path | None = None) -> dict[str, int]:
     return counts
 
 
+def clear_review_state_by_state(
+    state: str,
+    *,
+    path: Path | None = None,
+    limit: int = 50,
+) -> dict:
+    """Clear up to limit review entries for one state and return updated data."""
+    clean_state = state.strip()
+    if clean_state not in REVIEW_STATES:
+        raise ValueError(f"Unknown job review state: {state}")
+
+    path = path or get_review_state_path()
+    data = load_review_state(path)
+    removed = 0
+    for key, entry in list(data["jobs"].items()):
+        if removed >= limit:
+            break
+        if entry.get("state") != clean_state:
+            continue
+        data["jobs"].pop(key, None)
+        removed += 1
+
+    _write_state(path, data)
+    return deepcopy(data)
+
+
 def _empty_state() -> dict:
     return {"version": 1, "jobs": {}}
 

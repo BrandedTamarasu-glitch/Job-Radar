@@ -9,6 +9,7 @@ import pytest
 
 from job_radar.review_state import (
     clear_job_review_state,
+    clear_review_state_by_state,
     get_job_review_state,
     load_review_state,
     review_state_counts,
@@ -76,3 +77,22 @@ def test_review_state_counts_include_all_supported_states(tmp_path):
         "maybe_later": 2,
         "shortlisted": 1,
     }
+
+
+def test_clear_review_state_by_state_is_bounded(tmp_path):
+    path = tmp_path / "review_state.json"
+    set_job_review_state("Dismissed 1", "Acme", "dismissed", path=path)
+    set_job_review_state("Dismissed 2", "Acme", "dismissed", path=path)
+    set_job_review_state("Maybe", "Acme", "maybe_later", path=path)
+
+    state = clear_review_state_by_state("dismissed", path=path, limit=1)
+
+    assert review_state_counts(path) == {
+        "dismissed": 1,
+        "maybe_later": 1,
+        "shortlisted": 0,
+    }
+    assert len(state["jobs"]) == 2
+
+    with pytest.raises(ValueError, match="Unknown job review state"):
+        clear_review_state_by_state("later-ish", path=path)

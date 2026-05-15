@@ -83,8 +83,8 @@ See `.planning/PRODUCT_ITERATION_SPRINTS_P_T.md` for the full sprint list.
 
 See `.planning/PRODUCT_ITERATION_SPRINTS_U_Y.md` for the full sprint list.
 
-- [ ] Sprint U: Adaptive Command Center (in progress)
-- [ ] Sprint V: Workflow Shortcuts & Bulk Actions
+- [x] Sprint U: Adaptive Command Center
+- [ ] Sprint V: Workflow Shortcuts & Bulk Actions (in progress)
 - [ ] Sprint W: Source Strategy & Preset Intelligence
 - [ ] Sprint X: Release Readiness & Regression Sweep
 - [ ] Sprint Y: Post-Release Feedback Loop

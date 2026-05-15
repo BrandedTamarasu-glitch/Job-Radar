@@ -491,7 +491,7 @@ For release builds, also run the platform build script and smoke-test the genera
 - Scoring config (25 tests) - validates scoring weights, staffing preference, normalization, live preview
 - Match calibration (5 tests) - validates broader, balanced, strict, and custom search calibration behavior
 - Saved searches (24 tests) - validates recent search storage, named search storage, run metadata, review-count metadata, previous-run deltas, search insight text, review-state comparison text, changed-search prioritization, run summary display, config normalization, deduplication, deletion, history caps, and labels
-- Review state (5 tests) - validates persisted shortlist, dismissed, and maybe-later search-result review states
+- Review state (6 tests) - validates persisted shortlist, dismissed, maybe-later, and bounded state-clearing helpers
 - Applications export (4 tests) - validates application pipeline CSV rows, timeline summaries, calendar-friendly follow-up export, CSV import normalization, and UTF-8 CSV output
 - Application templates (5 tests) - validates follow-up, recruiter response, and cover-letter note template rendering
 - Applications view model (10 tests) - validates grouped pipeline statuses, note-only entries, follow-up focus filters, template note appending, status-menu mappings, and GUI detail-input normalization
@@ -548,8 +548,8 @@ The next product iteration is tracked in `.planning/PRODUCT_ITERATION_SPRINTS_P_
 
 The active product iteration is tracked in `.planning/PRODUCT_ITERATION_SPRINTS_U_Y.md`:
 
-- **Sprint U:** adaptive command center — in progress
-- **Sprint V:** workflow shortcuts and bulk actions — planned
+- **Sprint U:** adaptive command center — complete
+- **Sprint V:** workflow shortcuts and bulk actions — in progress
 - **Sprint W:** source strategy and preset intelligence — planned
 - **Sprint X:** release readiness and regression sweep — planned
 - **Sprint Y:** post-release feedback loop — planned

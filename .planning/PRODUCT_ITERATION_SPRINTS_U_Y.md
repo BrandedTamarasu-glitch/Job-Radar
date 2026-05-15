@@ -17,7 +17,7 @@ Goal: make the opening dashboard respond to search, follow-up, source, and maint
 
 Deliverable: returning users can see operational issues and next actions from the first authenticated screen.
 
-Status: in progress. Profile dashboard recommendations now surface local maintenance suggestions and source-quality issues that need attention.
+Status: complete. Profile dashboard recommendations surface local maintenance suggestions and source-quality issues that need attention.
 
 ## Sprint V: Workflow Shortcuts & Bulk Actions
 
@@ -30,7 +30,7 @@ Goal: reduce repeated manual work in search review and applications.
 
 Deliverable: users can process repeated workflow updates faster without losing control.
 
-Status: planned.
+Status: in progress. Review-state helpers now support bounded clearing by state for future safe bulk review actions.
 
 ## Sprint W: Source Strategy & Preset Intelligence
 
