@@ -895,12 +895,24 @@ class MainWindow(ctk.CTk):
             company = action.get("company") or "Unknown company"
             status = str(action.get("status") or "needs_status").replace("_", " ").title()
 
+            action_frame = ctk.CTkFrame(queue_frame, fg_color="transparent")
+            action_frame.grid(row=index * 2 - 1, column=0, sticky="ew", padx=16, pady=(4, 0))
+            action_frame.grid_columnconfigure(0, weight=1)
+
             ctk.CTkLabel(
-                queue_frame,
+                action_frame,
                 text=f"{index}. {action['next_action']} — {title} at {company}",
                 font=ctk.CTkFont(size=13, weight="bold"),
                 anchor="w",
-            ).grid(row=index * 2 - 1, column=0, sticky="ew", padx=16, pady=(4, 0))
+            ).grid(row=0, column=0, sticky="ew")
+
+            ctk.CTkButton(
+                action_frame,
+                text="Complete",
+                width=96,
+                height=28,
+                command=lambda queued=action: self._complete_application_next_action(parent, queued),
+            ).grid(row=0, column=1, sticky="e", padx=(12, 0))
 
             ctk.CTkLabel(
                 queue_frame,
@@ -923,6 +935,24 @@ class MainWindow(ctk.CTk):
         if action.get("next_action_date"):
             return f"Due {action['next_action_date']}"
         return "No due date"
+
+    def _complete_application_next_action(self, parent, queued_action: dict):
+        """Clear a queued next action after the user completes it."""
+        try:
+            update_application_details(
+                str(queued_action.get("title") or ""),
+                str(queued_action.get("company") or ""),
+                notes=str(queued_action.get("notes") or ""),
+                next_action="",
+                next_action_date="",
+            )
+            self._build_applications_tab(parent)
+        except Exception as e:
+            if self._applications_export_status_label is not None:
+                self._applications_export_status_label.configure(
+                    text=f"Follow-up update failed: {e}",
+                    text_color="red",
+                )
 
     def _insert_application_note_template(self, parent, application_row, template_key: str):
         """Append a rendered application note template and refresh the Applications tab."""

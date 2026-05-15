@@ -77,6 +77,22 @@ def test_applications_tab_includes_next_action_queue():
     assert "limit=5" in source
 
 
+def test_application_next_action_queue_includes_complete_action():
+    source = inspect.getsource(MainWindow._add_application_next_action_queue)
+
+    assert "Complete" in source
+    assert "_complete_application_next_action" in source
+
+
+def test_complete_application_next_action_clears_followup_details():
+    source = inspect.getsource(MainWindow._complete_application_next_action)
+
+    assert "update_application_details" in source
+    assert 'next_action=""' in source
+    assert 'next_action_date=""' in source
+    assert "_build_applications_tab(parent)" in source
+
+
 def test_applications_tab_includes_direct_edit_controls():
     source = inspect.getsource(MainWindow._build_applications_tab)
 

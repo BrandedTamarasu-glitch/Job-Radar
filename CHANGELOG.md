@@ -9,6 +9,7 @@
 - **Changed-search prioritization** - Saved searches with meaningful previous-run movement are surfaced first in the Search tab.
 - **Dashboard search insight** - The Profile dashboard now calls out saved searches that changed since the previous run.
 - **Follow-up focus filters** - Applications can filter the follow-up queue to all, overdue, or due-soon actions.
+- **Quick follow-up completion** - Applications next-action queue rows can clear completed follow-ups directly.
 
 ### Documentation
 - Documented Product Iteration P-T and Sprint P-T planning across README, roadmap, and project state memory.

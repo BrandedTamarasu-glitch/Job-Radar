@@ -43,7 +43,7 @@ Goal: make application follow-up easier to run consistently.
 
 Deliverable: users can maintain follow-ups from a focused queue instead of scanning every application.
 
-Status: in progress. Applications now include all, overdue, and due-soon follow-up queue filters.
+Status: in progress. Applications now include all, overdue, and due-soon follow-up queue filters plus a quick Complete action for queued follow-ups.
 
 ## Sprint S: Source Quality & Coverage Controls
 
