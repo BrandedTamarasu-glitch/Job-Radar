@@ -136,8 +136,6 @@ def _sha256(path: Path) -> str:
 def _similar_artifacts(root: Path, expected_path: Path) -> list[Path]:
     """Return nearby artifact paths that can explain filename drift."""
     parent = root / expected_path.parent
-    if not parent.is_dir():
-        return []
 
     expected_name = expected_path.name
     tokens = [
@@ -145,12 +143,16 @@ def _similar_artifacts(root: Path, expected_path: Path) -> list[Path]:
         for token in expected_name.replace(".", "-").replace("_", "-").split("-")
         if token and not token.startswith("v")
     ]
+    if not tokens:
+        return []
+
     matches = []
-    for candidate in parent.iterdir():
-        if candidate.name == expected_name:
+    candidates = parent.iterdir() if parent.is_dir() else root.rglob("*")
+    for candidate in candidates:
+        if candidate.is_dir() or candidate == root / expected_path:
             continue
         candidate_lower = candidate.name.casefold()
-        if tokens and all(token.casefold() in candidate_lower for token in tokens[:2]):
+        if all(token.casefold() in candidate_lower for token in tokens[:2]):
             matches.append(candidate.relative_to(root))
 
     return sorted(matches, key=lambda path: path.as_posix())[:5]
