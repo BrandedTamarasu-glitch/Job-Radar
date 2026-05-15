@@ -5,6 +5,7 @@ from job_radar.gui.source_diagnostics_view_model import (
     build_source_diagnostics,
     format_cache_freshness_line,
     format_source_diagnostics_lines,
+    format_source_toggle_recommendations,
 )
 
 
@@ -53,6 +54,7 @@ def test_source_diagnostics_tracks_failed_source_without_timing():
     assert rows[0].runs == 0
     assert rows[0].failure_count == 1
     assert rows[0].average_duration is None
+    assert rows[0].recommended_action == "temporarily uncheck this source in Search > Sources, then retry later"
 
 
 def test_source_diagnostics_prioritizes_failures_before_slow_sources():
@@ -164,3 +166,27 @@ def test_format_source_diagnostics_lines_includes_source_control_guidance():
         "Source controls: use Search > Sources to temporarily disable unreliable sources, "
         "then refresh diagnostics after reruns."
     )
+
+
+def test_source_toggle_recommendations_call_out_unreliable_sources():
+    rows = build_source_diagnostics([
+        {
+            "sources": [
+                {"name": "HealthySource", "job_count": 2, "warning_count": 0, "duration_seconds": 1.0},
+            ],
+            "failed_sources": ["BrokenSource", "BrokenSource"],
+        }
+    ])
+
+    assert format_source_toggle_recommendations(rows) == [
+        "Source toggle recommendation: disable BrokenSource temporarily and rerun the search."
+    ]
+    lines = format_source_diagnostics_lines([
+        {
+            "sources": [
+                {"name": "HealthySource", "job_count": 2, "warning_count": 0, "duration_seconds": 1.0},
+            ],
+            "failed_sources": ["BrokenSource", "BrokenSource"],
+        }
+    ])
+    assert "Source toggle recommendation: disable BrokenSource temporarily and rerun the search." in lines

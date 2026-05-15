@@ -43,6 +43,8 @@ class SourceDiagnosticRow:
     @property
     def recommended_action(self) -> str:
         """Return a concise user-facing source-health recommendation."""
+        if self.failure_count >= 2 or self.reliability_score < 70:
+            return "temporarily uncheck this source in Search > Sources, then retry later"
         if self.failure_count:
             return "retry later or uncheck this source in Search > Sources if failures continue"
         if self.warning_count:
@@ -165,6 +167,12 @@ def format_source_diagnostics_lines(
             f"reliability {row.reliability_score}/100; {row.recommended_action}"
         )
 
+    toggle_lines = format_source_toggle_recommendations(
+        build_source_diagnostics(history, limit=limit)
+    )
+    if toggle_lines:
+        lines.extend(toggle_lines)
+
     cache_totals = build_cache_totals(history)
     if any(cache_totals.values()):
         lines.append(
@@ -178,6 +186,17 @@ def format_source_diagnostics_lines(
         if freshness_line:
             lines.append(freshness_line)
     return lines
+
+
+def format_source_toggle_recommendations(rows: list[SourceDiagnosticRow]) -> list[str]:
+    """Return source-toggle recommendations for unreliable recent sources."""
+    recommendations = []
+    for row in rows:
+        if row.failure_count >= 2 or row.reliability_score < 70:
+            recommendations.append(
+                f"Source toggle recommendation: disable {row.name} temporarily and rerun the search."
+            )
+    return recommendations
 
 
 def _format_duration(seconds: float) -> str:

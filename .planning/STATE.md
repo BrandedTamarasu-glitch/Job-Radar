@@ -13,7 +13,7 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Milestone:** Product Iteration P-T — IN PROGRESS
 **Status:** Sprints P-R complete; Sprint S in progress; Sprint T planned
-**Last activity:** 2026-05-15 — shipped v2.6.0 for completed Product Iteration K-O, completed Sprints P-R, and started Sprint S with source reliability scores in Settings diagnostics.
+**Last activity:** 2026-05-15 — shipped v2.6.0 for completed Product Iteration K-O, completed Sprints P-R, and continued Sprint S with source reliability scores plus source-toggle recommendations in Settings diagnostics.
 
 **Next step:** continue Sprint S with actionable source-toggle recommendations from reliability history.
 
