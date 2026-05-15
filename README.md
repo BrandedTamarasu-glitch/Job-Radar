@@ -451,7 +451,7 @@ python -m job_radar --help
 
 ### Running Tests
 
-The project includes a comprehensive test suite with 911 automated tests:
+The project includes a comprehensive test suite with 917 automated tests:
 
 ```bash
 # Install dev dependencies
@@ -519,6 +519,7 @@ For release builds, also run the platform build script and smoke-test the genera
 - Entry integration (46 tests) - validates GUI/CLI entry points, wizard flow, error handling
 - Auto-update (42 tests) - validates detection, download, SHA256 verification, installer launch, skip version
 - Release verification (11 tests) - validates release bundle/installer artifact expectations, missing/empty files, filename and installer-directory drift diagnostics, executable permissions, clean CLI failures, noisy virtualenv-match suppression, and checksum manifests
+- Release notes (6 tests) - validates changelog section extraction, tag normalization, output writing, and clean release-note CLI failures
 - Metadata (2 tests) - validates runtime/package version sync and release build files deriving versions from package metadata
 - Browser (12 tests) - validates report opening, platform detection, error handling
 - Paths (16 tests) - validates config directory resolution, platform compatibility
