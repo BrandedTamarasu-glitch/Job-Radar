@@ -15,6 +15,7 @@ from .report_filtering import filtered_out_results as _filtered_out_results
 from .report_matching import match_highlights as _match_highlights
 from .report_matching import match_summary_text as _match_summary_text
 from .report_matching import skill_callout_groups as _skill_callout_groups
+from .report_profile import html_profile_section as _html_profile_section
 from .report_safety import safe_external_url as _safe_external_url
 from .report_source_warnings import failed_source_names as _failed_source_names
 from .report_source_warnings import html_source_failures as _html_source_failures
@@ -2257,57 +2258,6 @@ def _html_tracker_stats(tracker_stats: dict) -> str:
       across {tracker_stats['total_runs']} runs |
       Avg {tracker_stats['avg_new_per_run_last_7']} new/run (last 7)
     </div>
-    """
-
-
-def _html_profile_section(profile: dict) -> str:
-    """Generate HTML for candidate profile summary."""
-    name = html.escape(profile.get("name", "N/A"))
-    level = html.escape(profile.get("level", "N/A"))
-    years = profile.get("years_experience", "N/A")
-    target_titles = html.escape(", ".join(profile.get("target_titles", []))) or "N/A"
-    core_skills = html.escape(", ".join(profile.get("core_skills", []))) or "N/A"
-    location = html.escape(profile.get("location", "N/A"))
-    arrangement = html.escape(", ".join(profile.get("arrangement", []))) or "N/A"
-    target_market = html.escape(profile.get("target_market", "N/A"))
-
-    cert_row = ""
-    if profile.get("certifications"):
-        certs = html.escape(", ".join(profile["certifications"]))
-        cert_row = f"<li><strong>Certifications:</strong> {certs}</li>"
-
-    comp_row = ""
-    if profile.get("comp_floor"):
-        comp_floor = profile["comp_floor"]
-        comp_row = f"<li><strong>Comp floor:</strong> ${comp_floor:,.0f}</li>"
-
-    dealbreaker_row = ""
-    if profile.get("dealbreakers"):
-        dealbreakers = html.escape(", ".join(profile["dealbreakers"]))
-        dealbreaker_row = f"<li><strong>Dealbreakers:</strong> {dealbreakers}</li>"
-
-    return f"""
-    <section aria-labelledby="profile-heading">
-      <div class="card mb-4">
-        <div class="card-header">
-          <h2 id="profile-heading" class="h4 mb-0">Candidate Profile Summary</h2>
-        </div>
-        <div class="card-body">
-          <ul class="list-unstyled mb-0">
-            <li><strong>Level:</strong> {level}</li>
-            <li><strong>Experience:</strong> {years} years</li>
-            <li><strong>Target titles:</strong> {target_titles}</li>
-            <li><strong>Core skills:</strong> {core_skills}</li>
-            <li><strong>Location:</strong> {location}</li>
-            <li><strong>Arrangement:</strong> {arrangement}</li>
-            <li><strong>Target market:</strong> {target_market}</li>
-            {cert_row}
-            {comp_row}
-            {dealbreaker_row}
-          </ul>
-        </div>
-      </div>
-    </section>
     """
 
 
