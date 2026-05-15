@@ -93,6 +93,22 @@ def test_dashboard_bounds_large_changed_search_counts():
     assert actions[0].detail == "99+ saved search(es) changed since the previous run."
 
 
+def test_dashboard_surfaces_maintenance_suggestions():
+    actions = build_dashboard_actions(
+        readiness=readiness(),
+        review_counts={},
+        next_actions=[],
+        search_history={"recent": [{"name": "recent"}], "saved": []},
+        maintenance_suggestions=["clear HTTP cache if source results feel stale"],
+    )
+
+    assert [action.title for action in actions[:2]] == [
+        "Review maintenance suggestions",
+        "Repeat a recent search",
+    ]
+    assert actions[0].target == "Settings"
+
+
 def test_dashboard_defaults_to_first_search_when_history_is_empty():
     actions = build_dashboard_actions(
         readiness=readiness(),

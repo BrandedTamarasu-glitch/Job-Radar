@@ -22,6 +22,7 @@ def build_dashboard_actions(
     review_counts: dict[str, int] | None = None,
     next_actions: list[dict[str, Any]] | None = None,
     search_history: dict[str, Any] | None = None,
+    maintenance_suggestions: list[str] | None = None,
     limit: int = 4,
 ) -> list[DashboardAction]:
     """Return prioritized next actions for the Profile tab dashboard."""
@@ -145,6 +146,16 @@ def build_dashboard_actions(
                 ),
                 target="Search",
                 priority=80,
+            )
+        )
+
+    if maintenance_suggestions:
+        actions.append(
+            DashboardAction(
+                title="Review maintenance suggestions",
+                detail=maintenance_suggestions[0],
+                target="Settings",
+                priority=65,
             )
         )
 

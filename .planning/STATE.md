@@ -7,15 +7,15 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Accurate job-candidate scoring — if the scoring is wrong, nothing else matters.
-**Current focus:** Product Iteration P-T completion validation
+**Current focus:** Product Iteration U-Y, Sprint U adaptive command center
 
 ## Current Position
 
-**Milestone:** Product Iteration P-T — COMPLETE
-**Status:** Sprints P-T complete; ready for validation, push, and release planning
-**Last activity:** 2026-05-15 — shipped v2.6.0 for completed Product Iteration K-O and completed Product Iteration P-T: dashboard next steps, search comparison recaps, follow-up automation, source quality controls, and local maintenance insights.
+**Milestone:** Product Iteration U-Y — IN PROGRESS
+**Status:** Sprint U in progress; Sprints V-Y planned
+**Last activity:** 2026-05-15 — completed Product Iteration P-T and started Product Iteration U-Y by documenting Sprints U-Y and surfacing local maintenance suggestions in Profile dashboard recommendations.
 
-**Next step:** commit Sprint T documentation closure, run broader validation, then push or plan the next release.
+**Next step:** continue Sprint U by adding source-quality dashboard signals and validating command-center prioritization.
 
 ## Performance Metrics
 
@@ -118,25 +118,25 @@ Full decision log: PROJECT.md Key Decisions table (143 decisions)
 
 ### Active Sprint Plan
 
-See `.planning/PRODUCT_ITERATION_SPRINTS_P_T.md`.
+See `.planning/PRODUCT_ITERATION_SPRINTS_U_Y.md`.
 
-- Sprint P: Daily Dashboard & Next Steps — complete
-- Sprint Q: Search Comparison & Insight Recap — complete
-- Sprint R: Follow-Up Workflow Automation — complete
-- Sprint S: Source Quality & Coverage Controls — complete
-- Sprint T: Local Performance & Maintenance Insights — complete
+- Sprint U: Adaptive Command Center — in progress
+- Sprint V: Workflow Shortcuts & Bulk Actions — planned
+- Sprint W: Source Strategy & Preset Intelligence — planned
+- Sprint X: Release Readiness & Regression Sweep — planned
+- Sprint Y: Post-Release Feedback Loop — planned
 
 ### Blockers/Concerns
 
-None. Sprints P-T are complete.
+None. Sprint U is active.
 
 ## Session Continuity
 
 Last session: 2026-05-15
-Stopped at: Product Iteration P-T complete, pending validation/push/release decision
+Stopped at: Sprint U dashboard maintenance-suggestion foundation in progress
 Resume file: None
 
-**Next step:** Commit documentation closure, run broader validation, then push or plan release.
+**Next step:** Continue Sprint U source-quality dashboard signals and validation.
 
 ---
 *State initialized: 2026-02-13*

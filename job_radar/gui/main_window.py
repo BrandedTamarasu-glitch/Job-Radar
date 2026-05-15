@@ -563,11 +563,21 @@ class MainWindow(ctk.CTk):
         except Exception:
             search_history = {"recent": [], "saved": []}
 
+        try:
+            maintenance_summary = build_local_maintenance_summary(
+                get_data_dir(),
+                get_results_dir(),
+            )
+            maintenance_suggestions = maintenance_summary.suggestions
+        except Exception:
+            maintenance_suggestions = []
+
         return build_dashboard_actions(
             readiness=readiness,
             review_counts=review_counts,
             next_actions=next_actions,
             search_history=search_history,
+            maintenance_suggestions=maintenance_suggestions,
         )
 
     def _add_dashboard_next_steps(self, parent, row, actions):

@@ -46,6 +46,7 @@ def test_dashboard_actions_use_local_state_sources():
     assert "get_application_next_actions" in source
     assert "review_state_counts()" in source
     assert "load_search_history()" in source
+    assert "build_local_maintenance_summary" in source
     assert "build_dashboard_actions" in source
     assert "except Exception" in source
 

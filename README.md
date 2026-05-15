@@ -546,6 +546,14 @@ The next product iteration is tracked in `.planning/PRODUCT_ITERATION_SPRINTS_P_
 - **Sprint S:** source quality and coverage controls — complete
 - **Sprint T:** local performance and maintenance insights — complete
 
+The active product iteration is tracked in `.planning/PRODUCT_ITERATION_SPRINTS_U_Y.md`:
+
+- **Sprint U:** adaptive command center — in progress
+- **Sprint V:** workflow shortcuts and bulk actions — planned
+- **Sprint W:** source strategy and preset intelligence — planned
+- **Sprint X:** release readiness and regression sweep — planned
+- **Sprint Y:** post-release feedback loop — planned
+
 ### Building Executables
 
 To build standalone executables for distribution:
