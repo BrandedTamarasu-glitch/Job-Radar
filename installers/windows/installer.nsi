@@ -8,7 +8,7 @@
 # ---- Metadata ----
 !define PRODUCT_NAME "Job Radar"
 !define PRODUCT_PUBLISHER "Job Radar"
-!define PRODUCT_WEB_SITE "https://github.com/coryebert/Job-Radar"
+!define PRODUCT_WEB_SITE "https://github.com/BrandedTamarasu-glitch/Job-Radar"
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\JobRadar"
 !define PRODUCT_DIR_REG_KEY "Software\JobRadar"
 

@@ -5,8 +5,27 @@ import logging
 import os
 from datetime import date, datetime
 from pathlib import Path
+from urllib.parse import urlsplit
 
 log = logging.getLogger(__name__)
+
+SAFE_EXTERNAL_URL_SCHEMES = {"http", "https"}
+
+
+def _safe_external_url(url: str | None) -> str:
+    """Return a safe clickable external URL, or an empty string when unsafe."""
+    if not url:
+        return ""
+    candidate = str(url).strip()
+    try:
+        parsed = urlsplit(candidate)
+    except ValueError:
+        return ""
+    if parsed.scheme.lower() not in SAFE_EXTERNAL_URL_SCHEMES:
+        return ""
+    if not parsed.netloc:
+        return ""
+    return candidate
 
 
 def _make_snippet(text: str, max_len: int = 80) -> str:
@@ -303,7 +322,8 @@ def _generate_markdown_report(
             rec = r["score"]["recommendation"]
             is_new = r.get("is_new", True)
             new_badge = "NEW" if is_new else ""
-            link = f"[{job.source}]({job.url})" if job.url else job.source
+            safe_job_url = _safe_external_url(job.url)
+            link = f"[{job.source}]({safe_job_url})" if safe_job_url else job.source
             salary = job.salary if job.salary != "Not listed" else "—"
             emp_type = getattr(job, "employment_type", "") or job.arrangement
             snippet = _make_snippet(job.description, 80)
@@ -336,7 +356,11 @@ def _generate_markdown_report(
         if u["source"] != current_source:
             current_source = u["source"]
             lines.append(f"**{current_source}:**")
-        lines.append(f"- {u['title']}: [{u['source']} Search]({u['url']})")
+        safe_url = _safe_external_url(u.get("url"))
+        if safe_url:
+            lines.append(f"- {u['title']}: [{u['source']} Search]({safe_url})")
+        else:
+            lines.append(f"- {u['title']}: {u['source']} Search URL unavailable")
     lines.append("")
 
     content = "\n".join(lines)
@@ -500,8 +524,11 @@ def _format_detailed_result(lines: list, rank: int, result: dict, profile: dict)
 
     if job.apply_info:
         lines.append(f"- **Apply:** {job.apply_info}")
-    if job.url:
-        lines.append(f"- **Link:** [{job.source}]({job.url})")
+    safe_job_url = _safe_external_url(job.url)
+    if safe_job_url:
+        lines.append(f"- **Link:** [{job.source}]({safe_job_url})")
+    elif job.url:
+        lines.append(f"- **Link:** {job.source} URL unavailable")
 
     # Talking points from profile highlights matched to this job
     highlights = profile.get("highlights", [])
@@ -2627,10 +2654,13 @@ def _html_job_detail_items(result: dict, profile: dict) -> str:
     if job.apply_info:
         details.append(f"<li><strong>Apply:</strong> {html.escape(job.apply_info)}</li>")
 
-    if job.url:
+    safe_job_url = _safe_external_url(job.url)
+    if safe_job_url:
         source_aria_label = f"View on {job.source}, opens in new tab"
-        details.append(f'<li><strong>Link:</strong> <a href="{html.escape(job.url)}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary" aria-label="{html.escape(source_aria_label)}">{html.escape(job.source)}</a></li>')
-        details.append(f'<li><button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copySingleUrl(this)" data-url="{html.escape(job.url)}">Copy URL</button></li>')
+        details.append(f'<li><strong>Link:</strong> <a href="{html.escape(safe_job_url)}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary" aria-label="{html.escape(source_aria_label)}">{html.escape(job.source)}</a></li>')
+        details.append(f'<li><button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copySingleUrl(this)" data-url="{html.escape(safe_job_url)}">Copy URL</button></li>')
+    elif job.url:
+        details.append(f"<li><strong>Link:</strong> {html.escape(job.source)} URL unavailable</li>")
 
     highlights = profile.get("highlights", [])
     matched_core_list = skill.get("matched_core", [])
@@ -2742,8 +2772,9 @@ def _html_hero_section(hero_jobs: list[dict], profile: dict) -> str:
 
         # Add data attributes (hero-job class IN ADDITION to tier-strong)
         data_attrs = ""
-        if job.url:
-            data_attrs = f'class="card mb-3 job-item hero-job tier-{tier}" tabindex="0" data-job-url="{html.escape(job.url)}" data-score="{score_val:.1f}" data-job-key="{html.escape(job_key_val)}" data-job-title="{html.escape(job.title)}" data-job-company="{html.escape(job.company)}"'
+        safe_job_url = _safe_external_url(job.url)
+        if safe_job_url:
+            data_attrs = f'class="card mb-3 job-item hero-job tier-{tier}" tabindex="0" data-job-url="{html.escape(safe_job_url)}" data-score="{score_val:.1f}" data-job-key="{html.escape(job_key_val)}" data-job-title="{html.escape(job.title)}" data-job-company="{html.escape(job.company)}"'
         else:
             data_attrs = f'class="card mb-3 hero-job tier-{tier}" data-job-key="{html.escape(job_key_val)}" data-job-title="{html.escape(job.title)}" data-job-company="{html.escape(job.company)}"'
 
@@ -2850,8 +2881,9 @@ def _html_recommended_section(recommended: list[dict], profile: dict) -> str:
 
         # Add data attributes for clipboard and status tracking functionality
         data_attrs = ""
-        if job.url:
-            data_attrs = f'class="card mb-3 job-item tier-{tier}" tabindex="0" data-job-url="{html.escape(job.url)}" data-score="{score_val:.1f}" data-job-key="{html.escape(job_key_val)}" data-job-title="{html.escape(job.title)}" data-job-company="{html.escape(job.company)}"'
+        safe_job_url = _safe_external_url(job.url)
+        if safe_job_url:
+            data_attrs = f'class="card mb-3 job-item tier-{tier}" tabindex="0" data-job-url="{html.escape(safe_job_url)}" data-score="{score_val:.1f}" data-job-key="{html.escape(job_key_val)}" data-job-title="{html.escape(job.title)}" data-job-company="{html.escape(job.company)}"'
         else:
             data_attrs = f'class="card mb-3 tier-{tier}" data-job-key="{html.escape(job_key_val)}" data-job-title="{html.escape(job.title)}" data-job-company="{html.escape(job.company)}"'
 
@@ -3079,12 +3111,13 @@ def _html_result_row(result: dict, index: int) -> str:
     snippet = _make_snippet(job.description, 80)
     job_key_val = f"{job.title.lower().strip()}||{job.company.lower().strip()}"
 
-    if job.url:
+    safe_job_url = _safe_external_url(job.url)
+    if safe_job_url:
         view_aria_label = f"View {job.title} at {job.company}, opens in new tab"
-        link_html = f'<a href="{html.escape(job.url)}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary" aria-label="{html.escape(view_aria_label)}">View</a> <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copySingleUrl(this)" data-url="{html.escape(job.url)}">Copy</button>'
-        row_attrs = f'class="job-item tier-{tier}" tabindex="0" data-job-url="{html.escape(job.url)}" data-score="{score:.1f}" data-job-key="{html.escape(job_key_val)}" data-job-title="{html.escape(job.title)}" data-job-company="{html.escape(job.company)}"'
+        link_html = f'<a href="{html.escape(safe_job_url)}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary" aria-label="{html.escape(view_aria_label)}">View</a> <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copySingleUrl(this)" data-url="{html.escape(safe_job_url)}">Copy</button>'
+        row_attrs = f'class="job-item tier-{tier}" tabindex="0" data-job-url="{html.escape(safe_job_url)}" data-score="{score:.1f}" data-job-key="{html.escape(job_key_val)}" data-job-title="{html.escape(job.title)}" data-job-company="{html.escape(job.company)}"'
     else:
-        link_html = html.escape(job.source)
+        link_html = "URL unavailable" if job.url else html.escape(job.source)
         row_attrs = f'class="tier-{tier}" data-job-key="{html.escape(job_key_val)}" data-job-title="{html.escape(job.title)}" data-job-company="{html.escape(job.company)}"'
 
     status_dropdown = f"""
@@ -3194,7 +3227,11 @@ def _html_manual_urls_section(manual_urls: list[dict]) -> str:
     for source, urls in groups.items():
         links = []
         for u in urls:
-            links.append(f'<li>{html.escape(u["title"])}: <a href="{html.escape(u["url"])}" target="_blank" rel="noopener" aria-label="{html.escape(u["title"])} on {html.escape(u["source"])}, opens in new tab">{html.escape(u["source"])} Search</a></li>')
+            safe_url = _safe_external_url(u.get("url"))
+            if safe_url:
+                links.append(f'<li>{html.escape(u["title"])}: <a href="{html.escape(safe_url)}" target="_blank" rel="noopener" aria-label="{html.escape(u["title"])} on {html.escape(u["source"])}, opens in new tab">{html.escape(u["source"])} Search</a></li>')
+            else:
+                links.append(f'<li>{html.escape(u["title"])}: {html.escape(u["source"])} Search URL unavailable</li>')
         links_html = "".join(links)
         sections.append(f"""
         <div class="mb-3">

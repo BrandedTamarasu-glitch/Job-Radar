@@ -267,11 +267,9 @@ The HTML report opens automatically in your browser after each search. Features 
 
 ### How does status tracking work?
 
-Click the status dropdown on any job card to mark it as Applied, Interviewing, Rejected, or Offer. Status is saved to:
-1. **Browser localStorage** — Persists across sessions in the same browser
-2. **App data results/tracker.json** — Embedded in the tracker file for long-term storage
+Click the status dropdown on any job card to mark it as Applied, Interviewing, Rejected, or Offer. Status changes made inside a generated HTML report are saved to **browser localStorage** for that browser and report file. The report can export pending status updates, but those browser-side changes do not automatically write back to the desktop app's `tracker.json` yet.
 
-Status data syncs bidirectionally between localStorage and tracker.json on report load.
+The desktop app embeds known tracker status when it generates a report. Treat report-side status changes as local report annotations until you export/import them through the app workflow.
 
 ### Can I export results to a spreadsheet?
 

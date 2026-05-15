@@ -1,5 +1,6 @@
 """Tests for dual-format report generation."""
 
+from dataclasses import replace
 import json
 import pytest
 import re
@@ -551,6 +552,39 @@ def test_html_report_contains_data_attributes(sample_profile, sample_scored_resu
 
     # Check for keyboard navigation tabindex
     assert 'tabindex="0"' in html_content
+
+
+def test_html_report_neutralizes_unsafe_job_and_manual_urls(sample_profile, sample_scored_results, tmp_path):
+    """Unsafe URL schemes are not rendered as clickable or copyable report URLs."""
+    unsafe_results = [dict(sample_scored_results[0])]
+    unsafe_results[0]["job"] = replace(
+        sample_scored_results[0]["job"],
+        url="javascript:alert('xss')",
+    )
+    manual_urls = [
+        {"source": "Unsafe", "title": "Manual unsafe", "url": "data:text/html,<script>alert(1)</script>"},
+    ]
+
+    result = generate_report(
+        profile=sample_profile,
+        scored_results=unsafe_results,
+        manual_urls=manual_urls,
+        sources_searched=["Unsafe"],
+        from_date="2026-02-06",
+        to_date="2026-02-09",
+        output_dir=str(tmp_path),
+    )
+
+    html_content = Path(result["html"]).read_text(encoding="utf-8")
+    markdown = Path(result["markdown"]).read_text(encoding="utf-8")
+
+    assert "javascript:alert" not in html_content
+    assert "data:text/html" not in html_content
+    assert 'data-job-url="javascript' not in html_content
+    assert 'data-url="javascript' not in html_content
+    assert "URL unavailable" in html_content
+    assert "javascript:alert" not in markdown
+    assert "data:text/html" not in markdown
 
 
 def test_html_report_contains_notyf_cdn(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):

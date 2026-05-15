@@ -40,3 +40,20 @@ def test_release_build_files_do_not_hardcode_old_versions():
     assert "app_version = version_scope['__version__']" in spec_file
     assert "job-radar-v*-linux.tar.gz" in gitignore
     assert "job-radar-v*.sha256" in gitignore
+
+
+def test_shipped_metadata_uses_current_repository_owner():
+    """Installer metadata should not point users to the previous repository owner."""
+    installer = Path("installers/windows/installer.nsi").read_text(encoding="utf-8")
+
+    assert "https://github.com/BrandedTamarasu-glitch/Job-Radar" in installer
+    assert "https://github.com/coryebert/Job-Radar" not in installer
+
+
+def test_release_workflow_uses_job_scoped_write_permission():
+    """Release workflow should keep write-scoped tokens limited to publishing."""
+    workflow = Path(".github/workflows/release.yml").read_text(encoding="utf-8")
+
+    assert "permissions:\n  contents: read" in workflow
+    assert "release:\n    name: Create Release" in workflow
+    assert "    permissions:\n      contents: write" in workflow
