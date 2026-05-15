@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import json
+import platform
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
+from job_radar import __version__
 
 
 @dataclass(frozen=True)
@@ -15,6 +18,23 @@ class LocalMaintenanceSummary:
     total_bytes: int
     cache_files: int
     cache_bytes: int
+    tracker_applications: int
+    tracker_seen_jobs: int
+    source_health_runs: int
+    review_jobs: int
+    saved_recent: int
+    saved_named: int
+    suggestions: list[str]
+
+
+@dataclass(frozen=True)
+class FeedbackDiagnosticsSummary:
+    """Privacy-safe diagnostics users can share for post-release feedback."""
+
+    app_version: str
+    operating_system: str
+    local_data_bytes: int
+    cache_files: int
     tracker_applications: int
     tracker_seen_jobs: int
     source_health_runs: int
@@ -69,6 +89,30 @@ def build_local_maintenance_summary(
     )
 
 
+def build_feedback_diagnostics_summary(
+    data_dir: Path,
+    results_dir: Path,
+    *,
+    app_version: str = __version__,
+    operating_system: str | None = None,
+) -> FeedbackDiagnosticsSummary:
+    """Build a privacy-safe diagnostics summary for user feedback."""
+    maintenance = build_local_maintenance_summary(data_dir, results_dir)
+    return FeedbackDiagnosticsSummary(
+        app_version=app_version,
+        operating_system=operating_system or platform.platform(),
+        local_data_bytes=maintenance.total_bytes,
+        cache_files=maintenance.cache_files,
+        tracker_applications=maintenance.tracker_applications,
+        tracker_seen_jobs=maintenance.tracker_seen_jobs,
+        source_health_runs=maintenance.source_health_runs,
+        review_jobs=maintenance.review_jobs,
+        saved_recent=maintenance.saved_recent,
+        saved_named=maintenance.saved_named,
+        suggestions=maintenance.suggestions,
+    )
+
+
 def format_local_maintenance_lines(summary: LocalMaintenanceSummary) -> list[str]:
     """Return Settings-ready local maintenance lines."""
     lines = [
@@ -91,6 +135,38 @@ def format_local_maintenance_lines(summary: LocalMaintenanceSummary) -> list[str
         lines.extend(f"Suggestion: {suggestion}" for suggestion in summary.suggestions)
     else:
         lines.append("Suggestion: no local maintenance needed right now.")
+    return lines
+
+
+def format_feedback_diagnostics_lines(summary: FeedbackDiagnosticsSummary) -> list[str]:
+    """Return a shareable diagnostics summary without private local contents."""
+    lines = [
+        "Feedback diagnostics (redacted):",
+        f"Version: {summary.app_version}",
+        f"Operating system: {summary.operating_system}",
+        f"Local data size: {_format_bytes(summary.local_data_bytes)}",
+        (
+            "Workflow counts: "
+            f"{summary.tracker_seen_jobs} seen job(s), "
+            f"{summary.tracker_applications} application(s), "
+            f"{summary.review_jobs} reviewed job(s)"
+        ),
+        (
+            "Search state: "
+            f"{summary.saved_named} saved search(es), "
+            f"{summary.saved_recent} recent search shortcut(s), "
+            f"{summary.source_health_runs} source diagnostic run(s)"
+        ),
+        f"Cache files: {summary.cache_files}",
+    ]
+    if summary.suggestions:
+        lines.extend(f"Maintenance signal: {suggestion}" for suggestion in summary.suggestions)
+    else:
+        lines.append("Maintenance signal: none")
+    lines.append(
+        "Privacy: do not include API keys, profile/resume contents, saved search names, "
+        "application notes, tracker records, or local filesystem paths."
+    )
     return lines
 
 

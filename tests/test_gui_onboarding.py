@@ -182,6 +182,16 @@ def test_settings_tab_includes_local_maintenance_summary():
     assert "Clear Dismissed Reviews" in source
 
 
+def test_settings_tab_includes_privacy_safe_feedback_diagnostics():
+    source = inspect.getsource(MainWindow._build_settings_tab)
+    helper_source = inspect.getsource(MainWindow._feedback_diagnostics_text)
+
+    assert "Feedback Diagnostics" in source
+    assert "_feedback_diagnostics_text()" in source
+    assert "build_feedback_diagnostics_summary" in helper_source
+    assert "format_feedback_diagnostics_lines" in helper_source
+
+
 def test_clear_dismissed_reviews_uses_bounded_review_helper():
     source = inspect.getsource(MainWindow._on_clear_dismissed_reviews)
 

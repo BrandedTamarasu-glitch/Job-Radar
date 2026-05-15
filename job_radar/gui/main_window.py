@@ -67,7 +67,9 @@ from job_radar.gui.search_summary import (
     zero_result_lines,
 )
 from job_radar.gui.maintenance_view_model import (
+    build_feedback_diagnostics_summary,
     build_local_maintenance_summary,
+    format_feedback_diagnostics_lines,
     format_local_maintenance_lines,
 )
 from job_radar.gui.source_diagnostics_view_model import (
@@ -2362,6 +2364,11 @@ class MainWindow(ctk.CTk):
         summary = build_local_maintenance_summary(get_data_dir(), get_results_dir())
         return "\n".join(format_local_maintenance_lines(summary))
 
+    def _feedback_diagnostics_text(self) -> str:
+        """Return privacy-safe feedback diagnostics text for Settings."""
+        summary = build_feedback_diagnostics_summary(get_data_dir(), get_results_dir())
+        return "\n".join(format_feedback_diagnostics_lines(summary))
+
     def _refresh_source_diagnostics(self):
         """Refresh source diagnostics text in Settings."""
         if not self._source_diagnostics_textbox:
@@ -2939,6 +2946,23 @@ class MainWindow(ctk.CTk):
             text_color="gray"
         )
         self._cache_status_label.pack(pady=(0, 10), anchor="w", padx=10)
+
+        feedback_title = ctk.CTkLabel(
+            scroll_frame,
+            text="Feedback Diagnostics",
+            font=ctk.CTkFont(size=16, weight="bold")
+        )
+        feedback_title.pack(pady=(10, 8), anchor="w", padx=10)
+
+        feedback_box = ctk.CTkTextbox(
+            scroll_frame,
+            width=620,
+            height=150,
+            state="normal",
+        )
+        feedback_box.insert("end", self._feedback_diagnostics_text())
+        feedback_box.configure(state="disabled")
+        feedback_box.pack(pady=(0, 10), anchor="w", padx=10)
 
         diagnostics_title = ctk.CTkLabel(
             scroll_frame,
