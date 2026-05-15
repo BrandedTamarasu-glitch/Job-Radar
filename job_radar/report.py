@@ -12,6 +12,9 @@ from .report_assets import (
 )
 from .report_filtering import filter_explanation_text as _filter_explanation_text
 from .report_filtering import filtered_out_results as _filtered_out_results
+from .report_matching import match_highlights as _match_highlights
+from .report_matching import match_summary_text as _match_summary_text
+from .report_matching import skill_callout_groups as _skill_callout_groups
 from .report_safety import safe_external_url as _safe_external_url
 from .report_source_warnings import failed_source_names as _failed_source_names
 from .report_source_warnings import html_source_failures as _html_source_failures
@@ -325,20 +328,6 @@ def _format_detailed_result(lines: list, rank: int, result: dict, profile: dict)
                 lines.append(f"  - {h}")
 
     lines.append("")
-
-
-def _match_highlights(highlights: list[str], matched_skills: list[str], job) -> list[str]:
-    """Find profile highlights relevant to this job's matched skills."""
-    relevant = []
-    searchable = (job.title + " " + job.description).lower()
-    for h in highlights:
-        h_lower = h.lower()
-        # Check if the highlight mentions any matched skill or job keyword
-        if any(s.lower() in h_lower for s in matched_skills):
-            relevant.append(h)
-        elif any(w in h_lower for w in searchable.split()[:20] if len(w) > 4):
-            relevant.append(h)
-    return relevant[:3]  # max 3 talking points
 
 
 def _generate_html_report(
@@ -2389,29 +2378,6 @@ def _html_job_detail_items(result: dict, profile: dict) -> str:
     return "".join(details)
 
 
-def _skill_callout_groups(skill: dict, profile: dict) -> list[tuple[str, list[str]]]:
-    """Return grouped must-have/nice-to-have skill callouts."""
-    groups = []
-    missing_core = list(skill.get("missing_core") or [])
-    if missing_core:
-        groups.append(("Missing must-have skills", missing_core))
-
-    matched_secondary = list(skill.get("matched_secondary") or [])
-    if matched_secondary:
-        groups.append(("Nice-to-have matches", matched_secondary))
-
-    secondary_skills = list(profile.get("secondary_skills") or [])
-    matched_secondary_lower = {value.casefold() for value in matched_secondary}
-    missing_secondary = [
-        value for value in secondary_skills
-        if value.casefold() not in matched_secondary_lower
-    ]
-    if missing_secondary:
-        groups.append(("Missing nice-to-have skills", missing_secondary))
-
-    return groups
-
-
 def _html_shortlist_button(job_key_val: str, *, compact: bool = False) -> str:
     """Generate accessible review-state controls."""
     margin_class = " mt-1" if compact else ""
@@ -2428,30 +2394,6 @@ def _html_shortlist_button(job_key_val: str, *, compact: bool = False) -> str:
         'aria-pressed="false" aria-label="Dismiss this job from review">Dismiss</button>'
         '</span>'
     )
-
-
-def _match_summary_text(result: dict) -> str:
-    """Build a concise explanation for why a job matched."""
-    score = result["score"]
-    components = score.get("components", {})
-    skill = components.get("skill_match", {})
-    title = components.get("title_relevance", {})
-    seniority = components.get("seniority", {})
-    response = components.get("response", {})
-
-    parts = []
-    if skill.get("ratio"):
-        parts.append(f"{skill['ratio']} core skills")
-    if title.get("reason"):
-        parts.append(f"title: {title['reason']}")
-    if seniority.get("reason"):
-        parts.append(f"seniority: {seniority['reason']}")
-    if response.get("likelihood"):
-        parts.append(f"{response['likelihood']} response likelihood")
-
-    if not parts:
-        return f"Matched with score {score.get('overall', 'N/A')}"
-    return "; ".join(parts)
 
 
 def _html_match_summary(result: dict) -> str:
