@@ -172,6 +172,13 @@ def test_search_complete_loads_profile_for_zero_result_guidance():
     assert "search_context_lines(summary, self._active_search_config)" in source
 
 
+def test_settings_tab_includes_local_maintenance_summary():
+    source = inspect.getsource(MainWindow._build_settings_tab)
+
+    assert "_local_maintenance_text()" in source
+    assert "Storage Maintenance" in source
+
+
 def test_real_search_records_recent_search_before_progress():
     source = inspect.getsource(MainWindow._start_real_search)
 

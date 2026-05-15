@@ -56,7 +56,7 @@ Goal: turn source diagnostics into practical search decisions.
 
 Deliverable: users can tune source coverage confidently when job boards are noisy or degraded.
 
-Status: in progress. Settings source diagnostics now include coarse reliability scores, source-toggle recommendations, and source/preset coverage-gap callouts over recent source history.
+Status: complete. Settings source diagnostics include coarse reliability scores, source-toggle recommendations, and source/preset coverage-gap callouts over recent source history.
 
 ## Sprint T: Local Performance & Maintenance Insights
 
@@ -69,7 +69,7 @@ Goal: keep large long-running installs predictable.
 
 Deliverable: users understand what local state exists, how large it is, and when maintenance is useful.
 
-Status: planned.
+Status: in progress. Settings now shows local data size, cache counts, tracker/review/saved-search counts, and maintenance suggestions.
 
 ## Execution Order
 

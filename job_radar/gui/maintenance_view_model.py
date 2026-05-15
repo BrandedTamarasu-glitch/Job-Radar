@@ -1,0 +1,156 @@
+"""View-model helpers for local data maintenance summaries."""
+
+from __future__ import annotations
+
+import json
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+
+@dataclass(frozen=True)
+class LocalMaintenanceSummary:
+    """Display-ready counts for local Job Radar state."""
+
+    total_bytes: int
+    cache_files: int
+    cache_bytes: int
+    tracker_applications: int
+    tracker_seen_jobs: int
+    source_health_runs: int
+    review_jobs: int
+    saved_recent: int
+    saved_named: int
+    suggestions: list[str]
+
+
+def build_local_maintenance_summary(
+    data_dir: Path,
+    results_dir: Path,
+) -> LocalMaintenanceSummary:
+    """Summarize local app data without leaving the app data tree."""
+    data_dir = Path(data_dir)
+    results_dir = Path(results_dir)
+    cache_dir = data_dir / "cache"
+    cache_files, cache_bytes = _directory_file_count_and_size(cache_dir)
+    total_bytes = _directory_file_count_and_size(data_dir)[1]
+
+    tracker = _read_json(results_dir / "tracker.json")
+    review_state = _read_json(data_dir / "review_state.json")
+    saved_searches = _read_json(data_dir / "saved_searches.json")
+
+    tracker_applications = _dict_count(tracker.get("applications"))
+    tracker_seen_jobs = _dict_count(tracker.get("seen_jobs"))
+    source_health_runs = _list_count(tracker.get("source_health_history"))
+    review_jobs = _dict_count(review_state.get("jobs"))
+    saved_recent = _list_count(saved_searches.get("recent"))
+    saved_named = _list_count(saved_searches.get("saved"))
+
+    suggestions = _maintenance_suggestions(
+        cache_files=cache_files,
+        cache_bytes=cache_bytes,
+        tracker_seen_jobs=tracker_seen_jobs,
+        source_health_runs=source_health_runs,
+        review_jobs=review_jobs,
+        saved_searches=saved_recent + saved_named,
+    )
+
+    return LocalMaintenanceSummary(
+        total_bytes=total_bytes,
+        cache_files=cache_files,
+        cache_bytes=cache_bytes,
+        tracker_applications=tracker_applications,
+        tracker_seen_jobs=tracker_seen_jobs,
+        source_health_runs=source_health_runs,
+        review_jobs=review_jobs,
+        saved_recent=saved_recent,
+        saved_named=saved_named,
+        suggestions=suggestions,
+    )
+
+
+def format_local_maintenance_lines(summary: LocalMaintenanceSummary) -> list[str]:
+    """Return Settings-ready local maintenance lines."""
+    lines = [
+        f"Local data: {_format_bytes(summary.total_bytes)} total",
+        f"HTTP cache: {summary.cache_files} file(s), {_format_bytes(summary.cache_bytes)}",
+        (
+            "History: "
+            f"{summary.tracker_seen_jobs} seen job(s), "
+            f"{summary.tracker_applications} application(s), "
+            f"{summary.source_health_runs} source diagnostic run(s)"
+        ),
+        (
+            "Workflow state: "
+            f"{summary.review_jobs} reviewed job(s), "
+            f"{summary.saved_named} saved search(es), "
+            f"{summary.saved_recent} recent search shortcut(s)"
+        ),
+    ]
+    if summary.suggestions:
+        lines.extend(f"Suggestion: {suggestion}" for suggestion in summary.suggestions)
+    else:
+        lines.append("Suggestion: no local maintenance needed right now.")
+    return lines
+
+
+def _directory_file_count_and_size(path: Path) -> tuple[int, int]:
+    if not path.exists():
+        return 0, 0
+    count = 0
+    size = 0
+    for item in path.rglob("*"):
+        if item.is_file():
+            count += 1
+            try:
+                size += item.stat().st_size
+            except OSError:
+                continue
+    return count, size
+
+
+def _read_json(path: Path) -> dict[str, Any]:
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _dict_count(value: Any) -> int:
+    return len(value) if isinstance(value, dict) else 0
+
+
+def _list_count(value: Any) -> int:
+    return len(value) if isinstance(value, list) else 0
+
+
+def _maintenance_suggestions(
+    *,
+    cache_files: int,
+    cache_bytes: int,
+    tracker_seen_jobs: int,
+    source_health_runs: int,
+    review_jobs: int,
+    saved_searches: int,
+) -> list[str]:
+    suggestions = []
+    if cache_files >= 100 or cache_bytes >= 50 * 1024 * 1024:
+        suggestions.append("clear HTTP cache if source results feel stale or disk use matters")
+    if tracker_seen_jobs >= 5000:
+        suggestions.append("export app data before pruning or resetting long-running tracker history")
+    if source_health_runs >= 20:
+        suggestions.append("source diagnostics history is at the retained-run cap")
+    if review_jobs >= 500:
+        suggestions.append("review queue is large; clear dismissed jobs from reports you no longer need")
+    if saved_searches >= 50:
+        suggestions.append("remove saved or recent searches you no longer rerun")
+    return suggestions
+
+
+def _format_bytes(value: int) -> str:
+    if value < 1024:
+        return f"{value} B"
+    if value < 1024 * 1024:
+        return f"{value / 1024:.1f} KB"
+    return f"{value / (1024 * 1024):.1f} MB"

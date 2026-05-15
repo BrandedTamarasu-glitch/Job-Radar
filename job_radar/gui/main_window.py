@@ -66,6 +66,10 @@ from job_radar.gui.search_summary import (
     source_warning_message,
     zero_result_lines,
 )
+from job_radar.gui.maintenance_view_model import (
+    build_local_maintenance_summary,
+    format_local_maintenance_lines,
+)
 from job_radar.gui.source_diagnostics_view_model import format_source_diagnostics_lines
 from job_radar.gui.worker_thread import create_search_worker, create_download_worker
 from job_radar.gui.scoring_config import ScoringConfigWidget
@@ -2303,6 +2307,11 @@ class MainWindow(ctk.CTk):
         history = get_source_health_history(limit=20)
         return "\n".join(format_source_diagnostics_lines(history))
 
+    def _local_maintenance_text(self) -> str:
+        """Return current local maintenance summary text for Settings."""
+        summary = build_local_maintenance_summary(get_data_dir(), get_results_dir())
+        return "\n".join(format_local_maintenance_lines(summary))
+
     def _refresh_source_diagnostics(self):
         """Refresh source diagnostics text in Settings."""
         if not self._source_diagnostics_textbox:
@@ -2822,6 +2831,16 @@ class MainWindow(ctk.CTk):
             text_color="gray"
         )
         storage_desc.pack(pady=(0, 10), anchor="w", padx=10)
+
+        maintenance_box = ctk.CTkTextbox(
+            scroll_frame,
+            width=620,
+            height=120,
+            state="normal",
+        )
+        maintenance_box.insert("end", self._local_maintenance_text())
+        maintenance_box.configure(state="disabled")
+        maintenance_box.pack(pady=(0, 10), anchor="w", padx=10)
 
         clear_cache_btn = ctk.CTkButton(
             scroll_frame,

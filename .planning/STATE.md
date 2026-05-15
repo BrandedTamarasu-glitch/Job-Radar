@@ -7,15 +7,15 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Accurate job-candidate scoring — if the scoring is wrong, nothing else matters.
-**Current focus:** Product Iteration P-T, Sprint S source quality and coverage controls
+**Current focus:** Product Iteration P-T, Sprint T local performance and maintenance insights
 
 ## Current Position
 
 **Milestone:** Product Iteration P-T — IN PROGRESS
-**Status:** Sprints P-R complete; Sprint S in progress; Sprint T planned
-**Last activity:** 2026-05-15 — shipped v2.6.0 for completed Product Iteration K-O, completed Sprints P-R, and continued Sprint S with source reliability scores, source-toggle recommendations, and source/preset coverage-gap diagnostics.
+**Status:** Sprints P-S complete; Sprint T in progress
+**Last activity:** 2026-05-15 — shipped v2.6.0 for completed Product Iteration K-O, completed Sprints P-S, and started Sprint T with Settings local data size, history counts, and maintenance suggestions.
 
-**Next step:** continue Sprint S with actionable source-toggle recommendations from reliability history.
+**Next step:** continue Sprint T with bounded large-history dashboard validation and maintenance documentation.
 
 ## Performance Metrics
 
@@ -123,20 +123,20 @@ See `.planning/PRODUCT_ITERATION_SPRINTS_P_T.md`.
 - Sprint P: Daily Dashboard & Next Steps — complete
 - Sprint Q: Search Comparison & Insight Recap — complete
 - Sprint R: Follow-Up Workflow Automation — complete
-- Sprint S: Source Quality & Coverage Controls — in progress
-- Sprint T: Local Performance & Maintenance Insights — planned
+- Sprint S: Source Quality & Coverage Controls — complete
+- Sprint T: Local Performance & Maintenance Insights — in progress
 
 ### Blockers/Concerns
 
-None. Sprint S is active.
+None. Sprint T is active.
 
 ## Session Continuity
 
 Last session: 2026-05-15
-Stopped at: Sprint S source reliability scoring foundation in progress
+Stopped at: Sprint T local maintenance summary foundation in progress
 Resume file: None
 
-**Next step:** Continue Sprint S source recommendations and validation.
+**Next step:** Continue Sprint T bounded large-history validation and maintenance documentation.
 
 ---
 *State initialized: 2026-02-13*
