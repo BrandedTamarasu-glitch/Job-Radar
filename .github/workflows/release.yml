@@ -209,7 +209,7 @@ jobs:
           if-no-files-found: error
           path: |
             *.dmg
-            *.sha256
+            installer-macos.sha256
 
       - name: Upload installer artifact (Windows)
         if: runner.os == 'Windows'
@@ -219,7 +219,7 @@ jobs:
           if-no-files-found: error
           path: |
             installers/windows/Job-Radar-Setup-*.exe
-            *.sha256
+            installer-windows.sha256
 
   release:
     name: Create Release
@@ -231,6 +231,21 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
 
+      - name: Stage release assets
+        run: |
+          mkdir release-assets
+          cp job-radar-linux/job-radar-${{ github.ref_name }}-linux.tar.gz release-assets/
+          cp job-radar-linux/job-radar-${{ github.ref_name }}-linux.sha256 release-assets/
+          cp job-radar-macos/job-radar-${{ github.ref_name }}-macos.zip release-assets/
+          cp job-radar-macos/job-radar-${{ github.ref_name }}-macos.sha256 release-assets/
+          cp job-radar-windows/job-radar-${{ github.ref_name }}-windows.zip release-assets/
+          cp job-radar-windows/job-radar-${{ github.ref_name }}-windows.sha256 release-assets/
+          cp installer-macos/Job-Radar-${{ github.ref_name }}-macos.dmg release-assets/
+          cp installer-macos/installer-macos.sha256 release-assets/
+          cp installer-windows/installers/windows/Job-Radar-Setup-${{ github.ref_name }}.exe release-assets/
+          cp installer-windows/installer-windows.sha256 release-assets/
+          ls -la release-assets
+
       - name: Prepare release notes
         run: python -m job_radar.release_notes --tag ${{ github.ref_name }} --output RELEASE_BODY.md
 
@@ -238,9 +253,4 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           body_path: RELEASE_BODY.md
-          files: |
-            job-radar-*/job-radar-${{ github.ref_name }}-*
-            installer-macos/**/*.dmg
-            installer-macos/**/*.sha256
-            installer-windows/**/*.exe
-            installer-windows/**/*.sha256
+          files: release-assets/*
