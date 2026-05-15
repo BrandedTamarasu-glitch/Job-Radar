@@ -45,6 +45,33 @@ def test_dashboard_surfaces_review_queue_before_saved_searches():
     ]
 
 
+def test_dashboard_calls_out_changed_saved_searches():
+    actions = build_dashboard_actions(
+        readiness=readiness(),
+        review_counts={},
+        next_actions=[],
+        search_history={
+            "recent": [],
+            "saved": [
+                {
+                    "name": "daily",
+                    "previous_result_stats": {"total": 8, "new": 2, "high_score": 1},
+                    "last_result_stats": {"total": 12, "new": 2, "high_score": 1},
+                },
+                {
+                    "name": "flat",
+                    "previous_result_stats": {"total": 5, "new": 1, "high_score": 1},
+                    "last_result_stats": {"total": 5, "new": 1, "high_score": 1},
+                },
+            ],
+        },
+    )
+
+    assert actions[0].title == "Review changed saved searches"
+    assert actions[0].detail == "1 saved search(es) changed since the previous run."
+    assert actions[0].target == "Search"
+
+
 def test_dashboard_defaults_to_first_search_when_history_is_empty():
     actions = build_dashboard_actions(
         readiness=readiness(),

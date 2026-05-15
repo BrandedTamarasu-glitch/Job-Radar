@@ -104,7 +104,20 @@ def build_dashboard_actions(
     history = search_history or {}
     recent = history.get("recent") if isinstance(history.get("recent"), list) else []
     saved = history.get("saved") if isinstance(history.get("saved"), list) else []
-    if saved:
+    changed_saved = _changed_search_count(saved)
+    if changed_saved:
+        actions.append(
+            DashboardAction(
+                title="Review changed saved searches",
+                detail=(
+                    f"{changed_saved} saved search(es) changed since the previous "
+                    "run."
+                ),
+                target="Search",
+                priority=45,
+            )
+        )
+    elif saved:
         actions.append(
             DashboardAction(
                 title="Run a saved search",
@@ -137,6 +150,28 @@ def build_dashboard_actions(
 
     actions.sort(key=lambda action: action.priority)
     return actions[:max(1, limit)]
+
+
+def _changed_search_count(items: list[dict[str, Any]]) -> int:
+    return sum(1 for item in items if _search_changed(item))
+
+
+def _search_changed(item: dict[str, Any]) -> bool:
+    current = item.get("last_result_stats") or {}
+    previous = item.get("previous_result_stats") or {}
+    if not current or not previous:
+        return False
+
+    for key in ("total", "new", "high_score"):
+        if int(current.get(key) or 0) != int(previous.get(key) or 0):
+            return True
+
+    current_review = current.get("review") or {}
+    previous_review = previous.get("review") or {}
+    for key in ("shortlisted", "maybe_later", "dismissed"):
+        if int(current_review.get(key) or 0) != int(previous_review.get(key) or 0):
+            return True
+    return False
 
 
 def _readiness_needs_attention(readiness: Any | None) -> bool:

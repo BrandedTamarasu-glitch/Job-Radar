@@ -501,7 +501,7 @@ For release builds, also run the platform build script and smoke-test the genera
 - Cache (14 tests) - validates HTTP cache lifecycle, request timeout handling, cache counters, and custom TTL expiry
 - Rate limits (16 tests) - validates rate limiter cleanup, shared backends, config loading, quota queries
 - Review state view model (3 tests) - validates compact GUI review queue summary text
-- Dashboard view model (5 tests) - validates Profile-tab next-step prioritization from readiness, follow-up, review queue, and search-history state
+- Dashboard view model (6 tests) - validates Profile-tab next-step prioritization from readiness, follow-up, review queue, changed saved-search, and search-history state
 - Source diagnostics view model (8 tests) - validates source-health priority, diagnostics, source-control guidance, recommendations, cache freshness, and cache totals for Settings
 - PDF parser (34 tests) - validates extraction, validation, Unicode support, error handling
 - Report generation (53 tests) - validates HTML/Markdown output, clipboard UI, status tracking, persisted shortlist/maybe-later/dismiss review state, keyboard navigation, compact/detail view, match summaries, filtered-out explanations, grouped skill callouts, large-report row caps and render skipping, mobile layout, accessibility
