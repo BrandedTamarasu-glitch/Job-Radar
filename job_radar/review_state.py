@@ -13,6 +13,7 @@ from job_radar.tracker import job_key
 
 
 REVIEW_STATE_FILENAME = "review_state.json"
+REVIEW_STATE_SCHEMA_VERSION = 1
 REVIEW_STATES = {"shortlisted", "dismissed", "maybe_later"}
 
 
@@ -35,6 +36,10 @@ def load_review_state(path: Path | None = None) -> dict:
     if not isinstance(data, dict):
         return _empty_state()
 
+    return _normalize_state(data)
+
+
+def _normalize_state(data: dict[str, Any]) -> dict:
     jobs = data.get("jobs")
     if not isinstance(jobs, dict):
         jobs = {}
@@ -53,7 +58,7 @@ def load_review_state(path: Path | None = None) -> dict:
             "updated_at": str(entry.get("updated_at") or ""),
         }
 
-    return {"version": 1, "jobs": normalized_jobs}
+    return {"version": REVIEW_STATE_SCHEMA_VERSION, "jobs": normalized_jobs}
 
 
 def set_job_review_state(
@@ -135,7 +140,7 @@ def clear_review_state_by_state(
 
 
 def _empty_state() -> dict:
-    return {"version": 1, "jobs": {}}
+    return {"version": REVIEW_STATE_SCHEMA_VERSION, "jobs": {}}
 
 
 def _timestamp(now: datetime | None = None) -> str:
@@ -148,5 +153,8 @@ def _timestamp(now: datetime | None = None) -> str:
 def _write_state(path: Path, state: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp_path = path.with_suffix(path.suffix + ".tmp")
-    tmp_path.write_text(json.dumps(state, indent=2, ensure_ascii=False), encoding="utf-8")
+    tmp_path.write_text(
+        json.dumps(_normalize_state(state), indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
     tmp_path.replace(path)

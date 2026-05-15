@@ -13,6 +13,7 @@ from job_radar.paths import get_data_dir
 
 RECENT_SEARCH_LIMIT = 10
 SAVED_SEARCHES_FILENAME = "saved_searches.json"
+SAVED_SEARCHES_SCHEMA_VERSION = 1
 SEARCH_CONFIG_KEYS = (
     "from_date",
     "to_date",
@@ -50,13 +51,7 @@ def load_search_history(path: Path | None = None) -> dict:
     if not isinstance(data, dict):
         return _empty_state()
 
-    recent = data.get("recent")
-    saved = data.get("saved")
-    return {
-        "version": 1,
-        "recent": recent if isinstance(recent, list) else [],
-        "saved": saved if isinstance(saved, list) else [],
-    }
+    return _normalize_state(data)
 
 
 def record_recent_search(
@@ -267,7 +262,44 @@ def prioritize_changed_searches(
 
 
 def _empty_state() -> dict:
-    return {"version": 1, "recent": [], "saved": []}
+    return {"version": SAVED_SEARCHES_SCHEMA_VERSION, "recent": [], "saved": []}
+
+
+def _normalize_state(data: dict[str, Any]) -> dict:
+    return {
+        "version": SAVED_SEARCHES_SCHEMA_VERSION,
+        "recent": _normalize_search_items(data.get("recent")),
+        "saved": _normalize_search_items(data.get("saved")),
+    }
+
+
+def _normalize_search_items(items: Any) -> list[dict[str, Any]]:
+    if not isinstance(items, list):
+        return []
+
+    normalized: list[dict[str, Any]] = []
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        config = item.get("config")
+        normalized_item: dict[str, Any] = {
+            "name": str(item.get("name") or ""),
+            "config": normalize_search_config(config if isinstance(config, dict) else {}),
+        }
+        for key in ("created_at", "updated_at", "last_run_at"):
+            if item.get(key):
+                normalized_item[key] = str(item[key])
+        if item.get("run_count") is not None:
+            normalized_item["run_count"] = _coerce_int(item.get("run_count"))
+        for key in ("last_result_stats", "previous_result_stats"):
+            stats = item.get(key)
+            if isinstance(stats, dict):
+                normalized_item[key] = _normalize_run_stats(stats)
+                review = stats.get("review")
+                if isinstance(review, dict):
+                    normalized_item[key]["review"] = _normalize_review_counts(review)
+        normalized.append(normalized_item)
+    return normalized
 
 
 def _timestamp(now: datetime | None = None) -> str:
@@ -280,18 +312,25 @@ def _timestamp(now: datetime | None = None) -> str:
 def _normalize_run_stats(stats: dict[str, Any] | None) -> dict[str, int]:
     stats = stats or {}
     return {
-        "total": int(stats.get("total") or 0),
-        "new": int(stats.get("new") or 0),
-        "high_score": int(stats.get("high_score") or 0),
+        "total": _coerce_int(stats.get("total")),
+        "new": _coerce_int(stats.get("new")),
+        "high_score": _coerce_int(stats.get("high_score")),
     }
 
 
 def _normalize_review_counts(counts: dict[str, Any]) -> dict[str, int]:
     return {
-        "shortlisted": int(counts.get("shortlisted") or 0),
-        "maybe_later": int(counts.get("maybe_later") or 0),
-        "dismissed": int(counts.get("dismissed") or 0),
+        "shortlisted": _coerce_int(counts.get("shortlisted")),
+        "maybe_later": _coerce_int(counts.get("maybe_later")),
+        "dismissed": _coerce_int(counts.get("dismissed")),
     }
+
+
+def _coerce_int(value: Any) -> int:
+    try:
+        return int(value or 0)
+    except (TypeError, ValueError):
+        return 0
 
 
 def _format_review_counts(counts: dict[str, Any]) -> str:
@@ -366,5 +405,8 @@ def _search_change_score(item: dict[str, Any]) -> int:
 def _write_state(path: Path, state: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp_path = path.with_suffix(path.suffix + ".tmp")
-    tmp_path.write_text(json.dumps(state, indent=2, ensure_ascii=False), encoding="utf-8")
+    tmp_path.write_text(
+        json.dumps(_normalize_state(state), indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
     tmp_path.replace(path)

@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 import pytest
 
 from job_radar.review_state import (
+    REVIEW_STATE_SCHEMA_VERSION,
     clear_job_review_state,
     clear_review_state_by_state,
     get_job_review_state,
@@ -25,6 +26,41 @@ def test_load_review_state_returns_empty_state_for_missing_or_invalid_file(tmp_p
     path.write_text("{bad json", encoding="utf-8")
 
     assert load_review_state(path) == {"version": 1, "jobs": {}}
+
+
+def test_load_review_state_normalizes_legacy_and_malformed_entries(tmp_path):
+    path = tmp_path / "review_state.json"
+    path.write_text(
+        json.dumps(
+            {
+                "jobs": {
+                    "good": {
+                        "state": "shortlisted",
+                        "title": "Engineer",
+                        "company": "Acme",
+                        "updated_at": 123,
+                    },
+                    "bad-state": {"state": "later"},
+                    "bad-entry": "dismissed",
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    state = load_review_state(path)
+
+    assert state == {
+        "version": REVIEW_STATE_SCHEMA_VERSION,
+        "jobs": {
+            "good": {
+                "state": "shortlisted",
+                "title": "Engineer",
+                "company": "Acme",
+                "updated_at": "123",
+            }
+        },
+    }
 
 
 def test_set_job_review_state_persists_normalized_job_entry(tmp_path):

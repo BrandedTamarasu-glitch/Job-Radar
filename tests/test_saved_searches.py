@@ -2,6 +2,7 @@ import json
 from datetime import datetime, timezone
 
 from job_radar.saved_searches import (
+    SAVED_SEARCHES_SCHEMA_VERSION,
     delete_named_search,
     format_search_insight,
     format_run_summary,
@@ -28,6 +29,47 @@ def test_load_search_history_recovers_from_corrupt_json(tmp_path):
     state = load_search_history(path)
 
     assert state == {"version": 1, "recent": [], "saved": []}
+
+
+def test_load_search_history_normalizes_legacy_and_malformed_entries(tmp_path):
+    path = tmp_path / "saved_searches.json"
+    path.write_text(
+        json.dumps(
+            {
+                "recent": [
+                    "bad",
+                    {
+                        "name": "Remote",
+                        "config": {"preset": "remote-backend", "unknown": "ignored"},
+                        "run_count": "2",
+                        "last_result_stats": {
+                            "total": "12",
+                            "new": "bad",
+                            "high_score": 3,
+                            "review": {"shortlisted": "1"},
+                        },
+                    },
+                ],
+                "saved": {"not": "a list"},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    state = load_search_history(path)
+
+    assert state["version"] == SAVED_SEARCHES_SCHEMA_VERSION
+    assert len(state["recent"]) == 1
+    assert state["recent"][0]["config"]["preset"] == "remote-backend"
+    assert "unknown" not in state["recent"][0]["config"]
+    assert state["recent"][0]["run_count"] == 2
+    assert state["recent"][0]["last_result_stats"] == {
+        "total": 12,
+        "new": 0,
+        "high_score": 3,
+        "review": {"shortlisted": 1, "maybe_later": 0, "dismissed": 0},
+    }
+    assert state["saved"] == []
 
 
 def test_normalize_search_config_keeps_known_json_safe_keys():
