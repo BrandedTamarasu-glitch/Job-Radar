@@ -264,6 +264,15 @@ def test_search_completion_records_run_metadata():
     assert "self._record_search_run_metadata(summary)" in source
 
 
+def test_search_tab_receives_pre_run_source_strategy_guidance():
+    source = inspect.getsource(MainWindow._show_search_idle)
+
+    assert "source_strategy_lines=self._pre_run_source_strategy_lines()" in source
+    helper_source = inspect.getsource(MainWindow._pre_run_source_strategy_lines)
+    assert "get_source_health_history(limit=20)" in helper_source
+    assert "format_pre_run_source_strategy_lines(history)" in helper_source
+
+
 def test_run_metadata_recording_is_non_blocking():
     source = inspect.getsource(MainWindow._record_search_run_metadata)
 

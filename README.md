@@ -505,12 +505,12 @@ For release builds, also run the platform build script and smoke-test the genera
 - Review state view model (3 tests) - validates compact GUI review queue summary text
 - Dashboard view model (8 tests) - validates Profile-tab next-step prioritization from readiness, follow-up, review queue, source quality, maintenance, changed saved-search, bounded large-history counts, and search-history state
 - Maintenance view model (2 tests) - validates local data size, cache, tracker, review-state, saved-search counts, and maintenance suggestions
-- Source diagnostics view model (10 tests) - validates source-health priority, reliability scoring, diagnostics, source-control guidance, source-toggle recommendations, source/preset coverage gaps, cache freshness, and cache totals for Settings
+- Source diagnostics view model (16 tests) - validates source-health priority, reliability scoring, diagnostics, source-control guidance, source-toggle recommendations, source/preset coverage gaps, preset strategy recommendations, source-selection strategy recommendations, source-name normalization, pre-run source strategy guidance, cache freshness, and cache totals for Settings
 - PDF parser (34 tests) - validates extraction, validation, Unicode support, error handling
 - Report generation (53 tests) - validates HTML/Markdown output, clipboard UI, status tracking, persisted shortlist/maybe-later/dismiss review state, keyboard navigation, compact/detail view, match summaries, filtered-out explanations, grouped skill callouts, large-report row caps and render skipping, mobile layout, accessibility
 - UX polish (69 tests) - validates banner, help text, progress messages, maintenance commands, error handling
 - GUI search summary (31 tests) - validates search completion, source warnings, per-source timing, cache counters, run context explanations, cache controls, app-data export/validation controls, cancellation boundaries through final report preparation, progress normalization, GUI preset application, automated/manual source selection, company filters, application-status report filtering, must-have and nice-to-have skill controls, location strictness, freshness presets, and profile-aware zero-result guidance
-- GUI onboarding (35 tests) - validates first-run demo report access, welcome/search feedback handling, Search tab profile-readiness guidance, Profile-tab dashboard next steps, Settings maintenance summary and dismissed-review cleanup, profile-form field hints, profile-aware zero-result guidance wiring, non-blocking recent-search recording, recent-search reapply controls, recent and saved search comparison insight text, review queue summaries, Applications follow-up filters/calendar export/next-action queue/quick complete and snooze/direct edit wiring, and run metadata recording
+- GUI onboarding (36 tests) - validates first-run demo report access, welcome/search feedback handling, Search tab profile-readiness and pre-run source strategy guidance, Profile-tab dashboard next steps, Settings maintenance summary and dismissed-review cleanup, profile-form field hints, profile-aware zero-result guidance wiring, non-blocking recent-search recording, recent-search reapply controls, recent and saved search comparison insight text, review queue summaries, Applications follow-up filters/calendar export/next-action queue/quick complete and snooze/direct edit wiring, and run metadata recording
 - Demo report (2 tests) - validates no-network sample profile/jobs and report generation
 - Data portability (9 tests) - validates portable app-data export bundles, manifests, restore preflight validation, and restore backups
 - Profile readiness (7 tests) - validates onboarding readiness status, missing required fields, scoring-signal recommendations, match-quality recommendations, and guidance prioritization
@@ -549,10 +549,14 @@ The next product iteration is tracked in `.planning/PRODUCT_ITERATION_SPRINTS_P_
 The active product iteration is tracked in `.planning/PRODUCT_ITERATION_SPRINTS_U_Y.md`:
 
 - **Sprint U:** adaptive command center — complete
-- **Sprint V:** workflow shortcuts and bulk actions — in progress
-- **Sprint W:** source strategy and preset intelligence — planned
-- **Sprint X:** release readiness and regression sweep — planned
+- **Sprint V:** workflow shortcuts and bulk actions — complete
+- **Sprint W:** source strategy and preset intelligence — complete
+- **Sprint X:** release readiness and regression sweep — in progress
 - **Sprint Y:** post-release feedback loop — planned
+
+Sprint X release-readiness checkpoints are tracked in `.planning/RELEASE_READINESS_U_Y.md`.
+Current Sprint X validation: full automated regression passed with 950 tests and 8 skips.
+Build-script metadata verification passed for release artifact naming and checksum checks.
 
 ### Building Executables
 

@@ -7,15 +7,15 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Accurate job-candidate scoring — if the scoring is wrong, nothing else matters.
-**Current focus:** Product Iteration U-Y, Sprint V workflow shortcuts and bulk actions
+**Current focus:** Product Iteration U-Y, Sprint X release readiness and regression sweep
 
 ## Current Position
 
 **Milestone:** Product Iteration U-Y — IN PROGRESS
-**Status:** Sprint U complete; Sprint V in progress; Sprints W-Y planned
-**Last activity:** 2026-05-15 — completed Product Iteration P-T, completed Sprint U adaptive dashboard signals, and continued Sprint V with bounded review-state clearing plus a Settings shortcut for dismissed-review cleanup.
+**Status:** Sprints U-W complete; Sprint X in progress; Sprint Y planned
+**Last activity:** 2026-05-15 — completed Sprint W source strategy and preset intelligence, started Sprint X, documented `.planning/RELEASE_READINESS_U_Y.md`, passed release verification/release notes/metadata tests, passed the full automated regression suite with 950 tests and 8 skips, and fixed Windows build script version/artifact naming drift.
 
-**Next step:** continue Sprint V by wiring safe workflow shortcuts into the GUI.
+**Next step:** continue Sprint X with final documentation refresh and artifact build verification.
 
 ## Performance Metrics
 
@@ -121,22 +121,22 @@ Full decision log: PROJECT.md Key Decisions table (143 decisions)
 See `.planning/PRODUCT_ITERATION_SPRINTS_U_Y.md`.
 
 - Sprint U: Adaptive Command Center — complete
-- Sprint V: Workflow Shortcuts & Bulk Actions — in progress
-- Sprint W: Source Strategy & Preset Intelligence — planned
-- Sprint X: Release Readiness & Regression Sweep — planned
+- Sprint V: Workflow Shortcuts & Bulk Actions — complete
+- Sprint W: Source Strategy & Preset Intelligence — complete
+- Sprint X: Release Readiness & Regression Sweep — in progress
 - Sprint Y: Post-Release Feedback Loop — planned
 
 ### Blockers/Concerns
 
-None. Sprint V is active.
+None. Sprint X is active.
 
 ## Session Continuity
 
 Last session: 2026-05-15
-Stopped at: Sprint V bounded review-state helper foundation in progress
+Stopped at: Sprint X build-script metadata verification passed
 Resume file: None
 
-**Next step:** Continue Sprint V GUI workflow shortcuts and validation.
+**Next step:** Continue Sprint X final documentation refresh and artifact build verification.
 
 ---
 *State initialized: 2026-02-13*

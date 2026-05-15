@@ -4,10 +4,11 @@ REM Usage: scripts\build.bat
 REM Output: dist\job-radar\ (executable bundle) + ZIP archive
 
 setlocal
-set VERSION=1.1.0
+for /f "usebackq delims=" %%V in (`python -c "from job_radar import __version__; print(__version__)"`) do set VERSION=%%V
+set RELEASE_VERSION=v%VERSION:v=%
 
 echo === Job Radar Build Script ===
-echo Version: %VERSION%
+echo Version: %RELEASE_VERSION%
 echo Platform: Windows
 echo.
 
@@ -34,12 +35,15 @@ copy README-dist.txt dist\job-radar\README.txt >nul 2>&1
 REM Step 5: Create ZIP
 echo Step 4: Creating distribution ZIP...
 cd dist
-powershell -command "Compress-Archive -Path 'job-radar' -DestinationPath 'job-radar-%VERSION%-windows.zip'"
+powershell -NoProfile -Command "Compress-Archive -Path 'job-radar' -DestinationPath '..\job-radar-%RELEASE_VERSION%-windows.zip' -Force"
 cd ..
+
+python -m job_radar.release_verification --platform windows --version "%RELEASE_VERSION%" --checksum-manifest "job-radar-%RELEASE_VERSION%-windows.sha256"
 
 echo.
 echo === Build Complete ===
 echo Executable: dist\job-radar\job-radar.exe
-echo Archive: dist\job-radar-%VERSION%-windows.zip
+echo Archive: job-radar-%RELEASE_VERSION%-windows.zip
+echo Checksum: job-radar-%RELEASE_VERSION%-windows.sha256
 echo.
 echo Quick test: dist\job-radar\job-radar.exe --help

@@ -72,6 +72,7 @@ from job_radar.gui.maintenance_view_model import (
 )
 from job_radar.gui.source_diagnostics_view_model import (
     format_source_diagnostics_lines,
+    format_pre_run_source_strategy_lines,
     format_source_toggle_recommendations,
     build_source_diagnostics,
 )
@@ -1208,7 +1209,10 @@ class MainWindow(ctk.CTk):
         content_frame.grid(row=0, column=0)
 
         # Search controls widget
-        self._search_controls = SearchControls(content_frame)
+        self._search_controls = SearchControls(
+            content_frame,
+            source_strategy_lines=self._pre_run_source_strategy_lines(),
+        )
         self._search_controls.pack(pady=(0, 20))
 
         self._add_search_readiness_guidance(content_frame)
@@ -2344,6 +2348,14 @@ class MainWindow(ctk.CTk):
         """Return current source diagnostics text for the Settings tab."""
         history = get_source_health_history(limit=20)
         return "\n".join(format_source_diagnostics_lines(history))
+
+    def _pre_run_source_strategy_lines(self) -> list[str]:
+        """Return current source strategy guidance for the Search tab."""
+        try:
+            history = get_source_health_history(limit=20)
+        except Exception:
+            return []
+        return format_pre_run_source_strategy_lines(history)
 
     def _local_maintenance_text(self) -> str:
         """Return current local maintenance summary text for Settings."""

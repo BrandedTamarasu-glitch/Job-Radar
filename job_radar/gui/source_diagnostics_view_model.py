@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from job_radar.sources import get_source_display_name
+
 
 @dataclass
 class SourceDiagnosticRow:
@@ -83,7 +85,7 @@ def build_source_diagnostics(history: list[dict[str, Any]], limit: int = 5) -> l
 
     for run in history:
         for source in run.get("sources", []):
-            name = source.get("name") or "Unknown source"
+            name = _display_source_name(source.get("name") or "Unknown source")
             row = by_source.setdefault(name, SourceDiagnosticRow(name=name))
             row.runs += 1
             row.total_jobs += int(source.get("job_count") or 0)
@@ -92,7 +94,8 @@ def build_source_diagnostics(history: list[dict[str, Any]], limit: int = 5) -> l
                 row.durations.append(float(source["duration_seconds"]))
 
         for failed_name in run.get("failed_sources", []) or []:
-            row = by_source.setdefault(failed_name, SourceDiagnosticRow(name=failed_name))
+            name = _display_source_name(failed_name)
+            row = by_source.setdefault(name, SourceDiagnosticRow(name=name))
             row.failure_count += 1
 
     rows = list(by_source.values())
@@ -173,9 +176,17 @@ def format_source_diagnostics_lines(
     if toggle_lines:
         lines.extend(toggle_lines)
 
+    selection_lines = format_source_selection_strategy_lines(history, limit=limit)
+    if selection_lines:
+        lines.extend(selection_lines)
+
     coverage_lines = format_source_coverage_lines(history)
     if coverage_lines:
         lines.extend(coverage_lines)
+
+    strategy_lines = format_preset_strategy_lines(history, limit=limit)
+    if strategy_lines:
+        lines.extend(strategy_lines)
 
     cache_totals = build_cache_totals(history)
     if any(cache_totals.values()):
@@ -189,6 +200,210 @@ def format_source_diagnostics_lines(
         freshness_line = format_cache_freshness_line(cache_totals)
         if freshness_line:
             lines.append(freshness_line)
+    return lines
+
+
+def format_preset_strategy_lines(history: list[dict[str, Any]], limit: int = 3) -> list[str]:
+    """Return preset strategy recommendations from recent source outcomes."""
+    stats_by_preset: dict[str, dict[str, Any]] = {}
+    for run in history:
+        config = run.get("search_config") or {}
+        if not config:
+            continue
+
+        preset = str(config.get("preset") or "custom")
+        stats = stats_by_preset.setdefault(
+            preset,
+            {
+                "runs": 0,
+                "total_jobs": 0,
+                "failures": 0,
+                "sources": set(),
+            },
+        )
+        stats["runs"] += 1
+        stats["total_jobs"] += int(run.get("total_jobs") or 0)
+        stats["failures"] += len(run.get("failed_sources", []) or [])
+
+        for source_name in config.get("selected_sources", []) or []:
+            stats["sources"].add(_display_source_name(source_name))
+        for source in run.get("sources", []) or []:
+            stats["sources"].add(_display_source_name(source.get("name") or "Unknown source"))
+
+    ranked = []
+    for preset, stats in stats_by_preset.items():
+        runs = max(1, int(stats["runs"]))
+        failures = int(stats["failures"])
+        total_jobs = int(stats["total_jobs"])
+        average_jobs = total_jobs / runs
+        ranked.append(
+            {
+                "preset": preset,
+                "runs": runs,
+                "failures": failures,
+                "total_jobs": total_jobs,
+                "average_jobs": average_jobs,
+                "source_count": len(stats["sources"]),
+            }
+        )
+
+    ranked.sort(
+        key=lambda item: (
+            item["failures"] > 0,
+            item["average_jobs"] < 1,
+            item["failures"],
+            item["average_jobs"],
+            item["preset"].casefold(),
+        ),
+        reverse=True,
+    )
+
+    lines = []
+    for item in ranked[:limit]:
+        preset = item["preset"]
+        runs = item["runs"]
+        run_noun = "run" if runs == 1 else "runs"
+        failures = item["failures"]
+        if failures:
+            failure_noun = "failure" if failures == 1 else "failures"
+            lines.append(
+                f"Preset strategy: {preset} had {failures} source {failure_noun} "
+                f"across {runs} recent {run_noun}; review Source controls before rerunning."
+            )
+            continue
+
+        average_jobs = item["average_jobs"]
+        if average_jobs < 1:
+            lines.append(
+                f"Preset strategy: {preset} averaged {average_jobs:.1f} jobs per run; "
+                "broaden filters or try another preset before rerunning."
+            )
+            continue
+
+        source_count = item["source_count"]
+        source_noun = "source" if source_count == 1 else "sources"
+        lines.append(
+            f"Preset strategy: {preset} averaged {average_jobs:.1f} jobs per run "
+            f"across {source_count} {source_noun}."
+        )
+    return lines
+
+
+def format_pre_run_source_strategy_lines(
+    history: list[dict[str, Any]],
+    *,
+    limit: int = 2,
+) -> list[str]:
+    """Return short Search-tab guidance from recent source strategy outcomes."""
+    if not history:
+        return []
+
+    rows = build_source_diagnostics(history, limit=limit)
+    lines = []
+    used_source_names = set()
+    for row in rows:
+        if row.failure_count >= 2 or row.reliability_score < 70:
+            lines.append(
+                f"Before rerunning: {row.name} has recent reliability issues; "
+                "consider unchecking it in Sources."
+            )
+            used_source_names.add(row.name)
+        elif row.failure_count:
+            lines.append(
+                f"Before rerunning: {row.name} failed recently; keep it selected only if you need its coverage."
+            )
+            used_source_names.add(row.name)
+
+    if len(lines) < limit:
+        for selection_line in format_source_selection_strategy_lines(history, limit=limit):
+            if any(f" {name} " in selection_line for name in used_source_names):
+                continue
+            lines.append(selection_line.replace("Source selection:", "Before rerunning:", 1))
+            if len(lines) >= limit:
+                break
+
+    if len(lines) < limit:
+        for strategy_line in format_preset_strategy_lines(history, limit=limit):
+            if "review Source controls" in strategy_line or "broaden filters" in strategy_line:
+                lines.append(strategy_line.replace("Preset strategy:", "Before rerunning:", 1))
+            if len(lines) >= limit:
+                break
+
+    return lines[:limit]
+
+
+def format_source_selection_strategy_lines(
+    history: list[dict[str, Any]],
+    *,
+    limit: int = 3,
+) -> list[str]:
+    """Return concrete source-selection recommendations from recent outcomes."""
+    by_source: dict[str, dict[str, int]] = {}
+    for run in history:
+        for source in run.get("sources", []) or []:
+            name = _display_source_name(source.get("name") or "Unknown source")
+            stats = by_source.setdefault(name, {"runs": 0, "total_jobs": 0, "failures": 0})
+            stats["runs"] += 1
+            stats["total_jobs"] += int(source.get("job_count") or 0)
+        for failed_source in run.get("failed_sources", []) or []:
+            name = _display_source_name(failed_source)
+            stats = by_source.setdefault(name, {"runs": 0, "total_jobs": 0, "failures": 0})
+            stats["failures"] += 1
+
+    ranked = []
+    for name, stats in by_source.items():
+        runs = max(1, int(stats["runs"]))
+        total_jobs = int(stats["total_jobs"])
+        failures = int(stats["failures"])
+        average_jobs = total_jobs / runs
+        priority = 0
+        if failures >= 2 or (failures and average_jobs < 1):
+            priority = 3
+        elif average_jobs < 1:
+            priority = 2
+        elif average_jobs >= 3 and failures == 0:
+            priority = 1
+        if priority:
+            ranked.append({
+                "name": name,
+                "runs": runs,
+                "total_jobs": total_jobs,
+                "failures": failures,
+                "average_jobs": average_jobs,
+                "priority": priority,
+            })
+
+    ranked.sort(
+        key=lambda item: (
+            item["priority"],
+            item["failures"],
+            item["average_jobs"],
+            item["name"].casefold(),
+        ),
+        reverse=True,
+    )
+
+    lines = []
+    for item in ranked[:limit]:
+        name = item["name"]
+        failures = item["failures"]
+        average_jobs = item["average_jobs"]
+        if item["priority"] == 3:
+            failure_noun = "failure" if failures == 1 else "failures"
+            lines.append(
+                f"Source selection: uncheck {name} for the next rerun unless you need its coverage "
+                f"({failures} recent {failure_noun}, {average_jobs:.1f} jobs/run)."
+            )
+        elif item["priority"] == 2:
+            lines.append(
+                f"Source selection: {name} has been low-yield recently "
+                f"({average_jobs:.1f} jobs/run); pair it with broader sources."
+            )
+        else:
+            lines.append(
+                f"Source selection: keep {name} enabled for similar searches "
+                f"({average_jobs:.1f} jobs/run, no recent failures)."
+            )
     return lines
 
 
@@ -212,10 +427,10 @@ def format_source_coverage_lines(history: list[dict[str, Any]]) -> list[str]:
         for source in run.get("sources", []) or []:
             if int(source.get("job_count") or 0) == 0:
                 gaps_by_preset.setdefault(preset, set()).add(
-                    str(source.get("name") or "Unknown source")
+                    _display_source_name(source.get("name") or "Unknown source")
                 )
         for failed_source in run.get("failed_sources", []) or []:
-            gaps_by_preset.setdefault(preset, set()).add(str(failed_source))
+            gaps_by_preset.setdefault(preset, set()).add(_display_source_name(failed_source))
 
     lines = []
     for preset, sources in sorted(gaps_by_preset.items()):
@@ -236,3 +451,9 @@ def _format_duration(seconds: float) -> str:
         minutes += 1
         remaining_seconds = 0
     return f"{minutes}m {remaining_seconds:02d}s"
+
+
+def _display_source_name(source_name: Any) -> str:
+    """Return a user-facing source name for either source keys or display names."""
+    name = str(source_name or "Unknown source")
+    return get_source_display_name(name)

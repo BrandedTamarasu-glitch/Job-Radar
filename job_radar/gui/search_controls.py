@@ -55,7 +55,7 @@ class SearchControls(ctk.CTkFrame):
     match CLI behavior of no --from/--to flags.
     """
 
-    def __init__(self, parent, **kwargs):
+    def __init__(self, parent, source_strategy_lines: Optional[list[str]] = None, **kwargs):
         """Initialize search controls widget.
 
         Args:
@@ -71,6 +71,7 @@ class SearchControls(ctk.CTkFrame):
         self._score_error_label = None
         self._source_vars = {}
         self._manual_source_vars = {}
+        self._source_strategy_lines = source_strategy_lines or []
 
         # Build layout
         self._create_widgets()
@@ -276,7 +277,7 @@ class SearchControls(ctk.CTkFrame):
 
         ctk.CTkLabel(
             source_section,
-            text="Choose which automated sources to query for this search.",
+            text=self._source_strategy_text(),
             font=ctk.CTkFont(size=11),
             text_color="gray",
             wraplength=520,
@@ -345,6 +346,13 @@ class SearchControls(ctk.CTkFrame):
             for source in SOURCE_REGISTRY.values()
             if source.phase == phase
         ]
+
+    def _source_strategy_text(self) -> str:
+        """Return helper text for source selection."""
+        base = "Choose which automated sources to query for this search."
+        if not self._source_strategy_lines:
+            return base
+        return base + "\n" + "\n".join(self._source_strategy_lines)
 
     def _set_default_values(self):
         """Set default values from config.json or fallback defaults."""

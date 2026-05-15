@@ -20,6 +20,7 @@ def test_package_version_matches_pyproject():
 def test_release_build_files_do_not_hardcode_old_versions():
     """Build scripts should derive release versions from package metadata."""
     build_script = Path("scripts/build.sh").read_text(encoding="utf-8")
+    windows_build_script = Path("scripts/build.bat").read_text(encoding="utf-8")
     spec_file = Path("job-radar.spec").read_text(encoding="utf-8")
     gitignore = Path(".gitignore").read_text(encoding="utf-8")
 
@@ -28,6 +29,12 @@ def test_release_build_files_do_not_hardcode_old_versions():
     assert "RELEASE_VERSION=\"v${VERSION#v}\"" in build_script
     assert "job-radar-${RELEASE_VERSION}-${PLATFORM}.sha256" in build_script
     assert "job_radar.release_verification" in build_script
+    assert "set VERSION=1.1.0" not in windows_build_script
+    assert "from job_radar import __version__" in windows_build_script
+    assert "set RELEASE_VERSION=v%VERSION:v=%" in windows_build_script
+    assert "job-radar-%RELEASE_VERSION%-windows.zip" in windows_build_script
+    assert "job-radar-%RELEASE_VERSION%-windows.sha256" in windows_build_script
+    assert "job_radar.release_verification" in windows_build_script
     assert "CFBundleShortVersionString': '2.1.7'" not in spec_file
     assert "CFBundleVersion': '2.1.7'" not in spec_file
     assert "app_version = version_scope['__version__']" in spec_file

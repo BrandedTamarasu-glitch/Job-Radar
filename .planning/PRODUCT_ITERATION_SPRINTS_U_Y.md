@@ -30,7 +30,7 @@ Goal: reduce repeated manual work in search review and applications.
 
 Deliverable: users can process repeated workflow updates faster without losing control.
 
-Status: in progress. Review-state helpers now support bounded clearing by state, and Settings exposes a bounded dismissed-review cleanup shortcut.
+Status: complete. Review-state helpers now support bounded clearing by state, and Settings exposes a bounded dismissed-review cleanup shortcut.
 
 ## Sprint W: Source Strategy & Preset Intelligence
 
@@ -43,7 +43,7 @@ Goal: help users choose source coverage and presets based on recent outcomes.
 
 Deliverable: users can choose better source coverage before spending time on a search.
 
-Status: planned.
+Status: complete. Settings source diagnostics now include preset strategy recommendations from recent failures and low-yield or high-yield search outcomes, Search controls surface bounded pre-run source strategy guidance before reruns, both surfaces recommend specific sources to uncheck, broaden, or keep enabled, and source keys are normalized into readable names.
 
 ## Sprint X: Release Readiness & Regression Sweep
 
@@ -56,7 +56,7 @@ Goal: harden the accumulated product work before a release.
 
 Deliverable: the next release candidate is documented, validated, and ready to package.
 
-Status: planned.
+Status: in progress. Release support validation passed for release artifact expectations, release notes, and metadata tests; full automated regression passed with 950 tests and 8 skips; Windows build script version/artifact drift was fixed; `.planning/RELEASE_READINESS_U_Y.md` tracks the remaining release-readiness checklist.
 
 ## Sprint Y: Post-Release Feedback Loop
 

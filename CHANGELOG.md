@@ -19,12 +19,21 @@
 - **Source reliability scoring** - Settings source diagnostics now include coarse reliability scores from recent source history.
 - **Source toggle recommendations** - Settings diagnostics now recommend temporarily disabling repeatedly unreliable sources.
 - **Source coverage gaps** - Source health history now preserves search context so Settings can call out source/preset combinations with no recent jobs.
+- **Preset strategy diagnostics** - Settings now recommends source/preset actions from recent failures and low-yield or high-yield search outcomes.
+- **Pre-run source strategy guidance** - Search controls now show recent source reliability and preset-yield guidance before rerunning a search.
+- **Source selection strategy** - Settings and Search guidance now recommend specific sources to uncheck, pair with broader coverage, or keep enabled from recent outcomes.
+- **Source strategy name clarity** - Source diagnostics normalize saved source keys into user-facing source names so recommendations stay readable.
+- **Release readiness tracking** - Added a Product Iteration U-Y release-readiness checklist with source strategy and release support validation checkpoints.
+- **Windows build script release drift** - Windows local builds now derive the version from package metadata, use release-compatible archive/checksum names, and run release artifact verification.
 - **Local maintenance insights** - Settings now summarizes local data size, cache files, tracker history, review state, saved searches, and maintenance suggestions.
 - **Bounded dashboard history counts** - Profile dashboard changed-search callouts now stay compact for large saved-search histories.
 - **Maintenance documentation** - README, workflow docs, and FAQ now describe local maintenance behavior and privacy boundaries.
 
 ### Documentation
 - Documented Product Iterations P-T and U-Y across README, roadmap, and project state memory.
+
+### Validation
+- Full automated regression for Sprint X release readiness: 950 passed, 8 skipped.
 
 ## v2.6.0 — 2026-05-15
 
