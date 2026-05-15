@@ -7,15 +7,15 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Accurate job-candidate scoring — if the scoring is wrong, nothing else matters.
-**Current focus:** Product Iteration P-T, Sprint Q search comparison and insight recap
+**Current focus:** Product Iteration P-T, Sprint R follow-up workflow automation
 
 ## Current Position
 
 **Milestone:** Product Iteration P-T — IN PROGRESS
-**Status:** Sprint P complete; Sprint Q in progress; Sprints R-T planned
-**Last activity:** 2026-05-15 — shipped v2.6.0 for completed Product Iteration K-O, documented Product Iteration P-T, completed the Sprint P Profile-tab next-step dashboard foundation, and continued Sprint Q with recent/saved search previous-run insight text, completion-screen run context, changed-search prioritization, and dashboard changed-search callouts.
+**Status:** Sprints P-Q complete; Sprint R in progress; Sprints S-T planned
+**Last activity:** 2026-05-15 — shipped v2.6.0 for completed Product Iteration K-O, completed Sprint P dashboard next steps, completed Sprint Q search comparison recaps, and started Sprint R with Applications follow-up queue filters for all, overdue, and due-soon work.
 
-**Next step:** continue Sprint Q by expanding search comparisons into bounded saved-search and recent-search recap surfaces.
+**Next step:** continue Sprint R with quick complete/snooze actions for application follow-up rows.
 
 ## Performance Metrics
 
@@ -121,22 +121,22 @@ Full decision log: PROJECT.md Key Decisions table (143 decisions)
 See `.planning/PRODUCT_ITERATION_SPRINTS_P_T.md`.
 
 - Sprint P: Daily Dashboard & Next Steps — complete
-- Sprint Q: Search Comparison & Insight Recap — in progress
-- Sprint R: Follow-Up Workflow Automation — planned
+- Sprint Q: Search Comparison & Insight Recap — complete
+- Sprint R: Follow-Up Workflow Automation — in progress
 - Sprint S: Source Quality & Coverage Controls — planned
 - Sprint T: Local Performance & Maintenance Insights — planned
 
 ### Blockers/Concerns
 
-None. Sprint Q is active.
+None. Sprint R is active.
 
 ## Session Continuity
 
 Last session: 2026-05-15
-Stopped at: Sprint Q saved-search comparison foundation in progress
+Stopped at: Sprint R follow-up filter foundation in progress
 Resume file: None
 
-**Next step:** Continue Sprint Q search comparison polish and validation.
+**Next step:** Continue Sprint R quick complete/snooze actions and validation.
 
 ---
 *State initialized: 2026-02-13*

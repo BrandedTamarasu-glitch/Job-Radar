@@ -6,6 +6,7 @@ from job_radar.gui.applications_view_model import (
     application_status_from_label,
     application_status_menu_labels,
     build_applications_view_model,
+    filter_application_next_actions,
     normalize_application_detail_input,
     normalize_application_status,
 )
@@ -126,6 +127,32 @@ def test_application_status_menu_labels_defaults_to_editable_statuses():
         "Rejected",
         "Skipped",
     ]
+
+
+def test_filter_application_next_actions_supports_followup_focus_modes():
+    actions = [
+        {"company": "OverdueCo", "is_overdue": True, "days_until": -2},
+        {"company": "TodayCo", "is_overdue": False, "days_until": 0},
+        {"company": "SoonCo", "is_overdue": False, "days_until": 5},
+        {"company": "LaterCo", "is_overdue": False, "days_until": 12},
+        {"company": "UnscheduledCo", "is_overdue": False, "days_until": None},
+    ]
+
+    assert [action["company"] for action in filter_application_next_actions(actions)] == [
+        "OverdueCo",
+        "TodayCo",
+        "SoonCo",
+        "LaterCo",
+        "UnscheduledCo",
+    ]
+    assert [
+        action["company"]
+        for action in filter_application_next_actions(actions, "overdue")
+    ] == ["OverdueCo"]
+    assert [
+        action["company"]
+        for action in filter_application_next_actions(actions, "due_soon")
+    ] == ["TodayCo", "SoonCo"]
 
 
 def test_application_status_from_label_maps_display_labels_to_tracker_values():

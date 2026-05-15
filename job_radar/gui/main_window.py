@@ -48,6 +48,7 @@ from job_radar.gui.applications_view_model import (
     application_status_from_label,
     application_status_menu_labels,
     build_applications_view_model,
+    filter_application_next_actions,
     normalize_application_detail_input,
 )
 from job_radar.gui.dashboard_view_model import build_dashboard_actions
@@ -154,6 +155,7 @@ class MainWindow(ctk.CTk):
         self._cache_status_label = None  # Settings cache maintenance status label reference
         self._source_diagnostics_textbox = None  # Settings source diagnostics text reference
         self._applications_export_status_label = None  # Applications tab export status
+        self._application_followup_filter = "all"  # Applications follow-up queue filter
         self._saved_search_status_label = None  # Search tab saved-search feedback
         self._active_search_config = None  # Search config for completion metadata
 
@@ -715,18 +717,46 @@ class MainWindow(ctk.CTk):
             command=lambda: self._build_applications_tab(parent),
         ).pack(side="left")
 
+        filter_frame = ctk.CTkFrame(scroll_frame, fg_color="transparent")
+        filter_frame.grid(row=1, column=0, sticky="w", pady=(0, 8))
+
+        ctk.CTkLabel(
+            filter_frame,
+            text="Follow-ups:",
+            font=ctk.CTkFont(size=12, weight="bold"),
+        ).pack(side="left", padx=(0, 8))
+
+        for filter_key, label in (
+            ("all", "All"),
+            ("overdue", "Overdue"),
+            ("due_soon", "Due Soon"),
+        ):
+            ctk.CTkButton(
+                filter_frame,
+                text=label,
+                width=84,
+                height=28,
+                fg_color=None if self._application_followup_filter == filter_key else "transparent",
+                border_width=0 if self._application_followup_filter == filter_key else 2,
+                command=lambda key=filter_key: self._set_application_followup_filter(parent, key),
+            ).pack(side="left", padx=(0, 6))
+
         self._applications_export_status_label = ctk.CTkLabel(
             scroll_frame,
             text="",
             font=ctk.CTkFont(size=12),
             text_color="gray",
         )
-        self._applications_export_status_label.grid(row=1, column=0, sticky="w", pady=(0, 8))
+        self._applications_export_status_label.grid(row=2, column=0, sticky="w", pady=(0, 8))
 
         applications = get_all_application_statuses()
         next_actions = get_application_next_actions(
             applications=applications,
             limit=5,
+        )
+        filtered_next_actions = filter_application_next_actions(
+            next_actions,
+            self._application_followup_filter,
         )
         groups = build_applications_view_model(applications)
         total_rows = sum(group.count for group in groups)
@@ -737,12 +767,12 @@ class MainWindow(ctk.CTk):
                 text="No application pipeline entries yet.",
                 font=ctk.CTkFont(size=14),
                 text_color="gray",
-            ).grid(row=2, column=0, sticky="w", pady=20)
+            ).grid(row=3, column=0, sticky="w", pady=20)
             return
 
-        row_index = 2
-        if next_actions:
-            self._add_application_next_action_queue(scroll_frame, row_index, next_actions)
+        row_index = 3
+        if filtered_next_actions:
+            self._add_application_next_action_queue(scroll_frame, row_index, filtered_next_actions)
             row_index += 1
 
         for group in groups:
@@ -841,6 +871,11 @@ class MainWindow(ctk.CTk):
                             key,
                         ),
                     ).pack(side="left", padx=(0, 6))
+
+    def _set_application_followup_filter(self, parent, followup_filter: str):
+        """Set the Applications follow-up filter and rebuild the tab."""
+        self._application_followup_filter = followup_filter
+        self._build_applications_tab(parent)
 
     def _add_application_next_action_queue(self, parent, row_index: int, next_actions: list[dict]):
         """Add a compact follow-up queue to the Applications tab."""

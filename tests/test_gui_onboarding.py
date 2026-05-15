@@ -71,6 +71,8 @@ def test_applications_tab_includes_next_action_queue():
     source = inspect.getsource(MainWindow._build_applications_tab)
 
     assert "get_application_next_actions" in source
+    assert "filter_application_next_actions" in source
+    assert "_set_application_followup_filter" in source
     assert "_add_application_next_action_queue" in source
     assert "limit=5" in source
 

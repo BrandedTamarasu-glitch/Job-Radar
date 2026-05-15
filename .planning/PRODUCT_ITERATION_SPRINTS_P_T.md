@@ -30,7 +30,7 @@ Goal: help users understand how the latest run changed their opportunity landsca
 
 Deliverable: users can decide whether a search needs attention before opening a full report.
 
-Status: in progress. Recent and saved searches now surface a bounded previous-run comparison line for total, new, high-score, and review-state movement. Search completion also explains source failures, cache behavior, and active filters that may affect result changes. Saved searches with meaningful movement are prioritized in the Search tab and called out on the Profile dashboard.
+Status: complete. Recent and saved searches surface bounded previous-run comparison lines for total, new, high-score, and review-state movement. Search completion explains source failures, cache behavior, and active filters that may affect result changes. Saved searches with meaningful movement are prioritized in the Search tab and called out on the Profile dashboard.
 
 ## Sprint R: Follow-Up Workflow Automation
 
@@ -43,7 +43,7 @@ Goal: make application follow-up easier to run consistently.
 
 Deliverable: users can maintain follow-ups from a focused queue instead of scanning every application.
 
-Status: planned.
+Status: in progress. Applications now include all, overdue, and due-soon follow-up queue filters.
 
 ## Sprint S: Source Quality & Coverage Controls
 

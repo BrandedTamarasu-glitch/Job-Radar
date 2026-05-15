@@ -111,6 +111,24 @@ def build_applications_view_model(applications: dict[str, dict[str, Any]]) -> li
     return groups
 
 
+def filter_application_next_actions(
+    actions: list[dict[str, Any]],
+    followup_filter: str = "all",
+    due_soon_days: int = 7,
+) -> list[dict[str, Any]]:
+    """Filter follow-up queue rows for Applications tab focus modes."""
+    if followup_filter == "overdue":
+        return [action for action in actions if action.get("is_overdue")]
+    if followup_filter == "due_soon":
+        return [
+            action for action in actions
+            if not action.get("is_overdue")
+            and isinstance(action.get("days_until"), int)
+            and 0 <= int(action["days_until"]) <= due_soon_days
+        ]
+    return actions
+
+
 def append_application_note(existing_notes: str | None, note: str) -> str:
     """Append a rendered note template to an application's existing notes."""
     existing = (existing_notes or "").strip()

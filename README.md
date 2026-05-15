@@ -492,7 +492,7 @@ For release builds, also run the platform build script and smoke-test the genera
 - Review state (5 tests) - validates persisted shortlist, dismissed, and maybe-later search-result review states
 - Applications export (3 tests) - validates application pipeline CSV rows, timeline summaries, CSV import normalization, and UTF-8 CSV output
 - Application templates (5 tests) - validates follow-up, recruiter response, and cover-letter note template rendering
-- Applications view model (9 tests) - validates grouped pipeline statuses, note-only entries, template note appending, status-menu mappings, and GUI detail-input normalization
+- Applications view model (10 tests) - validates grouped pipeline statuses, note-only entries, follow-up focus filters, template note appending, status-menu mappings, and GUI detail-input normalization
 - Tracker functions (27 tests) - validates deduplication, pruning, app-data storage, application notes/next actions, timeline recording, follow-up queueing, application import merging, application-status report filtering, source health history, and stats aggregation with tmp_path isolation
 - Config module (24 tests) - validates config file parsing, CLI override, defaults, validation
 - Wizard (38 tests) - validates setup flow, PDF integration, navigation, error handling
@@ -507,7 +507,7 @@ For release builds, also run the platform build script and smoke-test the genera
 - Report generation (53 tests) - validates HTML/Markdown output, clipboard UI, status tracking, persisted shortlist/maybe-later/dismiss review state, keyboard navigation, compact/detail view, match summaries, filtered-out explanations, grouped skill callouts, large-report row caps and render skipping, mobile layout, accessibility
 - UX polish (69 tests) - validates banner, help text, progress messages, maintenance commands, error handling
 - GUI search summary (31 tests) - validates search completion, source warnings, per-source timing, cache counters, run context explanations, cache controls, app-data export/validation controls, cancellation boundaries through final report preparation, progress normalization, GUI preset application, automated/manual source selection, company filters, application-status report filtering, must-have and nice-to-have skill controls, location strictness, freshness presets, and profile-aware zero-result guidance
-- GUI onboarding (28 tests) - validates first-run demo report access, welcome/search feedback handling, Search tab profile-readiness guidance, Profile-tab dashboard next steps, profile-form field hints, profile-aware zero-result guidance wiring, non-blocking recent-search recording, recent-search reapply controls, recent and saved search comparison insight text, review queue summaries, Applications next-action queue/direct edit wiring, and run metadata recording
+- GUI onboarding (28 tests) - validates first-run demo report access, welcome/search feedback handling, Search tab profile-readiness guidance, Profile-tab dashboard next steps, profile-form field hints, profile-aware zero-result guidance wiring, non-blocking recent-search recording, recent-search reapply controls, recent and saved search comparison insight text, review queue summaries, Applications follow-up filters/next-action queue/direct edit wiring, and run metadata recording
 - Demo report (2 tests) - validates no-network sample profile/jobs and report generation
 - Data portability (9 tests) - validates portable app-data export bundles, manifests, restore preflight validation, and restore backups
 - Profile readiness (7 tests) - validates onboarding readiness status, missing required fields, scoring-signal recommendations, match-quality recommendations, and guidance prioritization
@@ -538,8 +538,8 @@ The K-O product iteration is complete and tracked in `.planning/PRODUCT_ITERATIO
 The next product iteration is tracked in `.planning/PRODUCT_ITERATION_SPRINTS_P_T.md`:
 
 - **Sprint P:** daily dashboard and next steps — complete
-- **Sprint Q:** search comparison and insight recap — in progress
-- **Sprint R:** follow-up workflow automation — planned
+- **Sprint Q:** search comparison and insight recap — complete
+- **Sprint R:** follow-up workflow automation — in progress
 - **Sprint S:** source quality and coverage controls — planned
 - **Sprint T:** local performance and maintenance insights — planned
 
