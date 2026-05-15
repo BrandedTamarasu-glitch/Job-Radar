@@ -9,6 +9,9 @@ import sys
 from pathlib import Path
 
 project_root = Path('.').resolve()
+version_scope = {}
+exec((project_root / 'job_radar' / '__init__.py').read_text(), version_scope)
+app_version = version_scope['__version__']
 
 # Data files to bundle (source_path, dest_folder_in_bundle)
 # Profile template so users have a starting point
@@ -161,7 +164,7 @@ if sys.platform == 'darwin':
                     'LSHandlerRank': 'Owner',
                 },
             ],
-            'CFBundleShortVersionString': '2.1.7',
-            'CFBundleVersion': '2.1.7',
+            'CFBundleShortVersionString': app_version,
+            'CFBundleVersion': app_version,
         },
     )

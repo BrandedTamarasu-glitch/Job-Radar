@@ -13,9 +13,9 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Milestone:** Product Iteration K-O — COMPLETE
 **Status:** Sprints K-O complete
-**Last activity:** 2026-05-15 — completed Sprint N data portability and Sprint O release artifact diagnostics, installer-directory drift checks, clean verifier CLI failures, noisy virtualenv-match suppression, checksum manifests, download verification docs, large-report render skipping, final-prep search cancellation, and v2.6.0 release notes
+**Last activity:** 2026-05-15 — completed Sprint N data portability and Sprint O release artifact diagnostics, installer-directory drift checks, clean verifier CLI failures, noisy virtualenv-match suppression, checksum manifests, download verification docs, large-report render skipping, final-prep search cancellation, v2.6.0 release notes, build metadata drift guards, and Linux release build smoke verification
 
-**Next step:** cut and verify the v2.6.0 release build, then plan the next product iteration.
+**Next step:** commit release build metadata guards, then tag/push v2.6.0 or plan the next product iteration.
 
 ## Performance Metrics
 
@@ -136,7 +136,7 @@ Last session: 2026-05-15
 Stopped at: Sprints K-O completed and validated
 Resume file: None
 
-**Next step:** Cut and verify the v2.6.0 release build, then plan the next product iteration.
+**Next step:** Commit release build metadata guards, then tag/push v2.6.0 or plan the next product iteration.
 
 ---
 *State initialized: 2026-02-13*

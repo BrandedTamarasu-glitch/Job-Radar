@@ -15,3 +15,15 @@ def test_package_version_matches_pyproject():
     pyproject = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
 
     assert __version__ == pyproject["project"]["version"]
+
+
+def test_release_build_files_do_not_hardcode_old_versions():
+    """Build scripts should derive release versions from package metadata."""
+    build_script = Path("scripts/build.sh").read_text(encoding="utf-8")
+    spec_file = Path("job-radar.spec").read_text(encoding="utf-8")
+
+    assert "VERSION=\"1.1.0\"" not in build_script
+    assert "from job_radar import __version__" in build_script
+    assert "CFBundleShortVersionString': '2.1.7'" not in spec_file
+    assert "CFBundleVersion': '2.1.7'" not in spec_file
+    assert "app_version = version_scope['__version__']" in spec_file

@@ -9,7 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$PROJECT_ROOT"
 
-VERSION="1.1.0"
+VERSION="$(python -c 'from job_radar import __version__; print(__version__)')"
 
 echo "=== Job Radar Build Script ==="
 echo "Version: $VERSION"
