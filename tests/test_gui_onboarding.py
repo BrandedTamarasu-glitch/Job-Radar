@@ -82,6 +82,8 @@ def test_application_next_action_queue_includes_complete_action():
 
     assert "Complete" in source
     assert "_complete_application_next_action" in source
+    assert "Snooze 3d" in source
+    assert "_snooze_application_next_action" in source
 
 
 def test_complete_application_next_action_clears_followup_details():
@@ -90,6 +92,16 @@ def test_complete_application_next_action_clears_followup_details():
     assert "update_application_details" in source
     assert 'next_action=""' in source
     assert 'next_action_date=""' in source
+    assert "_build_applications_tab(parent)" in source
+
+
+def test_snooze_application_next_action_moves_due_date_forward():
+    source = inspect.getsource(MainWindow._snooze_application_next_action)
+
+    assert "timedelta(days=3)" in source
+    assert "update_application_details" in source
+    assert "next_action=str(queued_action.get(\"next_action\") or \"\")" in source
+    assert "next_action_date=snoozed_date" in source
     assert "_build_applications_tab(parent)" in source
 
 

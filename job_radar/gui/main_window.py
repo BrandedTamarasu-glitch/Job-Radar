@@ -12,6 +12,7 @@ import tempfile
 import threading
 import webbrowser
 from datetime import date
+from datetime import timedelta
 from pathlib import Path
 
 import customtkinter as ctk
@@ -914,6 +915,14 @@ class MainWindow(ctk.CTk):
                 command=lambda queued=action: self._complete_application_next_action(parent, queued),
             ).grid(row=0, column=1, sticky="e", padx=(12, 0))
 
+            ctk.CTkButton(
+                action_frame,
+                text="Snooze 3d",
+                width=96,
+                height=28,
+                command=lambda queued=action: self._snooze_application_next_action(parent, queued),
+            ).grid(row=0, column=2, sticky="e", padx=(6, 0))
+
             ctk.CTkLabel(
                 queue_frame,
                 text=f"{due_text} | {status}",
@@ -951,6 +960,25 @@ class MainWindow(ctk.CTk):
             if self._applications_export_status_label is not None:
                 self._applications_export_status_label.configure(
                     text=f"Follow-up update failed: {e}",
+                    text_color="red",
+                )
+
+    def _snooze_application_next_action(self, parent, queued_action: dict):
+        """Move a queued follow-up three days forward."""
+        try:
+            snoozed_date = (date.today() + timedelta(days=3)).isoformat()
+            update_application_details(
+                str(queued_action.get("title") or ""),
+                str(queued_action.get("company") or ""),
+                notes=str(queued_action.get("notes") or ""),
+                next_action=str(queued_action.get("next_action") or ""),
+                next_action_date=snoozed_date,
+            )
+            self._build_applications_tab(parent)
+        except Exception as e:
+            if self._applications_export_status_label is not None:
+                self._applications_export_status_label.configure(
+                    text=f"Follow-up snooze failed: {e}",
                     text_color="red",
                 )
 
