@@ -13,9 +13,9 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Milestone:** Product Iteration U-Y — IN PROGRESS
 **Status:** Sprints U-X complete; Sprint Y in progress
-**Last activity:** 2026-05-15 — completed Sprint X release readiness with focused release support validation, full automated regression, documentation refresh, Windows build script drift fix, U-Y release notes draft, and local Linux artifact build verification; continued Sprint Y with privacy-safe feedback loop documentation and Settings redacted feedback diagnostics.
+**Last activity:** 2026-05-15 — completed Sprint X release readiness with focused release support validation, full automated regression, documentation refresh, Windows build script drift fix, U-Y release notes draft, and local Linux artifact build verification; continued Sprint Y with privacy-safe feedback loop documentation and copyable Settings redacted feedback diagnostics.
 
-**Next step:** continue Sprint Y by deciding whether feedback diagnostics need a copy/export action and finalizing post-release iteration inputs.
+**Next step:** continue Sprint Y by finalizing post-release iteration inputs and deciding whether to close the U-Y iteration.
 
 ## Performance Metrics
 
@@ -133,10 +133,10 @@ None. Sprint Y is active.
 ## Session Continuity
 
 Last session: 2026-05-15
-Stopped at: Sprint Y redacted feedback diagnostics in Settings
+Stopped at: Sprint Y copyable redacted feedback diagnostics in Settings
 Resume file: None
 
-**Next step:** Continue Sprint Y feedback diagnostics copy/export decision and post-release iteration inputs.
+**Next step:** Continue Sprint Y post-release iteration inputs and closure decision.
 
 ---
 *State initialized: 2026-02-13*

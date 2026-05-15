@@ -52,13 +52,14 @@ Track feedback into these buckets:
 
 - Redacted diagnostics summary is now available in Settings > Feedback Diagnostics.
 - Confirm whether source strategy recommendations should offer one-click source toggle changes or remain advisory.
-- Decide whether feedback diagnostics should add a copy button or remain a read-only textbox.
+- Feedback diagnostics now include a copy-to-clipboard action.
 - Review whether the Search tab guidance should be collapsible if users find it too prominent.
 - Consider a post-release issue template in GitHub once the next tag is published.
 
 ## Implemented App Support
 
 - Settings shows a privacy-safe feedback diagnostics summary.
+- Settings can copy the diagnostics summary to the clipboard for issue reports.
 - The summary includes app version, operating system, local data size, aggregate workflow counts, cache file count, and maintenance signals.
 - The summary explicitly reminds users not to include API keys, profile/resume contents, saved search names, application notes, tracker records, or local filesystem paths.
 - Tests verify the diagnostics summary does not expose representative private path, saved-search, tracker, application, or cache-name content.

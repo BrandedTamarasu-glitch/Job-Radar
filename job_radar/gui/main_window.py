@@ -2369,6 +2369,16 @@ class MainWindow(ctk.CTk):
         summary = build_feedback_diagnostics_summary(get_data_dir(), get_results_dir())
         return "\n".join(format_feedback_diagnostics_lines(summary))
 
+    def _on_copy_feedback_diagnostics(self):
+        """Copy privacy-safe feedback diagnostics to the clipboard."""
+        text = self._feedback_diagnostics_text()
+        self.clipboard_clear()
+        self.clipboard_append(text)
+        if self._cache_status_label:
+            self._cache_status_label.configure(
+                text="Copied redacted feedback diagnostics to clipboard"
+            )
+
     def _refresh_source_diagnostics(self):
         """Refresh source diagnostics text in Settings."""
         if not self._source_diagnostics_textbox:
@@ -2963,6 +2973,16 @@ class MainWindow(ctk.CTk):
         feedback_box.insert("end", self._feedback_diagnostics_text())
         feedback_box.configure(state="disabled")
         feedback_box.pack(pady=(0, 10), anchor="w", padx=10)
+
+        copy_feedback_btn = ctk.CTkButton(
+            scroll_frame,
+            text="Copy Feedback Diagnostics",
+            width=230,
+            fg_color="transparent",
+            border_width=1,
+            command=self._on_copy_feedback_diagnostics
+        )
+        copy_feedback_btn.pack(pady=(0, 10), anchor="w", padx=10)
 
         diagnostics_title = ctk.CTkLabel(
             scroll_frame,

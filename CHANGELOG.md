@@ -24,7 +24,7 @@
 - **Source selection strategy** - Settings and Search guidance now recommend specific sources to uncheck, pair with broader coverage, or keep enabled from recent outcomes.
 - **Source strategy name clarity** - Source diagnostics normalize saved source keys into user-facing source names so recommendations stay readable.
 - **Release readiness tracking** - Added a Product Iteration U-Y release-readiness checklist with source strategy and release support validation checkpoints.
-- **Redacted feedback diagnostics** - Settings now shows privacy-safe aggregate diagnostics users can share after release without exposing local profile, search, tracker, or path contents.
+- **Redacted feedback diagnostics** - Settings now shows copyable privacy-safe aggregate diagnostics users can share after release without exposing local profile, search, tracker, or path contents.
 - **Windows build script release drift** - Windows local builds now derive the version from package metadata, use release-compatible archive/checksum names, and run release artifact verification.
 - **Local maintenance insights** - Settings now summarizes local data size, cache files, tracker history, review state, saved searches, and maintenance suggestions.
 - **Bounded dashboard history counts** - Profile dashboard changed-search callouts now stay compact for large saved-search histories.

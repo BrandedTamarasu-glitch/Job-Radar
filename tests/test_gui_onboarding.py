@@ -192,6 +192,17 @@ def test_settings_tab_includes_privacy_safe_feedback_diagnostics():
     assert "format_feedback_diagnostics_lines" in helper_source
 
 
+def test_feedback_diagnostics_can_be_copied_from_settings():
+    source = inspect.getsource(MainWindow._build_settings_tab)
+    handler_source = inspect.getsource(MainWindow._on_copy_feedback_diagnostics)
+
+    assert "Copy Feedback Diagnostics" in source
+    assert "command=self._on_copy_feedback_diagnostics" in source
+    assert "self.clipboard_clear()" in handler_source
+    assert "self.clipboard_append(text)" in handler_source
+    assert "Copied redacted feedback diagnostics to clipboard" in handler_source
+
+
 def test_clear_dismissed_reviews_uses_bounded_review_helper():
     source = inspect.getsource(MainWindow._on_clear_dismissed_reviews)
 
