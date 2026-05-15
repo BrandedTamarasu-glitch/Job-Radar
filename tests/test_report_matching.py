@@ -5,6 +5,7 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 from job_radar.report_matching import (
+    html_match_summary,
     match_highlights,
     match_summary_text,
     skill_callout_groups,
@@ -48,6 +49,21 @@ def test_match_summary_text_falls_back_to_score():
     assert match_summary_text({"score": {"overall": 3.1, "components": {}}}) == (
         "Matched with score 3.1"
     )
+
+
+def test_html_match_summary_escapes_summary_text():
+    result = {
+        "score": {
+            "overall": 4.2,
+            "components": {"title_relevance": {"reason": "<Exact>"}},
+        }
+    }
+
+    html = html_match_summary(result)
+
+    assert 'class="match-summary small mb-3"' in html
+    assert "&lt;Exact&gt;" in html
+    assert "<Exact>" not in html
 
 
 def test_match_highlights_limits_relevant_talking_points():

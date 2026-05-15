@@ -11,11 +11,13 @@ from .report_assets import (
     html_external_stylesheets as _html_external_stylesheets,
 )
 from .report_controls import html_shortlist_button as _html_shortlist_button
+from .report_controls import html_status_dropdown as _html_status_dropdown
 from .report_filtering import filter_explanation_text as _filter_explanation_text
 from .report_filtering import filtered_out_results as _filtered_out_results
 from .report_filtering import html_filtered_out_section as _html_filtered_out_section
 from .report_job_details import html_job_detail_items as _html_job_detail_items
 from .report_manual import html_manual_urls_section as _html_manual_urls_section
+from .report_matching import html_match_summary as _html_match_summary
 from .report_matching import match_highlights as _match_highlights
 from .report_matching import match_summary_text as _match_summary_text
 from .report_matching import skill_callout_groups as _skill_callout_groups
@@ -2255,15 +2257,6 @@ def _generate_html_report(
     filepath.write_text(html_content, encoding="utf-8")
 
 
-def _html_match_summary(result: dict) -> str:
-    """Generate the visible match-summary callout for a job card."""
-    return (
-        '<p class="match-summary small mb-3">'
-        f'<strong>Why this matched:</strong> {html.escape(_match_summary_text(result))}'
-        '</p>'
-    )
-
-
 def _html_hero_section(hero_jobs: list[dict], profile: dict) -> str:
     """Generate HTML for hero jobs section (score >= 4.0)."""
     if not hero_jobs:
@@ -2295,24 +2288,7 @@ def _html_hero_section(hero_jobs: list[dict], profile: dict) -> str:
         else:
             data_attrs = f'class="card mb-3 hero-job tier-{tier}" data-job-key="{html.escape(job_key_val)}" data-job-title="{html.escape(job.title)}" data-job-company="{html.escape(job.company)}"'
 
-        # Status dropdown HTML
-        status_dropdown = f"""
-          <div class="dropdown d-inline-block ms-2">
-            <button class="btn btn-sm btn-outline-secondary dropdown-toggle status-dropdown"
-                    type="button" data-bs-toggle="dropdown"
-                    aria-label="Change application status">
-              Status
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end">
-              <li><a class="dropdown-item" href="#" data-status="applied">Applied</a></li>
-              <li><a class="dropdown-item" href="#" data-status="interviewing">Interviewing</a></li>
-              <li><a class="dropdown-item" href="#" data-status="rejected">Rejected</a></li>
-              <li><a class="dropdown-item" href="#" data-status="offer">Offer</a></li>
-              <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item" href="#" data-status="">Clear Status</a></li>
-            </ul>
-          </div>
-        """
+        status_dropdown = _html_status_dropdown(extra_classes="ms-2")
 
         # Score badge with "Top Match" label
         tier_icon_html = f'<span class="{_tier_icon_class(tier)}" aria-hidden="true"></span>'
@@ -2404,24 +2380,7 @@ def _html_recommended_section(recommended: list[dict], profile: dict) -> str:
         else:
             data_attrs = f'class="card mb-3 tier-{tier}" data-job-key="{html.escape(job_key_val)}" data-job-title="{html.escape(job.title)}" data-job-company="{html.escape(job.company)}"'
 
-        # Status dropdown HTML
-        status_dropdown = f"""
-          <div class="dropdown d-inline-block ms-2">
-            <button class="btn btn-sm btn-outline-secondary dropdown-toggle status-dropdown"
-                    type="button" data-bs-toggle="dropdown"
-                    aria-label="Change application status">
-              Status
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end">
-              <li><a class="dropdown-item" href="#" data-status="applied">Applied</a></li>
-              <li><a class="dropdown-item" href="#" data-status="interviewing">Interviewing</a></li>
-              <li><a class="dropdown-item" href="#" data-status="rejected">Rejected</a></li>
-              <li><a class="dropdown-item" href="#" data-status="offer">Offer</a></li>
-              <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item" href="#" data-status="">Clear Status</a></li>
-            </ul>
-          </div>
-        """
+        status_dropdown = _html_status_dropdown(extra_classes="ms-2")
 
         # Score badge with screen reader context and tier icon
         tier_icon_html = f'<span class="{_tier_icon_class(tier)}" aria-hidden="true"></span>'
@@ -2637,23 +2596,7 @@ def _html_result_row(result: dict, index: int) -> str:
         link_html = "URL unavailable" if job.url else html.escape(job.source)
         row_attrs = f'class="tier-{tier}" data-job-key="{html.escape(job_key_val)}" data-job-title="{html.escape(job.title)}" data-job-company="{html.escape(job.company)}"'
 
-    status_dropdown = f"""
-      <div class="dropdown d-inline-block">
-        <button class="btn btn-sm btn-outline-secondary dropdown-toggle status-dropdown"
-                type="button" data-bs-toggle="dropdown"
-                aria-label="Change application status">
-          Status
-        </button>
-        <ul class="dropdown-menu dropdown-menu-end">
-          <li><a class="dropdown-item" href="#" data-status="applied">Applied</a></li>
-          <li><a class="dropdown-item" href="#" data-status="interviewing">Interviewing</a></li>
-          <li><a class="dropdown-item" href="#" data-status="rejected">Rejected</a></li>
-          <li><a class="dropdown-item" href="#" data-status="offer">Offer</a></li>
-          <li><hr class="dropdown-divider"></li>
-          <li><a class="dropdown-item" href="#" data-status="">Clear Status</a></li>
-        </ul>
-      </div>
-    """
+    status_dropdown = _html_status_dropdown()
     new_badge_accessible = '<span class="badge bg-primary rounded-pill"><span class="visually-hidden">New listing, not seen in previous searches. </span>NEW</span>' if is_new else ''
     shortlist_button = _html_shortlist_button(job_key_val, compact=True)
     tier_icon_html = f'<span class="{_tier_icon_class(tier)}" aria-hidden="true"></span>'

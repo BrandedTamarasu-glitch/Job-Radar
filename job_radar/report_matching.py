@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import html
 from typing import Any
 
 
@@ -63,3 +64,12 @@ def match_summary_text(result: dict) -> str:
     if not parts:
         return f"Matched with score {score.get('overall', 'N/A')}"
     return "; ".join(parts)
+
+
+def html_match_summary(result: dict) -> str:
+    """Generate the visible match-summary callout for a job card."""
+    return (
+        '<p class="match-summary small mb-3">'
+        f'<strong>Why this matched:</strong> {html.escape(match_summary_text(result))}'
+        '</p>'
+    )
