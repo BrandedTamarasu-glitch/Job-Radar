@@ -7,6 +7,7 @@ import zipfile
 from datetime import datetime, timezone
 
 from job_radar.data_portability import (
+    MAX_PORTABLE_FILE_BYTES,
     export_app_data_bundle,
     list_portable_data_files,
     restore_app_data_bundle,
@@ -122,6 +123,57 @@ def test_validate_app_data_bundle_rejects_unsupported_and_missing_files(tmp_path
         "Manifest file missing from bundle: config.json",
         "Unexpected bundle file: extra.json",
     ]
+
+
+def test_validate_app_data_bundle_rejects_invalid_json_payload(tmp_path):
+    bundle_path = tmp_path / "bad-json.zip"
+    manifest = {
+        "version": 1,
+        "files": [{"path": "profile.json", "description": "Profile"}],
+    }
+    with zipfile.ZipFile(bundle_path, "w") as archive:
+        archive.writestr("manifest.json", json.dumps(manifest))
+        archive.writestr("profile.json", "{bad json")
+
+    result = validate_app_data_bundle(bundle_path)
+
+    assert result.is_valid is False
+    assert result.files == []
+    assert result.errors == ["Bundle file is not valid JSON: profile.json"]
+
+
+def test_validate_app_data_bundle_rejects_non_object_json_payload(tmp_path):
+    bundle_path = tmp_path / "bad-shape.zip"
+    manifest = {
+        "version": 1,
+        "files": [{"path": "saved_searches.json", "description": "Saved searches"}],
+    }
+    with zipfile.ZipFile(bundle_path, "w") as archive:
+        archive.writestr("manifest.json", json.dumps(manifest))
+        archive.writestr("saved_searches.json", "[]")
+
+    result = validate_app_data_bundle(bundle_path)
+
+    assert result.is_valid is False
+    assert result.files == []
+    assert result.errors == ["Bundle file must contain a JSON object: saved_searches.json"]
+
+
+def test_validate_app_data_bundle_rejects_oversized_file(tmp_path):
+    bundle_path = tmp_path / "large.zip"
+    manifest = {
+        "version": 1,
+        "files": [{"path": "config.json", "description": "Config"}],
+    }
+    with zipfile.ZipFile(bundle_path, "w", compression=zipfile.ZIP_STORED) as archive:
+        archive.writestr("manifest.json", json.dumps(manifest))
+        archive.writestr("config.json", " " * (MAX_PORTABLE_FILE_BYTES + 1))
+
+    result = validate_app_data_bundle(bundle_path)
+
+    assert result.is_valid is False
+    assert result.files == []
+    assert result.errors == ["Bundle file is too large: config.json"]
 
 
 def test_restore_app_data_bundle_restores_validated_files(tmp_path):

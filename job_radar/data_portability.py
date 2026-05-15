@@ -46,6 +46,8 @@ PORTABLE_DATA_FILES = (
     ("results/tracker.json", "results/tracker.json", "Tracker, applications, and diagnostics"),
 )
 SUPPORTED_ARCHIVE_PATHS = {archive_name for _, archive_name, _ in PORTABLE_DATA_FILES}
+MAX_PORTABLE_BUNDLE_BYTES = 25 * 1024 * 1024
+MAX_PORTABLE_FILE_BYTES = 10 * 1024 * 1024
 
 
 def list_portable_data_files(data_dir: Path | None = None) -> list[PortableDataFile]:
@@ -103,6 +105,8 @@ def validate_app_data_bundle(bundle_path: str | Path) -> PortableBundleValidatio
 
     if not path.is_file():
         return PortableBundleValidation(False, [], [f"Bundle not found: {path}"])
+    if path.stat().st_size > MAX_PORTABLE_BUNDLE_BYTES:
+        return PortableBundleValidation(False, [], ["Bundle is too large to restore safely"])
 
     try:
         with zipfile.ZipFile(path) as archive:
@@ -133,6 +137,18 @@ def validate_app_data_bundle(bundle_path: str | Path) -> PortableBundleValidatio
                     continue
                 if archive_name not in names:
                     errors.append(f"Manifest file missing from bundle: {archive_name}")
+                    continue
+                info = archive.getinfo(archive_name)
+                if info.file_size > MAX_PORTABLE_FILE_BYTES:
+                    errors.append(f"Bundle file is too large: {archive_name}")
+                    continue
+                try:
+                    payload = json.loads(archive.read(archive_name).decode("utf-8"))
+                except (UnicodeDecodeError, json.JSONDecodeError):
+                    errors.append(f"Bundle file is not valid JSON: {archive_name}")
+                    continue
+                if not isinstance(payload, dict):
+                    errors.append(f"Bundle file must contain a JSON object: {archive_name}")
                     continue
                 files.append(archive_name)
 
