@@ -31,6 +31,7 @@ from job_radar.sources import (
     _slugify_for_wellfound,
     generate_manual_urls,
     JobResult,
+    SourceExecutionState,
     SOURCE_PHASE_ORDER,
     SOURCE_REGISTRY,
 )
@@ -459,6 +460,52 @@ def test_selected_source_display_names_follow_phase_order():
     names = get_selected_source_display_names(["jsearch", "dice", "remoteok"])
 
     assert names == ["Dice", "RemoteOK", "JSearch"]
+
+
+def test_source_execution_state_tracks_counts_failures_and_warnings():
+    """Fetch execution bookkeeping is isolated from source fetch behavior."""
+    queries = [
+        {"source": "dice", "query": "Backend"},
+        {"source": "dice", "query": "Frontend"},
+        {"source": "jsearch", "query": "Backend"},
+    ]
+    state = SourceExecutionState(queries)
+    job = JobResult(
+        title="Backend Engineer",
+        company="ExampleCo",
+        location="Remote",
+        arrangement="remote",
+        salary="Not listed",
+        date_posted="Today",
+        description="Build systems",
+        url="https://example.com/job",
+        source="LinkedIn",
+    )
+
+    assert state.total_queries == 3
+    assert state.total_sources == 2
+    assert state.mark_source_started() == 1
+    assert state.record_result("jsearch", job) is True
+    assert state.record_result("jsearch", job) is False
+    state.record_slow_query(queries[0], elapsed=9.123, threshold=8.0)
+    state.record_failure(queries[1], RuntimeError("dice down"))
+    assert state.mark_source_query_complete("dice") is False
+    assert state.mark_source_query_complete("dice") is True
+
+    assert state.job_count_for_source("jsearch") == 1
+    assert state.job_count_for_source("LinkedIn") == 1
+    assert state.completed_source_count() == 1
+    assert state.slow_query_warnings == [
+        {
+            "source": "dice",
+            "query": "Backend",
+            "elapsed_seconds": 9.12,
+            "threshold_seconds": 8.0,
+        }
+    ]
+    assert state.query_failures == [
+        {"source": "dice", "query": "Frontend", "error": "dice down"}
+    ]
 
 
 def test_fetch_all_queries_only_selected_sources(monkeypatch):

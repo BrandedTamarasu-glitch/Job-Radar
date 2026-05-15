@@ -8,7 +8,7 @@ import re
 import time
 import urllib.parse
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
 from typing import Callable
 
@@ -60,6 +60,89 @@ class SourceDefinition:
     def fetch(self, query: dict, profile: dict) -> list[JobResult]:
         """Run this source's fetcher for one query dict."""
         return self.fetcher(query, profile)
+
+
+@dataclass
+class SourceExecutionState:
+    """Mutable per-run source fetch bookkeeping."""
+
+    queries: list[dict]
+    completed: int = 0
+    sources_started: int = 0
+    sources_done: int = 0
+    query_failures: list[dict] = field(default_factory=list)
+    slow_query_warnings: list[dict] = field(default_factory=list)
+    seen: set[tuple[str, str]] = field(default_factory=set)
+    source_names: list[str] = field(init=False)
+    source_query_counts: dict[str, int] = field(init=False)
+    source_completed: dict[str, int] = field(init=False)
+    source_job_counts: dict[str, int] = field(init=False)
+
+    def __post_init__(self) -> None:
+        self.source_names = []
+        self.source_query_counts = {}
+        self.source_completed = {}
+        self.source_job_counts = {}
+        for query in self.queries:
+            source = query["source"]
+            if source not in self.source_names:
+                self.source_names.append(source)
+            self.source_query_counts[source] = self.source_query_counts.get(source, 0) + 1
+            self.source_completed[source] = 0
+            self.source_job_counts[source] = 0
+
+    @property
+    def total_queries(self) -> int:
+        return len(self.queries)
+
+    @property
+    def total_sources(self) -> int:
+        return len(self.source_names)
+
+    def mark_source_started(self) -> int:
+        self.sources_started += 1
+        return self.sources_started
+
+    def mark_query_complete(self) -> int:
+        self.completed += 1
+        return self.completed
+
+    def record_slow_query(self, query: dict, elapsed: float, threshold: float) -> None:
+        self.slow_query_warnings.append({
+            "source": query["source"],
+            "query": query.get("query", ""),
+            "elapsed_seconds": round(elapsed, 2),
+            "threshold_seconds": threshold,
+        })
+
+    def record_result(self, query_source: str, result: JobResult) -> bool:
+        key = (result.title.lower().strip(), result.company.lower().strip())
+        if key in self.seen:
+            return False
+        self.seen.add(key)
+        self.source_job_counts[query_source] = self.source_job_counts.get(query_source, 0) + 1
+        self.source_job_counts[result.source] = self.source_job_counts.get(result.source, 0) + 1
+        return True
+
+    def record_failure(self, query: dict, error: Exception) -> None:
+        self.query_failures.append({
+            "source": query["source"],
+            "query": query.get("query", ""),
+            "error": str(error),
+        })
+
+    def mark_source_query_complete(self, source: str) -> bool:
+        self.source_completed[source] += 1
+        if self.source_completed[source] != self.source_query_counts[source]:
+            return False
+        self.sources_done += 1
+        return True
+
+    def completed_source_count(self) -> int:
+        return self.sources_done
+
+    def job_count_for_source(self, source: str) -> int:
+        return self.source_job_counts.get(source, 0)
 
 
 HEADERS = {
@@ -2363,28 +2446,7 @@ def fetch_all(
     }
 
     all_results = []
-    seen = set()
-    total = len(queries)
-    completed = 0
-
-    source_names = []
-    for q in queries:
-        if q["source"] not in source_names:
-            source_names.append(q["source"])
-
-    source_query_counts = {}
-    source_completed = {}
-    source_job_counts = {}
-    for q in queries:
-        source_query_counts[q["source"]] = source_query_counts.get(q["source"], 0) + 1
-        source_completed[q["source"]] = 0
-        source_job_counts[q["source"]] = 0
-
-    sources_started = 0
-    sources_done = 0
-    total_sources = len(source_names)
-    query_failures = []
-    slow_query_warnings = []
+    run_state = SourceExecutionState(queries)
 
     def run_query(q):
         if cancellation_event is not None and cancellation_event.is_set():
@@ -2397,7 +2459,6 @@ def fetch_all(
 
     def _run_queries_parallel(query_list, phase_name):
         """Helper to run queries in parallel and collect results."""
-        nonlocal completed, sources_started, sources_done
         phase_results = []
 
         with ThreadPoolExecutor(max_workers=worker_count) as executor:
@@ -2411,10 +2472,16 @@ def fetch_all(
                 source = q["source"]
                 if source not in started_sources_in_phase:
                     started_sources_in_phase.add(source)
-                    sources_started += 1
+                    source_index = run_state.mark_source_started()
                     if on_source_progress:
                         display_name = _source_display_name(source)
-                        on_source_progress(display_name, sources_started, total_sources, "started", 0)
+                        on_source_progress(
+                            display_name,
+                            source_index,
+                            run_state.total_sources,
+                            "started",
+                            0,
+                        )
                 future = executor.submit(run_query, q)
                 futures[future] = q
                 future_started_at[future] = time.perf_counter()
@@ -2427,40 +2494,33 @@ def fetch_all(
                             pending.cancel()
                     break
                 q = futures[future]
-                completed += 1
+                completed = run_state.mark_query_complete()
                 source = q["source"]
                 elapsed = time.perf_counter() - future_started_at[future]
                 if elapsed >= slow_query_threshold:
-                    slow_query_warnings.append({
-                        "source": source,
-                        "query": q.get("query", ""),
-                        "elapsed_seconds": round(elapsed, 2),
-                        "threshold_seconds": slow_query_threshold,
-                    })
+                    run_state.record_slow_query(q, elapsed, slow_query_threshold)
                 try:
                     results = future.result()
                     for r in results:
-                        key = (r.title.lower().strip(), r.company.lower().strip())
-                        if key not in seen:
-                            seen.add(key)
+                        if run_state.record_result(source, r):
                             phase_results.append(r)
-                            source_job_counts[source] = source_job_counts.get(source, 0) + 1
-                            # Also track by actual source for aggregate stats/debugging.
-                            actual_source = r.source
-                            source_job_counts[actual_source] = source_job_counts.get(actual_source, 0) + 1
                 except Exception as e:
-                    query_failures.append({"source": source, "query": q.get("query", ""), "error": str(e)})
+                    run_state.record_failure(q, e)
                     log.error("Query failed (%s): %s", q, e)
                 if on_progress:
-                    on_progress(completed, total, source)
+                    on_progress(completed, run_state.total_queries, source)
 
                 # Source-level completion tracking
-                source_completed[source] += 1
-                if source_completed[source] == source_query_counts[source]:
-                    sources_done += 1
+                if run_state.mark_source_query_complete(source):
                     if on_source_progress:
                         display_name = _source_display_name(source)
-                        on_source_progress(display_name, sources_done, total_sources, "complete", source_job_counts.get(source, 0))
+                        on_source_progress(
+                            display_name,
+                            run_state.completed_source_count(),
+                            run_state.total_sources,
+                            "complete",
+                            run_state.job_count_for_source(source),
+                        )
 
         return phase_results
 
@@ -2480,11 +2540,11 @@ def fetch_all(
     dedup_result = deduplicate_cross_source(all_results)
     all_results = dedup_result["results"]
     dedup_stats = dedup_result["stats"]
-    dedup_stats["query_failures"] = len(query_failures)
-    dedup_stats["failed_sources"] = sorted({f["source"] for f in query_failures})
-    dedup_stats["query_failure_details"] = query_failures
-    dedup_stats["slow_query_warnings"] = slow_query_warnings
-    dedup_stats["slow_queries"] = len(slow_query_warnings)
+    dedup_stats["query_failures"] = len(run_state.query_failures)
+    dedup_stats["failed_sources"] = sorted({f["source"] for f in run_state.query_failures})
+    dedup_stats["query_failure_details"] = run_state.query_failures
+    dedup_stats["slow_query_warnings"] = run_state.slow_query_warnings
+    dedup_stats["slow_queries"] = len(run_state.slow_query_warnings)
     dedup_stats["max_workers"] = worker_count
     dedup_stats["slow_query_threshold_seconds"] = slow_query_threshold
     dedup_stats["cache_stats"] = get_cache_stats()
