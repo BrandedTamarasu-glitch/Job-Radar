@@ -91,6 +91,22 @@ def test_verify_release_artifacts_reports_installer_directory_drift(tmp_path):
     assert "found similar: Job-Radar-Setup-v2.6.0.exe" in message
 
 
+def test_verify_release_artifacts_ignores_virtualenv_matches_for_missing_artifacts(tmp_path):
+    venv_bin = tmp_path / ".venv" / "bin"
+    venv_bin.mkdir(parents=True)
+    (venv_bin / "job-radar").write_text("editable script", encoding="utf-8")
+    (venv_bin / "job-radar-gui").write_text("editable script", encoding="utf-8")
+    (tmp_path / "job-radar.spec").write_text("pyinstaller spec", encoding="utf-8")
+
+    with pytest.raises(ReleaseArtifactError) as exc:
+        verify_release_artifacts(tmp_path, "linux", "v2.6.0")
+
+    message = str(exc.value)
+    assert ".venv" not in message
+    assert "job-radar.spec" not in message
+    assert "missing Linux executable" in message
+
+
 def test_verify_release_artifacts_reports_missing_execute_permission(tmp_path):
     executable = tmp_path / "dist" / "job-radar" / "job-radar"
     executable.parent.mkdir(parents=True)

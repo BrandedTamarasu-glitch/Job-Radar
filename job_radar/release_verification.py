@@ -150,13 +150,28 @@ def _similar_artifacts(root: Path, expected_path: Path) -> list[Path]:
     matches = []
     candidates = parent.iterdir() if parent.is_dir() else root.rglob("*")
     for candidate in candidates:
-        if candidate.is_dir() or candidate == root / expected_path:
+        if (
+            candidate.is_dir()
+            or candidate == root / expected_path
+            or not _is_plausible_artifact_candidate(candidate, root, expected_path)
+        ):
             continue
         candidate_lower = candidate.name.casefold()
         if all(token.casefold() in candidate_lower for token in tokens[:2]):
             matches.append(candidate.relative_to(root))
 
     return sorted(matches, key=lambda path: path.as_posix())[:5]
+
+
+def _is_plausible_artifact_candidate(candidate: Path, root: Path, expected_path: Path) -> bool:
+    relative_parts = candidate.relative_to(root).parts
+    if any(part.startswith(".") or part == "__pycache__" for part in relative_parts):
+        return False
+
+    expected_name = expected_path.name
+    if expected_path.suffix:
+        return candidate.suffix.casefold() == expected_path.suffix.casefold()
+    return candidate.name == expected_name
 
 
 def main(argv: list[str] | None = None) -> int:

@@ -69,7 +69,7 @@ Goal: keep large daily workflows responsive and make releases easier to verify.
 
 Deliverable: the app remains responsive under larger local datasets and release failures are easier to diagnose.
 
-Status: in progress. Release artifact verification now reports nearby similarly named artifacts when expected release filenames or installer directories drift, validates executable permissions, returns clean non-traceback CLI failures, release workflows publish SHA256 checksum manifests for verified bundle and installer artifacts, README installation docs explain how to verify downloads, large HTML reports now skip rendering omitted lower-score rows after the visible/collapsed caps, and search cancellation now stops final report preparation before source-health writes or report generation.
+Status: complete. Release artifact verification now reports nearby similarly named artifacts when expected release filenames or installer directories drift, suppresses noisy virtualenv matches, validates executable permissions, returns clean non-traceback CLI failures, release workflows publish SHA256 checksum manifests for verified bundle and installer artifacts, README installation docs explain how to verify downloads, large HTML reports now skip rendering omitted lower-score rows after the visible/collapsed caps, and search cancellation now stops final report preparation before source-health writes or report generation.
 
 ## Execution Order
 
