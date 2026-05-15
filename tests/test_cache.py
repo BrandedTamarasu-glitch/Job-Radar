@@ -207,7 +207,7 @@ def test_cache_write_failure_preserves_existing_entry(tmp_path, monkeypatch):
     path = cache._cache_path(url)
     path.parent.mkdir(parents=True)
     path.write_text(json.dumps({"ts": 1000, "body": "old body"}), encoding="utf-8")
-    monkeypatch.setattr("job_radar.cache.os.fsync", lambda _fd: (_ for _ in ()).throw(OSError("disk full")))
+    monkeypatch.setattr("job_radar.json_io.os.fsync", lambda _fd: (_ for _ in ()).throw(OSError("disk full")))
 
     cache._write_cache(url, "new body")
 

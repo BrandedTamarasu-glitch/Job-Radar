@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from job_radar.json_io import write_json_atomic
 from job_radar.paths import get_data_dir
 from job_radar.tracker import job_key
 
@@ -151,10 +152,4 @@ def _timestamp(now: datetime | None = None) -> str:
 
 
 def _write_state(path: Path, state: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp_path = path.with_suffix(path.suffix + ".tmp")
-    tmp_path.write_text(
-        json.dumps(_normalize_state(state), indent=2, ensure_ascii=False),
-        encoding="utf-8",
-    )
-    tmp_path.replace(path)
+    write_json_atomic(path, _normalize_state(state))

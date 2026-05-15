@@ -4,7 +4,6 @@ import hashlib
 import json
 import logging
 import os
-import tempfile
 import threading
 import time
 from pathlib import Path
@@ -13,6 +12,7 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 import requests
 
+from .json_io import write_json_atomic
 from .paths import get_data_dir
 
 log = logging.getLogger(__name__)
@@ -129,33 +129,15 @@ def _write_cache(url: str, body: str):
     cache_dir = get_cache_dir()
     cache_dir.mkdir(parents=True, exist_ok=True)
     path = _cache_path(url)
-    payload = json.dumps({
+    payload = {
         "url_hash": hashlib.sha256(url.encode()).hexdigest(),
         "ts": time.time(),
         "body": body,
-    })
-    fd = None
-    tmp_path = None
+    }
     try:
-        fd, tmp_path = tempfile.mkstemp(dir=cache_dir, prefix=path.name + ".", suffix=".tmp")
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            fd = None
-            f.write(payload)
-            f.flush()
-            os.fsync(f.fileno())
-        Path(tmp_path).replace(path)
+        write_json_atomic(path, payload, indent=None)
     except OSError as e:
         log.debug("Cache write failed: %s", e)
-        if fd is not None:
-            try:
-                os.close(fd)
-            except OSError:
-                pass
-        if tmp_path is not None:
-            try:
-                Path(tmp_path).unlink(missing_ok=True)
-            except OSError:
-                pass
 
 
 def prune_stale_cache(

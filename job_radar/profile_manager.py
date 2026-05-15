@@ -2,11 +2,10 @@
 
 import json
 import logging
-import os
-import tempfile
 from datetime import datetime
 from pathlib import Path
 
+from .json_io import write_json_atomic as _write_json_atomic
 from .paths import get_backup_dir
 
 log = logging.getLogger(__name__)
@@ -242,35 +241,6 @@ def _rotate_backups(backup_dir: Path, max_backups: int = MAX_BACKUPS) -> None:
             old_backup.unlink()
         except Exception:
             pass  # silent rotation per user decision
-
-
-def _write_json_atomic(path: Path, data: dict) -> None:
-    """Write *data* as JSON to *path* using the temp-file-plus-rename pattern.
-
-    Extracted from wizard.py for reuse. Guarantees that *path* is never
-    left in a partially-written state.
-    """
-    path.parent.mkdir(parents=True, exist_ok=True)
-
-    fd, tmp_path = tempfile.mkstemp(
-        dir=path.parent,
-        prefix=path.name + ".",
-        suffix=".tmp",
-    )
-
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
-            f.flush()
-            os.fsync(f.fileno())
-
-        Path(tmp_path).replace(path)
-    except Exception:
-        try:
-            os.unlink(tmp_path)
-        except Exception:
-            pass
-        raise
 
 
 # ---------------------------------------------------------------------------
