@@ -545,6 +545,11 @@ class SearchWorker:
                 search_profile,
                 selected_manual_sources=selected_manual_sources,
             )
+
+            if self._stop_event.is_set():
+                self._queue.put(("cancelled",))
+                return
+
             record_source_health(run_summary)
             tracker_stats = get_stats()
 

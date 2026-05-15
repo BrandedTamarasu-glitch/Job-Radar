@@ -515,6 +515,46 @@ def test_search_worker_cancellation_after_fetch_skips_report(tmp_path, source_he
     source_health_recorder.assert_not_called()
 
 
+def test_search_worker_cancellation_after_manual_urls_skips_report_and_health(
+    tmp_path,
+    source_health_recorder,
+):
+    """Worker stops if cancellation is requested during final report preparation."""
+    result_queue = queue.Queue()
+    stop_event = threading.Event()
+    profile = {
+        "name": "Test User",
+        "target_titles": ["Backend Engineer"],
+        "core_skills": ["Python"],
+    }
+
+    def fake_generate_manual_urls(*args, **kwargs):
+        stop_event.set()
+        return []
+
+    with patch("job_radar.api_config.load_api_credentials"):
+        with patch("job_radar.sources.fetch_all", return_value=([], {
+            "query_failures": 0,
+            "failed_sources": [],
+            "query_failure_details": [],
+        })):
+            with patch("job_radar.sources.generate_manual_urls", side_effect=fake_generate_manual_urls):
+                with patch("job_radar.tracker.mark_seen", side_effect=lambda scored: scored):
+                    with patch("job_radar.tracker.get_stats") as get_stats:
+                        with patch("job_radar.report.generate_report") as generate_report:
+                            worker = SearchWorker(result_queue, stop_event, profile, {"min_score": 2.8})
+                            worker.run()
+
+    messages = []
+    while not result_queue.empty():
+        messages.append(result_queue.get())
+
+    assert messages[-1] == ("cancelled",)
+    source_health_recorder.assert_not_called()
+    get_stats.assert_not_called()
+    generate_report.assert_not_called()
+
+
 def test_search_worker_applies_gui_search_preset(tmp_path):
     """SearchWorker applies selected GUI preset before fetching and reporting."""
     result_queue = queue.Queue()

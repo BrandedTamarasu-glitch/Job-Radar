@@ -13,9 +13,9 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Milestone:** Product Iteration K-O — ACTIVE
 **Status:** Sprint O started
-**Last activity:** 2026-05-14 — completed Sprint N data portability and advanced Sprint O release artifact diagnostics, checksum manifests, download verification docs, and large-report render skipping
+**Last activity:** 2026-05-15 — completed Sprint N data portability and advanced Sprint O release artifact diagnostics, checksum manifests, download verification docs, large-report render skipping, and final-prep search cancellation
 
-**Next step:** continue Sprint O with long-running search cancellation regression coverage and remaining release diagnostics.
+**Next step:** continue Sprint O with remaining release diagnostics and wrap-up validation.
 
 ## Performance Metrics
 
