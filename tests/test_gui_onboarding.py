@@ -129,6 +129,7 @@ def test_search_complete_loads_profile_for_zero_result_guidance():
     source = inspect.getsource(MainWindow._show_search_complete)
 
     assert "zero_result_lines(job_count, self._load_current_profile_for_guidance())" in source
+    assert "search_context_lines(summary, self._active_search_config)" in source
 
 
 def test_real_search_records_recent_search_before_progress():

@@ -12,6 +12,7 @@ from job_radar.gui.search_summary import (
     cancellation_message,
     completion_message,
     error_message,
+    search_context_lines,
     source_summary_lines,
     source_warning_message,
     zero_result_lines,
@@ -99,6 +100,38 @@ def test_cache_summary_line_includes_hits_misses_and_writes():
 
     assert cache_summary_line(summary) == "Cache: 3 hits, 2 misses, 2 writes, 1 uncached requests"
     assert cache_summary_line({"cache_stats": {}}) is None
+
+
+def test_search_context_lines_explain_failures_cache_and_filters():
+    summary = {
+        "query_failures": 1,
+        "cache_stats": {"hits": 0, "misses": 2, "writes": 2, "disabled": 0},
+    }
+    config = {
+        "new_only": True,
+        "min_score": 80,
+        "required_skills": ["Python"],
+        "selected_sources": ["dice"],
+    }
+
+    assert search_context_lines(summary, config) == [
+        "Some source queries failed, so totals may be lower than usual.",
+        "Fresh source requests ran for uncached results.",
+        "Active filters: new-only, minimum score 80, must-have skills, custom source selection.",
+    ]
+
+
+def test_search_context_lines_explain_cache_reuse_and_stay_bounded():
+    summary = {
+        "query_failures": 1,
+        "cache_stats": {"hits": 4, "misses": 0, "writes": 0, "disabled": 0},
+    }
+    config = {"new_only": True, "min_score": 70}
+
+    assert search_context_lines(summary, config, limit=2) == [
+        "Some source queries failed, so totals may be lower than usual.",
+        "This run was served from cache, so results may match a recent run.",
+    ]
 
 
 def test_zero_result_lines_reuse_next_action_guidance():

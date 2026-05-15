@@ -59,6 +59,7 @@ from job_radar.gui.search_summary import (
     cache_summary_line,
     completion_message,
     error_message,
+    search_context_lines,
     source_summary_lines,
     source_warning_message,
     zero_result_lines,
@@ -1448,6 +1449,18 @@ class MainWindow(ctk.CTk):
             summary_box.insert("end", "\n".join(summary_lines))
             summary_box.configure(state="disabled")
             summary_box.pack(pady=(0, 20))
+
+        context_lines = search_context_lines(summary, self._active_search_config)
+        if context_lines:
+            context_label = ctk.CTkLabel(
+                content_frame,
+                text="Run context:\n" + "\n".join(f"- {line}" for line in context_lines),
+                font=ctk.CTkFont(size=12),
+                text_color="gray",
+                wraplength=420,
+                justify="left",
+            )
+            context_label.pack(pady=(0, 16))
 
         review_lines = self._review_state_summary_lines()
         if review_lines:

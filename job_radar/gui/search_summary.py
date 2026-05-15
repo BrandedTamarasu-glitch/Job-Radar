@@ -75,6 +75,58 @@ def cache_summary_line(summary: dict | None) -> str | None:
     return "Cache: " + ", ".join(parts)
 
 
+def search_context_lines(
+    summary: dict | None,
+    search_config: dict | None = None,
+    limit: int = 3,
+) -> list[str]:
+    """Return bounded context explaining why a search may have changed."""
+    lines: list[str] = []
+    summary = summary or {}
+    search_config = search_config or {}
+
+    if int(summary.get("query_failures") or 0) > 0:
+        lines.append("Some source queries failed, so totals may be lower than usual.")
+
+    cache_stats = summary.get("cache_stats") or {}
+    hits = int(cache_stats.get("hits") or 0)
+    misses = int(cache_stats.get("misses") or 0)
+    writes = int(cache_stats.get("writes") or 0)
+    if hits and not misses and not writes:
+        lines.append("This run was served from cache, so results may match a recent run.")
+    elif misses or writes:
+        lines.append("Fresh source requests ran for uncached results.")
+
+    filter_parts = _active_filter_parts(search_config)
+    if filter_parts:
+        lines.append(f"Active filters: {', '.join(filter_parts)}.")
+
+    return lines[:max(1, limit)]
+
+
+def _active_filter_parts(search_config: dict) -> list[str]:
+    parts: list[str] = []
+    if search_config.get("new_only"):
+        parts.append("new-only")
+    min_score = search_config.get("min_score")
+    if min_score not in (None, "", 0):
+        parts.append(f"minimum score {min_score}")
+    if search_config.get("required_skills"):
+        parts.append("must-have skills")
+    if search_config.get("preferred_skills"):
+        parts.append("nice-to-have skills")
+    if search_config.get("include_companies") or search_config.get("exclude_companies"):
+        parts.append("company filters")
+    strictness = search_config.get("location_strictness")
+    if strictness and strictness != "profile":
+        parts.append(f"{str(strictness).replace('_', ' ')} location")
+    selected_sources = search_config.get("selected_sources") or []
+    selected_manual_sources = search_config.get("selected_manual_sources") or []
+    if selected_sources or selected_manual_sources:
+        parts.append("custom source selection")
+    return parts
+
+
 def _format_duration(seconds: float) -> str:
     """Format short source timings for compact GUI display."""
     if seconds < 60:
