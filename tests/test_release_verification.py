@@ -7,6 +7,7 @@ import pytest
 from job_radar.release_verification import (
     ReleaseArtifactError,
     expected_release_artifacts,
+    main,
     verify_release_artifacts,
     write_checksum_manifest,
 )
@@ -116,3 +117,41 @@ def test_write_checksum_manifest_records_verified_artifact_hashes(tmp_path):
         "0eb3e36bfb24dcd9bb1d1bece1531216b59539a8fde17ee80224af0653c92aa3  "
         "job-radar-v2.6.0-linux.tar.gz\n"
     )
+
+
+def test_main_returns_clean_failure_without_traceback(tmp_path, capsys):
+    exit_code = main([
+        "--root", str(tmp_path),
+        "--platform", "linux",
+        "--version", "v2.6.0",
+    ])
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "Release artifact verification failed for linux bundle build v2.6.0" in captured.err
+    assert "missing Linux executable" in captured.err
+    assert captured.out == ""
+
+
+def test_main_writes_checksum_manifest_for_verified_artifacts(tmp_path, capsys):
+    executable = tmp_path / "dist" / "job-radar" / "job-radar"
+    executable.parent.mkdir(parents=True)
+    executable.write_text("binary", encoding="utf-8")
+    executable.chmod(executable.stat().st_mode | 0o755)
+    archive = tmp_path / "job-radar-v2.6.0-linux.tar.gz"
+    archive.write_text("archive", encoding="utf-8")
+    manifest = tmp_path / "job-radar-v2.6.0-linux.sha256"
+
+    exit_code = main([
+        "--root", str(tmp_path),
+        "--platform", "linux",
+        "--version", "v2.6.0",
+        "--checksum-manifest", str(manifest),
+    ])
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert f"OK: {executable}" in captured.out
+    assert f"OK: {archive}" in captured.out
+    assert f"OK: wrote checksums to {manifest}" in captured.out
+    assert "dist/job-radar/job-radar" in manifest.read_text(encoding="utf-8")

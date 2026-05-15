@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -168,7 +169,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--checksum-manifest", help="Optional path to write SHA256 checksums")
     args = parser.parse_args(argv)
 
-    verified = verify_release_artifacts(args.root, args.platform, args.version, kind=args.kind)
+    try:
+        verified = verify_release_artifacts(args.root, args.platform, args.version, kind=args.kind)
+    except ReleaseArtifactError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+
     for path in verified:
         print(f"OK: {path}")
     if args.checksum_manifest:
