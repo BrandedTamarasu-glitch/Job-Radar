@@ -56,7 +56,7 @@ Goal: harden the accumulated product work before a release.
 
 Deliverable: the next release candidate is documented, validated, and ready to package.
 
-Status: in progress. Release support validation passed for release artifact expectations, release notes, and metadata tests; full automated regression passed with 950 tests and 8 skips; Windows build script version/artifact drift was fixed; `.planning/RELEASE_READINESS_U_Y.md` tracks the remaining release-readiness checklist.
+Status: in progress. Release support validation passed for release artifact expectations, release notes, and metadata tests; full automated regression passed with 950 tests and 8 skips; Windows build script version/artifact drift was fixed; release notes were drafted in `.planning/RELEASE_NOTES_DRAFT_U_Y.md`; `.planning/RELEASE_READINESS_U_Y.md` tracks the remaining release-readiness checklist.
 
 ## Sprint Y: Post-Release Feedback Loop
 

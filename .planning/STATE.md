@@ -13,9 +13,9 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Milestone:** Product Iteration U-Y — IN PROGRESS
 **Status:** Sprints U-W complete; Sprint X in progress; Sprint Y planned
-**Last activity:** 2026-05-15 — completed Sprint W source strategy and preset intelligence, started Sprint X, documented `.planning/RELEASE_READINESS_U_Y.md`, passed release verification/release notes/metadata tests, passed the full automated regression suite with 950 tests and 8 skips, and fixed Windows build script version/artifact naming drift.
+**Last activity:** 2026-05-15 — completed Sprint W source strategy and preset intelligence, started Sprint X, documented `.planning/RELEASE_READINESS_U_Y.md`, passed release verification/release notes/metadata tests, passed the full automated regression suite with 950 tests and 8 skips, fixed Windows build script version/artifact naming drift, and drafted U-Y release notes.
 
-**Next step:** continue Sprint X with final documentation refresh and artifact build verification.
+**Next step:** continue Sprint X with artifact build verification.
 
 ## Performance Metrics
 
@@ -133,10 +133,10 @@ None. Sprint X is active.
 ## Session Continuity
 
 Last session: 2026-05-15
-Stopped at: Sprint X build-script metadata verification passed
+Stopped at: Sprint X documentation refresh passed
 Resume file: None
 
-**Next step:** Continue Sprint X final documentation refresh and artifact build verification.
+**Next step:** Continue Sprint X artifact build verification.
 
 ---
 *State initialized: 2026-02-13*

@@ -31,6 +31,7 @@
 
 ### Documentation
 - Documented Product Iterations P-T and U-Y across README, roadmap, and project state memory.
+- Drafted Product Iteration U-Y release notes with privacy boundaries for local user data.
 
 ### Validation
 - Full automated regression for Sprint X release readiness: 950 passed, 8 skipped.

@@ -557,6 +557,7 @@ The active product iteration is tracked in `.planning/PRODUCT_ITERATION_SPRINTS_
 Sprint X release-readiness checkpoints are tracked in `.planning/RELEASE_READINESS_U_Y.md`.
 Current Sprint X validation: full automated regression passed with 950 tests and 8 skips.
 Build-script metadata verification passed for release artifact naming and checksum checks.
+Release-note drafting for this iteration is tracked in `.planning/RELEASE_NOTES_DRAFT_U_Y.md`.
 
 ### Building Executables
 

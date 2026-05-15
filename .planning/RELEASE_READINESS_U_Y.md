@@ -28,9 +28,10 @@ This checklist tracks the release-readiness sweep for Product Iteration U-Y afte
   - Result: 950 passed, 8 skipped
   - Coverage: full automated suite before packaging or tagging.
 
-- [ ] Documentation refresh
+- [x] Documentation refresh
   - Confirm README, changelog, roadmap, and project state reflect the final U-Y scope.
   - Confirm release notes summarize user-facing changes without exposing local private data.
+  - Draft: `.planning/RELEASE_NOTES_DRAFT_U_Y.md`
 
 - [ ] Build verification
   - [x] Build script metadata check
@@ -45,4 +46,4 @@ This checklist tracks the release-readiness sweep for Product Iteration U-Y afte
 
 ## Current Status
 
-Sprint X is in progress. Focused release support validation, full regression, and build-script metadata verification have passed; documentation refresh and artifact build verification remain the next gates.
+Sprint X is in progress. Focused release support validation, full regression, build-script metadata verification, and documentation refresh have passed; artifact build verification remains the next gate.
