@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-from job_radar.report_job_details import html_job_detail_items
+from job_radar.report_job_details import html_job_detail_items, html_result_link
 
 
 def _result(url: str = "https://example.com/job") -> dict:
@@ -65,3 +65,17 @@ def test_html_job_detail_items_neutralizes_unsafe_urls():
 
     assert "javascript:alert" not in html
     assert "Dice URL unavailable" in html
+
+
+def test_html_result_link_renders_view_and_copy_for_safe_url():
+    link = html_result_link(_result()["job"])
+
+    assert 'href="https://example.com/job"' in link
+    assert "copySingleUrl" in link
+    assert 'data-url="https://example.com/job"' in link
+    assert "View Backend Engineer at Acme" in link
+
+
+def test_html_result_link_handles_missing_and_unsafe_urls():
+    assert html_result_link(_result("")["job"]) == "Dice"
+    assert html_result_link(_result("javascript:alert(1)")["job"]) == "URL unavailable"

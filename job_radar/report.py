@@ -18,6 +18,7 @@ from .report_filtering import html_filtered_out_section as _html_filtered_out_se
 from .report_job_attrs import html_job_attrs as _html_job_attrs
 from .report_job_attrs import report_job_key as _report_job_key
 from .report_job_details import html_job_detail_items as _html_job_detail_items
+from .report_job_details import html_result_link as _html_result_link
 from .report_manual import html_manual_urls_section as _html_manual_urls_section
 from .report_matching import html_match_summary as _html_match_summary
 from .report_matching import match_highlights as _match_highlights
@@ -2594,8 +2595,7 @@ def _html_result_row(result: dict, index: int) -> str:
 
     safe_job_url = _safe_external_url(job.url)
     if safe_job_url:
-        view_aria_label = f"View {job.title} at {job.company}, opens in new tab"
-        link_html = f'<a href="{html.escape(safe_job_url)}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary" aria-label="{html.escape(view_aria_label)}">View</a> <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copySingleUrl(this)" data-url="{html.escape(safe_job_url)}">Copy</button>'
+        link_html = _html_result_link(job)
         row_attrs = _html_job_attrs(
             job,
             class_value=f"job-item tier-{tier}",
@@ -2603,7 +2603,7 @@ def _html_result_row(result: dict, index: int) -> str:
             include_tabindex=True,
         )
     else:
-        link_html = "URL unavailable" if job.url else html.escape(job.source)
+        link_html = _html_result_link(job)
         row_attrs = _html_job_attrs(job, class_value=f"tier-{tier}")
 
     status_dropdown = _html_status_dropdown()

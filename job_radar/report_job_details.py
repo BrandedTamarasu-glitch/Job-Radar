@@ -89,3 +89,21 @@ def html_job_detail_items(result: dict, profile: dict) -> str:
             details.append(f"<li><strong>Talking points:</strong><ul>{talking_points}</ul></li>")
 
     return "".join(details)
+
+
+def html_result_link(job: object) -> str:
+    """Return table-row link and copy controls for a job."""
+    safe_job_url = safe_external_url(job.url)
+    if safe_job_url:
+        view_aria_label = f"View {job.title} at {job.company}, opens in new tab"
+        return (
+            f'<a href="{html.escape(safe_job_url)}" target="_blank" rel="noopener" '
+            f'class="btn btn-sm btn-outline-primary" '
+            f'aria-label="{html.escape(view_aria_label)}">View</a> '
+            f'<button class="btn btn-sm btn-outline-secondary copy-btn" '
+            f'onclick="copySingleUrl(this)" data-url="{html.escape(safe_job_url)}">'
+            "Copy</button>"
+        )
+    if job.url:
+        return "URL unavailable"
+    return html.escape(job.source)
