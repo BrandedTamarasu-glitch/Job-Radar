@@ -10,6 +10,7 @@ from .report_assets import (
     html_external_scripts as _html_external_scripts,
     html_external_stylesheets as _html_external_stylesheets,
 )
+from .report_controls import html_shortlist_button as _html_shortlist_button
 from .report_filtering import filter_explanation_text as _filter_explanation_text
 from .report_filtering import filtered_out_results as _filtered_out_results
 from .report_filtering import html_filtered_out_section as _html_filtered_out_section
@@ -2252,24 +2253,6 @@ def _generate_html_report(
 </html>"""
 
     filepath.write_text(html_content, encoding="utf-8")
-
-
-def _html_shortlist_button(job_key_val: str, *, compact: bool = False) -> str:
-    """Generate accessible review-state controls."""
-    margin_class = " mt-1" if compact else ""
-    return (
-        f'<span class="review-state-controls{margin_class}">'
-        f'<button type="button" class="btn btn-sm btn-outline-warning shortlist-btn" '
-        f'data-shortlist-key="{html.escape(job_key_val)}" data-review-state="shortlisted" '
-        'aria-pressed="false" aria-label="Toggle shortlist for this job">Shortlist</button> '
-        f'<button type="button" class="btn btn-sm btn-outline-secondary review-state-btn" '
-        f'data-review-key="{html.escape(job_key_val)}" data-review-state="maybe_later" '
-        'aria-pressed="false" aria-label="Mark this job as maybe later">Maybe Later</button> '
-        f'<button type="button" class="btn btn-sm btn-outline-danger review-state-btn" '
-        f'data-review-key="{html.escape(job_key_val)}" data-review-state="dismissed" '
-        'aria-pressed="false" aria-label="Dismiss this job from review">Dismiss</button>'
-        '</span>'
-    )
 
 
 def _html_match_summary(result: dict) -> str:
