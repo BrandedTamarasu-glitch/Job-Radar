@@ -37,13 +37,13 @@ def test_expected_release_artifacts_cover_installers():
     ]
 
 
-def test_verify_release_artifacts_accepts_nonempty_bundle_files(tmp_path):
+def test_verify_release_artifacts_accepts_nonempty_bundle_files(tmp_path, monkeypatch):
     executable = tmp_path / "dist" / "job-radar" / "job-radar"
     executable.parent.mkdir(parents=True)
     executable.write_text("binary", encoding="utf-8")
-    executable.chmod(executable.stat().st_mode | 0o755)
     archive = tmp_path / "job-radar-v2.6.0-linux.tar.gz"
     archive.write_text("archive", encoding="utf-8")
+    monkeypatch.setattr("job_radar.release_verification._has_execute_bit", lambda _path: True)
 
     verified = verify_release_artifacts(tmp_path, "linux", "v2.6.0")
 
@@ -63,13 +63,13 @@ def test_verify_release_artifacts_reports_missing_and_empty_files(tmp_path):
     assert os.fspath(tmp_path) in message
 
 
-def test_verify_release_artifacts_reports_similar_files_for_name_drift(tmp_path):
+def test_verify_release_artifacts_reports_similar_files_for_name_drift(tmp_path, monkeypatch):
     executable = tmp_path / "dist" / "job-radar" / "job-radar"
     executable.parent.mkdir(parents=True)
     executable.write_text("binary", encoding="utf-8")
-    executable.chmod(executable.stat().st_mode | 0o755)
     drifted_archive = tmp_path / "job-radar-v2.6.1-linux.tar.gz"
     drifted_archive.write_text("archive", encoding="utf-8")
+    monkeypatch.setattr("job_radar.release_verification._has_execute_bit", lambda _path: True)
 
     with pytest.raises(ReleaseArtifactError) as exc:
         verify_release_artifacts(tmp_path, "linux", "v2.6.0")
@@ -107,13 +107,13 @@ def test_verify_release_artifacts_ignores_virtualenv_matches_for_missing_artifac
     assert "missing Linux executable" in message
 
 
-def test_verify_release_artifacts_reports_missing_execute_permission(tmp_path):
+def test_verify_release_artifacts_reports_missing_execute_permission(tmp_path, monkeypatch):
     executable = tmp_path / "dist" / "job-radar" / "job-radar"
     executable.parent.mkdir(parents=True)
     executable.write_text("binary", encoding="utf-8")
-    executable.chmod(0o644)
     archive = tmp_path / "job-radar-v2.6.0-linux.tar.gz"
     archive.write_text("archive", encoding="utf-8")
+    monkeypatch.setattr("job_radar.release_verification._has_execute_bit", lambda _path: False)
 
     with pytest.raises(ReleaseArtifactError) as exc:
         verify_release_artifacts(tmp_path, "linux", "v2.6.0")
@@ -149,14 +149,14 @@ def test_main_returns_clean_failure_without_traceback(tmp_path, capsys):
     assert captured.out == ""
 
 
-def test_main_writes_checksum_manifest_for_verified_artifacts(tmp_path, capsys):
+def test_main_writes_checksum_manifest_for_verified_artifacts(tmp_path, capsys, monkeypatch):
     executable = tmp_path / "dist" / "job-radar" / "job-radar"
     executable.parent.mkdir(parents=True)
     executable.write_text("binary", encoding="utf-8")
-    executable.chmod(executable.stat().st_mode | 0o755)
     archive = tmp_path / "job-radar-v2.6.0-linux.tar.gz"
     archive.write_text("archive", encoding="utf-8")
     manifest = tmp_path / "job-radar-v2.6.0-linux.sha256"
+    monkeypatch.setattr("job_radar.release_verification._has_execute_bit", lambda _path: True)
 
     exit_code = main([
         "--root", str(tmp_path),
