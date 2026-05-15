@@ -317,6 +317,8 @@ Job Radar stores user data outside the application bundle:
 | Tracker | app data `results/tracker.json`; existing launch-directory trackers are read as a legacy fallback |
 | Error log | home directory `job-radar-error.log` |
 
+The desktop Settings tab includes **Storage Maintenance** details for local data size, cache files, tracker history, review state, and saved searches. These summaries inspect only the local app data directory. Clearing HTTP cache removes temporary job-board responses without deleting your profile, reports, saved searches, application tracker, or review state. Export App Data creates a portable backup ZIP before larger cleanup work.
+
 ## Score Ratings
 
 | Score | Rating | Action |
@@ -542,7 +544,7 @@ The next product iteration is tracked in `.planning/PRODUCT_ITERATION_SPRINTS_P_
 - **Sprint Q:** search comparison and insight recap — complete
 - **Sprint R:** follow-up workflow automation — complete
 - **Sprint S:** source quality and coverage controls — complete
-- **Sprint T:** local performance and maintenance insights — in progress
+- **Sprint T:** local performance and maintenance insights — complete
 
 ### Building Executables
 

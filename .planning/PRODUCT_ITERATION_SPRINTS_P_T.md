@@ -69,7 +69,7 @@ Goal: keep large long-running installs predictable.
 
 Deliverable: users understand what local state exists, how large it is, and when maintenance is useful.
 
-Status: in progress. Settings now shows local data size, cache counts, tracker/review/saved-search counts, and maintenance suggestions. Profile dashboard history counts stay bounded for large saved-search histories.
+Status: complete. Settings shows local data size, cache counts, tracker/review/saved-search counts, and maintenance suggestions. Profile dashboard history counts stay bounded for large saved-search histories. README, workflow docs, and FAQ document maintenance behavior and local-only privacy boundaries.
 
 ## Execution Order
 

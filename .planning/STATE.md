@@ -7,15 +7,15 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Accurate job-candidate scoring — if the scoring is wrong, nothing else matters.
-**Current focus:** Product Iteration P-T, Sprint T local performance and maintenance insights
+**Current focus:** Product Iteration P-T completion validation
 
 ## Current Position
 
-**Milestone:** Product Iteration P-T — IN PROGRESS
-**Status:** Sprints P-S complete; Sprint T in progress
-**Last activity:** 2026-05-15 — shipped v2.6.0 for completed Product Iteration K-O, completed Sprints P-S, and continued Sprint T with Settings local data size/history counts plus bounded Profile dashboard history counts.
+**Milestone:** Product Iteration P-T — COMPLETE
+**Status:** Sprints P-T complete; ready for validation, push, and release planning
+**Last activity:** 2026-05-15 — shipped v2.6.0 for completed Product Iteration K-O and completed Product Iteration P-T: dashboard next steps, search comparison recaps, follow-up automation, source quality controls, and local maintenance insights.
 
-**Next step:** continue Sprint T with bounded large-history dashboard validation and maintenance documentation.
+**Next step:** commit Sprint T documentation closure, run broader validation, then push or plan the next release.
 
 ## Performance Metrics
 
@@ -124,19 +124,19 @@ See `.planning/PRODUCT_ITERATION_SPRINTS_P_T.md`.
 - Sprint Q: Search Comparison & Insight Recap — complete
 - Sprint R: Follow-Up Workflow Automation — complete
 - Sprint S: Source Quality & Coverage Controls — complete
-- Sprint T: Local Performance & Maintenance Insights — in progress
+- Sprint T: Local Performance & Maintenance Insights — complete
 
 ### Blockers/Concerns
 
-None. Sprint T is active.
+None. Sprints P-T are complete.
 
 ## Session Continuity
 
 Last session: 2026-05-15
-Stopped at: Sprint T local maintenance summary foundation in progress
+Stopped at: Product Iteration P-T complete, pending validation/push/release decision
 Resume file: None
 
-**Next step:** Continue Sprint T bounded large-history validation and maintenance documentation.
+**Next step:** Commit documentation closure, run broader validation, then push or plan release.
 
 ---
 *State initialized: 2026-02-13*

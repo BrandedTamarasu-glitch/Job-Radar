@@ -278,6 +278,8 @@ Supported keys: `min_score`, `new_only`, `output`, `profile_path`, `auto_open_br
 
 HTTP responses are cached for 4 hours in the app data `cache/` directory to avoid hammering sources during development or repeated runs. Use `--no-cache` to force fresh fetches, or `--clear-cache` to remove cached responses and exit. The GUI Settings tab also includes a Clear HTTP Cache action. Stale or unreadable JSON cache files are pruned periodically during cached fetches.
 
+The GUI Settings tab also shows local maintenance summaries for app data size, HTTP cache files, tracker history, review state, and saved searches. These summaries are local-only and do not transmit profile, tracker, or search history data. Use Export App Data before deleting or resetting long-running local history.
+
 ## Runtime Controls
 
 Set `JOB_RADAR_MAX_WORKERS` to tune how many source queries run in parallel. The default is `6`.

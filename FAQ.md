@@ -55,6 +55,10 @@ Common app data locations:
 - **macOS:** `~/Library/Application Support/JobRadar/`
 - **Linux:** `~/.local/share/JobRadar/`
 
+### What does Storage Maintenance show?
+
+The Settings tab summarizes local app data size, HTTP cache file counts, tracker history, review-state counts, and saved-search counts. This is a local-only inspection of the Job Radar app data directory. Clearing HTTP cache removes temporary job-board responses, but does not remove your profile, reports, application tracker, review state, or saved searches.
+
 ### Can I use Job Radar without API keys?
 
 Yes! Job Radar works out-of-the-box with 7 free sources:
