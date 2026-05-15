@@ -2861,84 +2861,21 @@ def _html_results_table(scored_results: list[dict]) -> str:
         </section>
         """
 
-    rows = []
-    for i, r in enumerate(scored_results, 1):
-        job = r["job"]
-        score = r["score"]["overall"]
-        rec = r["score"]["recommendation"]
-        is_new = r.get("is_new", True)
-        new_badge = '<span class="badge bg-primary rounded-pill">NEW</span>' if is_new else ''
-
-        # Determine tier based on score
-        tier = _score_tier(score)
-
-        salary = html.escape(job.salary) if job.salary != "Not listed" else "—"
-        emp_type = getattr(job, "employment_type", "") or job.arrangement
-        snippet = _make_snippet(job.description, 80)
-
-        # Generate job key for status tracking
-        job_key_val = f"{job.title.lower().strip()}||{job.company.lower().strip()}"
-
-        # Build link and copy button with accessibility attributes
-        if job.url:
-            view_aria_label = f"View {job.title} at {job.company}, opens in new tab"
-            link_html = f'<a href="{html.escape(job.url)}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary" aria-label="{html.escape(view_aria_label)}">View</a> <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copySingleUrl(this)" data-url="{html.escape(job.url)}">Copy</button>'
-            row_attrs = f'class="job-item tier-{tier}" tabindex="0" data-job-url="{html.escape(job.url)}" data-score="{score:.1f}" data-job-key="{html.escape(job_key_val)}" data-job-title="{html.escape(job.title)}" data-job-company="{html.escape(job.company)}"'
-        else:
-            link_html = html.escape(job.source)
-            row_attrs = f'class="tier-{tier}" data-job-key="{html.escape(job_key_val)}" data-job-title="{html.escape(job.title)}" data-job-company="{html.escape(job.company)}"'
-
-        # Status dropdown (compact version for table)
-        status_dropdown = f"""
-          <div class="dropdown d-inline-block">
-            <button class="btn btn-sm btn-outline-secondary dropdown-toggle status-dropdown"
-                    type="button" data-bs-toggle="dropdown"
-                    aria-label="Change application status">
-              Status
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end">
-              <li><a class="dropdown-item" href="#" data-status="applied">Applied</a></li>
-              <li><a class="dropdown-item" href="#" data-status="interviewing">Interviewing</a></li>
-              <li><a class="dropdown-item" href="#" data-status="rejected">Rejected</a></li>
-              <li><a class="dropdown-item" href="#" data-status="offer">Offer</a></li>
-              <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item" href="#" data-status="">Clear Status</a></li>
-            </ul>
-          </div>
-        """
-
-        # Update NEW badge with screen reader context
-        new_badge_accessible = '<span class="badge bg-primary rounded-pill"><span class="visually-hidden">New listing, not seen in previous searches. </span>NEW</span>' if is_new else ''
-        shortlist_button = _html_shortlist_button(job_key_val, compact=True)
-
-        # Update score badge with screen reader context and tier icon
-        tier_icon_html = f'<span class="{_tier_icon_class(tier)}" aria-hidden="true"></span>'
-        score_badge_accessible = f'{tier_icon_html}<span class="badge rounded-pill score-badge tier-badge-{tier}"><span class="visually-hidden">Score </span>{score:.1f}<span class="visually-hidden"> out of 5.0</span></span>'
-
-        rows.append(f"""
-        <tr {row_attrs}>
-          <th scope="row" data-label="#">{i}</th>
-          <td data-label="Score">{score_badge_accessible}<br><small class="text-muted">({html.escape(rec)})</small></td>
-          <td data-label="New" class="col-new">{new_badge_accessible}</td>
-          <td data-label="Status">{status_dropdown}<br>{shortlist_button}</td>
-          <td data-label="Title"><strong>{html.escape(job.title)}</strong></td>
-          <td data-label="Company">{html.escape(job.company)}</td>
-          <td data-label="Salary" class="col-salary">{salary}</td>
-          <td data-label="Type" class="col-type">{html.escape(emp_type)}</td>
-          <td data-label="Location">{html.escape(job.location)}</td>
-          <td data-label="Snippet" class="col-snippet">{html.escape(snippet)}</td>
-          <td data-label="Link" class="no-label">{link_html}</td>
-        </tr>
-        """)
-
-    rows_html = "".join(rows)
-    visible_rows_html = rows_html
+    visible_results = scored_results[:COLLAPSE_RESULTS_AFTER]
+    visible_rows = [
+        _html_result_row(result, index)
+        for index, result in enumerate(visible_results, 1)
+    ]
+    visible_rows_html = "".join(visible_rows)
     collapsed_rows_html = ""
-    hidden_count = max(0, len(rows) - COLLAPSE_RESULTS_AFTER)
+    hidden_count = max(0, len(scored_results) - COLLAPSE_RESULTS_AFTER)
     if hidden_count:
-        visible_rows_html = "".join(rows[:COLLAPSE_RESULTS_AFTER])
-        collapsed_rows = rows[
+        collapsed_results = scored_results[
             COLLAPSE_RESULTS_AFTER:COLLAPSE_RESULTS_AFTER + COLLAPSED_RESULTS_RENDER_LIMIT
+        ]
+        collapsed_rows = [
+            _html_result_row(result, index)
+            for index, result in enumerate(collapsed_results, COLLAPSE_RESULTS_AFTER + 1)
         ]
         omitted_count = max(0, hidden_count - len(collapsed_rows))
         omitted_note = ""
@@ -3045,6 +2982,66 @@ def _html_results_table(scored_results: list[dict]) -> str:
         {collapsed_rows_html}
       </div>
     </section>
+    """
+
+
+def _html_result_row(result: dict, index: int) -> str:
+    """Generate one HTML row for the all-results table."""
+    job = result["job"]
+    score = result["score"]["overall"]
+    rec = result["score"]["recommendation"]
+    is_new = result.get("is_new", True)
+    tier = _score_tier(score)
+
+    salary = html.escape(job.salary) if job.salary != "Not listed" else "—"
+    emp_type = getattr(job, "employment_type", "") or job.arrangement
+    snippet = _make_snippet(job.description, 80)
+    job_key_val = f"{job.title.lower().strip()}||{job.company.lower().strip()}"
+
+    if job.url:
+        view_aria_label = f"View {job.title} at {job.company}, opens in new tab"
+        link_html = f'<a href="{html.escape(job.url)}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary" aria-label="{html.escape(view_aria_label)}">View</a> <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copySingleUrl(this)" data-url="{html.escape(job.url)}">Copy</button>'
+        row_attrs = f'class="job-item tier-{tier}" tabindex="0" data-job-url="{html.escape(job.url)}" data-score="{score:.1f}" data-job-key="{html.escape(job_key_val)}" data-job-title="{html.escape(job.title)}" data-job-company="{html.escape(job.company)}"'
+    else:
+        link_html = html.escape(job.source)
+        row_attrs = f'class="tier-{tier}" data-job-key="{html.escape(job_key_val)}" data-job-title="{html.escape(job.title)}" data-job-company="{html.escape(job.company)}"'
+
+    status_dropdown = f"""
+      <div class="dropdown d-inline-block">
+        <button class="btn btn-sm btn-outline-secondary dropdown-toggle status-dropdown"
+                type="button" data-bs-toggle="dropdown"
+                aria-label="Change application status">
+          Status
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li><a class="dropdown-item" href="#" data-status="applied">Applied</a></li>
+          <li><a class="dropdown-item" href="#" data-status="interviewing">Interviewing</a></li>
+          <li><a class="dropdown-item" href="#" data-status="rejected">Rejected</a></li>
+          <li><a class="dropdown-item" href="#" data-status="offer">Offer</a></li>
+          <li><hr class="dropdown-divider"></li>
+          <li><a class="dropdown-item" href="#" data-status="">Clear Status</a></li>
+        </ul>
+      </div>
+    """
+    new_badge_accessible = '<span class="badge bg-primary rounded-pill"><span class="visually-hidden">New listing, not seen in previous searches. </span>NEW</span>' if is_new else ''
+    shortlist_button = _html_shortlist_button(job_key_val, compact=True)
+    tier_icon_html = f'<span class="{_tier_icon_class(tier)}" aria-hidden="true"></span>'
+    score_badge_accessible = f'{tier_icon_html}<span class="badge rounded-pill score-badge tier-badge-{tier}"><span class="visually-hidden">Score </span>{score:.1f}<span class="visually-hidden"> out of 5.0</span></span>'
+
+    return f"""
+    <tr {row_attrs}>
+      <th scope="row" data-label="#">{index}</th>
+      <td data-label="Score">{score_badge_accessible}<br><small class="text-muted">({html.escape(rec)})</small></td>
+      <td data-label="New" class="col-new">{new_badge_accessible}</td>
+      <td data-label="Status">{status_dropdown}<br>{shortlist_button}</td>
+      <td data-label="Title"><strong>{html.escape(job.title)}</strong></td>
+      <td data-label="Company">{html.escape(job.company)}</td>
+      <td data-label="Salary" class="col-salary">{salary}</td>
+      <td data-label="Type" class="col-type">{html.escape(emp_type)}</td>
+      <td data-label="Location">{html.escape(job.location)}</td>
+      <td data-label="Snippet" class="col-snippet">{html.escape(snippet)}</td>
+      <td data-label="Link" class="no-label">{link_html}</td>
+    </tr>
     """
 
 
