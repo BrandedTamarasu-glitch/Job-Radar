@@ -551,13 +551,15 @@ The active product iteration is tracked in `.planning/PRODUCT_ITERATION_SPRINTS_
 - **Sprint U:** adaptive command center — complete
 - **Sprint V:** workflow shortcuts and bulk actions — complete
 - **Sprint W:** source strategy and preset intelligence — complete
-- **Sprint X:** release readiness and regression sweep — in progress
-- **Sprint Y:** post-release feedback loop — planned
+- **Sprint X:** release readiness and regression sweep — complete
+- **Sprint Y:** post-release feedback loop — in progress
 
 Sprint X release-readiness checkpoints are tracked in `.planning/RELEASE_READINESS_U_Y.md`.
 Current Sprint X validation: full automated regression passed with 950 tests and 8 skips.
 Build-script metadata verification passed for release artifact naming and checksum checks.
 Release-note drafting for this iteration is tracked in `.planning/RELEASE_NOTES_DRAFT_U_Y.md`.
+Local Linux artifact build verification passed for `job-radar-v2.6.0-linux.tar.gz`.
+Sprint Y feedback-loop planning is tracked in `.planning/POST_RELEASE_FEEDBACK_U_Y.md`.
 
 ### Building Executables
 

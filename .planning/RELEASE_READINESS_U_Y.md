@@ -33,17 +33,20 @@ This checklist tracks the release-readiness sweep for Product Iteration U-Y afte
   - Confirm release notes summarize user-facing changes without exposing local private data.
   - Draft: `.planning/RELEASE_NOTES_DRAFT_U_Y.md`
 
-- [ ] Build verification
+- [x] Build verification
   - [x] Build script metadata check
     - Command: `rtk .venv/bin/python -m pytest tests/test_metadata.py tests/test_release_verification.py -q`
     - Result: 13 passed
     - Additional check: `bash -n scripts/build.sh`
     - Result: passed
     - Coverage: Unix and Windows build scripts derive versions from package metadata, emit expected release artifact/checksum names, and call release artifact verification.
-  - [ ] Artifact build check
-  - Verify release scripts and artifact expectations against the intended tag.
-  - Confirm checksums and installer artifact names before publishing.
+  - [x] Artifact build check
+    - Command: `PYTHON_BIN=.venv/bin/python bash scripts/build.sh`
+    - Result: passed; release verification accepted `dist/job-radar/job-radar` and `job-radar-v2.6.0-linux.tar.gz`
+    - Binary check: `./dist/job-radar/job-radar --version` returned `job-radar 2.6.0`
+    - Checksum manifest: `job-radar-v2.6.0-linux.sha256`
+    - Note: PyInstaller emitted non-fatal CustomTkinter font-copy warnings from a read-only home font directory, then completed successfully.
 
 ## Current Status
 
-Sprint X is in progress. Focused release support validation, full regression, build-script metadata verification, and documentation refresh have passed; artifact build verification remains the next gate.
+Sprint X is complete. Focused release support validation, full regression, documentation refresh, build-script metadata verification, and local Linux artifact build verification have passed.

@@ -32,9 +32,11 @@
 ### Documentation
 - Documented Product Iterations P-T and U-Y across README, roadmap, and project state memory.
 - Drafted Product Iteration U-Y release notes with privacy boundaries for local user data.
+- Added privacy-safe post-release feedback loop planning for Product Iteration U-Y.
 
 ### Validation
 - Full automated regression for Sprint X release readiness: 950 passed, 8 skipped.
+- Local Linux artifact build verification passed for `job-radar-v2.6.0-linux.tar.gz` with checksum manifest generation.
 
 ## v2.6.0 — 2026-05-15
 

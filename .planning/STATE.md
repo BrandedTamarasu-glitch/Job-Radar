@@ -7,15 +7,15 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Accurate job-candidate scoring — if the scoring is wrong, nothing else matters.
-**Current focus:** Product Iteration U-Y, Sprint X release readiness and regression sweep
+**Current focus:** Product Iteration U-Y, Sprint Y post-release feedback loop
 
 ## Current Position
 
 **Milestone:** Product Iteration U-Y — IN PROGRESS
-**Status:** Sprints U-W complete; Sprint X in progress; Sprint Y planned
-**Last activity:** 2026-05-15 — completed Sprint W source strategy and preset intelligence, started Sprint X, documented `.planning/RELEASE_READINESS_U_Y.md`, passed release verification/release notes/metadata tests, passed the full automated regression suite with 950 tests and 8 skips, fixed Windows build script version/artifact naming drift, and drafted U-Y release notes.
+**Status:** Sprints U-X complete; Sprint Y in progress
+**Last activity:** 2026-05-15 — completed Sprint X release readiness with focused release support validation, full automated regression, documentation refresh, Windows build script drift fix, U-Y release notes draft, and local Linux artifact build verification; started Sprint Y with privacy-safe post-release feedback loop documentation.
 
-**Next step:** continue Sprint X with artifact build verification.
+**Next step:** continue Sprint Y by deciding whether feedback capture should remain documentation-only or become an app-exported redacted diagnostics summary.
 
 ## Performance Metrics
 
@@ -123,20 +123,20 @@ See `.planning/PRODUCT_ITERATION_SPRINTS_U_Y.md`.
 - Sprint U: Adaptive Command Center — complete
 - Sprint V: Workflow Shortcuts & Bulk Actions — complete
 - Sprint W: Source Strategy & Preset Intelligence — complete
-- Sprint X: Release Readiness & Regression Sweep — in progress
-- Sprint Y: Post-Release Feedback Loop — planned
+- Sprint X: Release Readiness & Regression Sweep — complete
+- Sprint Y: Post-Release Feedback Loop — in progress
 
 ### Blockers/Concerns
 
-None. Sprint X is active.
+None. Sprint Y is active.
 
 ## Session Continuity
 
 Last session: 2026-05-15
-Stopped at: Sprint X documentation refresh passed
+Stopped at: Sprint Y privacy-safe feedback loop documented
 Resume file: None
 
-**Next step:** Continue Sprint X artifact build verification.
+**Next step:** Continue Sprint Y feedback capture decision and post-release iteration inputs.
 
 ---
 *State initialized: 2026-02-13*
