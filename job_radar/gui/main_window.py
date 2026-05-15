@@ -70,7 +70,11 @@ from job_radar.gui.maintenance_view_model import (
     build_local_maintenance_summary,
     format_local_maintenance_lines,
 )
-from job_radar.gui.source_diagnostics_view_model import format_source_diagnostics_lines
+from job_radar.gui.source_diagnostics_view_model import (
+    format_source_diagnostics_lines,
+    format_source_toggle_recommendations,
+    build_source_diagnostics,
+)
 from job_radar.gui.worker_thread import create_search_worker, create_download_worker
 from job_radar.gui.scoring_config import ScoringConfigWidget
 from job_radar.gui.update_banner import UpdateBanner, DownloadConfirmDialog
@@ -572,12 +576,20 @@ class MainWindow(ctk.CTk):
         except Exception:
             maintenance_suggestions = []
 
+        try:
+            source_quality_issues = format_source_toggle_recommendations(
+                build_source_diagnostics(get_source_health_history(limit=20))
+            )
+        except Exception:
+            source_quality_issues = []
+
         return build_dashboard_actions(
             readiness=readiness,
             review_counts=review_counts,
             next_actions=next_actions,
             search_history=search_history,
             maintenance_suggestions=maintenance_suggestions,
+            source_quality_issues=source_quality_issues,
         )
 
     def _add_dashboard_next_steps(self, parent, row, actions):

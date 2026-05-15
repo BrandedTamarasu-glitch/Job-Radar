@@ -23,6 +23,7 @@ def build_dashboard_actions(
     next_actions: list[dict[str, Any]] | None = None,
     search_history: dict[str, Any] | None = None,
     maintenance_suggestions: list[str] | None = None,
+    source_quality_issues: list[str] | None = None,
     limit: int = 4,
 ) -> list[DashboardAction]:
     """Return prioritized next actions for the Profile tab dashboard."""
@@ -156,6 +157,16 @@ def build_dashboard_actions(
                 detail=maintenance_suggestions[0],
                 target="Settings",
                 priority=65,
+            )
+        )
+
+    if source_quality_issues:
+        actions.append(
+            DashboardAction(
+                title="Review source quality",
+                detail=source_quality_issues[0],
+                target="Settings",
+                priority=50,
             )
         )
 

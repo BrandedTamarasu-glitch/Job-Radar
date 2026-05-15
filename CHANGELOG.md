@@ -4,6 +4,7 @@
 
 ### New Features
 - **Adaptive dashboard maintenance guidance** - Profile dashboard recommendations can now surface local maintenance suggestions from Settings state.
+- **Adaptive dashboard source quality** - Profile dashboard recommendations can now surface source-quality issues from recent diagnostics.
 - **Daily dashboard foundation** - Added a Profile-tab next-step panel that prioritizes profile readiness, overdue follow-ups, review queue work, and saved/recent search shortcuts from local state.
 - **Search insight recap** - Recent and saved searches now show a bounded previous-run comparison for total, new, high-score, and review-state movement.
 - **Search run context** - Search completion now highlights source failures, cache behavior, and active filters that may explain result changes.

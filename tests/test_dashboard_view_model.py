@@ -109,6 +109,24 @@ def test_dashboard_surfaces_maintenance_suggestions():
     assert actions[0].target == "Settings"
 
 
+def test_dashboard_surfaces_source_quality_issues_before_maintenance():
+    actions = build_dashboard_actions(
+        readiness=readiness(),
+        review_counts={},
+        next_actions=[],
+        search_history={"recent": [{"name": "recent"}], "saved": []},
+        maintenance_suggestions=["clear HTTP cache if source results feel stale"],
+        source_quality_issues=["Source toggle recommendation: disable Dice temporarily"],
+    )
+
+    assert [action.title for action in actions[:3]] == [
+        "Review source quality",
+        "Review maintenance suggestions",
+        "Repeat a recent search",
+    ]
+    assert actions[0].target == "Settings"
+
+
 def test_dashboard_defaults_to_first_search_when_history_is_empty():
     actions = build_dashboard_actions(
         readiness=readiness(),

@@ -17,7 +17,7 @@ Goal: make the opening dashboard respond to search, follow-up, source, and maint
 
 Deliverable: returning users can see operational issues and next actions from the first authenticated screen.
 
-Status: in progress.
+Status: in progress. Profile dashboard recommendations now surface local maintenance suggestions and source-quality issues that need attention.
 
 ## Sprint V: Workflow Shortcuts & Bulk Actions
 

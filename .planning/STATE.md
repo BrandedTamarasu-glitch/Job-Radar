@@ -13,7 +13,7 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Milestone:** Product Iteration U-Y — IN PROGRESS
 **Status:** Sprint U in progress; Sprints V-Y planned
-**Last activity:** 2026-05-15 — completed Product Iteration P-T and started Product Iteration U-Y by documenting Sprints U-Y and surfacing local maintenance suggestions in Profile dashboard recommendations.
+**Last activity:** 2026-05-15 — completed Product Iteration P-T and started Product Iteration U-Y by documenting Sprints U-Y and surfacing local maintenance/source-quality issues in Profile dashboard recommendations.
 
 **Next step:** continue Sprint U by adding source-quality dashboard signals and validating command-center prioritization.
 
