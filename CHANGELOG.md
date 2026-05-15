@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v2.7.0 — 2026-05-15
+
 ### New Features
 - **Adaptive dashboard maintenance guidance** - Profile dashboard recommendations can now surface local maintenance suggestions from Settings state.
 - **Adaptive dashboard source quality** - Profile dashboard recommendations can now surface source-quality issues from recent diagnostics.
@@ -38,7 +40,7 @@
 
 ### Validation
 - Full automated regression for Sprint X release readiness: 950 passed, 8 skipped.
-- Local Linux artifact build verification passed for `job-radar-v2.6.0-linux.tar.gz` with checksum manifest generation.
+- Local Linux artifact build verification passed for `job-radar-v2.7.0-linux.tar.gz` with checksum manifest generation.
 
 ## v2.6.0 — 2026-05-15
 

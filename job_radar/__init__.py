@@ -1,3 +1,3 @@
 """job-radar — CLI job search tool that scores listings against your profile."""
 
-__version__ = "2.6.0"
+__version__ = "2.7.0"

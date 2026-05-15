@@ -2,12 +2,12 @@
 
 A desktop job search tool that searches multiple job boards, scores listings against your profile, and generates ranked reports. Available as both a **desktop GUI application** (double-click to launch) and a **CLI** for power users and scripting. Features include multi-source search (11 API sources: Dice, HN Hiring, RemoteOK, We Work Remotely, Adzuna, Authentic Jobs, JSearch, USAJobs, SerpAPI, Jobicy, hiring.cafe + 4 manual URLs: Wellfound, Indeed, LinkedIn, Glassdoor), PDF resume import, fuzzy skill matching, user-configurable scoring weights, cross-source deduplication with richness scoring, real-time API quota tracking, in-app auto-updates, and dual-format HTML and Markdown reports with shortlist state, compact/detail review, keyboard navigation, application status tracking, and WCAG 2.1 Level AA accessibility.
 
-## What's New in v2.6.0
+## What's New in v2.7.0
 
-- **Editable application workspace:** Applications rows now support direct status, next-action, due-date, notes, and template insertion workflows while preserving tracker timeline history.
-- **Persistent search review:** Reports and saved-search comparisons now carry shortlist, maybe-later, and dismissed review states so triage survives across runs.
-- **Data portability:** Settings can export and validate portable app-data bundles for profile, config, saved searches, review state, tracker data, and manifests.
-- **Performance and release trust:** Large reports skip rendering omitted rows, cancellation stops final report preparation cleanly, release diagnostics catch artifact drift and permission issues, and release assets include checksum manifests.
+- **Adaptive command center:** The Profile dashboard surfaces readiness, follow-up, review queue, saved-search, source-quality, and local maintenance next steps.
+- **Workflow shortcuts:** Settings can clear a bounded batch of dismissed review items without touching shortlist or maybe-later entries.
+- **Source strategy intelligence:** Settings and Search controls recommend source/preset actions from recent reliability, yield, and coverage signals.
+- **Release and feedback loop:** Release readiness is documented and validated, Windows build script artifact drift is fixed, and Settings can copy redacted feedback diagnostics for issue reports.
 
 ## Installation
 
@@ -558,7 +558,7 @@ Sprint X release-readiness checkpoints are tracked in `.planning/RELEASE_READINE
 Current Sprint X validation: full automated regression passed with 950 tests and 8 skips.
 Build-script metadata verification passed for release artifact naming and checksum checks.
 Release-note drafting for this iteration is tracked in `.planning/RELEASE_NOTES_DRAFT_U_Y.md`.
-Local Linux artifact build verification passed for `job-radar-v2.6.0-linux.tar.gz`.
+Local Linux artifact build verification passed for `job-radar-v2.7.0-linux.tar.gz`.
 Sprint Y feedback-loop planning and next product slice candidates are tracked in `.planning/POST_RELEASE_FEEDBACK_U_Y.md`, and Settings now includes copyable redacted feedback diagnostics for privacy-safe issue reports.
 
 ### Building Executables

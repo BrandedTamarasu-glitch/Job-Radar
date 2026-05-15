@@ -42,9 +42,9 @@ This checklist tracks the release-readiness sweep for Product Iteration U-Y afte
     - Coverage: Unix and Windows build scripts derive versions from package metadata, emit expected release artifact/checksum names, and call release artifact verification.
   - [x] Artifact build check
     - Command: `PYTHON_BIN=.venv/bin/python bash scripts/build.sh`
-    - Result: passed; release verification accepted `dist/job-radar/job-radar` and `job-radar-v2.6.0-linux.tar.gz`
-    - Binary check: `./dist/job-radar/job-radar --version` returned `job-radar 2.6.0`
-    - Checksum manifest: `job-radar-v2.6.0-linux.sha256`
+    - Result: passed; release verification accepted `dist/job-radar/job-radar` and `job-radar-v2.7.0-linux.tar.gz`
+    - Binary check: `./dist/job-radar/job-radar --version` returned `job-radar 2.7.0`
+    - Checksum manifest: `job-radar-v2.7.0-linux.sha256`
     - Note: PyInstaller emitted non-fatal CustomTkinter font-copy warnings from a read-only home font directory, then completed successfully.
 
 ## Current Status
