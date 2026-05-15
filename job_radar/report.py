@@ -28,6 +28,7 @@ from .report_matching import match_highlights as _match_highlights
 from .report_matching import match_summary_text as _match_summary_text
 from .report_matching import skill_callout_groups as _skill_callout_groups
 from .report_profile import html_profile_section as _html_profile_section
+from .report_results import html_results_table_header as _html_results_table_header
 from .report_safety import safe_external_url as _safe_external_url
 from .report_source_warnings import failed_source_names as _failed_source_names
 from .report_source_warnings import html_source_failures as _html_source_failures
@@ -2440,6 +2441,9 @@ def _html_results_table(scored_results: list[dict]) -> str:
         """
 
     visible_results = scored_results[:COLLAPSE_RESULTS_AFTER]
+    visible_table_header = _html_results_table_header(
+        "Job search results sorted by relevance score, highest first"
+    )
     visible_rows = [
         _html_result_row(result, index)
         for index, result in enumerate(visible_results, 1)
@@ -2455,6 +2459,9 @@ def _html_results_table(scored_results: list[dict]) -> str:
             _html_result_row(result, index)
             for index, result in enumerate(collapsed_results, COLLAPSE_RESULTS_AFTER + 1)
         ]
+        collapsed_table_header = _html_results_table_header(
+            "Additional lower-score job results sorted by relevance score"
+        )
         omitted_count = max(0, hidden_count - len(collapsed_rows))
         omitted_note = ""
         if omitted_count:
@@ -2470,22 +2477,7 @@ def _html_results_table(scored_results: list[dict]) -> str:
           </summary>
           <div class="table-responsive mt-3">
             <table class="table table-striped table-hover">
-              <caption class="visually-hidden">Additional lower-score job results sorted by relevance score</caption>
-              <thead>
-                <tr>
-                  <th scope="col">#</th>
-                  <th scope="col">Score</th>
-                  <th scope="col" class="col-new">New</th>
-                  <th scope="col">Status</th>
-                  <th scope="col">Title</th>
-                  <th scope="col">Company</th>
-                  <th scope="col" class="col-salary">Salary</th>
-                  <th scope="col" class="col-type">Type</th>
-                  <th scope="col">Location</th>
-                  <th scope="col" class="col-snippet">Snippet</th>
-                  <th scope="col">Link</th>
-                </tr>
-              </thead>
+              {collapsed_table_header}
               <tbody>
                 {"".join(collapsed_rows)}
               </tbody>
@@ -2504,22 +2496,7 @@ def _html_results_table(scored_results: list[dict]) -> str:
         <h2 id="results-heading" class="h4 mb-3">All Results (sorted by score)</h2>
         <div class="table-responsive">
           <table class="table table-striped table-hover">
-            <caption class="visually-hidden">Job search results sorted by relevance score, highest first</caption>
-            <thead>
-              <tr>
-                <th scope="col">#</th>
-                <th scope="col">Score</th>
-                <th scope="col" class="col-new">New</th>
-                <th scope="col">Status</th>
-                <th scope="col">Title</th>
-                <th scope="col">Company</th>
-                <th scope="col" class="col-salary">Salary</th>
-                <th scope="col" class="col-type">Type</th>
-                <th scope="col">Location</th>
-                <th scope="col" class="col-snippet">Snippet</th>
-                <th scope="col">Link</th>
-              </tr>
-            </thead>
+            {visible_table_header}
             <tbody>
               {visible_rows_html}
             </tbody>
