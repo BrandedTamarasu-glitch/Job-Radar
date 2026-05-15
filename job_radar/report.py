@@ -11,20 +11,11 @@ from .report_assets import (
     html_external_stylesheets as _html_external_stylesheets,
 )
 from .report_safety import safe_external_url as _safe_external_url
+from .report_text import make_snippet as _make_snippet
+from .report_text import markdown_cell as _markdown_cell
 
 
 log = logging.getLogger(__name__)
-
-
-def _make_snippet(text: str, max_len: int = 80) -> str:
-    """Create a short snippet from description text, safe for markdown tables."""
-    if not text:
-        return "—"
-    # Remove pipe chars that would break the table
-    clean = text.replace("|", " ").replace("\n", " ").strip()
-    if len(clean) > max_len:
-        return clean[:max_len - 3].rsplit(" ", 1)[0] + "..."
-    return clean if clean else "—"
 
 
 ZERO_RESULTS_TIPS = [
@@ -302,11 +293,6 @@ def _markdown_source_warnings(source_warnings: list[dict]) -> list[str]:
         lines.append(f"| ... | ... | ... | {len(source_warnings) - 10} more warnings omitted |")
     lines.append("")
     return lines
-
-
-def _markdown_cell(value: str) -> str:
-    """Escape a value for use inside a Markdown table cell."""
-    return value.replace("|", "\\|").replace("\n", " ").strip()
 
 
 def _filtered_out_results(scored_results: list[dict], min_score: float) -> list[dict]:
