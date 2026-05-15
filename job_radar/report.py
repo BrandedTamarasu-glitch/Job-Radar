@@ -21,6 +21,7 @@ from .report_source_warnings import html_source_failures as _html_source_failure
 from .report_source_warnings import html_source_warnings as _html_source_warnings
 from .report_source_warnings import markdown_source_failures as _markdown_source_failures
 from .report_source_warnings import markdown_source_warnings as _markdown_source_warnings
+from .report_stats import calculate_report_stats
 from .report_text import make_snippet as _make_snippet
 from .report_text import markdown_cell as _markdown_cell
 from .report_tiers import score_tier as _score_tier
@@ -97,18 +98,10 @@ def generate_report(
         sources_searched, from_date, to_date, tracker_stats, min_score, source_failures, source_warnings
     )
 
-    # Calculate statistics
-    filtered_results = [r for r in scored_results if r["score"]["overall"] >= min_score]
-    stats = {
-        "total": len(filtered_results),
-        "new": sum(1 for r in filtered_results if r.get("is_new", True)),
-        "high_score": sum(1 for r in filtered_results if r["score"]["overall"] >= 3.5)
-    }
-
     return {
         "markdown": str(md_path),
         "html": str(html_path),
-        "stats": stats
+        "stats": calculate_report_stats(scored_results, min_score),
     }
 
 
