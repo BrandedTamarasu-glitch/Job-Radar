@@ -69,7 +69,7 @@ Goal: make the next iteration easier to steer from real usage.
 
 Deliverable: the project has a clean loop from release, feedback, and next planning.
 
-Status: in progress. Sprint X release readiness is complete, `.planning/POST_RELEASE_FEEDBACK_U_Y.md` captures privacy-safe feedback fields, intake template, and next-iteration input buckets, and Settings now exposes a copyable redacted feedback diagnostics summary.
+Status: complete. `.planning/POST_RELEASE_FEEDBACK_U_Y.md` captures privacy-safe feedback fields, intake template, next-iteration input buckets, and next product slice candidates, and Settings exposes a copyable redacted feedback diagnostics summary.
 
 ## Execution Order
 

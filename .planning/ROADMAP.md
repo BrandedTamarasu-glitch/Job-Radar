@@ -15,7 +15,7 @@
 - ✅ **Product Iteration F-J** - onboarding, saved searches, match tuning, application workflow, performance hardening (completed 2026-05-14)
 - ✅ **Product Iteration K-O** - application editing, search review, source health, data recovery, performance/release trust (completed 2026-05-15)
 - ✅ **Product Iteration P-T** - daily dashboard, search comparison, follow-up automation, source quality, local maintenance insights (completed 2026-05-15)
-- 🚧 **Product Iteration U-Y** - adaptive command center, workflow shortcuts, source strategy, release readiness, feedback loop (in progress)
+- ✅ **Product Iteration U-Y** - adaptive command center, workflow shortcuts, source strategy, release readiness, feedback loop (completed 2026-05-15)
 
 ## Phases
 
@@ -79,7 +79,7 @@ See `.planning/PRODUCT_ITERATION_SPRINTS_P_T.md` for the full sprint list.
 </details>
 
 <details>
-<summary>🚧 Product Iteration U-Y - IN PROGRESS</summary>
+<summary>✅ Product Iteration U-Y - COMPLETED 2026-05-15</summary>
 
 See `.planning/PRODUCT_ITERATION_SPRINTS_U_Y.md` for the full sprint list.
 
@@ -87,7 +87,7 @@ See `.planning/PRODUCT_ITERATION_SPRINTS_U_Y.md` for the full sprint list.
 - [x] Sprint V: Workflow Shortcuts & Bulk Actions
 - [x] Sprint W: Source Strategy & Preset Intelligence
 - [x] Sprint X: Release Readiness & Regression Sweep
-- [ ] Sprint Y: Post-Release Feedback Loop (in progress)
+- [x] Sprint Y: Post-Release Feedback Loop
 
 </details>
 

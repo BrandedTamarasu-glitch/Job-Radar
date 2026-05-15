@@ -51,8 +51,8 @@ Track feedback into these buckets:
 ## Current Candidate Follow-Ups
 
 - Redacted diagnostics summary is now available in Settings > Feedback Diagnostics.
-- Confirm whether source strategy recommendations should offer one-click source toggle changes or remain advisory.
 - Feedback diagnostics now include a copy-to-clipboard action.
+- Confirm whether source strategy recommendations should offer one-click source toggle changes or remain advisory.
 - Review whether the Search tab guidance should be collapsible if users find it too prominent.
 - Consider a post-release issue template in GitHub once the next tag is published.
 
@@ -63,3 +63,27 @@ Track feedback into these buckets:
 - The summary includes app version, operating system, local data size, aggregate workflow counts, cache file count, and maintenance signals.
 - The summary explicitly reminds users not to include API keys, profile/resume contents, saved search names, application notes, tracker records, or local filesystem paths.
 - Tests verify the diagnostics summary does not expose representative private path, saved-search, tracker, application, or cache-name content.
+
+## Next Product Slice Candidates
+
+Prioritize the next round from post-release feedback in this order:
+
+1. Search guidance ergonomics
+   - Decide whether pre-run source strategy guidance should be collapsible, dismissible, or promoted into source controls.
+   - Consider one-click source toggle actions only if users repeatedly ask for faster remediation.
+
+2. Feedback diagnostics workflow
+   - Decide whether the copied diagnostics should be formatted as a GitHub issue body.
+   - Consider adding a direct "Open GitHub Issue" action after confirming the final issue template.
+
+3. Result trust and quality
+   - Use reports of weak matches, duplicates, stale listings, or confusing explanations to tune scoring, deduplication, and source freshness.
+   - Keep changes measurable with focused tests before broad scoring changes.
+
+4. Release trust
+   - Use installer/update feedback to prioritize notarization, signing, checksum UX, and auto-update diagnostics.
+   - Treat release workflow failures as blocking before another public tag.
+
+5. Workflow speed
+   - Use application/review feedback to decide whether additional bulk actions are warranted.
+   - Keep destructive operations bounded and reversible.
