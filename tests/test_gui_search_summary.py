@@ -477,6 +477,14 @@ def test_search_worker_emits_completion_summary(tmp_path, source_health_recorder
             "query_failure_details": [
                 {"source": "dice", "query": "Backend Engineer", "error": "timeout"}
             ],
+            "slow_query_warnings": [
+                {
+                    "source": "remoteok",
+                    "query": "Backend Engineer",
+                    "elapsed_seconds": 9.0,
+                    "threshold_seconds": 8.0,
+                }
+            ],
             "cache_stats": {"hits": 2, "misses": 1, "writes": 1, "disabled": 0},
         }
 
@@ -504,6 +512,18 @@ def test_search_worker_emits_completion_summary(tmp_path, source_health_recorder
     summary = complete[3]
     assert summary["query_failures"] == 1
     assert summary["failed_sources"] == ["Dice"]
+    assert summary["query_failure_details"] == [
+        {"source": "dice", "query": "Backend Engineer", "error": "timeout"}
+    ]
+    assert summary["slow_query_warnings"] == [
+        {
+            "source": "remoteok",
+            "query": "Backend Engineer",
+            "elapsed_seconds": 9.0,
+            "threshold_seconds": 8.0,
+        }
+    ]
+    assert summary["source_warnings"] == summary["slow_query_warnings"]
     assert summary["cache_stats"] == {"hits": 2, "misses": 1, "writes": 1, "disabled": 0}
     assert summary["result_stats"] == {"total": 0, "new": 0, "high_score": 0}
     assert summary["sources"] == [

@@ -578,7 +578,8 @@ def test_record_source_health_persists_run_summary(tmp_path):
         ],
         "query_failures": 1,
         "failed_sources": ["Dice"],
-        "source_warnings": [{"source": "dice", "query": "Backend", "error": "timeout"}],
+        "query_failure_details": [{"source": "dice", "query": "Backend", "error": "timeout"}],
+        "slow_query_warnings": [{"source": "remoteok", "query": "Backend", "elapsed_seconds": 9.0}],
         "cache_stats": {"hits": 2, "misses": 1, "writes": 1, "disabled": 0},
         "search_config": {"preset": "remote-backend", "selected_sources": ["dice"]},
     }
@@ -591,6 +592,15 @@ def test_record_source_health_persists_run_summary(tmp_path):
     assert entry["total_jobs"] == 3
     assert entry["query_failures"] == 1
     assert entry["failed_sources"] == ["Dice"]
+    assert entry["query_failure_details"] == [
+        {"source": "dice", "query": "Backend", "error": "timeout"}
+    ]
+    assert entry["slow_query_warnings"] == [
+        {"source": "remoteok", "query": "Backend", "elapsed_seconds": 9.0}
+    ]
+    assert entry["source_warnings"] == [
+        {"source": "remoteok", "query": "Backend", "elapsed_seconds": 9.0}
+    ]
     assert entry["cache_stats"] == {"hits": 2, "misses": 1, "writes": 1, "disabled": 0}
     assert entry["search_config"] == {"preset": "remote-backend", "selected_sources": ["dice"]}
     assert entry["sources"] == [
@@ -603,6 +613,31 @@ def test_record_source_health_persists_run_summary(tmp_path):
         {"name": "RemoteOK", "job_count": 0, "warning_count": 0},
     ]
     assert history == [entry]
+
+
+def test_source_health_history_normalizes_legacy_source_warnings(tmp_path):
+    """Legacy source_warnings failure payloads are exposed under canonical fields."""
+    legacy_entry = {
+        "timestamp": "2026-05-13T12:00:00",
+        "sources": [],
+        "query_failures": 1,
+        "failed_sources": ["Dice"],
+        "source_warnings": [{"source": "dice", "query": "Backend", "error": "timeout"}],
+        "total_jobs": 0,
+    }
+    tracker_path = tmp_path / "tracker.json"
+    tracker_path.write_text(
+        json.dumps({"source_health_history": [legacy_entry]}),
+        encoding="utf-8",
+    )
+
+    with patch("job_radar.tracker._TRACKER_PATH", str(tracker_path)):
+        history = get_source_health_history()
+
+    assert history[0]["query_failure_details"] == [
+        {"source": "dice", "query": "Backend", "error": "timeout"}
+    ]
+    assert "slow_query_warnings" not in history[0]
 
 
 def test_record_source_health_retains_recent_runs(tmp_path):

@@ -231,8 +231,21 @@ def record_source_health(
         "failed_sources": list(summary.get("failed_sources") or []),
         "total_jobs": sum(source["job_count"] for source in sources),
     }
-    if summary.get("source_warnings") is not None:
-        health_entry["source_warnings"] = list(summary.get("source_warnings") or [])
+    query_failure_details = (
+        summary.get("query_failure_details")
+        or summary.get("source_failures")
+        or _legacy_source_failures(summary.get("source_warnings"))
+    )
+    slow_query_warnings = (
+        summary.get("slow_query_warnings")
+        or _legacy_slow_query_warnings(summary.get("source_warnings"))
+    )
+    if query_failure_details is not None:
+        health_entry["query_failure_details"] = list(query_failure_details or [])
+    if slow_query_warnings is not None:
+        warnings = list(slow_query_warnings or [])
+        health_entry["slow_query_warnings"] = warnings
+        health_entry["source_warnings"] = warnings
     if summary.get("cache_stats") is not None:
         health_entry["cache_stats"] = dict(summary.get("cache_stats") or {})
     if summary.get("search_config") is not None:
@@ -249,8 +262,46 @@ def get_source_health_history(limit: int | None = None) -> list[dict]:
     tracker = _load_tracker()
     history = tracker.get("source_health_history", [])
     if limit is None:
-        return list(history)
-    return list(history[-limit:])
+        return [_normalize_source_health_entry(entry) for entry in history]
+    return [_normalize_source_health_entry(entry) for entry in history[-limit:]]
+
+
+def _normalize_source_health_entry(entry: dict) -> dict:
+    """Return source health entries with canonical warning/failure fields."""
+    normalized = dict(entry)
+    if "query_failure_details" not in normalized:
+        failures = _legacy_source_failures(normalized.get("source_warnings"))
+        if failures is not None:
+            normalized["query_failure_details"] = list(failures)
+    if "slow_query_warnings" not in normalized:
+        warnings = _legacy_slow_query_warnings(normalized.get("source_warnings"))
+        if warnings is not None:
+            normalized["slow_query_warnings"] = list(warnings)
+            normalized["source_warnings"] = list(warnings)
+    return normalized
+
+
+def _legacy_source_failures(warnings: object) -> list[dict] | None:
+    if not isinstance(warnings, list):
+        return None
+    failures = [item for item in warnings if isinstance(item, dict) and item.get("error")]
+    return failures or None
+
+
+def _legacy_slow_query_warnings(warnings: object) -> list[dict] | None:
+    if not isinstance(warnings, list):
+        return None
+    slow_warnings = [
+        item
+        for item in warnings
+        if isinstance(item, dict)
+        and not item.get("error")
+        and (
+            item.get("elapsed_seconds") is not None
+            or item.get("threshold_seconds") is not None
+        )
+    ]
+    return slow_warnings if slow_warnings or not warnings else None
 
 
 def update_application_status(

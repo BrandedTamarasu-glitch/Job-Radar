@@ -442,6 +442,7 @@ class SearchWorker:
                 cancellation_event=self._stop_event,
             )
             source_failures = dedup_stats.get("query_failure_details") or []
+            slow_query_warnings = dedup_stats.get("slow_query_warnings") or []
             failed_source_names = [
                 get_source_display_name(failure.get("source", "unknown"))
                 for failure in source_failures
@@ -465,7 +466,9 @@ class SearchWorker:
                 ],
                 "query_failures": dedup_stats.get("query_failures", 0),
                 "failed_sources": sorted(set(failed_source_names), key=str.casefold),
-                "source_warnings": source_failures,
+                "query_failure_details": source_failures,
+                "slow_query_warnings": slow_query_warnings,
+                "source_warnings": slow_query_warnings,
                 "cache_stats": dedup_stats.get("cache_stats", {}),
                 "search_config": {
                     "preset": self._search_config.get("preset"),
@@ -578,7 +581,7 @@ class SearchWorker:
                 tracker_stats=tracker_stats,
                 min_score=min_score,
                 source_failures=source_failures,
-                source_warnings=dedup_stats.get("slow_query_warnings"),
+                source_warnings=slow_query_warnings,
             )
 
             report_path = report_result["html"]
