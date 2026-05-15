@@ -16,6 +16,7 @@
 - **Source toggle recommendations** - Settings diagnostics now recommend temporarily disabling repeatedly unreliable sources.
 - **Source coverage gaps** - Source health history now preserves search context so Settings can call out source/preset combinations with no recent jobs.
 - **Local maintenance insights** - Settings now summarizes local data size, cache files, tracker history, review state, saved searches, and maintenance suggestions.
+- **Bounded dashboard history counts** - Profile dashboard changed-search callouts now stay compact for large saved-search histories.
 
 ### Documentation
 - Documented Product Iteration P-T and Sprint P-T planning across README, roadmap, and project state memory.

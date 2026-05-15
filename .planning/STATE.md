@@ -13,7 +13,7 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Milestone:** Product Iteration P-T — IN PROGRESS
 **Status:** Sprints P-S complete; Sprint T in progress
-**Last activity:** 2026-05-15 — shipped v2.6.0 for completed Product Iteration K-O, completed Sprints P-S, and started Sprint T with Settings local data size, history counts, and maintenance suggestions.
+**Last activity:** 2026-05-15 — shipped v2.6.0 for completed Product Iteration K-O, completed Sprints P-S, and continued Sprint T with Settings local data size/history counts plus bounded Profile dashboard history counts.
 
 **Next step:** continue Sprint T with bounded large-history dashboard validation and maintenance documentation.
 

@@ -110,8 +110,8 @@ def build_dashboard_actions(
             DashboardAction(
                 title="Review changed saved searches",
                 detail=(
-                    f"{changed_saved} saved search(es) changed since the previous "
-                    "run."
+                    f"{_bounded_count(changed_saved)} saved search(es) changed "
+                    "since the previous run."
                 ),
                 target="Search",
                 priority=45,
@@ -154,6 +154,12 @@ def build_dashboard_actions(
 
 def _changed_search_count(items: list[dict[str, Any]]) -> int:
     return sum(1 for item in items if _search_changed(item))
+
+
+def _bounded_count(value: int) -> str:
+    if value > 99:
+        return "99+"
+    return str(value)
 
 
 def _search_changed(item: dict[str, Any]) -> bool:

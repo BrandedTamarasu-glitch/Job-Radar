@@ -72,6 +72,27 @@ def test_dashboard_calls_out_changed_saved_searches():
     assert actions[0].target == "Search"
 
 
+def test_dashboard_bounds_large_changed_search_counts():
+    changed_searches = [
+        {
+            "name": f"changed-{index}",
+            "previous_result_stats": {"total": index, "new": 0, "high_score": 0},
+            "last_result_stats": {"total": index + 1, "new": 0, "high_score": 0},
+        }
+        for index in range(150)
+    ]
+
+    actions = build_dashboard_actions(
+        readiness=readiness(),
+        review_counts={},
+        next_actions=[],
+        search_history={"recent": [], "saved": changed_searches},
+    )
+
+    assert len(actions) == 1
+    assert actions[0].detail == "99+ saved search(es) changed since the previous run."
+
+
 def test_dashboard_defaults_to_first_search_when_history_is_empty():
     actions = build_dashboard_actions(
         readiness=readiness(),
