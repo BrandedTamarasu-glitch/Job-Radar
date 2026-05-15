@@ -13,7 +13,7 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Milestone:** Product Iteration P-T — IN PROGRESS
 **Status:** Sprints P-Q complete; Sprint R in progress; Sprints S-T planned
-**Last activity:** 2026-05-15 — shipped v2.6.0 for completed Product Iteration K-O, completed Sprint P dashboard next steps, completed Sprint Q search comparison recaps, and continued Sprint R with Applications follow-up queue filters plus quick Complete and Snooze actions for queued follow-ups.
+**Last activity:** 2026-05-15 — shipped v2.6.0 for completed Product Iteration K-O, completed Sprint P dashboard next steps, completed Sprint Q search comparison recaps, and continued Sprint R with Applications follow-up queue filters, quick Complete/Snooze actions, and calendar-friendly follow-up export.
 
 **Next step:** continue Sprint R with quick complete/snooze actions for application follow-up rows.
 

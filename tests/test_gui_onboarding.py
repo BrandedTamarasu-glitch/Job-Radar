@@ -108,10 +108,20 @@ def test_snooze_application_next_action_moves_due_date_forward():
 def test_applications_tab_includes_direct_edit_controls():
     source = inspect.getsource(MainWindow._build_applications_tab)
 
+    assert "Export Calendar" in source
+    assert "_export_application_followups_ics" in source
     assert "_prompt_application_next_action" in source
     assert "_prompt_application_due_date" in source
     assert "_prompt_application_notes" in source
     assert "Edit Notes" in source
+
+
+def test_calendar_export_writes_followup_ics_file():
+    source = inspect.getsource(MainWindow._export_application_followups_ics)
+
+    assert "export_application_followups_ics" in source
+    assert "application-followups-" in source
+    assert ".ics" in source
 
 
 def test_search_complete_includes_review_state_summary():

@@ -23,7 +23,7 @@ from job_radar.application_templates import (
     get_application_note_templates,
     render_application_note_template,
 )
-from job_radar.applications_export import export_applications_csv
+from job_radar.applications_export import export_application_followups_ics, export_applications_csv
 from job_radar.browser import open_report_in_browser
 from job_radar.data_portability import export_app_data_bundle, validate_app_data_bundle
 from job_radar.demo_report import generate_demo_report
@@ -713,6 +713,13 @@ class MainWindow(ctk.CTk):
 
         ctk.CTkButton(
             actions_frame,
+            text="Export Calendar",
+            width=140,
+            command=self._export_application_followups_ics,
+        ).pack(side="left", padx=(0, 8))
+
+        ctk.CTkButton(
+            actions_frame,
             text="Refresh",
             width=100,
             command=lambda: self._build_applications_tab(parent),
@@ -1122,6 +1129,24 @@ class MainWindow(ctk.CTk):
             if self._applications_export_status_label is not None:
                 self._applications_export_status_label.configure(
                     text=f"Export failed: {e}",
+                    text_color="red",
+                )
+
+    def _export_application_followups_ics(self):
+        """Export dated application follow-ups to an iCalendar file."""
+        try:
+            applications = get_all_application_statuses()
+            output_path = get_results_dir() / f"application-followups-{date.today().isoformat()}.ics"
+            export_path = export_application_followups_ics(applications, output_path)
+            if self._applications_export_status_label is not None:
+                self._applications_export_status_label.configure(
+                    text=f"Exported calendar to {export_path}",
+                    text_color="green",
+                )
+        except Exception as e:
+            if self._applications_export_status_label is not None:
+                self._applications_export_status_label.configure(
+                    text=f"Calendar export failed: {e}",
                     text_color="red",
                 )
 

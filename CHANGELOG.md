@@ -11,6 +11,7 @@
 - **Follow-up focus filters** - Applications can filter the follow-up queue to all, overdue, or due-soon actions.
 - **Quick follow-up completion** - Applications next-action queue rows can clear completed follow-ups directly.
 - **Follow-up snooze** - Applications next-action queue rows can snooze follow-ups by three days.
+- **Follow-up calendar export** - Applications can export dated follow-up tasks as an iCalendar file.
 
 ### Documentation
 - Documented Product Iteration P-T and Sprint P-T planning across README, roadmap, and project state memory.

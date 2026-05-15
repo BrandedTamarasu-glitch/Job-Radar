@@ -5,6 +5,7 @@ import csv
 from job_radar.applications_export import (
     APPLICATION_EXPORT_COLUMNS,
     application_rows_for_export,
+    export_application_followups_ics,
     export_applications_csv,
     import_applications_csv,
 )
@@ -104,6 +105,42 @@ def test_export_applications_csv_writes_utf8_csv(tmp_path):
             "job_key": "backend engineer||acme",
         }
     ]
+
+
+def test_export_application_followups_ics_writes_dated_followups(tmp_path):
+    applications = {
+        "backend engineer||acme": {
+            "title": "Backend Engineer",
+            "company": "Acme, Inc.",
+            "status": "interviewing",
+            "next_action": "Send thank-you note",
+            "next_action_date": "2026-05-21",
+        },
+        "platform engineer||northstar": {
+            "title": "Platform Engineer",
+            "company": "Northstar",
+            "status": "applied",
+            "next_action": "Follow up",
+        },
+        "bad date||co": {
+            "title": "Bad Date",
+            "company": "Co",
+            "status": "applied",
+            "next_action": "Follow up",
+            "next_action_date": "tomorrow",
+        },
+    }
+
+    path = export_application_followups_ics(applications, tmp_path / "followups.ics")
+
+    text = path.read_text(encoding="utf-8")
+    assert "BEGIN:VCALENDAR" in text
+    assert "BEGIN:VEVENT" in text
+    assert "DTSTART;VALUE=DATE:20260521" in text
+    assert "SUMMARY:Send thank-you note - Backend Engineer" in text
+    assert "DESCRIPTION:Interviewing at Acme\\, Inc." in text
+    assert "Platform Engineer" not in text
+    assert "Bad Date" not in text
 
 
 def test_import_applications_csv_restores_tracker_entries(tmp_path):

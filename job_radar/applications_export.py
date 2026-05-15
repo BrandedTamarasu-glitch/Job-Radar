@@ -1,6 +1,7 @@
 """Export helpers for the application pipeline."""
 
 import csv
+from datetime import datetime
 from pathlib import Path
 
 from job_radar.gui.applications_view_model import (
@@ -67,6 +68,39 @@ def export_applications_csv(applications: dict, output_path: str | Path) -> Path
     return path
 
 
+def export_application_followups_ics(applications: dict, output_path: str | Path) -> Path:
+    """Write dated application follow-ups to an iCalendar file."""
+    path = Path(output_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    lines = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//Job Radar//Application Follow-ups//EN",
+    ]
+    for row in application_rows_for_export(applications):
+        due_date = row.get("next_action_date", "").strip()
+        next_action = row.get("next_action", "").strip()
+        if not due_date or not next_action or not _valid_ics_date(due_date):
+            continue
+
+        uid = f"{row.get('job_key', '')}-{due_date}@job-radar"
+        summary = f"{next_action} - {row.get('title') or 'Application'}"
+        company = row.get("company")
+        description = f"{row.get('status', '')} at {company}" if company else row.get("status", "")
+        lines.extend([
+            "BEGIN:VEVENT",
+            f"UID:{_escape_ics_text(uid)}",
+            f"DTSTART;VALUE=DATE:{due_date.replace('-', '')}",
+            f"SUMMARY:{_escape_ics_text(summary)}",
+            f"DESCRIPTION:{_escape_ics_text(description)}",
+            "END:VEVENT",
+        ])
+    lines.append("END:VCALENDAR")
+    path.write_text("\r\n".join(lines) + "\r\n", encoding="utf-8")
+    return path
+
+
 def import_applications_csv(input_path: str | Path) -> dict[str, dict[str, str]]:
     """Read an applications CSV export into tracker application entries."""
     path = Path(input_path)
@@ -107,3 +141,20 @@ def _status_value_from_export(value: str | None) -> str:
         for status, label in APPLICATION_STATUS_LABELS.items()
     }
     return display_to_value.get(str(value or "").strip().casefold(), "needs_status")
+
+
+def _valid_ics_date(value: str) -> bool:
+    try:
+        datetime.strptime(value, "%Y-%m-%d")
+    except ValueError:
+        return False
+    return True
+
+
+def _escape_ics_text(value: str) -> str:
+    return (
+        value.replace("\\", "\\\\")
+        .replace("\n", "\\n")
+        .replace(",", "\\,")
+        .replace(";", "\\;")
+    )
