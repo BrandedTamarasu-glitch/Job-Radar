@@ -1,6 +1,7 @@
 """Export helpers for the application pipeline."""
 
 import csv
+import json
 from datetime import datetime
 from pathlib import Path
 
@@ -127,6 +128,38 @@ def import_applications_csv(input_path: str | Path) -> dict[str, dict[str, str]]
                 field: value for field, value in entry.items()
                 if value not in ("", "needs_status")
             }
+    return imported
+
+
+def import_report_status_updates_json(input_path: str | Path) -> dict[str, dict[str, str]]:
+    """Read report-exported pending status updates into tracker entries."""
+    path = Path(input_path)
+    data = json.loads(path.read_text(encoding="utf-8"))
+    applications = data.get("applications") if isinstance(data, dict) else None
+    if not isinstance(applications, dict):
+        raise ValueError("Status update file must contain an applications object")
+
+    imported: dict[str, dict[str, str]] = {}
+    for raw_key, raw_entry in applications.items():
+        if not isinstance(raw_entry, dict):
+            continue
+        title = str(raw_entry.get("title") or "").strip()
+        company = str(raw_entry.get("company") or "").strip()
+        key = str(raw_key or "").strip() or job_key(title, company)
+        status = normalize_application_status(raw_entry.get("status"))
+        if not key or status == "needs_status":
+            continue
+
+        entry = {
+            "title": title,
+            "company": company,
+            "status": status,
+            "updated": str(raw_entry.get("updated") or "").strip(),
+        }
+        imported[key] = {
+            field: value for field, value in entry.items()
+            if value not in ("", None)
+        }
     return imported
 
 

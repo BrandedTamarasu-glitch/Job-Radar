@@ -28,7 +28,11 @@ from job_radar.application_templates import (
     get_application_note_templates,
     render_application_note_template,
 )
-from job_radar.applications_export import export_application_followups_ics, export_applications_csv
+from job_radar.applications_export import (
+    export_application_followups_ics,
+    export_applications_csv,
+    import_report_status_updates_json,
+)
 from job_radar.browser import open_report_in_browser
 from job_radar.data_portability import export_app_data_bundle, validate_app_data_bundle
 from job_radar.demo_report import generate_demo_report
@@ -44,6 +48,7 @@ from job_radar.config import load_config
 from job_radar.tracker import (
     get_all_application_statuses,
     get_application_next_actions,
+    merge_application_entries,
     get_source_health_history,
     update_application_details,
     update_application_status,
@@ -747,6 +752,13 @@ class MainWindow(ctk.CTk):
 
         ctk.CTkButton(
             actions_frame,
+            text="Import Status JSON",
+            width=150,
+            command=lambda: self._import_report_status_updates(parent),
+        ).pack(side="left", padx=(0, 8))
+
+        ctk.CTkButton(
+            actions_frame,
             text="Export Calendar",
             width=140,
             command=self._export_application_followups_ics,
@@ -1163,6 +1175,37 @@ class MainWindow(ctk.CTk):
             if self._applications_export_status_label is not None:
                 self._applications_export_status_label.configure(
                     text=f"Export failed: {e}",
+                    text_color="red",
+                )
+
+    def _import_report_status_updates(self, parent):
+        """Import pending status updates exported from an HTML report."""
+        try:
+            from tkinter import filedialog
+
+            path = filedialog.askopenfilename(
+                title="Import Report Status Updates",
+                filetypes=[
+                    ("Job Radar status updates", "job-status-updates-*.json"),
+                    ("JSON files", "*.json"),
+                    ("All files", "*.*"),
+                ],
+            )
+            if not path:
+                return
+
+            imported = import_report_status_updates_json(path)
+            changed = merge_application_entries(imported)
+            self._build_applications_tab(parent)
+            if self._applications_export_status_label is not None:
+                self._applications_export_status_label.configure(
+                    text=f"Imported {changed} status update(s)",
+                    text_color="green",
+                )
+        except Exception as e:
+            if self._applications_export_status_label is not None:
+                self._applications_export_status_label.configure(
+                    text=f"Status import failed: {e}",
                     text_color="red",
                 )
 

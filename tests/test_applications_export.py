@@ -8,6 +8,7 @@ from job_radar.applications_export import (
     export_application_followups_ics,
     export_applications_csv,
     import_applications_csv,
+    import_report_status_updates_json,
 )
 
 
@@ -169,4 +170,28 @@ def test_import_applications_csv_restores_tracker_entries(tmp_path):
         "title": "Review Role",
         "company": "Northstar",
         "notes": "Review later",
+    }
+
+
+def test_import_report_status_updates_json_reads_pending_report_export(tmp_path):
+    """Report-exported status JSON maps to tracker merge entries."""
+    path = tmp_path / "job-status-updates.json"
+    path.write_text(
+        '{"applications": {'
+        '"backend engineer||acme": {"title": "Backend Engineer", "company": "Acme", '
+        '"status": "Interviewing", "updated": "2026-05-15T10:00:00"},'
+        '"bad||row": {"title": "Bad", "company": "Row", "status": "unknown"}'
+        '}}',
+        encoding="utf-8",
+    )
+
+    imported = import_report_status_updates_json(path)
+
+    assert imported == {
+        "backend engineer||acme": {
+            "title": "Backend Engineer",
+            "company": "Acme",
+            "status": "interviewing",
+            "updated": "2026-05-15T10:00:00",
+        }
     }
