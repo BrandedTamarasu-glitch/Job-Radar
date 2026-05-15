@@ -56,7 +56,7 @@ Goal: turn source diagnostics into practical search decisions.
 
 Deliverable: users can tune source coverage confidently when job boards are noisy or degraded.
 
-Status: in progress. Settings source diagnostics now include coarse reliability scores and source-toggle recommendations over recent source history.
+Status: in progress. Settings source diagnostics now include coarse reliability scores, source-toggle recommendations, and source/preset coverage-gap callouts over recent source history.
 
 ## Sprint T: Local Performance & Maintenance Insights
 

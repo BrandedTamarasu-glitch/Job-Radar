@@ -206,6 +206,8 @@ def record_source_health(
         health_entry["source_warnings"] = list(summary.get("source_warnings") or [])
     if summary.get("cache_stats") is not None:
         health_entry["cache_stats"] = dict(summary.get("cache_stats") or {})
+    if summary.get("search_config") is not None:
+        health_entry["search_config"] = dict(summary.get("search_config") or {})
 
     source_health_history.append(health_entry)
     tracker["source_health_history"] = source_health_history[-retention_runs:]

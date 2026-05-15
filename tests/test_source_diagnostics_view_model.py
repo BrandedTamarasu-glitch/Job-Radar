@@ -4,6 +4,7 @@ from job_radar.gui.source_diagnostics_view_model import (
     build_cache_totals,
     build_source_diagnostics,
     format_cache_freshness_line,
+    format_source_coverage_lines,
     format_source_diagnostics_lines,
     format_source_toggle_recommendations,
 )
@@ -190,3 +191,28 @@ def test_source_toggle_recommendations_call_out_unreliable_sources():
         }
     ])
     assert "Source toggle recommendation: disable BrokenSource temporarily and rerun the search." in lines
+
+
+def test_source_coverage_lines_group_gaps_by_preset():
+    history = [
+        {
+            "search_config": {"preset": "remote-backend"},
+            "sources": [
+                {"name": "Dice", "job_count": 0},
+                {"name": "RemoteOK", "job_count": 3},
+            ],
+            "failed_sources": ["Adzuna"],
+        },
+        {
+            "search_config": {"preset": "contract"},
+            "sources": [{"name": "Dice", "job_count": 0}],
+            "failed_sources": [],
+        },
+    ]
+
+    assert format_source_coverage_lines(history) == [
+        "Coverage gap: contract had no recent jobs from Dice.",
+        "Coverage gap: remote-backend had no recent jobs from Adzuna, Dice.",
+    ]
+    lines = format_source_diagnostics_lines(history)
+    assert "Coverage gap: remote-backend had no recent jobs from Adzuna, Dice." in lines

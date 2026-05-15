@@ -467,6 +467,10 @@ class SearchWorker:
                 "failed_sources": sorted(set(failed_source_names), key=str.casefold),
                 "source_warnings": source_failures,
                 "cache_stats": dedup_stats.get("cache_stats", {}),
+                "search_config": {
+                    "preset": self._search_config.get("preset"),
+                    "selected_sources": selected_sources,
+                },
             }
 
             if self._stop_event.is_set():

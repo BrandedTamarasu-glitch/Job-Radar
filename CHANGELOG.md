@@ -14,6 +14,7 @@
 - **Follow-up calendar export** - Applications can export dated follow-up tasks as an iCalendar file.
 - **Source reliability scoring** - Settings source diagnostics now include coarse reliability scores from recent source history.
 - **Source toggle recommendations** - Settings diagnostics now recommend temporarily disabling repeatedly unreliable sources.
+- **Source coverage gaps** - Source health history now preserves search context so Settings can call out source/preset combinations with no recent jobs.
 
 ### Documentation
 - Documented Product Iteration P-T and Sprint P-T planning across README, roadmap, and project state memory.

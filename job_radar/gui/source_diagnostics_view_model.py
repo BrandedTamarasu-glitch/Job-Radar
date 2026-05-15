@@ -173,6 +173,10 @@ def format_source_diagnostics_lines(
     if toggle_lines:
         lines.extend(toggle_lines)
 
+    coverage_lines = format_source_coverage_lines(history)
+    if coverage_lines:
+        lines.extend(coverage_lines)
+
     cache_totals = build_cache_totals(history)
     if any(cache_totals.values()):
         lines.append(
@@ -197,6 +201,29 @@ def format_source_toggle_recommendations(rows: list[SourceDiagnosticRow]) -> lis
                 f"Source toggle recommendation: disable {row.name} temporarily and rerun the search."
             )
     return recommendations
+
+
+def format_source_coverage_lines(history: list[dict[str, Any]]) -> list[str]:
+    """Return source/preset coverage gaps from recent source history."""
+    gaps_by_preset: dict[str, set[str]] = {}
+    for run in history:
+        config = run.get("search_config") or {}
+        preset = str(config.get("preset") or "custom")
+        for source in run.get("sources", []) or []:
+            if int(source.get("job_count") or 0) == 0:
+                gaps_by_preset.setdefault(preset, set()).add(
+                    str(source.get("name") or "Unknown source")
+                )
+        for failed_source in run.get("failed_sources", []) or []:
+            gaps_by_preset.setdefault(preset, set()).add(str(failed_source))
+
+    lines = []
+    for preset, sources in sorted(gaps_by_preset.items()):
+        if sources:
+            lines.append(
+                f"Coverage gap: {preset} had no recent jobs from {', '.join(sorted(sources, key=str.casefold))}."
+            )
+    return lines
 
 
 def _format_duration(seconds: float) -> str:

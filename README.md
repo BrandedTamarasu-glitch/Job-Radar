@@ -493,7 +493,7 @@ For release builds, also run the platform build script and smoke-test the genera
 - Applications export (4 tests) - validates application pipeline CSV rows, timeline summaries, calendar-friendly follow-up export, CSV import normalization, and UTF-8 CSV output
 - Application templates (5 tests) - validates follow-up, recruiter response, and cover-letter note template rendering
 - Applications view model (10 tests) - validates grouped pipeline statuses, note-only entries, follow-up focus filters, template note appending, status-menu mappings, and GUI detail-input normalization
-- Tracker functions (27 tests) - validates deduplication, pruning, app-data storage, application notes/next actions, timeline recording, follow-up queueing, application import merging, application-status report filtering, source health history, and stats aggregation with tmp_path isolation
+- Tracker functions (27 tests) - validates deduplication, pruning, app-data storage, application notes/next actions, timeline recording, follow-up queueing, application import merging, application-status report filtering, source health history with search context, and stats aggregation with tmp_path isolation
 - Config module (24 tests) - validates config file parsing, CLI override, defaults, validation
 - Wizard (38 tests) - validates setup flow, PDF integration, navigation, error handling
 - API integration (61 tests) - validates all 11 API sources, mappers, rate limiting, source selection, cache stats propagation, per-source cache TTLs, diagnostics-driven TTL overrides, source cancellation boundaries, manual source links, deduplication
@@ -502,7 +502,7 @@ For release builds, also run the platform build script and smoke-test the genera
 - Rate limits (16 tests) - validates rate limiter cleanup, shared backends, config loading, quota queries
 - Review state view model (3 tests) - validates compact GUI review queue summary text
 - Dashboard view model (6 tests) - validates Profile-tab next-step prioritization from readiness, follow-up, review queue, changed saved-search, and search-history state
-- Source diagnostics view model (9 tests) - validates source-health priority, reliability scoring, diagnostics, source-control guidance, source-toggle recommendations, cache freshness, and cache totals for Settings
+- Source diagnostics view model (10 tests) - validates source-health priority, reliability scoring, diagnostics, source-control guidance, source-toggle recommendations, source/preset coverage gaps, cache freshness, and cache totals for Settings
 - PDF parser (34 tests) - validates extraction, validation, Unicode support, error handling
 - Report generation (53 tests) - validates HTML/Markdown output, clipboard UI, status tracking, persisted shortlist/maybe-later/dismiss review state, keyboard navigation, compact/detail view, match summaries, filtered-out explanations, grouped skill callouts, large-report row caps and render skipping, mobile layout, accessibility
 - UX polish (69 tests) - validates banner, help text, progress messages, maintenance commands, error handling
