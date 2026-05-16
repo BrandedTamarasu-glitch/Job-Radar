@@ -3,11 +3,66 @@
 from __future__ import annotations
 
 from job_radar.report_results import (
+    COLLAPSE_RESULTS_AFTER,
+    COLLAPSED_RESULTS_RENDER_LIMIT,
     html_collapsed_results_section,
     html_results_section,
+    html_results_table,
     html_results_table_header,
     html_zero_results_section,
 )
+
+
+def test_html_results_table_uses_row_renderer_for_visible_and_collapsed_rows():
+    scored_results = [{"job": f"job-{index}"} for index in range(COLLAPSE_RESULTS_AFTER + 2)]
+    rendered_indexes = []
+
+    def row_renderer(result, index):
+        rendered_indexes.append(index)
+        return f"<tr><td>{result['job']}:{index}</td></tr>"
+
+    html = html_results_table(
+        scored_results,
+        row_renderer=row_renderer,
+        filter_controls="<div>Filters</div>",
+    )
+
+    assert rendered_indexes == list(range(1, COLLAPSE_RESULTS_AFTER + 3))
+    assert "Show 2 additional lower-score results" in html
+    assert "<div>Filters</div>" in html
+    assert "job-0:1" in html
+    assert f"job-{COLLAPSE_RESULTS_AFTER + 1}:{COLLAPSE_RESULTS_AFTER + 2}" in html
+
+
+def test_html_results_table_caps_collapsed_row_rendering():
+    total_results = COLLAPSE_RESULTS_AFTER + COLLAPSED_RESULTS_RENDER_LIMIT + 3
+    scored_results = [{"job": f"job-{index}"} for index in range(total_results)]
+    rendered_indexes = []
+
+    def row_renderer(result, index):
+        rendered_indexes.append(index)
+        return f"<tr><td>{result['job']}:{index}</td></tr>"
+
+    html = html_results_table(
+        scored_results,
+        row_renderer=row_renderer,
+        filter_controls="<div>Filters</div>",
+    )
+
+    assert len(rendered_indexes) == COLLAPSE_RESULTS_AFTER + COLLAPSED_RESULTS_RENDER_LIMIT
+    assert rendered_indexes[-1] == COLLAPSE_RESULTS_AFTER + COLLAPSED_RESULTS_RENDER_LIMIT
+    assert "3 additional lower-score rows omitted from the HTML view" in html
+
+
+def test_html_results_table_renders_zero_results_without_filter_controls():
+    html = html_results_table(
+        [],
+        row_renderer=lambda _result, _index: "<tr></tr>",
+        filter_controls="<div>Filters</div>",
+    )
+
+    assert "No results found." in html
+    assert "<div>Filters</div>" not in html
 
 
 def test_html_results_section_renders_visible_and_collapsed_results():

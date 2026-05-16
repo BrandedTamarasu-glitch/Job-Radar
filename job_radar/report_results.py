@@ -3,6 +3,58 @@
 from __future__ import annotations
 
 import html
+from collections.abc import Callable
+
+
+ZERO_RESULTS_TIPS = [
+    "Lower the minimum score threshold for this run.",
+    "Broaden target titles or add adjacent titles to your profile.",
+    "Add common variants of your core skills.",
+    "Widen location or include remote/hybrid arrangements.",
+    "Open the manual check URLs below for sources that block automation.",
+]
+COLLAPSE_RESULTS_AFTER = 20
+COLLAPSED_RESULTS_RENDER_LIMIT = 200
+
+
+def html_results_table(
+    scored_results: list[dict],
+    *,
+    row_renderer: Callable[[dict, int], str],
+    filter_controls: str,
+) -> str:
+    """Generate the complete all-results HTML table section."""
+    if not scored_results:
+        return html_zero_results_section(ZERO_RESULTS_TIPS)
+
+    visible_results = scored_results[:COLLAPSE_RESULTS_AFTER]
+    visible_rows = [
+        row_renderer(result, index)
+        for index, result in enumerate(visible_results, 1)
+    ]
+    visible_rows_html = "".join(visible_rows)
+    collapsed_rows_html = ""
+    hidden_count = max(0, len(scored_results) - COLLAPSE_RESULTS_AFTER)
+    if hidden_count:
+        collapsed_results = scored_results[
+            COLLAPSE_RESULTS_AFTER:COLLAPSE_RESULTS_AFTER + COLLAPSED_RESULTS_RENDER_LIMIT
+        ]
+        collapsed_rows = [
+            row_renderer(result, index)
+            for index, result in enumerate(collapsed_results, COLLAPSE_RESULTS_AFTER + 1)
+        ]
+        omitted_count = max(0, hidden_count - len(collapsed_rows))
+        collapsed_rows_html = html_collapsed_results_section(
+            hidden_count=hidden_count,
+            rows_html="".join(collapsed_rows),
+            omitted_count=omitted_count,
+        )
+
+    return html_results_section(
+        filter_controls=filter_controls,
+        visible_rows_html=visible_rows_html,
+        collapsed_rows_html=collapsed_rows_html,
+    )
 
 
 def html_results_section(*, filter_controls: str, visible_rows_html: str, collapsed_rows_html: str = "") -> str:

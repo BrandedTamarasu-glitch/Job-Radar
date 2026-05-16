@@ -28,9 +28,8 @@ from .report_matching import match_highlights as _match_highlights
 from .report_matching import match_summary_text as _match_summary_text
 from .report_matching import skill_callout_groups as _skill_callout_groups
 from .report_profile import html_profile_section as _html_profile_section
-from .report_results import html_collapsed_results_section as _html_collapsed_results_section
-from .report_results import html_results_section as _html_results_section
-from .report_results import html_zero_results_section as _html_zero_results_section
+from .report_results import COLLAPSE_RESULTS_AFTER, COLLAPSED_RESULTS_RENDER_LIMIT, ZERO_RESULTS_TIPS
+from .report_results import html_results_table as _html_results_table_renderer
 from .report_safety import safe_external_url as _safe_external_url
 from .report_source_warnings import failed_source_names as _failed_source_names
 from .report_source_warnings import html_source_failures as _html_source_failures
@@ -47,17 +46,6 @@ from .report_tracker import html_tracker_stats as _html_tracker_stats
 
 
 log = logging.getLogger(__name__)
-
-
-ZERO_RESULTS_TIPS = [
-    "Lower the minimum score threshold for this run.",
-    "Broaden target titles or add adjacent titles to your profile.",
-    "Add common variants of your core skills.",
-    "Widen location or include remote/hybrid arrangements.",
-    "Open the manual check URLs below for sources that block automation.",
-]
-COLLAPSE_RESULTS_AFTER = 20
-COLLAPSED_RESULTS_RENDER_LIMIT = 200
 
 
 def generate_report(
@@ -2427,38 +2415,10 @@ def _html_recommended_section(recommended: list[dict], profile: dict) -> str:
 
 def _html_results_table(scored_results: list[dict]) -> str:
     """Generate HTML for all results table."""
-    if not scored_results:
-        return _html_zero_results_section(ZERO_RESULTS_TIPS)
-
-    visible_results = scored_results[:COLLAPSE_RESULTS_AFTER]
-    visible_rows = [
-        _html_result_row(result, index)
-        for index, result in enumerate(visible_results, 1)
-    ]
-    visible_rows_html = "".join(visible_rows)
-    collapsed_rows_html = ""
-    hidden_count = max(0, len(scored_results) - COLLAPSE_RESULTS_AFTER)
-    if hidden_count:
-        collapsed_results = scored_results[
-            COLLAPSE_RESULTS_AFTER:COLLAPSE_RESULTS_AFTER + COLLAPSED_RESULTS_RENDER_LIMIT
-        ]
-        collapsed_rows = [
-            _html_result_row(result, index)
-            for index, result in enumerate(collapsed_results, COLLAPSE_RESULTS_AFTER + 1)
-        ]
-        omitted_count = max(0, hidden_count - len(collapsed_rows))
-        collapsed_rows_html = _html_collapsed_results_section(
-            hidden_count=hidden_count,
-            rows_html="".join(collapsed_rows),
-            omitted_count=omitted_count,
-        )
-
-    filter_controls = _html_filter_controls()
-
-    return _html_results_section(
-        filter_controls=filter_controls,
-        visible_rows_html=visible_rows_html,
-        collapsed_rows_html=collapsed_rows_html,
+    return _html_results_table_renderer(
+        scored_results,
+        row_renderer=_html_result_row,
+        filter_controls=_html_filter_controls(),
     )
 
 
