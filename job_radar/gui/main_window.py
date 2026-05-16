@@ -60,6 +60,7 @@ from job_radar.gui.applications_view_model import (
     application_status_menu_labels,
     build_applications_view_model,
     filter_application_next_actions,
+    format_next_action_due_text,
     normalize_application_detail_input,
 )
 from job_radar.gui.dashboard_view_model import build_dashboard_actions
@@ -987,16 +988,7 @@ class MainWindow(ctk.CTk):
 
     def _format_next_action_due_text(self, action: dict) -> str:
         """Return a compact due-date label for an application next action."""
-        days_until = action.get("days_until")
-        if action.get("is_overdue"):
-            return f"Overdue by {abs(int(days_until or 0))} day(s)"
-        if days_until == 0:
-            return "Due today"
-        if isinstance(days_until, int) and days_until > 0:
-            return f"Due in {days_until} day(s)"
-        if action.get("next_action_date"):
-            return f"Due {action['next_action_date']}"
-        return "No due date"
+        return format_next_action_due_text(action)
 
     def _complete_application_next_action(self, parent, queued_action: dict):
         """Clear a queued next action after the user completes it."""

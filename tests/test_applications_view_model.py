@@ -7,6 +7,7 @@ from job_radar.gui.applications_view_model import (
     application_status_menu_labels,
     build_applications_view_model,
     filter_application_next_actions,
+    format_next_action_due_text,
     normalize_application_detail_input,
     normalize_application_status,
 )
@@ -153,6 +154,17 @@ def test_filter_application_next_actions_supports_followup_focus_modes():
         action["company"]
         for action in filter_application_next_actions(actions, "due_soon")
     ] == ["TodayCo", "SoonCo"]
+
+
+def test_format_next_action_due_text_formats_queue_states():
+    assert format_next_action_due_text({
+        "is_overdue": True,
+        "days_until": -2,
+    }) == "Overdue by 2 day(s)"
+    assert format_next_action_due_text({"days_until": 0}) == "Due today"
+    assert format_next_action_due_text({"days_until": 3}) == "Due in 3 day(s)"
+    assert format_next_action_due_text({"next_action_date": "2026-05-20"}) == "Due 2026-05-20"
+    assert format_next_action_due_text({}) == "No due date"
 
 
 def test_application_status_from_label_maps_display_labels_to_tracker_values():

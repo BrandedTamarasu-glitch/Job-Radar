@@ -129,6 +129,20 @@ def filter_application_next_actions(
     return actions
 
 
+def format_next_action_due_text(action: dict[str, Any]) -> str:
+    """Return a compact due-date label for an application next action."""
+    days_until = action.get("days_until")
+    if action.get("is_overdue"):
+        return f"Overdue by {abs(int(days_until or 0))} day(s)"
+    if days_until == 0:
+        return "Due today"
+    if isinstance(days_until, int) and days_until > 0:
+        return f"Due in {days_until} day(s)"
+    if action.get("next_action_date"):
+        return f"Due {action['next_action_date']}"
+    return "No due date"
+
+
 def append_application_note(existing_notes: str | None, note: str) -> str:
     """Append a rendered note template to an application's existing notes."""
     existing = (existing_notes or "").strip()
