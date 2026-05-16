@@ -4,6 +4,7 @@ from job_radar.gui.applications_view_model import (
     APPLICATION_STATUS_ORDER,
     ApplicationRow,
     append_application_note,
+    application_followup_filter_options,
     application_next_action_row,
     application_pipeline_display_row,
     application_status_from_label,
@@ -157,6 +158,14 @@ def test_filter_application_next_actions_supports_followup_focus_modes():
         action["company"]
         for action in filter_application_next_actions(actions, "due_soon")
     ] == ["TodayCo", "SoonCo"]
+
+
+def test_application_followup_filter_options_are_stable_for_gui_buttons():
+    assert application_followup_filter_options() == [
+        ("all", "All"),
+        ("overdue", "Overdue"),
+        ("due_soon", "Due Soon"),
+    ]
 
 
 def test_format_next_action_due_text_formats_queue_states():

@@ -56,6 +56,7 @@ from job_radar.tracker import (
 from job_radar.update_checker import UpdateChecker, launch_installer, cleanup_old_installers, extract_summary
 from job_radar.gui.applications_view_model import (
     append_application_note,
+    application_followup_filter_options,
     application_next_action_row,
     application_pipeline_display_row,
     application_status_from_label,
@@ -783,11 +784,7 @@ class MainWindow(ctk.CTk):
             font=ctk.CTkFont(size=12, weight="bold"),
         ).pack(side="left", padx=(0, 8))
 
-        for filter_key, label in (
-            ("all", "All"),
-            ("overdue", "Overdue"),
-            ("due_soon", "Due Soon"),
-        ):
+        for filter_key, label in application_followup_filter_options():
             ctk.CTkButton(
                 filter_frame,
                 text=label,

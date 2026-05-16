@@ -32,6 +32,14 @@ APPLICATION_EDITABLE_STATUS_ORDER = [
     "skipped",
 ]
 
+APPLICATION_FOLLOWUP_FILTER_LABELS = {
+    "all": "All",
+    "overdue": "Overdue",
+    "due_soon": "Due Soon",
+}
+
+APPLICATION_FOLLOWUP_FILTER_ORDER = ["all", "overdue", "due_soon"]
+
 
 @dataclass(frozen=True)
 class ApplicationRow:
@@ -145,6 +153,14 @@ def filter_application_next_actions(
             and 0 <= int(action["days_until"]) <= due_soon_days
         ]
     return actions
+
+
+def application_followup_filter_options() -> list[tuple[str, str]]:
+    """Return stable follow-up filter options for the Applications tab."""
+    return [
+        (filter_key, APPLICATION_FOLLOWUP_FILTER_LABELS[filter_key])
+        for filter_key in APPLICATION_FOLLOWUP_FILTER_ORDER
+    ]
 
 
 def format_next_action_due_text(action: dict[str, Any]) -> str:
