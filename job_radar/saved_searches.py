@@ -252,6 +252,16 @@ def format_search_history_detail(item: dict[str, Any]) -> str:
     return f"{format_run_summary(item)}\n{format_search_insight(item)}"
 
 
+def saved_search_success_message(name: str) -> str:
+    """Return GUI feedback after saving a named search."""
+    return f"Saved: {name}"
+
+
+def saved_search_error_message(error: object) -> str:
+    """Return GUI feedback after a saved-search failure."""
+    return f"Save failed: {error}"
+
+
 def prioritize_changed_searches(
     items: list[dict[str, Any]],
     limit: int = 3,

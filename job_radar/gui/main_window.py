@@ -111,6 +111,8 @@ from job_radar.saved_searches import (
     prioritize_changed_searches,
     record_search_run,
     record_recent_search,
+    saved_search_error_message,
+    saved_search_success_message,
     save_named_search,
     summarize_search_config,
 )
@@ -1475,10 +1477,16 @@ class MainWindow(ctk.CTk):
         try:
             save_named_search(name, config)
             if self._saved_search_status_label is not None:
-                self._saved_search_status_label.configure(text=f"Saved: {name}", text_color="green")
+                self._saved_search_status_label.configure(
+                    text=saved_search_success_message(name),
+                    text_color="green",
+                )
         except Exception as e:
             if self._saved_search_status_label is not None:
-                self._saved_search_status_label.configure(text=f"Save failed: {e}", text_color="red")
+                self._saved_search_status_label.configure(
+                    text=saved_search_error_message(e),
+                    text_color="red",
+                )
 
     def _open_demo_report(self):
         """Generate and open the no-network demo report from the GUI."""

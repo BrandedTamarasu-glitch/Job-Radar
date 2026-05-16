@@ -12,6 +12,8 @@ from job_radar.saved_searches import (
     prioritize_changed_searches,
     record_search_run,
     record_recent_search,
+    saved_search_error_message,
+    saved_search_success_message,
     save_named_search,
     summarize_search_config,
 )
@@ -344,6 +346,11 @@ def test_format_search_history_detail_combines_summary_and_insight():
         "Last run: 12 results, +4 vs previous, 5 new, 3 high-score | 2 runs\n"
         "Change: +4 total, +3 new, +2 high-score vs previous."
     )
+
+
+def test_saved_search_status_messages_are_consistent_for_gui():
+    assert saved_search_success_message("Remote backend") == "Saved: Remote backend"
+    assert saved_search_error_message(ValueError("bad name")) == "Save failed: bad name"
 
 
 def test_prioritize_changed_searches_surfaces_largest_changes_first():
