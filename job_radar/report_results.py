@@ -5,6 +5,37 @@ from __future__ import annotations
 import html
 
 
+def html_collapsed_results_section(*, hidden_count: int, rows_html: str, omitted_count: int = 0) -> str:
+    """Generate the expandable lower-score result table section."""
+    omitted_note = ""
+    if omitted_count:
+        omitted_note = (
+            f'<p class="text-muted small mt-2 mb-0">'
+            f'{omitted_count} additional lower-score rows omitted from the HTML view '
+            f'to keep large reports responsive.</p>'
+        )
+
+    table_header = html_results_table_header(
+        "Additional lower-score job results sorted by relevance score"
+    )
+    return f"""
+        <details class="mt-3" id="lower-score-results">
+          <summary class="btn btn-outline-secondary btn-sm">
+            Show {hidden_count} additional lower-score results
+          </summary>
+          <div class="table-responsive mt-3">
+            <table class="table table-striped table-hover">
+              {table_header}
+              <tbody>
+                {rows_html}
+              </tbody>
+            </table>
+          </div>
+          {omitted_note}
+        </details>
+        """
+
+
 def html_zero_results_section(tips: list[str]) -> str:
     """Generate the all-results empty-state guidance section."""
     tip_items = "".join(f"<li>{html.escape(tip)}</li>" for tip in tips)

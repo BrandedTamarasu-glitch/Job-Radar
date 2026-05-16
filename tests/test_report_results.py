@@ -2,7 +2,35 @@
 
 from __future__ import annotations
 
-from job_radar.report_results import html_results_table_header, html_zero_results_section
+from job_radar.report_results import (
+    html_collapsed_results_section,
+    html_results_table_header,
+    html_zero_results_section,
+)
+
+
+def test_html_collapsed_results_section_renders_lower_score_table():
+    html = html_collapsed_results_section(
+        hidden_count=3,
+        rows_html="<tr><td>Job</td></tr>",
+    )
+
+    assert 'id="lower-score-results"' in html
+    assert "Show 3 additional lower-score results" in html
+    assert "Additional lower-score job results sorted by relevance score" in html
+    assert "<tr><td>Job</td></tr>" in html
+    assert "additional lower-score rows omitted" not in html
+
+
+def test_html_collapsed_results_section_renders_omitted_note():
+    html = html_collapsed_results_section(
+        hidden_count=203,
+        rows_html="<tr><td>Job</td></tr>",
+        omitted_count=2,
+    )
+
+    assert "2 additional lower-score rows omitted from the HTML view" in html
+    assert "to keep large reports responsive" in html
 
 
 def test_html_zero_results_section_renders_empty_state_tips():

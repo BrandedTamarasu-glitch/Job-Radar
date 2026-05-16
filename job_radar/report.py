@@ -28,6 +28,7 @@ from .report_matching import match_highlights as _match_highlights
 from .report_matching import match_summary_text as _match_summary_text
 from .report_matching import skill_callout_groups as _skill_callout_groups
 from .report_profile import html_profile_section as _html_profile_section
+from .report_results import html_collapsed_results_section as _html_collapsed_results_section
 from .report_results import html_results_table_header as _html_results_table_header
 from .report_results import html_zero_results_section as _html_zero_results_section
 from .report_safety import safe_external_url as _safe_external_url
@@ -2448,33 +2449,12 @@ def _html_results_table(scored_results: list[dict]) -> str:
             _html_result_row(result, index)
             for index, result in enumerate(collapsed_results, COLLAPSE_RESULTS_AFTER + 1)
         ]
-        collapsed_table_header = _html_results_table_header(
-            "Additional lower-score job results sorted by relevance score"
-        )
         omitted_count = max(0, hidden_count - len(collapsed_rows))
-        omitted_note = ""
-        if omitted_count:
-            omitted_note = (
-                f'<p class="text-muted small mt-2 mb-0">'
-                f'{omitted_count} additional lower-score rows omitted from the HTML view '
-                f'to keep large reports responsive.</p>'
-            )
-        collapsed_rows_html = f"""
-        <details class="mt-3" id="lower-score-results">
-          <summary class="btn btn-outline-secondary btn-sm">
-            Show {hidden_count} additional lower-score results
-          </summary>
-          <div class="table-responsive mt-3">
-            <table class="table table-striped table-hover">
-              {collapsed_table_header}
-              <tbody>
-                {"".join(collapsed_rows)}
-              </tbody>
-            </table>
-          </div>
-          {omitted_note}
-        </details>
-        """
+        collapsed_rows_html = _html_collapsed_results_section(
+            hidden_count=hidden_count,
+            rows_html="".join(collapsed_rows),
+            omitted_count=omitted_count,
+        )
 
     filter_controls = _html_filter_controls()
 
