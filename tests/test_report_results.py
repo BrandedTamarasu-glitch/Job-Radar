@@ -4,9 +4,25 @@ from __future__ import annotations
 
 from job_radar.report_results import (
     html_collapsed_results_section,
+    html_results_section,
     html_results_table_header,
     html_zero_results_section,
 )
+
+
+def test_html_results_section_renders_visible_and_collapsed_results():
+    html = html_results_section(
+        filter_controls="<div>Filters</div>",
+        visible_rows_html="<tr><td>Visible</td></tr>",
+        collapsed_rows_html="<details>More</details>",
+    )
+
+    assert 'aria-labelledby="results-heading"' in html
+    assert "<div>Filters</div>" in html
+    assert "All Results (sorted by score)" in html
+    assert "Job search results sorted by relevance score, highest first" in html
+    assert "<tr><td>Visible</td></tr>" in html
+    assert "<details>More</details>" in html
 
 
 def test_html_collapsed_results_section_renders_lower_score_table():

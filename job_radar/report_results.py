@@ -5,6 +5,30 @@ from __future__ import annotations
 import html
 
 
+def html_results_section(*, filter_controls: str, visible_rows_html: str, collapsed_rows_html: str = "") -> str:
+    """Generate the all-results section around visible and collapsed rows."""
+    table_header = html_results_table_header(
+        "Job search results sorted by relevance score, highest first"
+    )
+    return f"""
+    <section aria-labelledby="results-heading">
+      <div class="mb-4">
+        {filter_controls}
+        <h2 id="results-heading" class="h4 mb-3">All Results (sorted by score)</h2>
+        <div class="table-responsive">
+          <table class="table table-striped table-hover">
+            {table_header}
+            <tbody>
+              {visible_rows_html}
+            </tbody>
+          </table>
+        </div>
+        {collapsed_rows_html}
+      </div>
+    </section>
+    """
+
+
 def html_collapsed_results_section(*, hidden_count: int, rows_html: str, omitted_count: int = 0) -> str:
     """Generate the expandable lower-score result table section."""
     omitted_note = ""

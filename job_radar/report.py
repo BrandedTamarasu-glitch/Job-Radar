@@ -29,7 +29,7 @@ from .report_matching import match_summary_text as _match_summary_text
 from .report_matching import skill_callout_groups as _skill_callout_groups
 from .report_profile import html_profile_section as _html_profile_section
 from .report_results import html_collapsed_results_section as _html_collapsed_results_section
-from .report_results import html_results_table_header as _html_results_table_header
+from .report_results import html_results_section as _html_results_section
 from .report_results import html_zero_results_section as _html_zero_results_section
 from .report_safety import safe_external_url as _safe_external_url
 from .report_source_warnings import failed_source_names as _failed_source_names
@@ -2431,9 +2431,6 @@ def _html_results_table(scored_results: list[dict]) -> str:
         return _html_zero_results_section(ZERO_RESULTS_TIPS)
 
     visible_results = scored_results[:COLLAPSE_RESULTS_AFTER]
-    visible_table_header = _html_results_table_header(
-        "Job search results sorted by relevance score, highest first"
-    )
     visible_rows = [
         _html_result_row(result, index)
         for index, result in enumerate(visible_results, 1)
@@ -2458,23 +2455,11 @@ def _html_results_table(scored_results: list[dict]) -> str:
 
     filter_controls = _html_filter_controls()
 
-    return f"""
-    <section aria-labelledby="results-heading">
-      <div class="mb-4">
-        {filter_controls}
-        <h2 id="results-heading" class="h4 mb-3">All Results (sorted by score)</h2>
-        <div class="table-responsive">
-          <table class="table table-striped table-hover">
-            {visible_table_header}
-            <tbody>
-              {visible_rows_html}
-            </tbody>
-          </table>
-        </div>
-        {collapsed_rows_html}
-      </div>
-    </section>
-    """
+    return _html_results_section(
+        filter_controls=filter_controls,
+        visible_rows_html=visible_rows_html,
+        collapsed_rows_html=collapsed_rows_html,
+    )
 
 
 def _html_result_row(result: dict, index: int) -> str:
