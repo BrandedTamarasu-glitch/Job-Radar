@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from job_radar.saved_searches import (
     SAVED_SEARCHES_SCHEMA_VERSION,
     delete_named_search,
+    format_search_history_detail,
     format_search_insight,
     format_run_summary,
     load_search_history,
@@ -330,6 +331,19 @@ def test_format_search_insight_handles_flat_runs():
     }
 
     assert format_search_insight(item) == "No result movement since the previous run."
+
+
+def test_format_search_history_detail_combines_summary_and_insight():
+    item = {
+        "run_count": 2,
+        "previous_result_stats": {"total": 8, "new": 2, "high_score": 1},
+        "last_result_stats": {"total": 12, "new": 5, "high_score": 3},
+    }
+
+    assert format_search_history_detail(item) == (
+        "Last run: 12 results, +4 vs previous, 5 new, 3 high-score | 2 runs\n"
+        "Change: +4 total, +3 new, +2 high-score vs previous."
+    )
 
 
 def test_prioritize_changed_searches_surfaces_largest_changes_first():

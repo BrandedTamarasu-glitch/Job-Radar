@@ -247,6 +247,11 @@ def format_search_insight(item: dict[str, Any]) -> str:
     return f"Change: {', '.join(changed)} vs previous."
 
 
+def format_search_history_detail(item: dict[str, Any]) -> str:
+    """Return the two-line search-history detail shown in the GUI."""
+    return f"{format_run_summary(item)}\n{format_search_insight(item)}"
+
+
 def prioritize_changed_searches(
     items: list[dict[str, Any]],
     limit: int = 3,
