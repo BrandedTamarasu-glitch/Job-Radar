@@ -6,6 +6,7 @@ from job_radar.report_markdown import (
     append_all_results_table,
     append_detailed_result,
     append_manual_urls_section,
+    append_profile_summary,
     markdown_filtered_out_section,
     markdown_result_row,
 )
@@ -83,6 +84,45 @@ def test_append_manual_urls_section_renders_heading_for_empty_urls():
         "",
         "",
     ]
+
+
+def test_append_profile_summary_renders_core_and_optional_fields(sample_profile):
+    lines = []
+    profile = dict(sample_profile)
+    profile["certifications"] = ["AWS"]
+
+    append_profile_summary(lines, profile)
+    content = "\n".join(lines)
+
+    assert "## Candidate Profile Summary" in content
+    assert "- **Level:** senior" in content
+    assert "- **Experience:** 7 years" in content
+    assert "- **Target titles:** Senior Python Developer, Backend Engineer" in content
+    assert "- **Core skills:** Python, pytest, FastAPI" in content
+    assert "- **Location:** San Francisco, CA" in content
+    assert "- **Arrangement:** remote, hybrid" in content
+    assert "- **Target market:** SF Bay Area" in content
+    assert "- **Certifications:** AWS" in content
+    assert "- **Comp floor:** $120,000" in content
+    assert "- **Dealbreakers:** relocation required" in content
+
+
+def test_append_profile_summary_uses_defaults_for_missing_values():
+    lines = []
+
+    append_profile_summary(lines, {})
+    content = "\n".join(lines)
+
+    assert "- **Level:** N/A" in content
+    assert "- **Experience:** N/A years" in content
+    assert "- **Target titles:** " in content
+    assert "- **Core skills:** " in content
+    assert "- **Location:** N/A" in content
+    assert "- **Arrangement:** " in content
+    assert "- **Target market:** N/A" in content
+    assert "Certifications" not in content
+    assert "Comp floor" not in content
+    assert "Dealbreakers" not in content
 
 
 def test_markdown_result_row_renders_safe_link_and_listing_fields(job_factory):

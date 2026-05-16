@@ -20,6 +20,7 @@ from .report_manual import html_manual_urls_section as _html_manual_urls_section
 from .report_markdown import append_all_results_table as _append_all_results_table
 from .report_markdown import append_detailed_result as _append_detailed_result
 from .report_markdown import append_manual_urls_section as _append_manual_urls_section
+from .report_markdown import append_profile_summary as _append_profile_summary
 from .report_markdown import markdown_filtered_out_section as _render_markdown_filtered_out_section
 from .report_matching import match_summary_text as _match_summary_text
 from .report_matching import skill_callout_groups as _skill_callout_groups
@@ -160,22 +161,7 @@ def _generate_markdown_report(
 
     lines.append("")
 
-    # Profile summary
-    lines.append("## Candidate Profile Summary")
-    lines.append(f"- **Level:** {profile.get('level', 'N/A')}")
-    lines.append(f"- **Experience:** {profile.get('years_experience', 'N/A')} years")
-    lines.append(f"- **Target titles:** {', '.join(profile.get('target_titles', []))}")
-    lines.append(f"- **Core skills:** {', '.join(profile.get('core_skills', []))}")
-    lines.append(f"- **Location:** {profile.get('location', 'N/A')}")
-    lines.append(f"- **Arrangement:** {', '.join(profile.get('arrangement', []))}")
-    lines.append(f"- **Target market:** {profile.get('target_market', 'N/A')}")
-    if profile.get("certifications"):
-        lines.append(f"- **Certifications:** {', '.join(profile['certifications'])}")
-    if profile.get("comp_floor"):
-        lines.append(f"- **Comp floor:** ${profile['comp_floor']:,.0f}")
-    if profile.get("dealbreakers"):
-        lines.append(f"- **Dealbreakers:** {', '.join(profile['dealbreakers'])}")
-    lines.append("")
+    _append_profile_summary(lines, profile)
 
     # Recommended roles
     if recommended:

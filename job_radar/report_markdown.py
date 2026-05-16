@@ -27,6 +27,25 @@ def append_manual_urls_section(lines: list[str], manual_urls: list[dict]) -> Non
     lines.append("")
 
 
+def append_profile_summary(lines: list[str], profile: dict) -> None:
+    """Append the candidate profile summary section."""
+    lines.append("## Candidate Profile Summary")
+    lines.append(f"- **Level:** {profile.get('level', 'N/A')}")
+    lines.append(f"- **Experience:** {profile.get('years_experience', 'N/A')} years")
+    lines.append(f"- **Target titles:** {', '.join(profile.get('target_titles', []))}")
+    lines.append(f"- **Core skills:** {', '.join(profile.get('core_skills', []))}")
+    lines.append(f"- **Location:** {profile.get('location', 'N/A')}")
+    lines.append(f"- **Arrangement:** {', '.join(profile.get('arrangement', []))}")
+    lines.append(f"- **Target market:** {profile.get('target_market', 'N/A')}")
+    if profile.get("certifications"):
+        lines.append(f"- **Certifications:** {', '.join(profile['certifications'])}")
+    if profile.get("comp_floor"):
+        lines.append(f"- **Comp floor:** ${profile['comp_floor']:,.0f}")
+    if profile.get("dealbreakers"):
+        lines.append(f"- **Dealbreakers:** {', '.join(profile['dealbreakers'])}")
+    lines.append("")
+
+
 def append_all_results_table(lines: list[str], scored_results: list[dict]) -> None:
     """Append the Markdown all-results table or empty-state guidance."""
     lines.append("## All Results (sorted by score)")
