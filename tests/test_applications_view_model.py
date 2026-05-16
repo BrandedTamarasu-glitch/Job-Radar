@@ -3,6 +3,7 @@
 from job_radar.gui.applications_view_model import (
     APPLICATION_STATUS_ORDER,
     append_application_note,
+    application_next_action_row,
     application_status_from_label,
     application_status_menu_labels,
     build_applications_view_model,
@@ -165,6 +166,20 @@ def test_format_next_action_due_text_formats_queue_states():
     assert format_next_action_due_text({"days_until": 3}) == "Due in 3 day(s)"
     assert format_next_action_due_text({"next_action_date": "2026-05-20"}) == "Due 2026-05-20"
     assert format_next_action_due_text({}) == "No due date"
+
+
+def test_application_next_action_row_normalizes_display_text():
+    row = application_next_action_row({
+        "title": "",
+        "company": "",
+        "status": "needs_status",
+        "days_until": 0,
+    })
+
+    assert row.title == "Untitled"
+    assert row.company == "Unknown company"
+    assert row.status_label == "Needs Status"
+    assert row.due_text == "Due today"
 
 
 def test_application_status_from_label_maps_display_labels_to_tracker_values():

@@ -58,6 +58,16 @@ class ApplicationGroup:
     rows: list[ApplicationRow]
 
 
+@dataclass(frozen=True)
+class ApplicationNextActionRow:
+    """Display-ready follow-up queue row."""
+
+    due_text: str
+    title: str
+    company: str
+    status_label: str
+
+
 def normalize_application_status(status: str | None) -> str:
     """Return a stable display bucket for tracker status values."""
     normalized = (status or "").strip().casefold()
@@ -141,6 +151,16 @@ def format_next_action_due_text(action: dict[str, Any]) -> str:
     if action.get("next_action_date"):
         return f"Due {action['next_action_date']}"
     return "No due date"
+
+
+def application_next_action_row(action: dict[str, Any]) -> ApplicationNextActionRow:
+    """Build display text for a follow-up queue action."""
+    return ApplicationNextActionRow(
+        due_text=format_next_action_due_text(action),
+        title=str(action.get("title") or "Untitled"),
+        company=str(action.get("company") or "Unknown company"),
+        status_label=str(action.get("status") or "needs_status").replace("_", " ").title(),
+    )
 
 
 def append_application_note(existing_notes: str | None, note: str) -> str:

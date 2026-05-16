@@ -56,6 +56,7 @@ from job_radar.tracker import (
 from job_radar.update_checker import UpdateChecker, launch_installer, cleanup_old_installers, extract_summary
 from job_radar.gui.applications_view_model import (
     append_application_note,
+    application_next_action_row,
     application_status_from_label,
     application_status_menu_labels,
     build_applications_view_model,
@@ -945,10 +946,7 @@ class MainWindow(ctk.CTk):
         ).grid(row=0, column=0, sticky="w", padx=10, pady=(8, 4))
 
         for index, action in enumerate(next_actions, start=1):
-            due_text = self._format_next_action_due_text(action)
-            title = action.get("title") or "Untitled"
-            company = action.get("company") or "Unknown company"
-            status = str(action.get("status") or "needs_status").replace("_", " ").title()
+            row = application_next_action_row(action)
 
             action_frame = ctk.CTkFrame(queue_frame, fg_color="transparent")
             action_frame.grid(row=index * 2 - 1, column=0, sticky="ew", padx=16, pady=(4, 0))
@@ -956,7 +954,7 @@ class MainWindow(ctk.CTk):
 
             ctk.CTkLabel(
                 action_frame,
-                text=f"{index}. {action['next_action']} — {title} at {company}",
+                text=f"{index}. {action['next_action']} — {row.title} at {row.company}",
                 font=ctk.CTkFont(size=13, weight="bold"),
                 anchor="w",
             ).grid(row=0, column=0, sticky="ew")
@@ -979,7 +977,7 @@ class MainWindow(ctk.CTk):
 
             ctk.CTkLabel(
                 queue_frame,
-                text=f"{due_text} | {status}",
+                text=f"{row.due_text} | {row.status_label}",
                 text_color="gray",
                 wraplength=760,
                 anchor="w",
