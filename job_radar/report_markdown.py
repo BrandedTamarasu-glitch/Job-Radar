@@ -4,8 +4,46 @@ from __future__ import annotations
 
 from .report_filtering import filter_explanation_text
 from .report_matching import match_highlights, skill_callout_groups
+from .report_results import ZERO_RESULTS_TIPS
 from .report_safety import safe_external_url
-from .report_text import markdown_cell
+from .report_text import make_snippet, markdown_cell
+
+
+def append_all_results_table(lines: list[str], scored_results: list[dict]) -> None:
+    """Append the Markdown all-results table or empty-state guidance."""
+    lines.append("## All Results (sorted by score)")
+    lines.append("")
+    if scored_results:
+        lines.append("| # | Score | New | Title | Company | Salary | Type | Location | Snippet | Link |")
+        lines.append("|---|-------|-----|-------|---------|--------|------|----------|---------|------|")
+        for index, result in enumerate(scored_results, 1):
+            lines.append(markdown_result_row(result, index))
+        lines.append("")
+    else:
+        lines.append("_No results found._")
+        lines.append("")
+        lines.append("### Try Next")
+        for tip in ZERO_RESULTS_TIPS:
+            lines.append(f"- {tip}")
+        lines.append("")
+
+
+def markdown_result_row(result: dict, index: int) -> str:
+    """Return one Markdown all-results table row."""
+    job = result["job"]
+    score = result["score"]["overall"]
+    rec = result["score"]["recommendation"]
+    is_new = result.get("is_new", True)
+    new_badge = "NEW" if is_new else ""
+    safe_job_url = safe_external_url(job.url)
+    link = f"[{job.source}]({safe_job_url})" if safe_job_url else job.source
+    salary = job.salary if job.salary != "Not listed" else "—"
+    emp_type = getattr(job, "employment_type", "") or job.arrangement
+    snippet = make_snippet(job.description, 80)
+    return (
+        f"| {index} | **{score}/5.0** ({rec}) | {new_badge} | {job.title} | {job.company} "
+        f"| {salary} | {emp_type} | {job.location} | {snippet} | {link} |"
+    )
 
 
 def markdown_filtered_out_section(filtered_out: list[dict], min_score: float) -> list[str]:

@@ -17,6 +17,7 @@ from .report_filtering import filter_explanation_text as _filter_explanation_tex
 from .report_filtering import filtered_out_results as _filtered_out_results
 from .report_filtering import html_filtered_out_section as _html_filtered_out_section
 from .report_manual import html_manual_urls_section as _html_manual_urls_section
+from .report_markdown import append_all_results_table as _append_all_results_table
 from .report_markdown import append_detailed_result as _append_detailed_result
 from .report_markdown import markdown_filtered_out_section as _render_markdown_filtered_out_section
 from .report_matching import match_summary_text as _match_summary_text
@@ -32,7 +33,6 @@ from .report_source_warnings import html_source_warnings as _html_source_warning
 from .report_source_warnings import markdown_source_failures as _markdown_source_failures
 from .report_source_warnings import markdown_source_warnings as _markdown_source_warnings
 from .report_stats import calculate_report_stats
-from .report_text import make_snippet as _make_snippet
 from .report_tracker import html_tracker_stats as _html_tracker_stats
 
 
@@ -188,35 +188,7 @@ def _generate_markdown_report(
         lines.append("_No results scored 3.5 or above in this search run._")
         lines.append("")
 
-    # All results table
-    lines.append("## All Results (sorted by score)")
-    lines.append("")
-    if scored_results:
-        lines.append("| # | Score | New | Title | Company | Salary | Type | Location | Snippet | Link |")
-        lines.append("|---|-------|-----|-------|---------|--------|------|----------|---------|------|")
-        for i, r in enumerate(scored_results, 1):
-            job = r["job"]
-            score = r["score"]["overall"]
-            rec = r["score"]["recommendation"]
-            is_new = r.get("is_new", True)
-            new_badge = "NEW" if is_new else ""
-            safe_job_url = _safe_external_url(job.url)
-            link = f"[{job.source}]({safe_job_url})" if safe_job_url else job.source
-            salary = job.salary if job.salary != "Not listed" else "—"
-            emp_type = getattr(job, "employment_type", "") or job.arrangement
-            snippet = _make_snippet(job.description, 80)
-            lines.append(
-                f"| {i} | **{score}/5.0** ({rec}) | {new_badge} | {job.title} | {job.company} "
-                f"| {salary} | {emp_type} | {job.location} | {snippet} | {link} |"
-            )
-        lines.append("")
-    else:
-        lines.append("_No results found._")
-        lines.append("")
-        lines.append("### Try Next")
-        for tip in ZERO_RESULTS_TIPS:
-            lines.append(f"- {tip}")
-        lines.append("")
+    _append_all_results_table(lines, scored_results)
 
     if source_failures:
         lines.extend(_markdown_source_failures(source_failures))

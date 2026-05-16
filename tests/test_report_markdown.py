@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
-from job_radar.report_markdown import append_detailed_result, markdown_filtered_out_section
+from job_radar.report_markdown import (
+    append_all_results_table,
+    append_detailed_result,
+    markdown_filtered_out_section,
+    markdown_result_row,
+)
 
 
 def _result(job, *, score: float = 3.8, is_new: bool = True) -> dict:
@@ -44,6 +49,52 @@ def test_markdown_filtered_out_section_renders_limited_table(job_factory):
 
 def test_markdown_filtered_out_section_omits_empty_section():
     assert markdown_filtered_out_section([], 2.8) == []
+
+
+def test_markdown_result_row_renders_safe_link_and_listing_fields(job_factory):
+    row = markdown_result_row(_result(job_factory()), 2)
+
+    assert row.startswith("| 2 | **3.8/5.0** (Good match) | NEW |")
+    assert "Senior Python Developer" in row
+    assert "TestCorp" in row
+    assert "$120k-$150k" in row
+    assert "Full-time" in row
+    assert "Remote" in row
+    assert "[Test](https://example.com/job/123)" in row
+
+
+def test_markdown_result_row_neutralizes_unsafe_link_and_not_listed_salary(job_factory):
+    row = markdown_result_row(
+        _result(job_factory(url="javascript:alert(1)", salary="Not listed"), is_new=False),
+        1,
+    )
+
+    assert "javascript:alert" not in row
+    assert "|  |" in row
+    assert "| — |" in row
+    assert "| Test |" in row
+
+
+def test_append_all_results_table_renders_rows(job_factory):
+    lines = []
+
+    append_all_results_table(lines, [_result(job_factory())])
+    content = "\n".join(lines)
+
+    assert "## All Results (sorted by score)" in content
+    assert "| # | Score | New | Title | Company | Salary | Type | Location | Snippet | Link |" in content
+    assert "Senior Python Developer" in content
+
+
+def test_append_all_results_table_renders_empty_state():
+    lines = []
+
+    append_all_results_table(lines, [])
+    content = "\n".join(lines)
+
+    assert "_No results found._" in content
+    assert "### Try Next" in content
+    assert "Lower the minimum score threshold" in content
 
 
 def test_append_detailed_result_renders_recommended_entry(job_factory, sample_profile):
