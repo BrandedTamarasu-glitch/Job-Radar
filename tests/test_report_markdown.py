@@ -5,6 +5,7 @@ from __future__ import annotations
 from job_radar.report_markdown import (
     append_all_results_table,
     append_detailed_result,
+    append_manual_urls_section,
     markdown_filtered_out_section,
     markdown_result_row,
 )
@@ -49,6 +50,39 @@ def test_markdown_filtered_out_section_renders_limited_table(job_factory):
 
 def test_markdown_filtered_out_section_omits_empty_section():
     assert markdown_filtered_out_section([], 2.8) == []
+
+
+def test_append_manual_urls_section_groups_sources_and_sanitizes_urls():
+    lines = []
+    manual_urls = [
+        {"source": "Dice", "title": "Backend", "url": "https://example.com/dice"},
+        {"source": "Dice", "title": "Python", "url": "https://example.com/python"},
+        {"source": "Unsafe", "title": "Bad", "url": "javascript:alert(1)"},
+    ]
+
+    append_manual_urls_section(lines, manual_urls)
+    content = "\n".join(lines)
+
+    assert "## Manual Check URLs" in content
+    assert "**Dice:**" in content
+    assert "- Backend: [Dice Search](https://example.com/dice)" in content
+    assert "- Python: [Dice Search](https://example.com/python)" in content
+    assert "**Unsafe:**" in content
+    assert "javascript:alert" not in content
+    assert "- Bad: Unsafe Search URL unavailable" in content
+
+
+def test_append_manual_urls_section_renders_heading_for_empty_urls():
+    lines = []
+
+    append_manual_urls_section(lines, [])
+
+    assert lines == [
+        "## Manual Check URLs",
+        "_Open these in your browser to check sources that block automated access._",
+        "",
+        "",
+    ]
 
 
 def test_markdown_result_row_renders_safe_link_and_listing_fields(job_factory):

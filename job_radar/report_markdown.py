@@ -9,6 +9,24 @@ from .report_safety import safe_external_url
 from .report_text import make_snippet, markdown_cell
 
 
+def append_manual_urls_section(lines: list[str], manual_urls: list[dict]) -> None:
+    """Append grouped manual-check URLs to a Markdown report."""
+    lines.append("## Manual Check URLs")
+    lines.append("_Open these in your browser to check sources that block automated access._")
+    lines.append("")
+    current_source = None
+    for manual_url in manual_urls:
+        if manual_url["source"] != current_source:
+            current_source = manual_url["source"]
+            lines.append(f"**{current_source}:**")
+        safe_url = safe_external_url(manual_url.get("url"))
+        if safe_url:
+            lines.append(f"- {manual_url['title']}: [{manual_url['source']} Search]({safe_url})")
+        else:
+            lines.append(f"- {manual_url['title']}: {manual_url['source']} Search URL unavailable")
+    lines.append("")
+
+
 def append_all_results_table(lines: list[str], scored_results: list[dict]) -> None:
     """Append the Markdown all-results table or empty-state guidance."""
     lines.append("## All Results (sorted by score)")

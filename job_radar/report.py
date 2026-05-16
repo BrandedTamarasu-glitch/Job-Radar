@@ -19,6 +19,7 @@ from .report_filtering import html_filtered_out_section as _html_filtered_out_se
 from .report_manual import html_manual_urls_section as _html_manual_urls_section
 from .report_markdown import append_all_results_table as _append_all_results_table
 from .report_markdown import append_detailed_result as _append_detailed_result
+from .report_markdown import append_manual_urls_section as _append_manual_urls_section
 from .report_markdown import markdown_filtered_out_section as _render_markdown_filtered_out_section
 from .report_matching import match_summary_text as _match_summary_text
 from .report_matching import skill_callout_groups as _skill_callout_groups
@@ -26,7 +27,6 @@ from .report_profile import html_profile_section as _html_profile_section
 from .report_result_rows import html_result_row as _render_html_result_row
 from .report_results import COLLAPSE_RESULTS_AFTER, COLLAPSED_RESULTS_RENDER_LIMIT, ZERO_RESULTS_TIPS
 from .report_results import html_results_table as _html_results_table_renderer
-from .report_safety import safe_external_url as _safe_external_url
 from .report_source_warnings import failed_source_names as _failed_source_names
 from .report_source_warnings import html_source_failures as _html_source_failures
 from .report_source_warnings import html_source_warnings as _html_source_warnings
@@ -197,21 +197,7 @@ def _generate_markdown_report(
 
     lines.extend(_markdown_filtered_out_section(filtered_out, min_score))
 
-    # Manual check URLs (grouped by source)
-    lines.append("## Manual Check URLs")
-    lines.append("_Open these in your browser to check sources that block automated access._")
-    lines.append("")
-    current_source = None
-    for u in manual_urls:
-        if u["source"] != current_source:
-            current_source = u["source"]
-            lines.append(f"**{current_source}:**")
-        safe_url = _safe_external_url(u.get("url"))
-        if safe_url:
-            lines.append(f"- {u['title']}: [{u['source']} Search]({safe_url})")
-        else:
-            lines.append(f"- {u['title']}: {u['source']} Search URL unavailable")
-    lines.append("")
+    _append_manual_urls_section(lines, manual_urls)
 
     content = "\n".join(lines)
     filepath.write_text(content, encoding="utf-8")
