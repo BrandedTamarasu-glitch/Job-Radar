@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Improvements
+- **Report renderer decomposition** - Split report rendering hotspots into focused modules for cards, result rows, result tables, Markdown sections, safety helpers, source warnings, profile/tracker summaries, and controls while keeping compatibility wrappers for existing report imports.
+- **Report stability coverage** - Added focused tests for extracted HTML and Markdown report renderers, including unsafe URL handling, empty states, large-report row caps, card sections, manual links, and profile summaries.
+
+### Validation
+- Full automated regression for report decomposition: 1052 passed, 8 skipped.
+
 ## v2.7.0 — 2026-05-15
 
 ### New Features

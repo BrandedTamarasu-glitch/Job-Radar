@@ -1,6 +1,6 @@
 # Audit Remediation Sprints
 
-Last updated: 2026-05-15
+Last updated: 2026-05-16
 
 This plan converts the Review Squad top-to-bottom quality, security, UX, and rebase audit into executable sprints. The current release line is blocked until Sprint 0 is complete and validated.
 
@@ -68,6 +68,11 @@ Goal: reduce merge hotspots and duplicated behavior after the trust fixes are st
 - Split report rendering into data shaping, template/assets, and export modules.
 - Consolidate profile schema construction and validation across CLI and GUI.
 - Rename source-health fields to distinguish source failures from slow-query warnings, with migration.
+
+Current progress:
+- Report rendering has been split into focused HTML and Markdown modules while preserving compatibility wrappers in `job_radar/report.py`.
+- Extracted modules now cover report safety, assets, text helpers, filtering, source warnings, tiers, matching, stats, profile/tracker summaries, manual links, job details, controls, job attributes, result tables, result rows, cards, and Markdown sections.
+- Latest validation: `1052 passed, 8 skipped`.
 
 Validation:
 - Full `pytest tests/`
