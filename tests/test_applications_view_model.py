@@ -2,8 +2,10 @@
 
 from job_radar.gui.applications_view_model import (
     APPLICATION_STATUS_ORDER,
+    ApplicationRow,
     append_application_note,
     application_next_action_row,
+    application_pipeline_display_row,
     application_status_from_label,
     application_status_menu_labels,
     build_applications_view_model,
@@ -180,6 +182,47 @@ def test_application_next_action_row_normalizes_display_text():
     assert row.company == "Unknown company"
     assert row.status_label == "Needs Status"
     assert row.due_text == "Due today"
+
+
+def test_application_pipeline_display_row_formats_heading_and_details():
+    row = ApplicationRow(
+        key="backend||acme",
+        title="Backend Engineer",
+        company="Acme",
+        status="applied",
+        status_label="Applied",
+        notes="Referral submitted",
+        next_action="Follow up",
+        next_action_date="2026-05-20",
+        updated="2026-05-16T12:34:56",
+    )
+
+    display = application_pipeline_display_row(row)
+
+    assert display.heading == "Backend Engineer — Acme"
+    assert display.detail_text == (
+        "Next: Follow up (2026-05-20) | "
+        "Notes: Referral submitted | Updated: 2026-05-16"
+    )
+
+
+def test_application_pipeline_display_row_uses_defaults_without_details():
+    row = ApplicationRow(
+        key="missing||missing",
+        title="",
+        company="",
+        status="needs_status",
+        status_label="Needs Status",
+        notes="",
+        next_action="",
+        next_action_date="",
+        updated="",
+    )
+
+    display = application_pipeline_display_row(row)
+
+    assert display.heading == "Untitled — Unknown company"
+    assert display.detail_text == "No follow-up details."
 
 
 def test_application_status_from_label_maps_display_labels_to_tracker_values():

@@ -57,6 +57,7 @@ from job_radar.update_checker import UpdateChecker, launch_installer, cleanup_ol
 from job_radar.gui.applications_view_model import (
     append_application_note,
     application_next_action_row,
+    application_pipeline_display_row,
     application_status_from_label,
     application_status_menu_labels,
     build_applications_view_model,
@@ -853,27 +854,18 @@ class MainWindow(ctk.CTk):
 
             templates = get_application_note_templates()
             for item_index, item in enumerate(group.rows, start=1):
-                details = []
-                if item.next_action:
-                    next_action = item.next_action
-                    if item.next_action_date:
-                        next_action = f"{next_action} ({item.next_action_date})"
-                    details.append(f"Next: {next_action}")
-                if item.notes:
-                    details.append(f"Notes: {item.notes}")
-                if item.updated:
-                    details.append(f"Updated: {item.updated[:10]}")
+                display_row = application_pipeline_display_row(item)
 
                 ctk.CTkLabel(
                     group_frame,
-                    text=f"{item.title or 'Untitled'} — {item.company or 'Unknown company'}",
+                    text=display_row.heading,
                     font=ctk.CTkFont(size=13, weight="bold"),
                     anchor="w",
                 ).grid(row=item_index * 3 - 2, column=0, sticky="ew", padx=16, pady=(4, 0))
 
                 ctk.CTkLabel(
                     group_frame,
-                    text=" | ".join(details) if details else "No follow-up details.",
+                    text=display_row.detail_text,
                     text_color="gray",
                     wraplength=760,
                     anchor="w",

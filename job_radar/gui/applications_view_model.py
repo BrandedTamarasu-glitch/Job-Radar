@@ -68,6 +68,14 @@ class ApplicationNextActionRow:
     status_label: str
 
 
+@dataclass(frozen=True)
+class ApplicationPipelineDisplayRow:
+    """Display text for a grouped application pipeline row."""
+
+    heading: str
+    detail_text: str
+
+
 def normalize_application_status(status: str | None) -> str:
     """Return a stable display bucket for tracker status values."""
     normalized = (status or "").strip().casefold()
@@ -161,6 +169,24 @@ def application_next_action_row(action: dict[str, Any]) -> ApplicationNextAction
         company=str(action.get("company") or "Unknown company"),
         status_label=str(action.get("status") or "needs_status").replace("_", " ").title(),
     )
+
+
+def application_pipeline_display_row(row: ApplicationRow) -> ApplicationPipelineDisplayRow:
+    """Build heading and detail text for an Applications pipeline row."""
+    details = []
+    if row.next_action:
+        next_action = row.next_action
+        if row.next_action_date:
+            next_action = f"{next_action} ({row.next_action_date})"
+        details.append(f"Next: {next_action}")
+    if row.notes:
+        details.append(f"Notes: {row.notes}")
+    if row.updated:
+        details.append(f"Updated: {row.updated[:10]}")
+
+    heading = f"{row.title or 'Untitled'} — {row.company or 'Unknown company'}"
+    detail_text = " | ".join(details) if details else "No follow-up details."
+    return ApplicationPipelineDisplayRow(heading=heading, detail_text=detail_text)
 
 
 def append_application_note(existing_notes: str | None, note: str) -> str:
