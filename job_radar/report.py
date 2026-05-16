@@ -17,7 +17,8 @@ from .report_filtering import filter_explanation_text as _filter_explanation_tex
 from .report_filtering import filtered_out_results as _filtered_out_results
 from .report_filtering import html_filtered_out_section as _html_filtered_out_section
 from .report_manual import html_manual_urls_section as _html_manual_urls_section
-from .report_matching import match_highlights as _match_highlights
+from .report_markdown import append_detailed_result as _append_detailed_result
+from .report_markdown import markdown_filtered_out_section as _render_markdown_filtered_out_section
 from .report_matching import match_summary_text as _match_summary_text
 from .report_matching import skill_callout_groups as _skill_callout_groups
 from .report_profile import html_profile_section as _html_profile_section
@@ -32,7 +33,6 @@ from .report_source_warnings import markdown_source_failures as _markdown_source
 from .report_source_warnings import markdown_source_warnings as _markdown_source_warnings
 from .report_stats import calculate_report_stats
 from .report_text import make_snippet as _make_snippet
-from .report_text import markdown_cell as _markdown_cell
 from .report_tracker import html_tracker_stats as _html_tracker_stats
 
 
@@ -247,77 +247,12 @@ def _generate_markdown_report(
 
 def _markdown_filtered_out_section(filtered_out: list[dict], min_score: float) -> list[str]:
     """Return a concise Markdown section for filtered-out jobs."""
-    if not filtered_out:
-        return []
-
-    lines = ["", "## Filtered Out", ""]
-    lines.append("| Title | Company | Score | Why |")
-    lines.append("|-------|---------|-------|-----|")
-    for result in filtered_out[:10]:
-        job = result["job"]
-        score = result.get("score", {}).get("overall", 0.0)
-        lines.append(
-            f"| {_markdown_cell(job.title)} | {_markdown_cell(job.company)} | "
-            f"{score}/5.0 | {_markdown_cell(_filter_explanation_text(result, min_score))} |"
-        )
-    if len(filtered_out) > 10:
-        lines.append(f"| ... | ... | ... | {len(filtered_out) - 10} more filtered jobs omitted |")
-    lines.append("")
-    return lines
+    return _render_markdown_filtered_out_section(filtered_out, min_score)
 
 
 def _format_detailed_result(lines: list, rank: int, result: dict, profile: dict):
     """Format a single detailed result entry for the recommended section."""
-    job = result["job"]
-    score = result["score"]
-    components = score["components"]
-    skill = components["skill_match"]
-    response = components["response"]
-    is_new = result.get("is_new", True)
-    new_tag = " [NEW]" if is_new else ""
-
-    lines.append(f"### {rank}. {job.title} — {job.company} — Score: {score['overall']}/5.0{new_tag}")
-    lines.append(f"- **Posted:** {job.date_posted}")
-    lines.append(f"- **Rate/Salary:** {job.salary}")
-    emp_type = getattr(job, "employment_type", "")
-    type_str = f" | {emp_type}" if emp_type else ""
-    lines.append(f"- **Location:** {job.location} | {job.arrangement}{type_str}")
-    lines.append(f"- **Stack match:** {skill['ratio']} — matched: {', '.join(skill['matched_core']) if skill['matched_core'] else 'none'}")
-    for label, values in _skill_callout_groups(skill, profile):
-        lines.append(f"- **{label}:** {', '.join(values)}")
-    title_rel = components.get("title_relevance", {})
-    if title_rel:
-        lines.append(f"- **Title match:** {title_rel.get('reason', 'N/A')}")
-    lines.append(f"- **Seniority:** {components['seniority']['reason']}")
-    lines.append(f"- **Response likelihood:** {response['likelihood']} — {response['reason']}")
-
-    # Compensation note
-    if components.get("comp_note"):
-        lines.append(f"- **Comp warning:** {components['comp_note']}")
-
-    # Parse confidence note
-    if components.get("parse_note"):
-        lines.append(f"- **Note:** {components['parse_note']}")
-
-    if job.apply_info:
-        lines.append(f"- **Apply:** {job.apply_info}")
-    safe_job_url = _safe_external_url(job.url)
-    if safe_job_url:
-        lines.append(f"- **Link:** [{job.source}]({safe_job_url})")
-    elif job.url:
-        lines.append(f"- **Link:** {job.source} URL unavailable")
-
-    # Talking points from profile highlights matched to this job
-    highlights = profile.get("highlights", [])
-    matched_core = skill.get("matched_core", [])
-    if highlights and matched_core:
-        relevant = _match_highlights(highlights, matched_core, job)
-        if relevant:
-            lines.append(f"- **Talking points:**")
-            for h in relevant:
-                lines.append(f"  - {h}")
-
-    lines.append("")
+    _append_detailed_result(lines, rank, result, profile)
 
 
 def _generate_html_report(
