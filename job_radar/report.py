@@ -10,8 +10,8 @@ from .report_assets import (
     html_external_scripts as _html_external_scripts,
     html_external_stylesheets as _html_external_stylesheets,
 )
-from .report_cards import html_job_card as _html_job_card
-from .report_controls import html_copy_action_bar as _html_copy_action_bar
+from .report_cards import html_hero_section as _render_html_hero_section
+from .report_cards import html_recommended_section as _render_html_recommended_section
 from .report_controls import html_filter_controls as _html_filter_controls
 from .report_filtering import filter_explanation_text as _filter_explanation_text
 from .report_filtering import filtered_out_results as _filtered_out_results
@@ -2248,62 +2248,12 @@ def _generate_html_report(
 
 def _html_hero_section(hero_jobs: list[dict], profile: dict) -> str:
     """Generate HTML for hero jobs section (score >= 4.0)."""
-    if not hero_jobs:
-        return ""
-
-    cards = []
-    for i, r in enumerate(hero_jobs, 1):
-        cards.append(_html_job_card(r, i, profile, hero=True))
-
-    cards_html = "".join(cards)
-
-    copy_all_button = _html_copy_action_bar("hero")
-
-    return f"""
-    <section aria-labelledby="hero-heading" class="hero-jobs-section">
-      <div class="mb-4">
-        <h2 id="hero-heading" class="h4 mb-3">Top Matches (Score >= 4.0)</h2>
-        <p class="text-muted mb-4">These jobs are excellent matches for your profile.</p>
-        {copy_all_button}
-        {cards_html}
-      </div>
-    </section>
-    """
+    return _render_html_hero_section(hero_jobs, profile)
 
 
 def _html_recommended_section(recommended: list[dict], profile: dict) -> str:
     """Generate HTML for recommended roles section."""
-    if not recommended:
-        return """
-        <section aria-labelledby="recommended-heading">
-          <div class="card mb-4">
-            <div class="card-header">
-              <h2 id="recommended-heading" class="h4 mb-0">Recommended Roles (Score 3.5 - 3.9)</h2>
-            </div>
-            <div class="card-body">
-              <p class="text-muted mb-0"><em>No results scored 3.5 to 3.9 in this search run.</em></p>
-            </div>
-          </div>
-        </section>
-        """
-
-    cards = []
-    for i, r in enumerate(recommended, 1):
-        cards.append(_html_job_card(r, i, profile))
-
-    cards_html = "".join(cards)
-
-    copy_all_button = _html_copy_action_bar("recommended")
-
-    return f"""
-    <section aria-labelledby="recommended-heading">
-      <div class="mb-4">
-        <h2 id="recommended-heading" class="h4 mb-3">Recommended Roles (Score 3.5 - 3.9)</h2>
-        {copy_all_button}
-        {cards_html}
-      </div>
-    </section>
-    """
+    return _render_html_recommended_section(recommended, profile)
 
 
 def _html_results_table(scored_results: list[dict]) -> str:
