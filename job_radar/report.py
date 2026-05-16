@@ -10,18 +10,13 @@ from .report_assets import (
     html_external_scripts as _html_external_scripts,
     html_external_stylesheets as _html_external_stylesheets,
 )
+from .report_cards import html_job_card as _html_job_card
 from .report_controls import html_copy_action_bar as _html_copy_action_bar
 from .report_controls import html_filter_controls as _html_filter_controls
-from .report_controls import html_shortlist_button as _html_shortlist_button
-from .report_controls import html_status_dropdown as _html_status_dropdown
 from .report_filtering import filter_explanation_text as _filter_explanation_text
 from .report_filtering import filtered_out_results as _filtered_out_results
 from .report_filtering import html_filtered_out_section as _html_filtered_out_section
-from .report_job_attrs import html_job_attrs as _html_job_attrs
-from .report_job_attrs import report_job_key as _report_job_key
-from .report_job_details import html_job_detail_items as _html_job_detail_items
 from .report_manual import html_manual_urls_section as _html_manual_urls_section
-from .report_matching import html_match_summary as _html_match_summary
 from .report_matching import match_highlights as _match_highlights
 from .report_matching import match_summary_text as _match_summary_text
 from .report_matching import skill_callout_groups as _skill_callout_groups
@@ -38,9 +33,6 @@ from .report_source_warnings import markdown_source_warnings as _markdown_source
 from .report_stats import calculate_report_stats
 from .report_text import make_snippet as _make_snippet
 from .report_text import markdown_cell as _markdown_cell
-from .report_tiers import html_new_badge as _html_new_badge
-from .report_tiers import html_score_badge as _html_score_badge
-from .report_tiers import score_tier as _score_tier
 from .report_tracker import html_tracker_stats as _html_tracker_stats
 
 
@@ -2261,56 +2253,7 @@ def _html_hero_section(hero_jobs: list[dict], profile: dict) -> str:
 
     cards = []
     for i, r in enumerate(hero_jobs, 1):
-        job = r["job"]
-        score = r["score"]
-        is_new = r.get("is_new", True)
-        new_tag = _html_new_badge(leading_space=True) if is_new else ""
-
-        # Hero jobs are always tier-strong (score >= 4.0)
-        tier = "strong"
-        score_val = score["overall"]
-
-        details_html = _html_job_detail_items(r, profile)
-        match_summary_html = _html_match_summary(r)
-
-        job_key_val = _report_job_key(job)
-        shortlist_button = _html_shortlist_button(job_key_val)
-
-        # Add data attributes (hero-job class IN ADDITION to tier-strong)
-        safe_job_url = _safe_external_url(job.url)
-        if safe_job_url:
-            data_attrs = _html_job_attrs(
-                job,
-                class_value=f"card mb-3 job-item hero-job tier-{tier}",
-                score=score_val,
-                include_tabindex=True,
-            )
-        else:
-            data_attrs = _html_job_attrs(job, class_value=f"card mb-3 hero-job tier-{tier}")
-
-        status_dropdown = _html_status_dropdown(extra_classes="ms-2")
-
-        score_badge_html = _html_score_badge(score_val, tier, label="Top Match")
-
-        card = f"""
-        <div {data_attrs}>
-          <div class="card-header">
-            <h3 class="h5 mb-0">
-              {i}. {html.escape(job.title)} — {html.escape(job.company)}
-              {score_badge_html}{new_tag}
-              {status_dropdown}
-              {shortlist_button}
-            </h3>
-          </div>
-          <div class="card-body job-card-body">
-            {match_summary_html}
-            <ul class="mb-0 job-detail-list">
-              {details_html}
-            </ul>
-          </div>
-        </div>
-        """
-        cards.append(card)
+        cards.append(_html_job_card(r, i, profile, hero=True))
 
     cards_html = "".join(cards)
 
@@ -2346,56 +2289,7 @@ def _html_recommended_section(recommended: list[dict], profile: dict) -> str:
 
     cards = []
     for i, r in enumerate(recommended, 1):
-        job = r["job"]
-        score = r["score"]
-        is_new = r.get("is_new", True)
-        new_tag = _html_new_badge(leading_space=True) if is_new else ""
-
-        # Determine tier based on score
-        score_val = score["overall"]
-        tier = _score_tier(score_val)
-
-        details_html = _html_job_detail_items(r, profile)
-        match_summary_html = _html_match_summary(r)
-
-        job_key_val = _report_job_key(job)
-        shortlist_button = _html_shortlist_button(job_key_val)
-
-        # Add data attributes for clipboard and status tracking functionality
-        safe_job_url = _safe_external_url(job.url)
-        if safe_job_url:
-            data_attrs = _html_job_attrs(
-                job,
-                class_value=f"card mb-3 job-item tier-{tier}",
-                score=score_val,
-                include_tabindex=True,
-            )
-        else:
-            data_attrs = _html_job_attrs(job, class_value=f"card mb-3 tier-{tier}")
-
-        status_dropdown = _html_status_dropdown(extra_classes="ms-2")
-
-        score_badge_html = _html_score_badge(score_val, tier)
-
-        card = f"""
-        <div {data_attrs}>
-          <div class="card-header">
-            <h3 class="h5 mb-0">
-              {i}. {html.escape(job.title)} — {html.escape(job.company)}
-              {score_badge_html}{new_tag}
-              {status_dropdown}
-              {shortlist_button}
-            </h3>
-          </div>
-          <div class="card-body job-card-body">
-            {match_summary_html}
-            <ul class="mb-0 job-detail-list">
-              {details_html}
-            </ul>
-          </div>
-        </div>
-        """
-        cards.append(card)
+        cards.append(_html_job_card(r, i, profile))
 
     cards_html = "".join(cards)
 
