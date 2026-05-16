@@ -20,14 +20,13 @@ from .report_filtering import html_filtered_out_section as _html_filtered_out_se
 from .report_job_attrs import html_job_attrs as _html_job_attrs
 from .report_job_attrs import report_job_key as _report_job_key
 from .report_job_details import html_job_detail_items as _html_job_detail_items
-from .report_job_details import html_result_link as _html_result_link
-from .report_job_details import result_row_display_fields as _result_row_display_fields
 from .report_manual import html_manual_urls_section as _html_manual_urls_section
 from .report_matching import html_match_summary as _html_match_summary
 from .report_matching import match_highlights as _match_highlights
 from .report_matching import match_summary_text as _match_summary_text
 from .report_matching import skill_callout_groups as _skill_callout_groups
 from .report_profile import html_profile_section as _html_profile_section
+from .report_result_rows import html_result_row as _render_html_result_row
 from .report_results import COLLAPSE_RESULTS_AFTER, COLLAPSED_RESULTS_RENDER_LIMIT, ZERO_RESULTS_TIPS
 from .report_results import html_results_table as _html_results_table_renderer
 from .report_safety import safe_external_url as _safe_external_url
@@ -2424,45 +2423,4 @@ def _html_results_table(scored_results: list[dict]) -> str:
 
 def _html_result_row(result: dict, index: int) -> str:
     """Generate one HTML row for the all-results table."""
-    job = result["job"]
-    score = result["score"]["overall"]
-    rec = result["score"]["recommendation"]
-    is_new = result.get("is_new", True)
-    tier = _score_tier(score)
-
-    display_fields = _result_row_display_fields(job)
-    job_key_val = _report_job_key(job)
-
-    safe_job_url = _safe_external_url(job.url)
-    if safe_job_url:
-        link_html = _html_result_link(job)
-        row_attrs = _html_job_attrs(
-            job,
-            class_value=f"job-item tier-{tier}",
-            score=score,
-            include_tabindex=True,
-        )
-    else:
-        link_html = _html_result_link(job)
-        row_attrs = _html_job_attrs(job, class_value=f"tier-{tier}")
-
-    status_dropdown = _html_status_dropdown()
-    new_badge_accessible = _html_new_badge(rounded=True) if is_new else ''
-    shortlist_button = _html_shortlist_button(job_key_val, compact=True)
-    score_badge_accessible = _html_score_badge(score, tier)
-
-    return f"""
-    <tr {row_attrs}>
-      <th scope="row" data-label="#">{index}</th>
-      <td data-label="Score">{score_badge_accessible}<br><small class="text-muted">({html.escape(rec)})</small></td>
-      <td data-label="New" class="col-new">{new_badge_accessible}</td>
-      <td data-label="Status">{status_dropdown}<br>{shortlist_button}</td>
-      <td data-label="Title"><strong>{html.escape(job.title)}</strong></td>
-      <td data-label="Company">{html.escape(job.company)}</td>
-      <td data-label="Salary" class="col-salary">{display_fields["salary"]}</td>
-      <td data-label="Type" class="col-type">{display_fields["employment_type"]}</td>
-      <td data-label="Location">{html.escape(job.location)}</td>
-      <td data-label="Snippet" class="col-snippet">{display_fields["snippet"]}</td>
-      <td data-label="Link" class="no-label">{link_html}</td>
-    </tr>
-    """
+    return _render_html_result_row(result, index)
