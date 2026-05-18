@@ -16,6 +16,7 @@ from pathlib import Path
 import requests
 
 from job_radar.search_pipeline import (
+    apply_scored_result_filters,
     apply_preferred_skills,
     filter_by_company,
     filter_by_location_strictness,
@@ -24,6 +25,7 @@ from job_radar.search_pipeline import (
     parse_company_filter,
     parse_skill_filter,
     resolve_date_filter,
+    score_results,
 )
 
 
@@ -239,7 +241,6 @@ class SearchWorker:
                 get_selected_source_display_names,
                 get_source_display_name,
             )
-            from job_radar.scoring import score_job
             from job_radar.report import generate_report
             from job_radar.tracker import (
                 filter_scored_by_application_status,
@@ -370,18 +371,7 @@ class SearchWorker:
                 return
 
             # Step 4: Score all results and filter dealbreakers
-            scored = []
-            for result in results:
-                score = score_job(result, search_profile)
-                # Filter out dealbreakers
-                if not score.get("dealbreaker"):
-                    scored.append({
-                        "job": result,
-                        "score": score
-                    })
-
-            # Sort by score descending
-            scored.sort(key=lambda x: x["score"]["overall"], reverse=True)
+            scored, _dealbreaker_count = score_results(results, search_profile)
 
             if self._stop_event.is_set():
                 self._queue.put(("cancelled",))
@@ -394,15 +384,12 @@ class SearchWorker:
                 self._queue.put(("cancelled",))
                 return
 
-            # Step 6: Apply new_only filter
-            if self._search_config.get("new_only", False):
-                scored = [r for r in scored if r.get("is_new", True)]
-
-            # Step 7: Apply min_score filter
-            min_score = self._search_config.get("min_score", 2.8)
-            scored = [r for r in scored if r["score"]["overall"] >= min_score]
-            if self._search_config.get("hide_rejected_skipped", False):
-                scored = filter_scored_by_application_status(scored, {"rejected", "skipped"})
+            # Step 6/7: Apply new_only, min_score, and optional tracker-status filters
+            scored, min_score = apply_scored_result_filters(
+                scored,
+                self._search_config,
+                status_filter_func=filter_scored_by_application_status,
+            )
 
             if self._stop_event.is_set():
                 self._queue.put(("cancelled",))

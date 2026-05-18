@@ -3,12 +3,14 @@
 from datetime import date
 
 from job_radar.search_pipeline import (
+    apply_scored_result_filters,
     apply_preferred_skills,
     filter_by_company,
     filter_by_location_strictness,
     parse_company_filter,
     parse_skill_filter,
     resolve_date_filter,
+    score_results,
 )
 from job_radar.sources import JobResult
 
@@ -61,6 +63,78 @@ def test_shared_company_and_location_filters():
     assert [job.company for job in filter_by_location_strictness(jobs, "exclude_onsite")] == [
         "Northstar Tools"
     ]
+
+
+def test_score_results_filters_dealbreakers_and_sorts_descending():
+    jobs = [
+        JobResult(
+            title="Engineer",
+            company="LowCo",
+            location="Remote",
+            arrangement="remote",
+            salary="Not listed",
+            date_posted="Today",
+            description="Build software",
+            url="https://example.com/1",
+            source="Dice",
+        ),
+        JobResult(
+            title="Engineer",
+            company="HighCo",
+            location="Remote",
+            arrangement="remote",
+            salary="Not listed",
+            date_posted="Today",
+            description="Build software",
+            url="https://example.com/2",
+            source="Dice",
+        ),
+        JobResult(
+            title="Engineer",
+            company="NopeCo",
+            location="Remote",
+            arrangement="remote",
+            salary="Not listed",
+            date_posted="Today",
+            description="Build software",
+            url="https://example.com/3",
+            source="Dice",
+        ),
+    ]
+
+    def score_func(job, _profile):
+        scores = {
+            "LowCo": {"overall": 3.0},
+            "HighCo": {"overall": 4.2},
+            "NopeCo": {"overall": 5.0, "dealbreaker": "onsite"},
+        }
+        return scores[job.company]
+
+    scored, dealbreaker_count = score_results(jobs, {"name": "Test User"}, score_func)
+
+    assert [result["job"].company for result in scored] == ["HighCo", "LowCo"]
+    assert dealbreaker_count == 1
+
+
+def test_apply_scored_result_filters_handles_new_score_and_status_filters():
+    scored = [
+        {"job": object(), "score": {"overall": 4.0}, "is_new": True},
+        {"job": object(), "score": {"overall": 3.0}, "is_new": False},
+        {"job": object(), "score": {"overall": 2.0}, "is_new": True},
+    ]
+
+    def status_filter(results, statuses):
+        assert statuses == {"rejected", "skipped"}
+        return results[:1]
+
+    filtered, min_score = apply_scored_result_filters(
+        scored,
+        {"new_only": True, "min_score": 2.8, "hide_rejected_skipped": True},
+        status_filter_func=status_filter,
+    )
+
+    assert filtered == [scored[0]]
+    assert min_score == 2.8
 
 
 def test_resolve_date_filter_supports_custom_dates_and_freshness():

@@ -133,6 +133,49 @@ def filter_by_location_strictness(results: list, strictness: str | None = None) 
     return filtered
 
 
+def score_results(results: list, profile: dict, score_func=None) -> tuple[list[dict], int]:
+    """Score results, remove dealbreakers, and sort highest score first."""
+    if score_func is None:
+        from job_radar.scoring import score_job
+
+        score_func = score_job
+
+    scored = []
+    dealbreaker_count = 0
+    for result in results:
+        score = score_func(result, profile)
+        if score.get("dealbreaker"):
+            dealbreaker_count += 1
+            continue
+        scored.append({"job": result, "score": score})
+
+    scored.sort(key=lambda item: item["score"]["overall"], reverse=True)
+    return scored, dealbreaker_count
+
+
+def apply_scored_result_filters(
+    scored: list[dict],
+    search_config: dict,
+    *,
+    status_filter_func=None,
+) -> tuple[list[dict], float]:
+    """Apply new-only, min-score, and optional tracker-status filters."""
+    if search_config.get("new_only", False):
+        scored = [result for result in scored if result.get("is_new", True)]
+
+    min_score = search_config.get("min_score", 2.8)
+    scored = [result for result in scored if result["score"]["overall"] >= min_score]
+
+    if search_config.get("hide_rejected_skipped", False):
+        if status_filter_func is None:
+            from job_radar.tracker import filter_scored_by_application_status
+
+            status_filter_func = filter_scored_by_application_status
+        scored = status_filter_func(scored, {"rejected", "skipped"})
+
+    return scored, min_score
+
+
 def resolve_date_filter(search_config: dict, today: date | None = None) -> tuple[str | None, str | None]:
     """Resolve freshness/custom settings into date-filter boundaries."""
     from_date = search_config.get("from_date")
