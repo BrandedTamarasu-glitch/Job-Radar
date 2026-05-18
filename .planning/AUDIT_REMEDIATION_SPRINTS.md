@@ -81,6 +81,7 @@ Current progress:
 - API credential test status formatting and HTTP response mapping now live in `job_radar/gui/api_status_view_model.py`.
 - Installer launch prompt/status/error messages now live in `job_radar/gui/install_status_view_model.py`.
 - Profile tab summary and readiness formatting now live in `job_radar/gui/profile_view_model.py`.
+- Profile dashboard next-step panel construction now lives in `job_radar/gui/dashboard_panel.py`.
 - Latest validation: `1084 passed, 8 skipped`.
 
 Validation:

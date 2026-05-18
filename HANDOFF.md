@@ -109,12 +109,15 @@ Started reducing `job_radar/gui/main_window.py` by moving display formatting int
   - Profile tab summary row formatting
   - Profile tab readiness summary/guidance formatting
   - Profile tab load error text
+- `job_radar/gui/dashboard_panel.py`
+  - Profile dashboard next-step panel construction
 
 Current line counts:
 
 ```text
 2149 job_radar/report.py
-3309 job_radar/gui/main_window.py
+3268 job_radar/gui/main_window.py
+  62 job_radar/gui/dashboard_panel.py
   75 job_radar/gui/api_status_view_model.py
   31 job_radar/gui/install_status_view_model.py
   77 job_radar/gui/profile_view_model.py

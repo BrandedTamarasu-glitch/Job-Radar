@@ -1,6 +1,7 @@
 import inspect
 
 from job_radar.gui.applications_tab import _add_application_next_action_queue, build_applications_tab_content
+from job_radar.gui.dashboard_panel import add_dashboard_next_steps
 from job_radar.gui.main_window import MainWindow
 from job_radar.gui.profile_form import PROFILE_FIELD_HINTS, ProfileForm
 
@@ -54,11 +55,11 @@ def test_dashboard_actions_use_local_state_sources():
 
 
 def test_dashboard_next_steps_link_to_target_tabs():
-    source = inspect.getsource(MainWindow._add_dashboard_next_steps)
+    source = inspect.getsource(add_dashboard_next_steps)
 
     assert "Next Steps" in source
     assert "action.detail" in source
-    assert "command=lambda target=action.target: self._show_tab(target)" in source
+    assert "command=lambda target=action.target: on_select(target)" in source
 
 
 def test_show_tab_builds_lazy_tabs_before_navigation():
