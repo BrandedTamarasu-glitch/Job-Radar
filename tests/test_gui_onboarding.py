@@ -3,6 +3,7 @@ import inspect
 from job_radar.gui.applications_tab import _add_application_next_action_queue, build_applications_tab_content
 from job_radar.gui.dashboard_panel import add_dashboard_next_steps
 from job_radar.gui.main_window import MainWindow
+from job_radar.gui.profile_panel import add_profile_field
 from job_radar.gui.profile_form import PROFILE_FIELD_HINTS, ProfileForm
 
 
@@ -60,6 +61,14 @@ def test_dashboard_next_steps_link_to_target_tabs():
     assert "Next Steps" in source
     assert "action.detail" in source
     assert "command=lambda target=action.target: on_select(target)" in source
+
+
+def test_profile_field_helper_builds_label_value_rows():
+    source = inspect.getsource(add_profile_field)
+
+    assert 'font=ctk.CTkFont(weight="bold")' in source
+    assert "column=0" in source
+    assert "column=1" in source
 
 
 def test_show_tab_builds_lazy_tabs_before_navigation():

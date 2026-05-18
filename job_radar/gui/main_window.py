@@ -83,6 +83,7 @@ from job_radar.gui.applications_view_model import (
 from job_radar.gui.applications_tab import ApplicationsTabCallbacks, build_applications_tab_content
 from job_radar.gui.dashboard_view_model import build_dashboard_actions
 from job_radar.gui.dashboard_panel import add_dashboard_next_steps
+from job_radar.gui.profile_panel import add_profile_field
 from job_radar.gui.profile_form import ProfileForm
 from job_radar.gui.profile_view_model import (
     build_profile_readiness_display,
@@ -655,22 +656,7 @@ class MainWindow(ctk.CTk):
         value_text : str
             Value text
         """
-        # Label (bold, left-aligned)
-        label = ctk.CTkLabel(
-            parent,
-            text=label_text,
-            font=ctk.CTkFont(weight="bold"),
-            anchor="w"
-        )
-        label.grid(row=row, column=0, sticky="w", padx=(0, 10), pady=5)
-
-        # Value (left-aligned, wrapping)
-        value = ctk.CTkLabel(
-            parent,
-            text=value_text,
-            anchor="w"
-        )
-        value.grid(row=row, column=1, sticky="w", pady=5)
+        add_profile_field(parent, row, label_text, value_text)
 
     def _build_search_tab(self, parent):
         """Build Search tab with search controls and threading integration.

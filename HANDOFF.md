@@ -109,6 +109,8 @@ Started reducing `job_radar/gui/main_window.py` by moving display formatting int
   - Profile tab summary row formatting
   - Profile tab readiness summary/guidance formatting
   - Profile tab load error text
+- `job_radar/gui/profile_panel.py`
+  - Profile tab label/value row construction
 - `job_radar/gui/dashboard_panel.py`
   - Profile dashboard next-step panel construction
 
@@ -116,7 +118,8 @@ Current line counts:
 
 ```text
 2149 job_radar/report.py
-3268 job_radar/gui/main_window.py
+3254 job_radar/gui/main_window.py
+  23 job_radar/gui/profile_panel.py
   62 job_radar/gui/dashboard_panel.py
   75 job_radar/gui/api_status_view_model.py
   31 job_radar/gui/install_status_view_model.py
@@ -147,7 +150,7 @@ rtk .venv/bin/python -m pytest tests/
 Latest result:
 
 ```text
-1084 passed, 8 skipped
+1085 passed, 8 skipped
 ```
 
 ## Active Plan
