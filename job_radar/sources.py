@@ -1,6 +1,5 @@
 """Job source fetchers and URL generators."""
 
-import json as _json
 import logging
 import re
 import time
@@ -62,7 +61,6 @@ from .source_parsing import (
     _SKIP_TOKENS,
     _clean_field,
     _parse_arrangement,
-    _strip_html,
     parse_location_to_city_state,
     strip_html_and_normalize,
 )
@@ -72,6 +70,10 @@ from .source_registry import (
     selected_automated_source_display_names,
     source_queries_by_phase,
     source_display_name,
+)
+from .source_scrapers import (
+    fetch_remoteok as _fetch_remoteok_scraper,
+    fetch_weworkremotely as _fetch_weworkremotely_scraper,
 )
 
 log = logging.getLogger(__name__)
@@ -409,84 +411,7 @@ def _extract_salary_from_text(text: str) -> str:
 
 def fetch_remoteok(query: str) -> list[JobResult]:
     """Fetch remote job listings from RemoteOK's JSON API."""
-    results = []
-    url = "https://remoteok.com/api"
-
-    body = fetch_with_retry(
-        url,
-        headers={**HEADERS, "Accept": "application/json"},
-        use_cache=True,
-        cache_ttl_seconds=source_cache_ttl("remoteok"),
-    )
-    if body is None:
-        log.warning("[RemoteOK] Fetch failed")
-        return results
-
-    try:
-        data = _json.loads(body)
-        query_lower = query.lower()
-        # Only keep significant words (3+ chars) for multi-word matching
-        query_words = [w for w in query_lower.split() if len(w) >= 3]
-
-        for item in data:
-            if not isinstance(item, dict) or "id" not in item:
-                continue  # skip the legal notice entry
-
-            # Match by tags or position title
-            tags = [t.lower() for t in item.get("tags", [])]
-            position = item.get("position", "").lower()
-            desc = item.get("description", "").lower()
-            tags_text = " ".join(tags)
-
-            # Full phrase match in title or tags (best signal)
-            if query_lower in position or query_lower in tags_text:
-                pass  # strong match, proceed
-            elif len(query_words) >= 2:
-                # Multi-word query: require ALL significant words present
-                # in either the title+tags, or title+description
-                title_tags = position + " " + tags_text
-                if not all(w in title_tags or w in desc for w in query_words):
-                    continue
-            else:
-                # Single-word query: require match in title or tags (not just description)
-                if not any(w in position or w in tags_text for w in query_words):
-                    continue
-
-            salary_min = item.get("salary_min", "")
-            salary_max = item.get("salary_max", "")
-            salary = "Not listed"
-            if salary_min and salary_max:
-                salary = f"${salary_min:,} - ${salary_max:,}" if isinstance(salary_min, int) else f"${salary_min} - ${salary_max}"
-            elif salary_min:
-                salary = f"${salary_min}+"
-
-            location_text = item.get("location", "Remote")
-            if not location_text or location_text.strip() == "":
-                location_text = "Remote"
-
-            apply_url = item.get("apply_url", item.get("url", ""))
-            detail_url = item.get("url", "")
-            if detail_url and not detail_url.startswith("http"):
-                detail_url = f"https://remoteok.com{detail_url}"
-
-            results.append(JobResult(
-                title=_clean_field(item.get("position", "Unknown Title"), _MAX_TITLE),
-                company=_clean_field(item.get("company", "Unknown"), _MAX_COMPANY),
-                location=_clean_field(location_text, _MAX_LOCATION),
-                arrangement="remote",
-                salary=salary,
-                date_posted=item.get("date", "Unknown")[:10],
-                description=_strip_html(item.get("description", ""))[:500],
-                url=detail_url,
-                source="RemoteOK",
-                apply_info=apply_url or "",
-                employment_type=item.get("job_type", ""),
-            ))
-    except Exception as e:
-        log.error("[RemoteOK] Parse error: %s", e)
-
-    log.info("[RemoteOK] Found %d results matching '%s'", len(results), query)
-    return results
+    return _fetch_remoteok_scraper(query, fetch_with_retry_func=fetch_with_retry)
 
 
 # ---------------------------------------------------------------------------
@@ -514,91 +439,8 @@ _SOURCE_DISPLAY_NAMES = {
 
 
 def fetch_weworkremotely(query: str) -> list[JobResult]:
-    """Fetch remote job listings from We Work Remotely.
-
-    Note: WWR uses Cloudflare protection which blocks automated access.
-    This fetcher detects the block and returns empty results gracefully.
-    WWR is included in manual-check URLs as an alternative.
-    """
-    results = []
-    encoded_q = urllib.parse.quote_plus(query)
-    url = f"https://weworkremotely.com/remote-jobs/search?term={encoded_q}"
-
-    body = fetch_with_retry(
-        url,
-        headers=HEADERS,
-        retries=1,
-        cache_ttl_seconds=source_cache_ttl("weworkremotely"),
-    )
-    if body is None:
-        log.info("[WWR] Fetch failed for '%s' — check manual URLs", query)
-        return results
-
-    # Detect Cloudflare challenge page
-    if "Just a moment" in body[:500] or "cf-browser-verification" in body[:2000]:
-        log.info("[WWR] Cloudflare protection detected — use manual URL instead")
-        return results
-
-    try:
-        soup = BeautifulSoup(body, "html.parser")
-
-        # WWR listing structure: <section class="jobs"> > <article> or <li>
-        listings = soup.select("section.jobs li, section.jobs article")
-        if not listings:
-            # Fallback: try broader selectors
-            listings = soup.select("li.feature, li.new, article.job")
-
-        for li in listings:
-            link = li.select_one("a[href*='/remote-jobs/'], a[href*='/listings/']")
-            if not link:
-                continue
-
-            href = link.get("href", "")
-            if not href.startswith("http"):
-                href = f"https://weworkremotely.com{href}"
-
-            # Try multiple selector patterns for company/title/region
-            company_el = (
-                li.select_one(".company")
-                or li.select_one("[class*='company']")
-                or li.select_one("span.companyName")
-            )
-            title_el = (
-                li.select_one(".title")
-                or li.select_one("[class*='title']")
-                or li.select_one("span.listing-title")
-            )
-            region_el = (
-                li.select_one(".region")
-                or li.select_one("[class*='region']")
-                or li.select_one(".location")
-            )
-
-            company = company_el.get_text(strip=True) if company_el else "Unknown"
-            title = title_el.get_text(strip=True) if title_el else link.get_text(strip=True) or "Unknown Title"
-            region = region_el.get_text(strip=True) if region_el else "Remote"
-
-            # Skip if we couldn't extract a meaningful title
-            if title in ("Unknown Title", ""):
-                continue
-
-            results.append(JobResult(
-                title=_clean_field(title, _MAX_TITLE),
-                company=_clean_field(company, _MAX_COMPANY),
-                location=_clean_field(region, _MAX_LOCATION),
-                arrangement="remote",
-                salary="Not listed",
-                date_posted="Recent",
-                description="",
-                url=href,
-                source="WWR",
-                apply_info=href,
-            ))
-    except Exception as e:
-        log.error("[WWR] Parse error: %s", e)
-
-    log.info("[WWR] Found %d results for '%s'", len(results), query)
-    return results
+    """Fetch remote job listings from We Work Remotely."""
+    return _fetch_weworkremotely_scraper(query, fetch_with_retry_func=fetch_with_retry)
 
 
 # ---------------------------------------------------------------------------
