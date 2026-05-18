@@ -1478,12 +1478,7 @@ class MainWindow(ctk.CTk):
             # Update button text
             self._manual_check_button.configure(text=result_text, state="normal")
 
-            # Reset button text after 3 seconds
-            def reset_button_text():
-                if self._manual_check_button is not None:
-                    self._manual_check_button.configure(text="Check for Updates")
-
-            self.after(3000, reset_button_text)
+            self.after(3000, self._reset_manual_check_button)
 
         # Update status label if exists
         if self._update_status_label is not None:
@@ -1491,6 +1486,11 @@ class MainWindow(ctk.CTk):
 
         # Reset flag
         self._manual_check_pending = False
+
+    def _reset_manual_check_button(self):
+        """Restore the manual update-check button label when the button still exists."""
+        if self._manual_check_button is not None:
+            self._manual_check_button.configure(text="Check for Updates")
 
     def _handle_manual_update_available(self, version: str):
         """Show the manual-check result for an available update when relevant."""

@@ -93,6 +93,7 @@ Current progress:
 - MainWindow now uses one lazy tab-build helper for user and programmatic tab navigation.
 - MainWindow now uses a shared available-update queue handling helper.
 - MainWindow now uses shared manual update-check result helpers for update queue messages.
+- MainWindow now uses a shared manual update-check button reset helper.
 - MainWindow now uses one update banner teardown helper for replacement, dismiss, skip, and download cancellation paths.
 - MainWindow now uses one download worker cleanup helper for terminal download queue messages.
 - MainWindow now uses shared terminal download queue handling helpers.

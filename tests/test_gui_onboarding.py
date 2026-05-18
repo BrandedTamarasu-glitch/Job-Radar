@@ -460,6 +460,8 @@ def test_update_queue_messages_reuse_manual_result_helpers():
     update_source = inspect.getsource(MainWindow._handle_update_available)
     available_source = inspect.getsource(MainWindow._handle_manual_update_available)
     result_source = inspect.getsource(MainWindow._handle_manual_update_result)
+    manual_result_source = inspect.getsource(MainWindow._on_manual_check_result)
+    reset_source = inspect.getsource(MainWindow._reset_manual_check_button)
 
     assert "self._handle_update_available(version, release_url, tag_name)" in queue_source
     assert "self._update_tag = tag_name" in update_source
@@ -475,6 +477,8 @@ def test_update_queue_messages_reuse_manual_result_helpers():
     assert 'self._handle_manual_update_result("Update available! (skipped)")' in available_source
     assert "self._manual_check_pending" in result_source
     assert "self._on_manual_check_result(result_text)" in result_source
+    assert "self.after(3000, self._reset_manual_check_button)" in manual_result_source
+    assert 'self._manual_check_button.configure(text="Check for Updates")' in reset_source
 
 
 def test_download_queue_cleanup_uses_shared_helper():

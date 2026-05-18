@@ -6,13 +6,14 @@ Date: 2026-05-18
 
 - Repo path: `/home/corye/openai-cli/Job-Radar`
 - Branch: `main`
-- Git status after latest slice: clean, `main...origin/main [ahead 60]`
+- Git status after latest slice: clean, `main...origin/main [ahead 61]`
 - Last full validation: `1117 passed, 8 skipped`
-- Do not push unless explicitly asked. The 60 local commits after the last push are still local.
+- Do not push unless explicitly asked. The 61 local commits after the last push are still local.
 
 ## Latest Local Commits
 
 ```text
+35fb9dc refactor: centralize download queue results
 4985940 refactor: centralize update availability handling
 a63f519 refactor: centralize manual update results
 5903fed refactor: centralize download worker cleanup
@@ -147,6 +148,7 @@ Started reducing `job_radar/gui/main_window.py` by moving display formatting int
   - Shared lazy tab-build helper for user and programmatic tab navigation
   - Shared available-update queue handling helper
   - Shared manual update-check result helpers
+  - Shared manual update-check button reset helper
   - Shared update banner teardown helper
   - Shared download worker reference cleanup helper
   - Shared terminal download queue handling helpers
