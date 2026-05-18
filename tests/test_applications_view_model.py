@@ -6,13 +6,18 @@ from job_radar.gui.applications_view_model import (
     append_application_note,
     application_calendar_export_error_message,
     application_calendar_export_success_message,
+    application_detail_update_error_message,
     application_followup_filter_options,
+    application_followup_snooze_error_message,
+    application_followup_update_error_message,
     application_next_action_row,
     application_pipeline_display_row,
     application_status_from_label,
     application_status_import_error_message,
     application_status_import_success_message,
     application_status_menu_labels,
+    application_status_update_error_message,
+    application_template_insert_error_message,
     applications_csv_export_error_message,
     applications_csv_export_success_message,
     build_applications_view_model,
@@ -252,6 +257,24 @@ def test_application_export_import_status_messages_are_consistent_for_gui():
     )
     assert application_calendar_export_error_message(ValueError("bad date")) == (
         "Calendar export failed: bad date"
+    )
+
+
+def test_application_edit_error_messages_are_consistent_for_gui():
+    assert application_followup_update_error_message(ValueError("missing row")) == (
+        "Follow-up update failed: missing row"
+    )
+    assert application_followup_snooze_error_message(ValueError("bad date")) == (
+        "Follow-up snooze failed: bad date"
+    )
+    assert application_template_insert_error_message(ValueError("unknown template")) == (
+        "Template insert failed: unknown template"
+    )
+    assert application_status_update_error_message(ValueError("bad status")) == (
+        "Status update failed: bad status"
+    )
+    assert application_detail_update_error_message(ValueError("write failed")) == (
+        "Application update failed: write failed"
     )
 
 

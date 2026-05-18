@@ -84,13 +84,14 @@ Started reducing `job_radar/gui/main_window.py` by moving display formatting int
   - Applications CSV export/import status messages
   - report status import feedback
   - follow-up calendar export feedback
+  - Applications edit/follow-up failure feedback
 
 Current line counts:
 
 ```text
 2149 job_radar/report.py
-3624 job_radar/gui/main_window.py
- 272 job_radar/gui/applications_view_model.py
+3629 job_radar/gui/main_window.py
+ 297 job_radar/gui/applications_view_model.py
  462 job_radar/saved_searches.py
 ```
 
@@ -112,7 +113,7 @@ rtk .venv/bin/python -m pytest tests/
 Latest result:
 
 ```text
-1062 passed, 8 skipped
+1063 passed, 8 skipped
 ```
 
 ## Active Plan
@@ -145,10 +146,9 @@ Still planned in Sprint 4:
 
 Continue with small, low-risk `MainWindow` extractions before attempting larger tab splitting:
 
-1. Continue moving Applications edit/follow-up failure messages into `applications_view_model.py`.
-2. Extract Applications tab building into a focused helper only after view-model formatting is stable.
-3. Move more search-panel state loading and empty-state text out of `MainWindow` if it stays low-risk.
-4. After a few more GUI slices, commit the GUI architecture cleanup docs and code.
+1. Extract Applications tab building into a focused helper only after view-model formatting is stable.
+2. Move more search-panel state loading and empty-state text out of `MainWindow` if it stays low-risk.
+3. After a few more GUI slices, commit the GUI architecture cleanup docs and code.
 
 Suggested validation for the next GUI slice:
 

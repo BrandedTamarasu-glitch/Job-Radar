@@ -58,13 +58,18 @@ from job_radar.gui.applications_view_model import (
     append_application_note,
     application_calendar_export_error_message,
     application_calendar_export_success_message,
+    application_detail_update_error_message,
     application_followup_filter_options,
+    application_followup_snooze_error_message,
+    application_followup_update_error_message,
     application_next_action_row,
     application_pipeline_display_row,
     application_status_from_label,
     application_status_import_error_message,
     application_status_import_success_message,
     application_status_menu_labels,
+    application_status_update_error_message,
+    application_template_insert_error_message,
     applications_csv_export_error_message,
     applications_csv_export_success_message,
     build_applications_view_model,
@@ -998,7 +1003,7 @@ class MainWindow(ctk.CTk):
         except Exception as e:
             if self._applications_export_status_label is not None:
                 self._applications_export_status_label.configure(
-                    text=f"Follow-up update failed: {e}",
+                    text=application_followup_update_error_message(e),
                     text_color="red",
                 )
 
@@ -1017,7 +1022,7 @@ class MainWindow(ctk.CTk):
         except Exception as e:
             if self._applications_export_status_label is not None:
                 self._applications_export_status_label.configure(
-                    text=f"Follow-up snooze failed: {e}",
+                    text=application_followup_snooze_error_message(e),
                     text_color="red",
                 )
 
@@ -1045,7 +1050,7 @@ class MainWindow(ctk.CTk):
         except Exception as e:
             if self._applications_export_status_label is not None:
                 self._applications_export_status_label.configure(
-                    text=f"Template insert failed: {e}",
+                    text=application_template_insert_error_message(e),
                     text_color="red",
                 )
 
@@ -1067,7 +1072,7 @@ class MainWindow(ctk.CTk):
         except Exception as e:
             if self._applications_export_status_label is not None:
                 self._applications_export_status_label.configure(
-                    text=f"Status update failed: {e}",
+                    text=application_status_update_error_message(e),
                     text_color="red",
                 )
 
@@ -1142,7 +1147,7 @@ class MainWindow(ctk.CTk):
         except Exception as e:
             if self._applications_export_status_label is not None:
                 self._applications_export_status_label.configure(
-                    text=f"Application update failed: {e}",
+                    text=application_detail_update_error_message(e),
                     text_color="red",
                 )
 

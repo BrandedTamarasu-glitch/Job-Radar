@@ -235,6 +235,31 @@ def application_calendar_export_error_message(error: object) -> str:
     return f"Calendar export failed: {error}"
 
 
+def application_followup_update_error_message(error: object) -> str:
+    """Return Applications tab feedback after completing a follow-up fails."""
+    return f"Follow-up update failed: {error}"
+
+
+def application_followup_snooze_error_message(error: object) -> str:
+    """Return Applications tab feedback after snoozing a follow-up fails."""
+    return f"Follow-up snooze failed: {error}"
+
+
+def application_template_insert_error_message(error: object) -> str:
+    """Return Applications tab feedback after note-template insertion fails."""
+    return f"Template insert failed: {error}"
+
+
+def application_status_update_error_message(error: object) -> str:
+    """Return Applications tab feedback after a pipeline status update fails."""
+    return f"Status update failed: {error}"
+
+
+def application_detail_update_error_message(error: object) -> str:
+    """Return Applications tab feedback after direct application edits fail."""
+    return f"Application update failed: {error}"
+
+
 def append_application_note(existing_notes: str | None, note: str) -> str:
     """Append a rendered note template to an application's existing notes."""
     existing = (existing_notes or "").strip()
