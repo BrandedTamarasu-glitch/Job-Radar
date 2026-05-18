@@ -92,15 +92,16 @@ from job_radar.gui.profile_view_model import (
     profile_load_error_message,
 )
 from job_radar.gui.review_state_view_model import format_review_state_summary
-from job_radar.gui.search_controls import SearchControls
 from job_radar.gui.search_panel import (
     add_recent_searches_panel,
     add_saved_searches_panel,
     add_search_readiness_guidance,
+    build_search_idle_shell,
     build_search_cancelled_panel,
     build_search_completion_panel,
     build_search_error_panel,
     build_search_progress_panel,
+    pack_search_idle_actions,
 )
 from job_radar.gui.search_summary import (
     bullet_block_text,
@@ -900,51 +901,21 @@ class MainWindow(ctk.CTk):
         self._worker_thread = None
         self._report_path = None
 
-        # Content frame (centered)
-        content_frame = ctk.CTkFrame(self._search_content, fg_color="transparent")
-        content_frame.grid(row=0, column=0)
-
-        # Search controls widget
-        self._search_controls = SearchControls(
-            content_frame,
+        widgets = build_search_idle_shell(
+            self._search_content,
             source_strategy_lines=self._pre_run_source_strategy_lines(),
+            profile_exists=self._profile_exists,
+            on_run_search=self._start_real_search,
+            on_preview_demo=self._open_demo_report,
         )
-        self._search_controls.pack(pady=(0, 20))
+        content_frame = widgets.content_frame
+        self._search_controls = widgets.search_controls
+        self._search_button = widgets.search_button
 
         self._add_search_readiness_guidance(content_frame)
         self._add_saved_searches_panel(content_frame)
         self._add_recent_searches_panel(content_frame)
-
-        # Run Search button
-        self._search_button = ctk.CTkButton(
-            content_frame,
-            text="Run Search",
-            height=40,
-            width=200,
-            state="normal" if self._profile_exists else "disabled",
-            command=self._start_real_search
-        )
-        self._search_button.pack(pady=(0, 10))
-
-        preview_btn = ctk.CTkButton(
-            content_frame,
-            text="Preview Demo Report",
-            height=36,
-            width=200,
-            command=self._open_demo_report,
-            fg_color="transparent",
-            border_width=2,
-        )
-        preview_btn.pack(pady=(0, 10))
-
-        # Warning label (only visible when no profile)
-        if not self._profile_exists:
-            warning_label = ctk.CTkLabel(
-                content_frame,
-                text="Profile required to run search",
-                text_color="red"
-            )
-            warning_label.pack()
+        pack_search_idle_actions(widgets)
 
     def _add_search_readiness_guidance(self, parent):
         """Add optional profile quality guidance above the search action."""

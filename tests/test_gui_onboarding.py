@@ -10,9 +10,11 @@ from job_radar.gui.search_panel import (
     add_recent_searches_panel,
     add_saved_searches_panel,
     add_search_readiness_guidance,
+    build_search_idle_shell,
     build_search_cancelled_panel,
     build_search_completion_panel,
     build_search_error_panel,
+    pack_search_idle_actions,
     build_search_progress_panel,
 )
 from job_radar.gui.settings_panel import (
@@ -374,6 +376,18 @@ def test_search_idle_includes_recent_searches_panel():
 
     assert "_add_recent_searches_panel" in source
     assert "_add_saved_searches_panel" in source
+    assert "build_search_idle_shell" in source
+    assert "pack_search_idle_actions" in source
+
+
+def test_search_idle_shell_builds_controls_and_actions():
+    source = inspect.getsource(build_search_idle_shell)
+
+    assert "SearchControls" in source
+    assert "Run Search" in source
+    assert "Preview Demo Report" in source
+    assert "Profile required to run search" in source
+    assert "SearchIdleWidgets" in source
 
 
 def test_recent_search_panel_loads_and_applies_configs():

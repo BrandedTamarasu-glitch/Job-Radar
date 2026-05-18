@@ -8,6 +8,7 @@ from typing import Any
 
 import customtkinter as ctk
 
+from job_radar.gui.search_controls import SearchControls
 from job_radar.profile_readiness import ProfileReadiness
 from job_radar.saved_searches import SearchPanelRow
 from job_radar.gui.search_summary import (
@@ -26,6 +27,79 @@ class SearchProgressWidgets:
     progress_bar: ctk.CTkProgressBar
     progress_count: ctk.CTkLabel
     job_count_display: ctk.CTkTextbox
+
+
+@dataclass(frozen=True)
+class SearchIdleWidgets:
+    """Widgets MainWindow wires while search is idle."""
+
+    content_frame: ctk.CTkFrame
+    search_controls: SearchControls
+    search_button: ctk.CTkButton
+    preview_button: ctk.CTkButton
+    warning_label: ctk.CTkLabel | None
+
+
+def build_search_idle_shell(
+    parent,
+    *,
+    source_strategy_lines: Sequence[str],
+    profile_exists: bool,
+    on_run_search: Callable[[], None],
+    on_preview_demo: Callable[[], None],
+) -> SearchIdleWidgets:
+    """Build the search idle shell around dynamic guidance/history panels."""
+    content_frame = ctk.CTkFrame(parent, fg_color="transparent")
+    content_frame.grid(row=0, column=0)
+
+    search_controls = SearchControls(
+        content_frame,
+        source_strategy_lines=source_strategy_lines,
+    )
+    search_controls.pack(pady=(0, 20))
+
+    search_button = ctk.CTkButton(
+        content_frame,
+        text="Run Search",
+        height=40,
+        width=200,
+        state="normal" if profile_exists else "disabled",
+        command=on_run_search,
+    )
+
+    preview_button = ctk.CTkButton(
+        content_frame,
+        text="Preview Demo Report",
+        height=36,
+        width=200,
+        command=on_preview_demo,
+        fg_color="transparent",
+        border_width=2,
+    )
+
+    warning_label = None
+    if not profile_exists:
+        warning_label = ctk.CTkLabel(
+            content_frame,
+            text="Profile required to run search",
+            text_color="red",
+        )
+
+    return SearchIdleWidgets(
+        content_frame=content_frame,
+        search_controls=search_controls,
+        search_button=search_button,
+        preview_button=preview_button,
+        warning_label=warning_label,
+    )
+
+
+def pack_search_idle_actions(widgets: SearchIdleWidgets) -> None:
+    """Pack idle search actions after optional panels have been inserted."""
+    widgets.search_button.pack(pady=(0, 10))
+    widgets.preview_button.pack(pady=(0, 10))
+    if widgets.warning_label is not None:
+        widgets.warning_label.pack()
 
 
 def add_search_readiness_guidance(

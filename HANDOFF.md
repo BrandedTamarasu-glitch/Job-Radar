@@ -101,6 +101,7 @@ Started reducing `job_radar/gui/main_window.py` by moving display formatting int
   - source progress counter display text
   - search completion label/block text helpers
 - `job_radar/gui/search_panel.py`
+  - Search idle controls/action shell construction
   - Search idle profile-readiness guidance panel construction
   - Recent search panel construction
   - Saved search panel construction/status label
@@ -138,11 +139,11 @@ Current line counts:
 
 ```text
 2149 job_radar/report.py
-2445 job_radar/gui/main_window.py
+2416 job_radar/gui/main_window.py
   44 job_radar/gui/dialogs.py
   70 job_radar/gui/welcome_panel.py
  532 job_radar/gui/settings_panel.py
- 391 job_radar/gui/search_panel.py
+ 465 job_radar/gui/search_panel.py
   76 job_radar/gui/profile_panel.py
   62 job_radar/gui/dashboard_panel.py
   75 job_radar/gui/api_status_view_model.py
@@ -174,7 +175,7 @@ rtk .venv/bin/python -m pytest tests/
 Latest result:
 
 ```text
-1096 passed, 8 skipped
+1097 passed, 8 skipped
 ```
 
 ## Active Plan
