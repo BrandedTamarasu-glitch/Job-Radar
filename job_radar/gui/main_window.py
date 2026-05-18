@@ -56,16 +56,12 @@ from job_radar.update_checker import UpdateChecker, launch_installer, cleanup_ol
 from job_radar.gui.api_status_view_model import (
     ApiStatusDisplay,
     api_error_status,
-    api_http_status,
-    api_invalid_credentials_status,
-    api_invalid_key_status,
     api_missing_credentials_status,
     api_missing_key_status,
     api_network_error_status,
+    api_response_status,
     api_testing_status,
     api_timeout_status,
-    api_unexpected_status,
-    api_valid_status,
 )
 from job_radar.gui.applications_view_model import (
     append_application_note,
@@ -3008,12 +3004,7 @@ class MainWindow(ctk.CTk):
             params = {"query": "test", "num_pages": "1"}
             response = requests.get(url, headers=headers, params=params, timeout=10)
 
-            if response.status_code == 200:
-                self._configure_api_status_async(status_label, api_valid_status())
-            elif response.status_code in (401, 403):
-                self._configure_api_status_async(status_label, api_invalid_key_status())
-            else:
-                self._configure_api_status_async(status_label, api_unexpected_status(response.status_code))
+            self._configure_api_status_async(status_label, api_response_status(response.status_code))
         except (requests.Timeout, requests.RequestException):
             self._configure_api_status_async(status_label, api_network_error_status())
 
@@ -3036,12 +3027,10 @@ class MainWindow(ctk.CTk):
             params = {"Keyword": "test", "ResultsPerPage": "1"}
             response = requests.get(url, headers=headers, params=params, timeout=10)
 
-            if response.status_code == 200:
-                self._configure_api_status_async(status_label, api_valid_status())
-            elif response.status_code in (401, 403):
-                self._configure_api_status_async(status_label, api_invalid_credentials_status())
-            else:
-                self._configure_api_status_async(status_label, api_unexpected_status(response.status_code))
+            self._configure_api_status_async(
+                status_label,
+                api_response_status(response.status_code, invalid_credentials=True),
+            )
         except (requests.Timeout, requests.RequestException):
             self._configure_api_status_async(status_label, api_network_error_status())
 
@@ -3064,12 +3053,10 @@ class MainWindow(ctk.CTk):
             }
             response = requests.get(url, params=params, timeout=10)
 
-            if response.status_code == 200:
-                self._configure_api_status_async(status_label, api_valid_status())
-            elif response.status_code in (401, 403):
-                self._configure_api_status_async(status_label, api_invalid_credentials_status())
-            else:
-                self._configure_api_status_async(status_label, api_unexpected_status(response.status_code))
+            self._configure_api_status_async(
+                status_label,
+                api_response_status(response.status_code, invalid_credentials=True),
+            )
         except (requests.Timeout, requests.RequestException):
             self._configure_api_status_async(status_label, api_network_error_status())
 
@@ -3090,12 +3077,7 @@ class MainWindow(ctk.CTk):
             }
             response = requests.get(url, params=params, timeout=10)
 
-            if response.status_code == 200:
-                self._configure_api_status_async(status_label, api_valid_status())
-            elif response.status_code in (401, 403):
-                self._configure_api_status_async(status_label, api_invalid_key_status())
-            else:
-                self._configure_api_status_async(status_label, api_unexpected_status(response.status_code))
+            self._configure_api_status_async(status_label, api_response_status(response.status_code))
         except (requests.Timeout, requests.RequestException):
             self._configure_api_status_async(status_label, api_network_error_status())
 
@@ -3109,12 +3091,10 @@ class MainWindow(ctk.CTk):
             url = f"https://serpapi.com/search?engine=google_jobs&q=test&api_key={api_key}"
             response = requests.get(url, timeout=10)
 
-            if response.status_code == 200:
-                self._configure_api_status_async(status_label, api_valid_status())
-            elif response.status_code in (401, 403):
-                self._configure_api_status_async(status_label, api_invalid_key_status())
-            else:
-                self._configure_api_status_async(status_label, api_http_status(response.status_code))
+            self._configure_api_status_async(
+                status_label,
+                api_response_status(response.status_code, fallback="http"),
+            )
 
         except requests.Timeout:
             self._configure_api_status_async(status_label, api_timeout_status())

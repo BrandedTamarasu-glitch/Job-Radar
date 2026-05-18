@@ -6,6 +6,7 @@ from job_radar.gui.api_status_view_model import (
     api_missing_credentials_status,
     api_missing_key_status,
     api_network_error_status,
+    api_response_status,
     api_testing_status,
     api_timeout_status,
     api_unexpected_status,
@@ -35,3 +36,11 @@ def test_api_status_view_model_formats_dynamic_states():
     assert api_unexpected_status(500).text == "⚠ Unexpected status 500"
     assert api_http_status(429).text == "⚠ HTTP 429"
     assert api_error_status(ValueError("bad key")).text == "⚠ Error: bad key"
+
+
+def test_api_response_status_maps_http_codes_to_display_states():
+    assert api_response_status(200).text == "✓ Valid"
+    assert api_response_status(401).text == "✗ Invalid key"
+    assert api_response_status(403, invalid_credentials=True).text == "✗ Invalid credentials"
+    assert api_response_status(500).text == "⚠ Unexpected status 500"
+    assert api_response_status(429, fallback="http").text == "⚠ HTTP 429"

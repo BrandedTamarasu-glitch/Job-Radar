@@ -55,3 +55,21 @@ def api_timeout_status() -> ApiStatusDisplay:
 
 def api_error_status(error: object) -> ApiStatusDisplay:
     return ApiStatusDisplay(f"⚠ Error: {error}", "orange")
+
+
+def api_response_status(
+    http_status: int,
+    *,
+    invalid_credentials: bool = False,
+    fallback: str = "unexpected",
+) -> ApiStatusDisplay:
+    """Return API test display data for an HTTP response code."""
+    if http_status == 200:
+        return api_valid_status()
+    if http_status in (401, 403):
+        if invalid_credentials:
+            return api_invalid_credentials_status()
+        return api_invalid_key_status()
+    if fallback == "http":
+        return api_http_status(http_status)
+    return api_unexpected_status(http_status)
