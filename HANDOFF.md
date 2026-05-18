@@ -6,13 +6,14 @@ Date: 2026-05-18
 
 - Repo path: `/home/corye/openai-cli/Job-Radar`
 - Branch: `main`
-- Git status after latest slice: clean, `main...origin/main [ahead 73]`
-- Last full validation: `1131 passed, 8 skipped`
-- Do not push unless explicitly asked. The 73 local commits after the last push are still local.
+- Git status after latest slice: clean, `main...origin/main [ahead 74]`
+- Last full validation: `1132 passed, 8 skipped`
+- Do not push unless explicitly asked. The 74 local commits after the last push are still local.
 
 ## Latest Local Commits
 
 ```text
+96da08b refactor: use shared raw filters in cli
 4ee2f9f refactor: use shared scorer in cli
 2d4623f refactor: share raw result filtering
 997b015 refactor: share scored result filtering
@@ -87,7 +88,7 @@ Started reducing `job_radar/gui/main_window.py` by moving display formatting int
 - `job_radar/search_pipeline.py`
   - Shared search filter parsing, profile preference, freshness/date resolution, and result filtering helpers for GUI/CLI reuse
   - Shared raw-result date/company/skill/location filtering; CLI now uses the shared raw-result filter for date filtering
-  - Shared result scoring/dealbreaker sorting and post-score filtering helpers; CLI now uses the shared scorer
+  - Shared result scoring/dealbreaker sorting and post-score filtering helpers; CLI now uses the shared scorer and composable post-score filters
 - `job_radar/gui/applications_view_model.py`
   - `format_next_action_due_text`
   - `ApplicationNextActionRow`
@@ -196,8 +197,8 @@ Current line counts:
 
 ```text
 2149 job_radar/report.py
-1129 job_radar/search.py
- 224 job_radar/search_pipeline.py
+1139 job_radar/search.py
+ 248 job_radar/search_pipeline.py
  630 job_radar/gui/worker_thread.py
 2320 job_radar/gui/main_window.py
   14 job_radar/gui/demo_report_view_model.py
@@ -240,7 +241,7 @@ rtk .venv/bin/python -m pytest tests/
 Latest result:
 
 ```text
-1131 passed, 8 skipped
+1132 passed, 8 skipped
 ```
 
 ## Active Plan

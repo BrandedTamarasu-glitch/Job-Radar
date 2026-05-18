@@ -37,7 +37,13 @@ from .sources import (
     get_automated_source_display_names,
 )
 from .report import ZERO_RESULTS_TIPS, generate_report
-from .search_pipeline import apply_result_filters, score_results
+from .search_pipeline import (
+    apply_result_filters,
+    filter_application_status_results,
+    filter_min_score_results,
+    filter_new_results,
+    score_results,
+)
 from .demo_report import generate_demo_report
 from .search_presets import (
     SEARCH_PRESETS,
@@ -1025,15 +1031,19 @@ def main():
     # Apply --new-only and --min-score filters
     pre_filter_count = len(scored)
     if args.new_only:
-        scored = [r for r in scored if r.get("is_new", True)]
+        scored = filter_new_results(scored)
         print(f"  {C.DIM}--new-only: {pre_filter_count - len(scored)} seen results filtered{C.RESET}")
     if args.min_score is not None:
         before = len(scored)
-        scored = [r for r in scored if r["score"]["overall"] >= args.min_score]
+        scored = filter_min_score_results(scored, args.min_score)
         print(f"  {C.DIM}--min-score {args.min_score}: {before - len(scored)} results below threshold{C.RESET}")
     if getattr(args, "hide_rejected_skipped", False):
         before = len(scored)
-        scored = filter_scored_by_application_status(scored, {"rejected", "skipped"})
+        scored = filter_application_status_results(
+            scored,
+            {"rejected", "skipped"},
+            status_filter_func=filter_scored_by_application_status,
+        )
         print(f"  {C.DIM}hide_rejected_skipped: {before - len(scored)} rejected/skipped results filtered{C.RESET}")
 
     # Check for zero results after scoring

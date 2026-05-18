@@ -6,8 +6,11 @@ from job_radar.search_pipeline import (
     apply_result_filters,
     apply_scored_result_filters,
     apply_preferred_skills,
+    filter_application_status_results,
     filter_by_company,
     filter_by_location_strictness,
+    filter_min_score_results,
+    filter_new_results,
     parse_company_filter,
     parse_skill_filter,
     resolve_date_filter,
@@ -183,6 +186,27 @@ def test_apply_scored_result_filters_handles_new_score_and_status_filters():
 
     assert filtered == [scored[0]]
     assert min_score == 2.8
+
+
+def test_composable_scored_result_filters_preserve_cli_counting_steps():
+    scored = [
+        {"job": "new-high", "score": {"overall": 4.0}, "is_new": True},
+        {"job": "seen-high", "score": {"overall": 4.5}, "is_new": False},
+        {"job": "new-low", "score": {"overall": 2.0}, "is_new": True},
+    ]
+
+    assert filter_new_results(scored) == [scored[0], scored[2]]
+    assert filter_min_score_results(scored, 3.0) == [scored[0], scored[1]]
+
+    def status_filter(results, statuses):
+        assert statuses == {"rejected"}
+        return results[:1]
+
+    assert filter_application_status_results(
+        scored,
+        {"rejected"},
+        status_filter_func=status_filter,
+    ) == [scored[0]]
 
 
 def test_resolve_date_filter_supports_custom_dates_and_freshness():

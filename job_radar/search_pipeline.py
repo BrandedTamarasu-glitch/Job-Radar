@@ -193,19 +193,43 @@ def apply_scored_result_filters(
 ) -> tuple[list[dict], float]:
     """Apply new-only, min-score, and optional tracker-status filters."""
     if search_config.get("new_only", False):
-        scored = [result for result in scored if result.get("is_new", True)]
+        scored = filter_new_results(scored)
 
     min_score = search_config.get("min_score", 2.8)
-    scored = [result for result in scored if result["score"]["overall"] >= min_score]
+    scored = filter_min_score_results(scored, min_score)
 
     if search_config.get("hide_rejected_skipped", False):
-        if status_filter_func is None:
-            from job_radar.tracker import filter_scored_by_application_status
-
-            status_filter_func = filter_scored_by_application_status
-        scored = status_filter_func(scored, {"rejected", "skipped"})
+        scored = filter_application_status_results(
+            scored,
+            {"rejected", "skipped"},
+            status_filter_func=status_filter_func,
+        )
 
     return scored, min_score
+
+
+def filter_new_results(scored: list[dict]) -> list[dict]:
+    """Return only scored results marked new."""
+    return [result for result in scored if result.get("is_new", True)]
+
+
+def filter_min_score_results(scored: list[dict], min_score: float) -> list[dict]:
+    """Return scored results at or above the selected minimum score."""
+    return [result for result in scored if result["score"]["overall"] >= min_score]
+
+
+def filter_application_status_results(
+    scored: list[dict],
+    statuses: set[str],
+    *,
+    status_filter_func=None,
+) -> list[dict]:
+    """Return scored results excluding the requested application statuses."""
+    if status_filter_func is None:
+        from job_radar.tracker import filter_scored_by_application_status
+
+        status_filter_func = filter_scored_by_application_status
+    return status_filter_func(scored, statuses)
 
 
 def resolve_date_filter(search_config: dict, today: date | None = None) -> tuple[str | None, str | None]:
