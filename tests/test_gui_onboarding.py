@@ -18,6 +18,7 @@ from job_radar.gui.search_panel import (
     build_search_progress_panel,
     replace_success_message,
 )
+from job_radar.gui.search_summary import search_readiness_guidance_lines
 from job_radar.gui.settings_panel import (
     add_api_credentials_panel,
     add_api_key_section,
@@ -100,10 +101,15 @@ def test_search_idle_includes_profile_readiness_guidance():
 
 def test_profile_readiness_guidance_links_to_profile_tab():
     source = inspect.getsource(add_search_readiness_guidance)
+    helper_source = inspect.getsource(search_readiness_guidance_lines)
+    window_source = inspect.getsource(MainWindow._add_search_readiness_guidance)
 
     assert "Profile readiness:" in source
     assert "Review Profile" in source
     assert "command=on_review_profile" in source
+    assert "readiness_guidance_lines(readiness)" in helper_source
+    assert "scoring_signal_guidance_lines" in helper_source
+    assert "search_readiness_guidance_lines(readiness)" in window_source
 
 
 def test_profile_tab_includes_dashboard_next_steps():

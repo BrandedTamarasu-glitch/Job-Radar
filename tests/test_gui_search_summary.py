@@ -16,6 +16,7 @@ from job_radar.gui.search_summary import (
     error_message,
     review_queue_text,
     search_context_lines,
+    search_readiness_guidance_lines,
     source_fetching_message,
     source_job_count_line,
     source_progress_count_text,
@@ -32,6 +33,7 @@ from job_radar.gui.worker_thread import (
     normalize_source_progress,
     resolve_date_filter,
 )
+from job_radar.profile_readiness import assess_profile_readiness
 from job_radar.sources import JobResult
 
 
@@ -181,6 +183,22 @@ def test_bullet_block_and_review_queue_text_format_compact_labels():
         "Review queue: 2 shortlisted | 1 maybe later"
     )
     assert review_queue_text([]) is None
+
+
+def test_search_readiness_guidance_lines_blend_readiness_and_scoring_signals():
+    profile = {
+        "name": "Test User",
+        "target_titles": ["Backend Engineer"],
+        "core_skills": ["Python"],
+    }
+    readiness = assess_profile_readiness(profile)
+
+    lines = search_readiness_guidance_lines(readiness)
+
+    assert len(lines) == 3
+    assert lines[0] == "Add years of experience so seniority matching is more accurate"
+    assert lines[1] == "Add a target location or work arrangement to reduce weak matches"
+    assert lines[2] == "Add nice-to-have skills to improve tie-breakers and report explanations"
 
 
 def test_normalize_source_progress_clamps_display_bounds():

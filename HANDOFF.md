@@ -6,13 +6,14 @@ Date: 2026-05-16
 
 - Repo path: `/home/corye/openai-cli/Job-Radar`
 - Branch: `main`
-- Git status before latest slice: clean, `main...origin/main [ahead 43]`
-- Last full validation: `1104 passed, 8 skipped`
-- Do not push unless explicitly asked. The 43 local commits after the last push are still local.
+- Git status before latest slice: clean, `main...origin/main [ahead 44]`
+- Last full validation: `1105 passed, 8 skipped`
+- Do not push unless explicitly asked. The 44 local commits after the last push are still local.
 
 ## Latest Local Commits
 
 ```text
+3e6cd0a refactor: extract settings separator helper
 d414df8 refactor: centralize lazy tab building
 d5a4a43 refactor: reuse search success flow
 3ba8423 refactor: extract main tab shell
@@ -20,7 +21,6 @@ fb8f391 refactor: extract settings scoring panel
 11dfc71 refactor: extract window shell clearing helper
 257a42f refactor: extract search idle shell
 de0ded2 refactor: extract profile summary panel
-afb16fa refactor: extract welcome screen panel
 ```
 
 ## Recently Pushed
@@ -102,6 +102,7 @@ Started reducing `job_radar/gui/main_window.py` by moving display formatting int
   - live source progress text helpers
   - source progress counter display text
   - search completion label/block text helpers
+  - search readiness guidance line composition
 - `job_radar/gui/search_panel.py`
   - Search idle controls/action shell construction
   - Search idle profile-readiness guidance panel construction
@@ -150,7 +151,7 @@ Current line counts:
 
 ```text
 2149 job_radar/report.py
-2375 job_radar/gui/main_window.py
+2370 job_radar/gui/main_window.py
   44 job_radar/gui/dialogs.py
   70 job_radar/gui/welcome_panel.py
   11 job_radar/gui/window_shell.py
@@ -165,7 +166,7 @@ Current line counts:
  287 job_radar/gui/applications_tab.py
  297 job_radar/gui/applications_view_model.py
  275 job_radar/gui/maintenance_view_model.py
- 207 job_radar/gui/search_summary.py
+ 222 job_radar/gui/search_summary.py
   78 job_radar/gui/update_status_view_model.py
  478 job_radar/saved_searches.py
 ```
@@ -188,7 +189,7 @@ rtk .venv/bin/python -m pytest tests/
 Latest result:
 
 ```text
-1104 passed, 8 skipped
+1105 passed, 8 skipped
 ```
 
 ## Active Plan

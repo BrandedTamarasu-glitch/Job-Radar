@@ -39,7 +39,6 @@ from job_radar.paths import get_data_dir
 from job_radar.paths import get_results_dir
 from job_radar.profile_readiness import (
     assess_profile_readiness,
-    readiness_guidance_lines,
     scoring_signal_guidance_lines,
 )
 from job_radar.profile_manager import load_profile
@@ -109,6 +108,7 @@ from job_radar.gui.search_summary import (
     cache_summary_line,
     review_queue_text,
     search_context_lines,
+    search_readiness_guidance_lines,
     source_fetching_message,
     source_job_count_line,
     source_progress_count_text,
@@ -906,12 +906,7 @@ class MainWindow(ctk.CTk):
         except Exception:
             return
 
-        guidance_lines = readiness_guidance_lines(readiness)
-        signal_lines = scoring_signal_guidance_lines(
-            readiness,
-            limit=max(0, 3 - len(guidance_lines)),
-        )
-        guidance_lines = guidance_lines + signal_lines
+        guidance_lines = search_readiness_guidance_lines(readiness)
         if not guidance_lines:
             return
 

@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
-from job_radar.profile_readiness import assess_profile_readiness, readiness_guidance_lines
+from job_radar.profile_readiness import (
+    ProfileReadiness,
+    assess_profile_readiness,
+    readiness_guidance_lines,
+    scoring_signal_guidance_lines,
+)
 from job_radar.report import ZERO_RESULTS_TIPS
 
 
@@ -136,6 +141,16 @@ def review_queue_text(lines: list[str]) -> str | None:
     if not lines:
         return None
     return "Review queue: " + " | ".join(lines)
+
+
+def search_readiness_guidance_lines(readiness: ProfileReadiness, limit: int = 3) -> list[str]:
+    """Return bounded readiness and scoring guidance for the Search tab."""
+    guidance_lines = readiness_guidance_lines(readiness)
+    signal_lines = scoring_signal_guidance_lines(
+        readiness,
+        limit=max(0, limit - len(guidance_lines)),
+    )
+    return (guidance_lines + signal_lines)[:max(0, limit)]
 
 
 def _active_filter_parts(search_config: dict) -> list[str]:
