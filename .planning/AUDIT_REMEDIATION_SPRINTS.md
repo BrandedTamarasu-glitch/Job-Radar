@@ -75,6 +75,7 @@ Current progress:
 - `job_radar/search_pipeline.py` now contains shared search filter parsing, preset/preferred-skill profile preparation, freshness/date resolution, raw-result filtering, scoring/dealbreaker sorting, and post-score filtering helpers for GUI/CLI reuse; the CLI now uses the shared profile preparation, scorer, raw-result date filter, and composable post-score filters.
 - `job_radar/source_registry.py` now contains shared source registry dataclasses and display-name selection helpers; `job_radar/sources.py` keeps the concrete fetcher dictionaries while delegating reusable registry behavior.
 - `job_radar/manual_sources.py` now contains manual job-board URL generators, the manual source registry, and manual URL generation helpers while `job_radar/sources.py` preserves existing compatibility imports.
+- `job_radar/source_queries.py` now contains automated source query construction and HN Hiring skill-slug mapping while `job_radar/sources.py` preserves the existing `build_search_queries` import path.
 - GUI display formatting cleanup has started by moving saved-search panel loading/rows/feedback, Applications pipeline rows, follow-up queue rows, filters, and Applications export/import/edit feedback into view-model helpers.
 - Applications tab construction now lives in a focused `job_radar/gui/applications_tab.py` helper while `MainWindow` retains behavior callbacks.
 - Settings update status formatting now lives in `job_radar/gui/update_status_view_model.py`.
@@ -107,7 +108,7 @@ Current progress:
 - MainWindow no longer wraps Profile field rendering that already lives in `job_radar/gui/profile_panel.py`.
 - MainWindow no longer carries the obsolete Settings update-status initializer that moved into `job_radar/gui/settings_panel.py`.
 - Settings update controls/status, section separators, API credential sections/widget registration/panel orchestration, scoring configuration, storage maintenance, diagnostics, Jobicy public-source status, JSearch setup tip, and danger-zone construction now live in `job_radar/gui/settings_panel.py`.
-- Latest validation: `1143 passed, 8 skipped`.
+- Latest validation: `1147 passed, 8 skipped`.
 
 Validation:
 - Full `pytest tests/`
