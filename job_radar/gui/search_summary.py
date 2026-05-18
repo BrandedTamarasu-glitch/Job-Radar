@@ -14,6 +14,11 @@ def completion_message(job_count: int) -> str:
     return f"Search complete! {job_count} {noun} found"
 
 
+def completion_color(job_count: int) -> str:
+    """Return the primary completion label color."""
+    return "green" if job_count else "orange"
+
+
 def source_warning_message(summary: dict | None) -> str | None:
     """Return a concise warning message for partial source failures."""
     if not summary:
@@ -117,6 +122,20 @@ def search_context_lines(
         lines.append(f"Active filters: {', '.join(filter_parts)}.")
 
     return lines[:max(1, limit)]
+
+
+def bullet_block_text(title: str, lines: list[str]) -> str | None:
+    """Return titled bullet text for compact GUI labels."""
+    if not lines:
+        return None
+    return f"{title}:\n" + "\n".join(f"- {line}" for line in lines)
+
+
+def review_queue_text(lines: list[str]) -> str | None:
+    """Return compact review queue summary text."""
+    if not lines:
+        return None
+    return "Review queue: " + " | ".join(lines)
 
 
 def _active_filter_parts(search_config: dict) -> list[str]:

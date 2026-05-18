@@ -130,7 +130,7 @@ def test_search_complete_includes_review_state_summary():
     source = inspect.getsource(MainWindow._show_search_complete)
 
     assert "_review_state_summary_lines" in source
-    assert "Review queue:" in source
+    assert "review_queue_text" in source
 
 
 def test_search_run_metadata_records_review_counts():

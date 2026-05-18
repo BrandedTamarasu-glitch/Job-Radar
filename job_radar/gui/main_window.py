@@ -86,10 +86,13 @@ from job_radar.gui.profile_form import ProfileForm
 from job_radar.gui.review_state_view_model import format_review_state_summary
 from job_radar.gui.search_controls import SearchControls
 from job_radar.gui.search_summary import (
+    bullet_block_text,
     cancellation_message,
     cache_summary_line,
+    completion_color,
     completion_message,
     error_message,
+    review_queue_text,
     search_context_lines,
     source_fetching_message,
     source_job_count_line,
@@ -1407,7 +1410,7 @@ class MainWindow(ctk.CTk):
             content_frame,
             text=completion_message(job_count),
             font=ctk.CTkFont(size=16, weight="bold"),
-            text_color="green" if job_count else "orange"
+            text_color=completion_color(job_count)
         )
         completion_label.pack(pady=(0, 15))
 
@@ -1424,8 +1427,8 @@ class MainWindow(ctk.CTk):
             warning_label.pack(pady=(0, 12))
 
         next_actions = zero_result_lines(job_count, self._load_current_profile_for_guidance())
-        if next_actions:
-            next_action_text = "Try next:\n" + "\n".join(f"- {line}" for line in next_actions)
+        next_action_text = bullet_block_text("Try next", next_actions)
+        if next_action_text:
             next_action_label = ctk.CTkLabel(
                 content_frame,
                 text=next_action_text,
@@ -1452,10 +1455,11 @@ class MainWindow(ctk.CTk):
             summary_box.pack(pady=(0, 20))
 
         context_lines = search_context_lines(summary, self._active_search_config)
-        if context_lines:
+        context_text = bullet_block_text("Run context", context_lines)
+        if context_text:
             context_label = ctk.CTkLabel(
                 content_frame,
-                text="Run context:\n" + "\n".join(f"- {line}" for line in context_lines),
+                text=context_text,
                 font=ctk.CTkFont(size=12),
                 text_color="gray",
                 wraplength=420,
@@ -1464,10 +1468,11 @@ class MainWindow(ctk.CTk):
             context_label.pack(pady=(0, 16))
 
         review_lines = self._review_state_summary_lines()
-        if review_lines:
+        review_text = review_queue_text(review_lines)
+        if review_text:
             review_box = ctk.CTkLabel(
                 content_frame,
-                text="Review queue: " + " | ".join(review_lines),
+                text=review_text,
                 font=ctk.CTkFont(size=12),
                 text_color="gray",
                 wraplength=420,

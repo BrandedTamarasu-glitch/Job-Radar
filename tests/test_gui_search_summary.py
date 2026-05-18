@@ -8,10 +8,13 @@ from unittest.mock import patch
 import pytest
 
 from job_radar.gui.search_summary import (
+    bullet_block_text,
     cache_summary_line,
     cancellation_message,
+    completion_color,
     completion_message,
     error_message,
+    review_queue_text,
     search_context_lines,
     source_fetching_message,
     source_job_count_line,
@@ -44,6 +47,8 @@ def test_completion_message_handles_zero_one_and_many():
     assert completion_message(0) == "Search complete. No matching jobs found."
     assert completion_message(1) == "Search complete! 1 job found"
     assert completion_message(2) == "Search complete! 2 jobs found"
+    assert completion_color(0) == "orange"
+    assert completion_color(1) == "green"
 
 
 def test_source_warning_message_summarizes_partial_failures():
@@ -165,6 +170,17 @@ def test_interruption_messages_explain_report_state():
     assert "No new report was generated" in cancellation_message()
     assert "before a report could be generated" in error_message("network down")
     assert "network down" in error_message("network down")
+
+
+def test_bullet_block_and_review_queue_text_format_compact_labels():
+    assert bullet_block_text("Try next", ["Broaden title", "Lower score"]) == (
+        "Try next:\n- Broaden title\n- Lower score"
+    )
+    assert bullet_block_text("Try next", []) is None
+    assert review_queue_text(["2 shortlisted", "1 maybe later"]) == (
+        "Review queue: 2 shortlisted | 1 maybe later"
+    )
+    assert review_queue_text([]) is None
 
 
 def test_normalize_source_progress_clamps_display_bounds():

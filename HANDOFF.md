@@ -99,6 +99,7 @@ Started reducing `job_radar/gui/main_window.py` by moving display formatting int
 - `job_radar/gui/search_summary.py`
   - live source progress text helpers
   - source progress counter display text
+  - search completion label/block text helpers
 - `job_radar/gui/api_status_view_model.py`
   - API credential test status text/color formatting
   - API credential test HTTP response status mapping
@@ -109,13 +110,13 @@ Current line counts:
 
 ```text
 2149 job_radar/report.py
-3335 job_radar/gui/main_window.py
+3340 job_radar/gui/main_window.py
   75 job_radar/gui/api_status_view_model.py
   31 job_radar/gui/install_status_view_model.py
  287 job_radar/gui/applications_tab.py
  297 job_radar/gui/applications_view_model.py
  275 job_radar/gui/maintenance_view_model.py
- 188 job_radar/gui/search_summary.py
+ 207 job_radar/gui/search_summary.py
   78 job_radar/gui/update_status_view_model.py
  478 job_radar/saved_searches.py
 ```
@@ -138,7 +139,7 @@ rtk .venv/bin/python -m pytest tests/
 Latest result:
 
 ```text
-1078 passed, 8 skipped
+1079 passed, 8 skipped
 ```
 
 ## Active Plan
