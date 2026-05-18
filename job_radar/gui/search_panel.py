@@ -40,6 +40,21 @@ class SearchIdleWidgets:
     warning_label: ctk.CTkLabel | None
 
 
+def replace_success_message(parent, existing_label, message: str):
+    """Replace the temporary success message label on the search tab."""
+    if existing_label:
+        existing_label.destroy()
+
+    success_label = ctk.CTkLabel(
+        parent,
+        text=message,
+        text_color="green",
+        font=ctk.CTkFont(size=13),
+    )
+    success_label.grid(row=1, column=0, pady=(0, 10))
+    return success_label
+
+
 def build_search_idle_shell(
     parent,
     *,

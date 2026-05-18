@@ -96,6 +96,7 @@ from job_radar.gui.search_panel import (
     add_recent_searches_panel,
     add_saved_searches_panel,
     add_search_readiness_guidance,
+    replace_success_message,
     build_search_idle_shell,
     build_search_cancelled_panel,
     build_search_completion_panel,
@@ -337,12 +338,7 @@ class MainWindow(ctk.CTk):
 
         # Show main tabs and navigate to Search tab with success message
         self._show_main_tabs()
-        # Manually trigger tab build before programmatic switch (lazy loading workaround)
-        if "Search" not in self._tabs_built:
-            self._build_search_tab(self._tabview.tab("Search"))
-            self._tabs_built.add("Search")
-        self._tabview.set("Search")
-        self._show_success_message("Profile created successfully!")
+        self._show_search_tab_with_success("Profile created successfully!")
 
     def _on_profile_updated(self, profile_data: dict):
         """Handle successful profile update.
@@ -356,12 +352,16 @@ class MainWindow(ctk.CTk):
         self._build_profile_tab(self._tabview.tab("Profile"))
 
         # Navigate to Search tab with success message
+        self._show_search_tab_with_success("Profile updated successfully!")
+
+    def _show_search_tab_with_success(self, message: str):
+        """Build and select the Search tab, then display a success message."""
         # Manually trigger tab build before programmatic switch (lazy loading workaround)
         if "Search" not in self._tabs_built:
             self._build_search_tab(self._tabview.tab("Search"))
             self._tabs_built.add("Search")
         self._tabview.set("Search")
-        self._show_success_message("Profile updated successfully!")
+        self._show_success_message(message)
 
     def _show_success_message(self, message: str):
         """Display temporary success message on Search tab.
@@ -371,19 +371,11 @@ class MainWindow(ctk.CTk):
         message : str
             Success message text
         """
-        # Remove existing success message if present
-        if self._success_message_label:
-            self._success_message_label.destroy()
-            self._success_message_label = None
-
-        # Create success message label — use grid row 1 (row 0 is content)
-        self._success_message_label = ctk.CTkLabel(
+        self._success_message_label = replace_success_message(
             self._search_content,
-            text=message,
-            text_color="green",
-            font=ctk.CTkFont(size=13)
+            self._success_message_label,
+            message,
         )
-        self._success_message_label.grid(row=1, column=0, pady=(0, 10))
 
         # Auto-hide after 3 seconds
         self.after(3000, self._hide_success_message)
