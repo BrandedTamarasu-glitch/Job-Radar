@@ -1125,9 +1125,7 @@ class MainWindow(ctk.CTk):
                         self._download_worker = None
                         self._download_thread = None
                     elif msg_type == "download_cancelled":
-                        if self._update_banner:
-                            self._update_banner.destroy()
-                            self._update_banner = None
+                        self._clear_update_banner()
                         self._download_worker = None
                         self._download_thread = None
                     elif msg_type == "asset_ready":
@@ -1194,9 +1192,7 @@ class MainWindow(ctk.CTk):
         self._update_release_url = release_url
 
         # Destroy existing banner if any
-        if self._update_banner:
-            self._update_banner.destroy()
-            self._update_banner = None
+        self._clear_update_banner()
 
         # Create banner at row 1
         self._update_banner = UpdateBanner(
@@ -1227,10 +1223,7 @@ class MainWindow(ctk.CTk):
         """
         self._update_checker.dismiss_version(version, hours)
 
-        # Destroy banner
-        if self._update_banner:
-            self._update_banner.destroy()
-            self._update_banner = None
+        self._clear_update_banner()
 
     def _on_skip_version(self, version: str):
         """Handle Skip This Version click from banner dropdown.
@@ -1249,9 +1242,7 @@ class MainWindow(ctk.CTk):
 
         # Schedule banner dismiss after 1.5 seconds
         def _dismiss_after_skip():
-            if self._update_banner:
-                self._update_banner.destroy()
-                self._update_banner = None
+            self._clear_update_banner()
 
         self.after(1500, _dismiss_after_skip)
 
@@ -1369,7 +1360,10 @@ class MainWindow(ctk.CTk):
         # Set session suppress flag
         self._download_cancelled_this_session = True
 
-        # Destroy banner
+        self._clear_update_banner()
+
+    def _clear_update_banner(self):
+        """Destroy the update banner and clear its reference when present."""
         if self._update_banner:
             self._update_banner.destroy()
             self._update_banner = None

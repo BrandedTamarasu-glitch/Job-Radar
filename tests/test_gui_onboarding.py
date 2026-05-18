@@ -444,6 +444,17 @@ def test_settings_update_panel_builds_status_and_controls():
     assert "Clear skipped versions" in source
 
 
+def test_update_banner_teardown_uses_shared_helper():
+    helper_source = inspect.getsource(MainWindow._clear_update_banner)
+
+    assert "self._update_banner.destroy()" in helper_source
+    assert "self._update_banner = None" in helper_source
+    assert "self._clear_update_banner()" in inspect.getsource(MainWindow._show_update_banner)
+    assert "self._clear_update_banner()" in inspect.getsource(MainWindow._dismiss_update)
+    assert "self._clear_update_banner()" in inspect.getsource(MainWindow._on_skip_version)
+    assert "self._clear_update_banner()" in inspect.getsource(MainWindow._on_download_cancel)
+
+
 def test_settings_separator_helper_keeps_section_dividers_consistent():
     source = inspect.getsource(add_settings_separator)
     tab_source = inspect.getsource(MainWindow._build_settings_tab)
