@@ -37,7 +37,7 @@ from .sources import (
     get_automated_source_display_names,
 )
 from .report import ZERO_RESULTS_TIPS, generate_report
-from .scoring import score_job
+from .search_pipeline import score_results
 from .demo_report import generate_demo_report
 from .search_presets import (
     SEARCH_PRESETS,
@@ -1007,16 +1007,7 @@ def main():
 
     # Step 3: Score
     print(f"\n{C.BOLD}Step 3:{C.RESET} Scoring results against profile...")
-    scored = []
-    dealbreaker_count = 0
-    for job in filtered:
-        score = score_job(job, profile)
-        if score.get("dealbreaker"):
-            dealbreaker_count += 1
-            continue
-        scored.append({"job": job, "score": score})
-
-    scored.sort(key=lambda x: x["score"]["overall"], reverse=True)
+    scored, dealbreaker_count = score_results(filtered, profile)
     if dealbreaker_count:
         print(f"  {C.DIM}{dealbreaker_count} results filtered by dealbreakers{C.RESET}")
 
