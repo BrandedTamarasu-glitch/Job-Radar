@@ -23,7 +23,11 @@ from job_radar.gui.search_panel import (
     update_source_progress_widgets,
 )
 from job_radar.gui.search_summary import search_completion_content, search_readiness_guidance_lines
-from job_radar.gui.maintenance_view_model import feedback_diagnostics_text, local_maintenance_text
+from job_radar.gui.maintenance_view_model import (
+    clear_dismissed_reviews_status,
+    feedback_diagnostics_text,
+    local_maintenance_text,
+)
 from job_radar.gui.source_diagnostics_view_model import source_diagnostics_text
 from job_radar.gui.settings_panel import (
     add_api_credentials_panel,
@@ -575,11 +579,13 @@ def test_settings_scoring_panel_builds_widget_with_save_callback():
 
 
 def test_clear_dismissed_reviews_uses_bounded_review_helper():
+    helper_source = inspect.getsource(clear_dismissed_reviews_status)
     source = inspect.getsource(MainWindow._on_clear_dismissed_reviews)
 
-    assert 'clear_review_state_by_state("dismissed", limit=50)' in source
-    assert "review_state_counts()" in source
-    assert "dismissed_review_cleanup_success_message" in source
+    assert 'clear_review_state_func("dismissed", limit=50)' in helper_source
+    assert "review_counts_func()" in helper_source
+    assert "dismissed_review_cleanup_success_message" in helper_source
+    assert "clear_dismissed_reviews_status" in source
 
 
 def test_real_search_records_recent_search_before_progress():

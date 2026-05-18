@@ -10,6 +10,7 @@ from job_radar.gui.maintenance_view_model import (
     build_local_maintenance_summary,
     cache_clear_error_message,
     cache_clear_success_message,
+    clear_dismissed_reviews_status,
     dismissed_review_cleanup_error_message,
     feedback_diagnostics_text,
     dismissed_review_cleanup_success_message,
@@ -180,3 +181,28 @@ def test_app_data_bundle_validation_message_handles_valid_and_invalid_results():
         files=[],
         errors=["missing manifest", "bad checksum"],
     ) == "Bundle validation failed: missing manifest; bad checksum"
+
+
+def test_clear_dismissed_reviews_status_returns_success_and_error():
+    counts = iter([{"dismissed": 5}, {"dismissed": 2}])
+    calls = []
+
+    message, color = clear_dismissed_reviews_status(
+        review_counts_func=lambda: next(counts),
+        clear_review_state_func=lambda state, limit: calls.append((state, limit)),
+    )
+
+    assert message == "Cleared 3 dismissed review item(s)"
+    assert color == "green"
+    assert calls == [("dismissed", 50)]
+
+    def fail_clear(state, limit):
+        raise RuntimeError("busy")
+
+    message, color = clear_dismissed_reviews_status(
+        review_counts_func=lambda: {"dismissed": 5},
+        clear_review_state_func=fail_clear,
+    )
+
+    assert message == "Dismissed review cleanup failed: busy"
+    assert color == "red"

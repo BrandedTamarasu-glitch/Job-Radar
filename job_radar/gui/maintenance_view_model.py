@@ -202,6 +202,22 @@ def dismissed_review_cleanup_error_message(error: object) -> str:
     return f"Dismissed review cleanup failed: {error}"
 
 
+def clear_dismissed_reviews_status(
+    *,
+    review_counts_func,
+    clear_review_state_func,
+) -> tuple[str, str]:
+    """Clear a bounded batch of dismissed review items and return status text/color."""
+    try:
+        before = review_counts_func().get("dismissed", 0)
+        clear_review_state_func("dismissed", limit=50)
+        after = review_counts_func().get("dismissed", 0)
+        removed = max(0, before - after)
+        return dismissed_review_cleanup_success_message(removed), "green"
+    except Exception as e:
+        return dismissed_review_cleanup_error_message(e), "red"
+
+
 def app_data_export_success_message(export_path: Path) -> str:
     """Return Settings feedback after app-data export succeeds."""
     return f"Exported app data to {export_path}"
