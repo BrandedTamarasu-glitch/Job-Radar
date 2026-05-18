@@ -47,6 +47,80 @@ BACKEND_API_BY_FIELD_ID = {
 }
 
 
+API_CREDENTIAL_SECTIONS = (
+    (
+        "JSearch API (LinkedIn, Indeed, Glassdoor)",
+        [("JSEARCH_API_KEY", "JSearch API Key", "jsearch")],
+        "Get your key from RapidAPI: https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch",
+    ),
+    (
+        "USAJobs (Federal Government Jobs)",
+        [
+            ("USAJOBS_EMAIL", "Email (User-Agent)", "usajobs_email"),
+            ("USAJOBS_API_KEY", "API Key", "usajobs"),
+        ],
+        "Register at: https://developer.usajobs.gov/",
+    ),
+    (
+        "Adzuna API",
+        [
+            ("ADZUNA_APP_ID", "App ID", "adzuna_id"),
+            ("ADZUNA_APP_KEY", "App Key", "adzuna_key"),
+        ],
+        "Sign up at: https://developer.adzuna.com/",
+    ),
+    (
+        "Authentic Jobs",
+        [("AUTHENTIC_JOBS_API_KEY", "API Key", "authentic_jobs")],
+        "Get your key from: https://authenticjobs.com/api/",
+    ),
+    (
+        "SerpAPI (Google Jobs)",
+        [("SERPAPI_API_KEY", "API Key", "serpapi")],
+        "Sign up at: https://serpapi.com/ (100 searches/month free)",
+    ),
+)
+
+
+def add_api_credentials_panel(
+    parent,
+    *,
+    on_add_api_section: Callable[[object, str, list[tuple[str, str, str]], str], None],
+    on_save: Callable[[], None],
+    show_jsearch_tip: bool,
+):
+    """Add API credential sections and return the Jobicy quota label."""
+    ctk.CTkLabel(
+        parent,
+        text="API Key Settings",
+        font=ctk.CTkFont(size=18, weight="bold"),
+    ).pack(pady=(0, 10))
+
+    ctk.CTkLabel(
+        parent,
+        text="Configure API keys to enable additional job sources",
+        wraplength=600,
+    ).pack(pady=(0, 20))
+
+    for title, fields, signup_url in API_CREDENTIAL_SECTIONS:
+        on_add_api_section(parent, title, fields, signup_url)
+
+    jobicy_quota_label = add_jobicy_api_status(parent)
+
+    if show_jsearch_tip:
+        add_jsearch_setup_tip(parent)
+
+    ctk.CTkButton(
+        parent,
+        text="Save API Keys",
+        height=40,
+        width=200,
+        command=on_save,
+    ).pack(pady=(20, 10))
+
+    return jobicy_quota_label
+
+
 def add_update_settings_panel(
     parent,
     *,

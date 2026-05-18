@@ -16,6 +16,7 @@ from job_radar.gui.search_panel import (
     build_search_progress_panel,
 )
 from job_radar.gui.settings_panel import (
+    add_api_credentials_panel,
     add_api_key_section,
     add_danger_zone,
     add_jobicy_api_status,
@@ -288,6 +289,16 @@ def test_settings_api_section_helper_builds_fields_and_test_controls():
     assert "on_test(fields)" in source
     assert "api_fields[field_id]" in source
     assert "quota_labels[backend_api]" in source
+
+
+def test_settings_api_credentials_panel_lists_sources_and_save_action():
+    source = inspect.getsource(add_api_credentials_panel)
+
+    assert "API Key Settings" in source
+    assert "API_CREDENTIAL_SECTIONS" in source
+    assert "add_jobicy_api_status" in source
+    assert "add_jsearch_setup_tip" in source
+    assert "Save API Keys" in source
 
 
 def test_settings_update_panel_builds_status_and_controls():

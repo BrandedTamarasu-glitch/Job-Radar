@@ -115,10 +115,9 @@ from job_radar.gui.search_summary import (
     zero_result_lines,
 )
 from job_radar.gui.settings_panel import (
+    add_api_credentials_panel,
     add_api_key_section,
     add_danger_zone,
-    add_jobicy_api_status,
-    add_jsearch_setup_tip,
     add_storage_maintenance_panel,
     add_update_settings_panel,
 )
@@ -2066,23 +2065,6 @@ class MainWindow(ctk.CTk):
         separator = ctk.CTkFrame(scroll_frame, height=1, fg_color="gray")
         separator.pack(fill="x", pady=(10, 20), padx=10)
 
-        # === API Key Settings Section ===
-        # Title
-        title_label = ctk.CTkLabel(
-            scroll_frame,
-            text="API Key Settings",
-            font=ctk.CTkFont(size=18, weight="bold")
-        )
-        title_label.pack(pady=(0, 10))
-
-        # Description
-        desc_label = ctk.CTkLabel(
-            scroll_frame,
-            text="Configure API keys to enable additional job sources",
-            wraplength=600
-        )
-        desc_label.pack(pady=(0, 20))
-
         # Load current env values from the app-data credential file.
         env_path = get_api_credentials_path()
         if env_path.exists():
@@ -2093,68 +2075,12 @@ class MainWindow(ctk.CTk):
         self._api_status_labels = {}
         self._quota_labels = {}
 
-        # JSearch section
-        self._add_api_section(
+        self._quota_labels["jobicy"] = add_api_credentials_panel(
             scroll_frame,
-            "JSearch API (LinkedIn, Indeed, Glassdoor)",
-            [("JSEARCH_API_KEY", "JSearch API Key", "jsearch")],
-            "Get your key from RapidAPI: https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch"
+            on_add_api_section=self._add_api_section,
+            on_save=self._save_api_keys,
+            show_jsearch_tip=not os.getenv("JSEARCH_API_KEY", "").strip(),
         )
-
-        # USAJobs section
-        self._add_api_section(
-            scroll_frame,
-            "USAJobs (Federal Government Jobs)",
-            [
-                ("USAJOBS_EMAIL", "Email (User-Agent)", "usajobs_email"),
-                ("USAJOBS_API_KEY", "API Key", "usajobs")
-            ],
-            "Register at: https://developer.usajobs.gov/"
-        )
-
-        # Adzuna section
-        self._add_api_section(
-            scroll_frame,
-            "Adzuna API",
-            [
-                ("ADZUNA_APP_ID", "App ID", "adzuna_id"),
-                ("ADZUNA_APP_KEY", "App Key", "adzuna_key")
-            ],
-            "Sign up at: https://developer.adzuna.com/"
-        )
-
-        # Authentic Jobs section
-        self._add_api_section(
-            scroll_frame,
-            "Authentic Jobs",
-            [("AUTHENTIC_JOBS_API_KEY", "API Key", "authentic_jobs")],
-            "Get your key from: https://authenticjobs.com/api/"
-        )
-
-        # SerpAPI section
-        self._add_api_section(
-            scroll_frame,
-            "SerpAPI (Google Jobs)",
-            [("SERPAPI_API_KEY", "API Key", "serpapi")],
-            "Sign up at: https://serpapi.com/ (100 searches/month free)"
-        )
-
-        self._quota_labels["jobicy"] = add_jobicy_api_status(scroll_frame)
-
-        # Tip for JSearch
-        jsearch_key = os.getenv("JSEARCH_API_KEY", "").strip()
-        if not jsearch_key:
-            add_jsearch_setup_tip(scroll_frame)
-
-        # Save button
-        save_btn = ctk.CTkButton(
-            scroll_frame,
-            text="Save API Keys",
-            height=40,
-            width=200,
-            command=self._save_api_keys
-        )
-        save_btn.pack(pady=(20, 10))
 
         # Separator between API settings and scoring config
         separator = ctk.CTkFrame(scroll_frame, height=2, fg_color="gray70")
