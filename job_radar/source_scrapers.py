@@ -11,9 +11,13 @@ from .cache import fetch_with_retry
 from .source_config import source_cache_ttl
 from .source_models import JobResult
 from .source_parsing import (
+    _DATE_RE,
+    _EMPLOYMENT_TYPE_RE,
     _MAX_COMPANY,
     _MAX_LOCATION,
     _MAX_TITLE,
+    _SALARY_RE,
+    _SKIP_TOKENS,
     _clean_field,
     _parse_arrangement,
     _strip_html,
@@ -28,6 +32,101 @@ HEADERS = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     "Accept-Language": "en-US,en;q=0.5",
 }
+
+
+def fetch_dice(
+    query: str,
+    location: str = "",
+    *,
+    fetch_with_retry_func=fetch_with_retry,
+) -> list[JobResult]:
+    """Fetch job listings from Dice.com by scraping search results."""
+    results = []
+    encoded_q = urllib.parse.quote_plus(query)
+    url = f"https://www.dice.com/jobs?q={encoded_q}"
+    if location:
+        url += f"&location={urllib.parse.quote_plus(location)}"
+
+    body = fetch_with_retry_func(
+        url,
+        headers=HEADERS,
+        cache_ttl_seconds=source_cache_ttl("dice"),
+    )
+    if body is None:
+        log.warning("[Dice] Fetch failed for '%s'", query)
+        return results
+
+    try:
+        soup = BeautifulSoup(body, "html.parser")
+        cards = soup.select("div.rounded-lg.border")
+
+        for card in cards:
+            detail_link = card.select_one('a[href*="/job-detail/"]')
+            if not detail_link:
+                continue
+
+            detail_url = detail_link.get("href", "")
+            if detail_url and not detail_url.startswith("http"):
+                detail_url = "https://www.dice.com" + detail_url
+
+            parts = [
+                p.strip()
+                for p in card.get_text(separator="|||", strip=True).split("|||")
+                if p.strip()
+            ]
+
+            meaningful = [p for p in parts if p not in _SKIP_TOKENS]
+
+            company = "Unknown"
+            title = "Unknown Title"
+            loc = location or "Unknown"
+            posted = "Unknown"
+            salary = "Not listed"
+            emp_type = ""
+            desc_parts = []
+            confidence = "high"
+
+            if meaningful:
+                company = _clean_field(meaningful[0], _MAX_COMPANY)
+
+            if len(meaningful) > 1:
+                title = _clean_field(meaningful[1], _MAX_TITLE)
+
+            for part in meaningful[2:]:
+                if _SALARY_RE.search(part) and salary == "Not listed":
+                    salary = part.strip()
+                elif _DATE_RE.match(part.strip()) and posted == "Unknown":
+                    posted = part.strip()
+                elif _EMPLOYMENT_TYPE_RE.match(part.strip()):
+                    emp_type = part.strip()
+                elif loc in (location or "Unknown", "Unknown") and (
+                    "," in part or "remote" in part.lower()
+                ) and len(part) < 60:
+                    loc = _clean_field(part, _MAX_LOCATION)
+                else:
+                    desc_parts.append(part)
+
+            arrangement = _parse_arrangement(f"{loc} {title}")
+            description = " ".join(desc_parts[:3])
+
+            results.append(JobResult(
+                title=title,
+                company=company,
+                location=loc,
+                arrangement=arrangement,
+                salary=salary,
+                date_posted=posted,
+                description=description,
+                url=detail_url,
+                source="Dice",
+                employment_type=emp_type,
+                parse_confidence=confidence,
+            ))
+    except Exception as e:
+        log.error("[Dice] Parse error: %s", e)
+
+    log.info("[Dice] Found %d results for '%s'", len(results), query)
+    return results
 
 
 def fetch_remoteok(

@@ -2,11 +2,8 @@
 
 import logging
 import time
-import urllib.parse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date
-
-from bs4 import BeautifulSoup
 
 from .cache import fetch_with_retry, get_cache_stats, reset_cache_stats
 from .api_config import get_api_key
@@ -71,6 +68,7 @@ from .source_registry import (
     source_display_name,
 )
 from .source_scrapers import (
+    fetch_dice as _fetch_dice_scraper,
     fetch_hn_hiring as _fetch_hn_hiring_scraper,
     fetch_remoteok as _fetch_remoteok_scraper,
     fetch_weworkremotely as _fetch_weworkremotely_scraper,
@@ -94,93 +92,7 @@ HEADERS = {
 
 def fetch_dice(query: str, location: str = "") -> list[JobResult]:
     """Fetch job listings from Dice.com by scraping search results."""
-    results = []
-    encoded_q = urllib.parse.quote_plus(query)
-    url = f"https://www.dice.com/jobs?q={encoded_q}"
-    if location:
-        url += f"&location={urllib.parse.quote_plus(location)}"
-
-    body = fetch_with_retry(url, headers=HEADERS, cache_ttl_seconds=source_cache_ttl("dice"))
-    if body is None:
-        log.warning("[Dice] Fetch failed for '%s'", query)
-        return results
-
-    try:
-        soup = BeautifulSoup(body, "html.parser")
-        cards = soup.select("div.rounded-lg.border")
-
-        for card in cards:
-            detail_link = card.select_one('a[href*="/job-detail/"]')
-            if not detail_link:
-                continue
-
-            detail_url = detail_link.get("href", "")
-            if detail_url and not detail_url.startswith("http"):
-                detail_url = "https://www.dice.com" + detail_url
-
-            parts = [
-                p.strip()
-                for p in card.get_text(separator="|||", strip=True).split("|||")
-                if p.strip()
-            ]
-
-            # Filter out noise tokens
-            meaningful = [p for p in parts if p not in _SKIP_TOKENS]
-
-            # Use heuristic field detection instead of fixed positions
-            company = "Unknown"
-            title = "Unknown Title"
-            loc = location or "Unknown"
-            posted = "Unknown"
-            salary = "Not listed"
-            emp_type = ""
-            desc_parts = []
-            confidence = "high"
-
-            # First meaningful part is usually company
-            if meaningful:
-                company = _clean_field(meaningful[0], _MAX_COMPANY)
-
-            # Second is usually title (often matches the detail link text)
-            if len(meaningful) > 1:
-                title = _clean_field(meaningful[1], _MAX_TITLE)
-
-            # Scan remaining parts for typed fields
-            for part in meaningful[2:]:
-                if _SALARY_RE.search(part) and salary == "Not listed":
-                    salary = part.strip()
-                elif _DATE_RE.match(part.strip()) and posted == "Unknown":
-                    posted = part.strip()
-                elif _EMPLOYMENT_TYPE_RE.match(part.strip()):
-                    emp_type = part.strip()
-                elif loc in (location or "Unknown", "Unknown") and (
-                    "," in part or "remote" in part.lower()
-                ) and len(part) < 60:
-                    loc = _clean_field(part, _MAX_LOCATION)
-                else:
-                    desc_parts.append(part)
-
-            arrangement = _parse_arrangement(f"{loc} {title}")
-            description = " ".join(desc_parts[:3])  # first 3 descriptive chunks
-
-            results.append(JobResult(
-                title=title,
-                company=company,
-                location=loc,
-                arrangement=arrangement,
-                salary=salary,
-                date_posted=posted,
-                description=description,
-                url=detail_url,
-                source="Dice",
-                employment_type=emp_type,
-                parse_confidence=confidence,
-            ))
-    except Exception as e:
-        log.error("[Dice] Parse error: %s", e)
-
-    log.info("[Dice] Found %d results for '%s'", len(results), query)
-    return results
+    return _fetch_dice_scraper(query, location, fetch_with_retry_func=fetch_with_retry)
 
 
 # ---------------------------------------------------------------------------
