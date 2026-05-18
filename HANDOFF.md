@@ -6,13 +6,14 @@ Date: 2026-05-16
 
 - Repo path: `/home/corye/openai-cli/Job-Radar`
 - Branch: `main`
-- Git status before latest slice: clean, `main...origin/main [ahead 48]`
+- Git status before latest slice: clean, `main...origin/main [ahead 49]`
 - Last full validation: `1109 passed, 8 skipped`
-- Do not push unless explicitly asked. The 48 local commits after the last push are still local.
+- Do not push unless explicitly asked. The 49 local commits after the last push are still local.
 
 ## Latest Local Commits
 
 ```text
+42c92e0 refactor: extract profile content clearing
 4984bdf refactor: remove application due text wrapper
 0442575 refactor: centralize demo report feedback
 5a2a8b8 refactor: extract search content clearing
@@ -20,7 +21,6 @@ Date: 2026-05-16
 3e6cd0a refactor: extract settings separator helper
 d414df8 refactor: centralize lazy tab building
 d5a4a43 refactor: reuse search success flow
-3ba8423 refactor: extract main tab shell
 ```
 
 ## Recently Pushed
@@ -140,6 +140,7 @@ Started reducing `job_radar/gui/main_window.py` by moving display formatting int
 - `job_radar/gui/main_window.py`
   - Shared lazy tab-build helper for user and programmatic tab navigation
   - Removed redundant Applications due-text wrapper in favor of the view-model helper
+  - Removed obsolete Profile field wrapper after Profile row rendering moved to `profile_panel.py`
 - `job_radar/gui/demo_report_view_model.py`
   - Demo report success/error feedback text
 - `job_radar/gui/settings_panel.py`
@@ -156,7 +157,7 @@ Current line counts:
 
 ```text
 2149 job_radar/report.py
-2353 job_radar/gui/main_window.py
+2337 job_radar/gui/main_window.py
   14 job_radar/gui/demo_report_view_model.py
   44 job_radar/gui/dialogs.py
   70 job_radar/gui/welcome_panel.py

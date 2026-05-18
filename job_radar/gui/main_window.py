@@ -83,7 +83,7 @@ from job_radar.gui.dashboard_view_model import build_dashboard_actions
 from job_radar.gui.dashboard_panel import add_dashboard_next_steps
 from job_radar.gui.demo_report_view_model import demo_report_error_message, demo_report_success_message
 from job_radar.gui.dialogs import show_message_dialog
-from job_radar.gui.profile_panel import add_profile_field, add_profile_summary_panel, clear_profile_content
+from job_radar.gui.profile_panel import add_profile_summary_panel, clear_profile_content
 from job_radar.gui.profile_form import ProfileForm
 from job_radar.gui.profile_view_model import (
     build_profile_readiness_display,
@@ -548,22 +548,6 @@ class MainWindow(ctk.CTk):
             existing_profile=profile
         )
         form.pack(fill="both", expand=True)
-
-    def _add_profile_field(self, parent, row, label_text, value_text):
-        """Add a label-value pair to the profile grid.
-
-        Parameters
-        ----------
-        parent
-            Parent widget
-        row : int
-            Grid row number
-        label_text : str
-            Label text
-        value_text : str
-            Value text
-        """
-        add_profile_field(parent, row, label_text, value_text)
 
     def _build_search_tab(self, parent):
         """Build Search tab with search controls and threading integration.
