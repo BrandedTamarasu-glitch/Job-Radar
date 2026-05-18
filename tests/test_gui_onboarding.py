@@ -351,8 +351,10 @@ def test_profile_form_renders_field_hints():
 def test_search_complete_loads_profile_for_zero_result_guidance():
     source = inspect.getsource(MainWindow._show_search_complete)
     summary_source = inspect.getsource(search_completion_content)
+    loader_source = inspect.getsource(MainWindow._load_current_profile_for_guidance)
 
     assert "profile=self._load_current_profile_for_guidance()" in source
+    assert "load_profile_for_guidance(self._profile_exists, get_data_dir(), load_profile)" in loader_source
     assert "search_config=self._active_search_config" in source
     assert "zero_result_lines(job_count, profile)" in summary_source
     assert "search_context_lines(summary, search_config)" in summary_source

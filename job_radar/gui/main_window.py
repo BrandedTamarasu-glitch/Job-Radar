@@ -88,6 +88,7 @@ from job_radar.gui.profile_form import ProfileForm
 from job_radar.gui.profile_view_model import (
     build_profile_readiness_display,
     build_profile_summary_rows,
+    load_profile_for_guidance,
     profile_load_error_message,
 )
 from job_radar.gui.review_state_view_model import load_review_state_summary_lines
@@ -1031,12 +1032,7 @@ class MainWindow(ctk.CTk):
 
     def _load_current_profile_for_guidance(self) -> dict | None:
         """Load the saved profile for non-blocking guidance text."""
-        if not self._profile_exists:
-            return None
-        try:
-            return load_profile(get_data_dir() / "profile.json")
-        except Exception:
-            return None
+        return load_profile_for_guidance(self._profile_exists, get_data_dir(), load_profile)
 
     def _check_queue(self):
         """Process messages from worker thread queue (runs in main GUI thread)."""

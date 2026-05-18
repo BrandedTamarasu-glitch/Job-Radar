@@ -1,8 +1,10 @@
+from pathlib import Path
 from types import SimpleNamespace
 
 from job_radar.gui.profile_view_model import (
     build_profile_readiness_display,
     build_profile_summary_rows,
+    load_profile_for_guidance,
     profile_load_error_message,
 )
 
@@ -49,6 +51,25 @@ def test_build_profile_summary_rows_uses_defaults_and_skips_empty_optional_field
 
 def test_profile_load_error_message_includes_error_detail():
     assert profile_load_error_message(ValueError("bad json")) == "Could not load profile: bad json"
+
+
+def test_load_profile_for_guidance_skips_absent_profile_and_handles_errors():
+    calls = []
+
+    def load_profile_func(path):
+        calls.append(path)
+        return {"name": "Test User"}
+
+    def fail_profile_func(path):
+        raise OSError("bad profile")
+
+    data_dir = Path("/tmp/job-radar-test-data")
+
+    assert load_profile_for_guidance(False, data_dir, load_profile_func) is None
+    assert calls == []
+    assert load_profile_for_guidance(True, data_dir, load_profile_func) == {"name": "Test User"}
+    assert calls == [data_dir / "profile.json"]
+    assert load_profile_for_guidance(True, data_dir, fail_profile_func) is None
 
 
 def test_build_profile_readiness_display_formats_summary_and_guidance():

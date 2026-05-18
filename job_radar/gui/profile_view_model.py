@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 
@@ -67,6 +68,16 @@ def build_profile_summary_rows(profile: dict[str, Any]) -> list[ProfileSummaryRo
 def profile_load_error_message(error: object) -> str:
     """Return Profile tab load failure text."""
     return f"Could not load profile: {error}"
+
+
+def load_profile_for_guidance(profile_exists: bool, data_dir: Path, load_profile_func) -> dict | None:
+    """Load the saved profile for non-blocking guidance, returning None on absence/errors."""
+    if not profile_exists:
+        return None
+    try:
+        return load_profile_func(data_dir / "profile.json")
+    except Exception:
+        return None
 
 
 def _join_list(value: object) -> str:
