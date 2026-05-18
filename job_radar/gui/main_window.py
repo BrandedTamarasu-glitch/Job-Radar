@@ -114,7 +114,11 @@ from job_radar.gui.search_summary import (
     source_warning_message,
     zero_result_lines,
 )
-from job_radar.gui.settings_panel import add_storage_maintenance_panel
+from job_radar.gui.settings_panel import (
+    add_jobicy_api_status,
+    add_jsearch_setup_tip,
+    add_storage_maintenance_panel,
+)
 from job_radar.gui.maintenance_view_model import (
     app_data_bundle_validation_message,
     app_data_export_error_message,
@@ -2181,56 +2185,12 @@ class MainWindow(ctk.CTk):
             "Sign up at: https://serpapi.com/ (100 searches/month free)"
         )
 
-        # Jobicy section (no API key, just info and enable status)
-        jobicy_frame = ctk.CTkFrame(scroll_frame, fg_color="transparent")
-        jobicy_frame.pack(fill="x", pady=(10, 20), padx=10)
-
-        jobicy_title = ctk.CTkLabel(
-            jobicy_frame,
-            text="Jobicy (Remote Jobs)",
-            font=ctk.CTkFont(size=14, weight="bold")
-        )
-        jobicy_title.pack(anchor="w", pady=(0, 5))
-
-        jobicy_info = ctk.CTkLabel(
-            jobicy_frame,
-            text="Public API - no key required (rate limited to 1 request/hour)",
-            font=ctk.CTkFont(size=10),
-            text_color="gray"
-        )
-        jobicy_info.pack(anchor="w", pady=(0, 5))
-
-        jobicy_status = ctk.CTkLabel(
-            jobicy_frame,
-            text="✓ Always available",
-            text_color="green"
-        )
-        jobicy_status.pack(anchor="w")
-
-        # Jobicy quota label
-        jobicy_quota = ctk.CTkLabel(
-            jobicy_frame,
-            text="",
-            font=ctk.CTkFont(size=10),
-            text_color="gray"
-        )
-        jobicy_quota.pack(anchor="w", pady=(5, 0))
-        self._quota_labels["jobicy"] = jobicy_quota
+        self._quota_labels["jobicy"] = add_jobicy_api_status(scroll_frame)
 
         # Tip for JSearch
         jsearch_key = os.getenv("JSEARCH_API_KEY", "").strip()
         if not jsearch_key:
-            tip_frame = ctk.CTkFrame(scroll_frame, fg_color="transparent", border_width=2, border_color="#5DADE2")
-            tip_frame.pack(fill="x", pady=(20, 10), padx=10)
-
-            tip_label = ctk.CTkLabel(
-                tip_frame,
-                text="💡 Tip: Set up JSearch API key to search LinkedIn, Indeed, and Glassdoor",
-                font=ctk.CTkFont(size=12),
-                text_color="#5DADE2",
-                wraplength=600
-            )
-            tip_label.pack(pady=10, padx=10)
+            add_jsearch_setup_tip(scroll_frame)
 
         # Save button
         save_btn = ctk.CTkButton(

@@ -152,3 +152,56 @@ def add_storage_maintenance_panel(
         cache_status_label=cache_status_label,
         source_diagnostics_textbox=source_diagnostics_textbox,
     )
+
+
+def add_jobicy_api_status(parent):
+    """Add the Jobicy public API status section and return its quota label."""
+    jobicy_frame = ctk.CTkFrame(parent, fg_color="transparent")
+    jobicy_frame.pack(fill="x", pady=(10, 20), padx=10)
+
+    ctk.CTkLabel(
+        jobicy_frame,
+        text="Jobicy (Remote Jobs)",
+        font=ctk.CTkFont(size=14, weight="bold"),
+    ).pack(anchor="w", pady=(0, 5))
+
+    ctk.CTkLabel(
+        jobicy_frame,
+        text="Public API - no key required (rate limited to 1 request/hour)",
+        font=ctk.CTkFont(size=10),
+        text_color="gray",
+    ).pack(anchor="w", pady=(0, 5))
+
+    ctk.CTkLabel(
+        jobicy_frame,
+        text="✓ Always available",
+        text_color="green",
+    ).pack(anchor="w")
+
+    quota_label = ctk.CTkLabel(
+        jobicy_frame,
+        text="",
+        font=ctk.CTkFont(size=10),
+        text_color="gray",
+    )
+    quota_label.pack(anchor="w", pady=(5, 0))
+    return quota_label
+
+
+def add_jsearch_setup_tip(parent) -> None:
+    """Add the JSearch setup tip shown when no API key is configured."""
+    tip_frame = ctk.CTkFrame(
+        parent,
+        fg_color="transparent",
+        border_width=2,
+        border_color="#5DADE2",
+    )
+    tip_frame.pack(fill="x", pady=(20, 10), padx=10)
+
+    ctk.CTkLabel(
+        tip_frame,
+        text="💡 Tip: Set up JSearch API key to search LinkedIn, Indeed, and Glassdoor",
+        font=ctk.CTkFont(size=12),
+        text_color="#5DADE2",
+        wraplength=600,
+    ).pack(pady=10, padx=10)

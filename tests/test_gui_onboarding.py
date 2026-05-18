@@ -15,7 +15,11 @@ from job_radar.gui.search_panel import (
     build_search_error_panel,
     build_search_progress_panel,
 )
-from job_radar.gui.settings_panel import add_storage_maintenance_panel
+from job_radar.gui.settings_panel import (
+    add_jobicy_api_status,
+    add_jsearch_setup_tip,
+    add_storage_maintenance_panel,
+)
 
 
 def test_welcome_screen_exposes_demo_report_preview():
@@ -262,6 +266,16 @@ def test_feedback_diagnostics_can_be_copied_from_settings():
     assert "self.clipboard_clear()" in handler_source
     assert "self.clipboard_append(text)" in handler_source
     assert "Copied redacted feedback diagnostics to clipboard" in handler_source
+
+
+def test_settings_api_helpers_include_public_source_and_setup_tip():
+    jobicy_source = inspect.getsource(add_jobicy_api_status)
+    tip_source = inspect.getsource(add_jsearch_setup_tip)
+
+    assert "Jobicy (Remote Jobs)" in jobicy_source
+    assert "Always available" in jobicy_source
+    assert "JSearch API key" in tip_source
+    assert "LinkedIn, Indeed, and Glassdoor" in tip_source
 
 
 def test_clear_dismissed_reviews_uses_bounded_review_helper():

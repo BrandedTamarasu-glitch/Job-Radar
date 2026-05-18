@@ -125,14 +125,15 @@ Started reducing `job_radar/gui/main_window.py` by moving display formatting int
   - Centered modal message dialog construction
 - `job_radar/gui/settings_panel.py`
   - Settings storage maintenance and diagnostics panel construction
+  - Settings Jobicy public-source status and JSearch setup tip construction
 
 Current line counts:
 
 ```text
 2149 job_radar/report.py
-2818 job_radar/gui/main_window.py
+2778 job_radar/gui/main_window.py
   44 job_radar/gui/dialogs.py
- 154 job_radar/gui/settings_panel.py
+ 207 job_radar/gui/settings_panel.py
  391 job_radar/gui/search_panel.py
   23 job_radar/gui/profile_panel.py
   62 job_radar/gui/dashboard_panel.py
@@ -165,7 +166,7 @@ rtk .venv/bin/python -m pytest tests/
 Latest result:
 
 ```text
-1090 passed, 8 skipped
+1091 passed, 8 skipped
 ```
 
 ## Active Plan
