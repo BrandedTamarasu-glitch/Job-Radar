@@ -31,7 +31,11 @@ from .source_config import (
     source_cache_ttl,
 )
 from .source_execution import SourceExecutionState
-from .source_api_fetchers import fetch_jobicy, fetch_serpapi
+from .source_api_fetchers import (
+    fetch_adzuna as _fetch_adzuna_api,
+    fetch_jobicy,
+    fetch_serpapi,
+)
 from .source_mappers import (
     _format_hiringcafe_salary,
     _normalize_salary_to_annual,
@@ -600,62 +604,14 @@ def fetch_weworkremotely(query: str) -> list[JobResult]:
 
 def fetch_adzuna(query: str, location: str = "", verbose: bool = False) -> list[JobResult]:
     """Fetch job listings from Adzuna API."""
-    results = []
-
-    # Check credentials
-    app_id = get_api_key("ADZUNA_APP_ID", "Adzuna")
-    app_key = get_api_key("ADZUNA_APP_KEY", "Adzuna")
-    if not app_id or not app_key:
-        return results
-
-    # Check rate limit
-    if not check_rate_limit("adzuna", verbose=verbose):
-        return results
-
-    # Build API URL
-    params = {
-        "app_id": app_id,
-        "app_key": app_key,
-        "what": query,
-        "results_per_page": "50",
-    }
-    if location:
-        params["where"] = location
-
-    url = "https://api.adzuna.com/v1/api/jobs/us/search/1?" + urllib.parse.urlencode(params)
-
-    # Fetch with retry
-    try:
-        body = fetch_with_retry(
-            url,
-            headers=HEADERS,
-            use_cache=True,
-            cache_ttl_seconds=source_cache_ttl("adzuna"),
-        )
-        if body is None:
-            log.debug("[Adzuna] Fetch failed for '%s'", query)
-            return results
-
-        data = _json.loads(body)
-        items = data.get("results", [])
-
-        for item in items:
-            job = map_adzuna_to_job_result(item)
-            if job:
-                results.append(job)
-
-    except _json.JSONDecodeError as e:
-        log.debug("[Adzuna] JSON parse error: %s", e)
-    except Exception as e:
-        # Check for HTTPError-like exceptions
-        error_str = str(e).lower()
-        if "401" in error_str or "403" in error_str or "unauthorized" in error_str:
-            log.error("[Adzuna] Authentication failed - run 'job-radar --setup-apis' to reconfigure")
-        else:
-            log.debug("[Adzuna] Request failed: %s", e)
-
-    log.info("[Adzuna] Found %d results for '%s'", len(results), query)
-    return results
+    return _fetch_adzuna_api(
+        query,
+        location,
+        verbose,
+        get_api_key_func=get_api_key,
+        check_rate_limit_func=check_rate_limit,
+        fetch_with_retry_func=fetch_with_retry,
+    )
 
 
 # ---------------------------------------------------------------------------

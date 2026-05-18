@@ -80,7 +80,7 @@ Current progress:
 - `job_radar/source_models.py` now contains the shared `JobResult` data model while `job_radar/sources.py` preserves the existing import path.
 - `job_radar/source_parsing.py` now contains source text cleanup, location normalization, arrangement parsing, Dice parsing constants, and local source location matching while `job_radar/sources.py` preserves existing parsing helper imports.
 - `job_radar/source_mappers.py` now contains the Adzuna, Authentic Jobs, JSearch, USAJobs, SerpAPI, Jobicy, and hiring.cafe API response mappers plus hiring.cafe salary helpers while `job_radar/sources.py` preserves the existing mapper import paths.
-- `job_radar/source_api_fetchers.py` now contains the SerpAPI and Jobicy API fetchers while `job_radar/sources.py` preserves the existing fetcher import paths and registry wiring.
+- `job_radar/source_api_fetchers.py` now contains the Adzuna, SerpAPI, and Jobicy API fetchers while `job_radar/sources.py` preserves existing patch-compatible fetcher import paths and registry wiring.
 - GUI display formatting cleanup has started by moving saved-search panel loading/rows/feedback, Applications pipeline rows, follow-up queue rows, filters, and Applications export/import/edit feedback into view-model helpers.
 - Applications tab construction now lives in a focused `job_radar/gui/applications_tab.py` helper while `MainWindow` retains behavior callbacks.
 - Settings update status formatting now lives in `job_radar/gui/update_status_view_model.py`.
