@@ -6,13 +6,14 @@ Date: 2026-05-18
 
 - Repo path: `/home/corye/openai-cli/Job-Radar`
 - Branch: `main`
-- Git status after latest slice: clean, `main...origin/main [ahead 76]`
-- Last full validation: `1138 passed, 8 skipped`
-- Do not push unless explicitly asked. The 76 local commits after the last push are still local.
+- Git status after latest slice: clean, `main...origin/main [ahead 77]`
+- Last full validation: `1143 passed, 8 skipped`
+- Do not push unless explicitly asked. The 77 local commits after the last push are still local.
 
 ## Latest Local Commits
 
 ```text
+ec9433e refactor: extract source registry helpers
 98de685 refactor: share search profile preparation
 4ffd8e2 refactor: use shared scored filters in cli
 fcdec9c refactor: use shared raw filters in cli
@@ -43,7 +44,7 @@ aa92d65 refactor: centralize source diagnostics text
 
 ## Recently Pushed
 
-Before the current 6 local commits, the main repo and wiki were pushed successfully using the active `BrandedTamarasu-glitch` GitHub CLI credential.
+Before the current local Sprint 3 commits, the main repo and wiki were pushed successfully using the active `BrandedTamarasu-glitch` GitHub CLI credential.
 
 Main repo docs commit:
 
@@ -95,6 +96,9 @@ Started reducing `job_radar/gui/main_window.py` by moving display formatting int
 - `job_radar/source_registry.py`
   - Shared source registry dataclasses and display-name selection helpers
   - `sources.py` now delegates registry/manual display-name selection while retaining concrete fetcher dictionaries
+- `job_radar/manual_sources.py`
+  - Manual job-board URL generators, manual source registry, and manual URL generation helpers
+  - `sources.py` re-exports the manual-source API for existing CLI/GUI/test imports
 - `job_radar/gui/applications_view_model.py`
   - `format_next_action_due_text`
   - `ApplicationNextActionRow`
@@ -205,8 +209,9 @@ Current line counts:
 2149 job_radar/report.py
 1138 job_radar/search.py
  261 job_radar/search_pipeline.py
+ 117 job_radar/manual_sources.py
   69 job_radar/source_registry.py
-2441 job_radar/sources.py
+2295 job_radar/sources.py
  627 job_radar/gui/worker_thread.py
 2320 job_radar/gui/main_window.py
   14 job_radar/gui/demo_report_view_model.py

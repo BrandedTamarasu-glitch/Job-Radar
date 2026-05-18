@@ -17,12 +17,21 @@ from .cache import fetch_with_retry, get_cache_stats, reset_cache_stats
 from .api_config import get_api_key
 from .rate_limits import check_rate_limit
 from .deduplication import deduplicate_cross_source
+from .manual_sources import (
+    MANUAL_SOURCE_REGISTRY,
+    _slugify_for_wellfound,
+    generate_glassdoor_url,
+    generate_indeed_url,
+    generate_linkedin_url,
+    generate_manual_urls,
+    generate_weworkremotely_url,
+    generate_wellfound_url,
+    get_manual_source_display_names,
+)
 from .source_execution import SourceExecutionState
 from .source_registry import (
-    ManualSourceDefinition,
     SourceDefinition,
     selected_automated_source_display_names,
-    selected_manual_source_display_names,
     source_display_name,
 )
 
@@ -1902,161 +1911,6 @@ def fetch_jobicy(query: str, location: str = "", verbose: bool = False) -> list[
 
     log.info("[Jobicy] Found %d results for '%s'", len(results), query)
     return results
-
-
-# ---------------------------------------------------------------------------
-# Manual-check URL generators
-# ---------------------------------------------------------------------------
-
-def _slugify_for_wellfound(text: str) -> str:
-    """Convert text to Wellfound URL slug format.
-
-    Wellfound uses lowercase, hyphen-separated slugs in URL paths.
-
-    Examples:
-        "Software Engineer" -> "software-engineer"
-        "San Francisco, CA" -> "san-francisco-ca"
-        "Senior Full-Stack Developer" -> "senior-full-stack-developer"
-
-    Args:
-        text: Text to slugify (job title or location)
-
-    Returns:
-        URL-safe slug (lowercase, hyphens, alphanumeric only)
-    """
-    # Lowercase and strip whitespace
-    slug = text.lower().strip()
-    # Remove commas (for locations like "San Francisco, CA")
-    slug = slug.replace(",", "")
-    # Replace spaces with hyphens
-    slug = slug.replace(" ", "-")
-    # Filter to alphanumeric + hyphens only
-    slug = "".join(c for c in slug if c.isalnum() or c == "-")
-    # Collapse consecutive hyphens
-    while "--" in slug:
-        slug = slug.replace("--", "-")
-    # Strip leading/trailing hyphens
-    return slug.strip("-")
-
-
-def generate_wellfound_url(title: str, location: str) -> str:
-    """Generate a Wellfound search URL with role and optional location.
-
-    Wellfound (formerly AngelList Talent) specializes in startup jobs and
-    equity-heavy roles. URL patterns:
-    - Remote only: https://wellfound.com/role/r/{role-slug}
-    - Role + location: https://wellfound.com/role/l/{role-slug}/{location-slug}
-
-    Examples:
-        generate_wellfound_url("Software Engineer", "Remote")
-        -> "https://wellfound.com/role/r/software-engineer"
-
-        generate_wellfound_url("Backend Developer", "San Francisco, CA")
-        -> "https://wellfound.com/role/l/backend-developer/san-francisco-ca"
-
-    Args:
-        title: Job title (e.g., "Software Engineer")
-        location: Location string (e.g., "San Francisco, CA" or "Remote")
-
-    Returns:
-        Wellfound search URL (no validation performed)
-    """
-    role_slug = _slugify_for_wellfound(title)
-
-    # Remote detection (case-insensitive)
-    if "remote" in location.lower():
-        return f"https://wellfound.com/role/r/{role_slug}"
-
-    # Location-specific URL
-    location_slug = _slugify_for_wellfound(location)
-    return f"https://wellfound.com/role/l/{role_slug}/{location_slug}"
-
-
-def generate_indeed_url(title: str, location: str, from_days: int = 3) -> str:
-    """Generate an Indeed search URL with filters."""
-    params = {
-        "q": title,
-        "l": location,
-        "fromage": str(from_days),
-        "sort": "date",
-    }
-    return "https://www.indeed.com/jobs?" + urllib.parse.urlencode(params)
-
-
-def generate_linkedin_url(title: str, location: str) -> str:
-    """Generate a LinkedIn job search URL."""
-    params = {
-        "keywords": title,
-        "location": location,
-        "f_TPR": "r604800",
-        "sortBy": "DD",
-    }
-    return "https://www.linkedin.com/jobs/search/?" + urllib.parse.urlencode(params)
-
-
-def generate_glassdoor_url(title: str, location: str) -> str:
-    """Generate a Glassdoor job search URL."""
-    params = {
-        "sc.keyword": title,
-        "locT": "",
-        "locId": "",
-        "locKeyword": location,
-        "fromAge": "3",
-        "sortBy": "date",
-    }
-    return "https://www.glassdoor.com/Job/jobs.htm?" + urllib.parse.urlencode(params)
-
-
-def generate_weworkremotely_url(query: str) -> str:
-    """Generate a We Work Remotely search URL."""
-    return f"https://weworkremotely.com/remote-jobs/search?term={urllib.parse.quote_plus(query)}"
-
-
-def _generate_weworkremotely_manual_url(title: str, location: str) -> str:
-    """Generate a WWR manual URL with the same signature as location-aware sources."""
-    return generate_weworkremotely_url(title)
-
-
-MANUAL_SOURCE_REGISTRY = {
-    "wellfound": ManualSourceDefinition("wellfound", "Wellfound", generate_wellfound_url),
-    "indeed": ManualSourceDefinition("indeed", "Indeed", generate_indeed_url),
-    "linkedin": ManualSourceDefinition("linkedin", "LinkedIn", generate_linkedin_url),
-    "glassdoor": ManualSourceDefinition("glassdoor", "Glassdoor", generate_glassdoor_url),
-    "weworkremotely": ManualSourceDefinition(
-        "weworkremotely",
-        "We Work Remotely",
-        _generate_weworkremotely_manual_url,
-    ),
-}
-
-
-def get_manual_source_display_names(selected_sources: list[str] | None = None) -> list[str]:
-    """Return manual source display names for selected source keys."""
-    return selected_manual_source_display_names(MANUAL_SOURCE_REGISTRY, selected_sources)
-
-
-def generate_manual_urls(
-    profile: dict,
-    selected_manual_sources: list[str] | None = None,
-) -> list[dict]:
-    """Generate manual-check URLs for a candidate profile, sorted by source."""
-    urls = []
-    titles = profile.get("target_titles", [])[:3]
-    location = profile.get("target_market", profile.get("location", ""))
-    selected = set(selected_manual_sources) if selected_manual_sources is not None else None
-
-    for source in MANUAL_SOURCE_REGISTRY.values():
-        if selected is not None and source.key not in selected:
-            continue
-        for title in titles:
-            url = source.generator(title, location)
-            urls.append({
-                "source": source.display_name,
-                "title": title,
-                "url": url,
-            })
-
-    return urls
 
 
 # ---------------------------------------------------------------------------
