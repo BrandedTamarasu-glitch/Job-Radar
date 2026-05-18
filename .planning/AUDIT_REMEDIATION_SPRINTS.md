@@ -84,13 +84,14 @@ Current progress:
 - Profile tab summary and readiness formatting now live in `job_radar/gui/profile_view_model.py`.
 - Profile tab label/value rows and readiness/summary/edit panel construction now live in `job_radar/gui/profile_panel.py`.
 - Profile dashboard next-step panel construction now lives in `job_radar/gui/dashboard_panel.py`.
+- Demo report success/error feedback text now lives in `job_radar/gui/demo_report_view_model.py`.
 - Centered modal message dialog construction now lives in `job_radar/gui/dialogs.py`.
 - First-run welcome screen construction now lives in `job_radar/gui/welcome_panel.py`.
 - Top-level content clearing while preserving the header now lives in `job_radar/gui/window_shell.py`.
 - Main tabview construction and canonical tab names now live in `job_radar/gui/tab_shell.py`.
 - MainWindow now uses one lazy tab-build helper for user and programmatic tab navigation.
 - Settings update controls/status, section separators, API credential sections/panel orchestration, scoring configuration, storage maintenance, diagnostics, Jobicy public-source status, JSearch setup tip, and danger-zone construction now live in `job_radar/gui/settings_panel.py`.
-- Latest validation: `1106 passed, 8 skipped`.
+- Latest validation: `1108 passed, 8 skipped`.
 
 Validation:
 - Full `pytest tests/`

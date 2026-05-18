@@ -2,6 +2,7 @@ import inspect
 
 from job_radar.gui.applications_tab import _add_application_next_action_queue, build_applications_tab_content
 from job_radar.gui.dashboard_panel import add_dashboard_next_steps
+from job_radar.gui.demo_report_view_model import demo_report_error_message, demo_report_success_message
 from job_radar.gui.dialogs import show_message_dialog
 from job_radar.gui.main_window import MainWindow
 from job_radar.gui.profile_panel import add_profile_field, add_profile_summary_panel
@@ -92,6 +93,10 @@ def test_demo_report_feedback_supports_welcome_and_search_contexts():
 
     assert "_show_demo_report_message" in source
     assert "_has_search_content" in source
+    assert "demo_report_success_message" in source
+    assert "demo_report_error_message" in source
+    assert "Open manually:" in inspect.getsource(demo_report_success_message)
+    assert "Could not generate demo report:" in inspect.getsource(demo_report_error_message)
 
 
 def test_search_idle_includes_profile_readiness_guidance():

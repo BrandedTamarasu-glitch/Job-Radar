@@ -82,6 +82,7 @@ from job_radar.gui.applications_view_model import (
 from job_radar.gui.applications_tab import ApplicationsTabCallbacks, build_applications_tab_content
 from job_radar.gui.dashboard_view_model import build_dashboard_actions
 from job_radar.gui.dashboard_panel import add_dashboard_next_steps
+from job_radar.gui.demo_report_view_model import demo_report_error_message, demo_report_success_message
 from job_radar.gui.dialogs import show_message_dialog
 from job_radar.gui.profile_panel import add_profile_field, add_profile_summary_panel
 from job_radar.gui.profile_form import ProfileForm
@@ -986,12 +987,10 @@ class MainWindow(ctk.CTk):
                 self._report_path,
                 auto_open=load_config().get("auto_open_browser", True),
             )
-            message = "Demo report generated."
-            if not browser_result["opened"]:
-                message += f" Open manually: {self._report_path}"
+            message = demo_report_success_message(self._report_path, bool(browser_result["opened"]))
             self._show_demo_report_message(message, "green")
         except Exception as e:
-            message = f"Could not generate demo report: {e}"
+            message = demo_report_error_message(e)
             if self._has_search_content():
                 self._show_search_error(message)
             else:
