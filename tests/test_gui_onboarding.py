@@ -27,6 +27,7 @@ from job_radar.gui.settings_panel import (
     add_update_settings_panel,
 )
 from job_radar.gui.welcome_panel import build_welcome_screen
+from job_radar.gui.window_shell import clear_content_except_header
 
 
 def test_welcome_screen_exposes_demo_report_preview():
@@ -36,6 +37,14 @@ def test_welcome_screen_exposes_demo_report_preview():
     assert "command=on_preview_demo" in source
     assert "Get Started" in source
     assert "on_get_started" in source
+
+
+def test_window_shell_clear_preserves_header_row():
+    source = inspect.getsource(clear_content_except_header)
+
+    assert 'widget.winfo_manager() == "grid"' in source
+    assert 'widget.grid_info().get("row") == 0' in source
+    assert "widget.destroy()" in source
 
 
 def test_demo_report_feedback_supports_welcome_and_search_contexts():

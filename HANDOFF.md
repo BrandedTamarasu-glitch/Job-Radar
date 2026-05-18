@@ -127,6 +127,8 @@ Started reducing `job_radar/gui/main_window.py` by moving display formatting int
   - Centered modal message dialog construction
 - `job_radar/gui/welcome_panel.py`
   - First-run welcome screen construction
+- `job_radar/gui/window_shell.py`
+  - Top-level content clearing while preserving the header
 - `job_radar/gui/settings_panel.py`
   - Settings update controls/status panel construction
   - Settings storage maintenance and diagnostics panel construction
@@ -139,9 +141,10 @@ Current line counts:
 
 ```text
 2149 job_radar/report.py
-2416 job_radar/gui/main_window.py
+2402 job_radar/gui/main_window.py
   44 job_radar/gui/dialogs.py
   70 job_radar/gui/welcome_panel.py
+  11 job_radar/gui/window_shell.py
  532 job_radar/gui/settings_panel.py
  465 job_radar/gui/search_panel.py
   76 job_radar/gui/profile_panel.py
@@ -175,7 +178,7 @@ rtk .venv/bin/python -m pytest tests/
 Latest result:
 
 ```text
-1097 passed, 8 skipped
+1098 passed, 8 skipped
 ```
 
 ## Active Plan

@@ -147,6 +147,7 @@ from job_radar.gui.update_banner import UpdateBanner, DownloadConfirmDialog
 from job_radar.gui.update_status_view_model import build_update_status_display
 from job_radar.gui.changelog_dialog import ChangelogDialog
 from job_radar.gui.welcome_panel import build_welcome_screen
+from job_radar.gui.window_shell import clear_content_except_header
 from job_radar.gui.installer_dialogs import InstallConfirmDialog, LinuxInstallInstructionsDialog
 from job_radar.gui.install_status_view_model import (
     install_launch_error_message,
@@ -301,12 +302,7 @@ class MainWindow(ctk.CTk):
 
     def _show_welcome_screen(self):
         """Display welcome screen for first-time users."""
-        # Clear ALL content (grid, place, pack) except header
-        for widget in list(self.winfo_children()):
-            # Keep only header (row 0 grid widget)
-            if widget.winfo_manager() == 'grid' and widget.grid_info().get('row') == 0:
-                continue
-            widget.destroy()
+        clear_content_except_header(self)
 
         self._welcome_status_label = build_welcome_screen(
             self,
@@ -316,12 +312,7 @@ class MainWindow(ctk.CTk):
 
     def _on_get_started(self):
         """Handle Get Started button click - show profile form in create mode."""
-        # Clear ALL content (grid, place, pack) except header
-        for widget in list(self.winfo_children()):
-            # Keep only header (row 0 grid widget)
-            if widget.winfo_manager() == 'grid' and widget.grid_info().get('row') == 0:
-                continue
-            widget.destroy()
+        clear_content_except_header(self)
 
         # Create ProfileForm in create mode (directly in row 1, no container)
         form = ProfileForm(
@@ -404,12 +395,7 @@ class MainWindow(ctk.CTk):
 
     def _show_main_tabs(self):
         """Display tabbed interface for users with existing profiles."""
-        # Clear ALL content (grid, place, pack) except header
-        for widget in list(self.winfo_children()):
-            # Keep only header (row 0 grid widget)
-            if widget.winfo_manager() == 'grid' and widget.grid_info().get('row') == 0:
-                continue
-            widget.destroy()
+        clear_content_except_header(self)
 
         # Create tabview (row 2 for content, row 1 reserved for banner)
         self._tabview = ctk.CTkTabview(self, command=self._on_tab_change)

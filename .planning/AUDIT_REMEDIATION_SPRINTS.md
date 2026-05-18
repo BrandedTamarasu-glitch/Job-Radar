@@ -86,8 +86,9 @@ Current progress:
 - Profile dashboard next-step panel construction now lives in `job_radar/gui/dashboard_panel.py`.
 - Centered modal message dialog construction now lives in `job_radar/gui/dialogs.py`.
 - First-run welcome screen construction now lives in `job_radar/gui/welcome_panel.py`.
+- Top-level content clearing while preserving the header now lives in `job_radar/gui/window_shell.py`.
 - Settings update controls/status, API credential sections/panel orchestration, storage maintenance, diagnostics, Jobicy public-source status, JSearch setup tip, and danger-zone construction now live in `job_radar/gui/settings_panel.py`.
-- Latest validation: `1097 passed, 8 skipped`.
+- Latest validation: `1098 passed, 8 skipped`.
 
 Validation:
 - Full `pytest tests/`
