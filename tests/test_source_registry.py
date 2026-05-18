@@ -5,6 +5,7 @@ from job_radar.source_registry import (
     SourceDefinition,
     selected_automated_source_display_names,
     selected_manual_source_display_names,
+    source_queries_by_phase,
     source_display_name,
 )
 
@@ -64,3 +65,47 @@ def test_source_display_name_uses_registry_then_fallback_then_source_key():
     assert source_display_name(registry, {"legacy": "Legacy"}, "dice") == "Dice"
     assert source_display_name(registry, {"legacy": "Legacy"}, "legacy") == "Legacy"
     assert source_display_name(registry, {"legacy": "Legacy"}, "unknown") == "unknown"
+
+
+def test_source_queries_by_phase_filters_and_groups_known_sources():
+    registry = {
+        "dice": SourceDefinition("dice", "Dice", "scraper", _fetch),
+        "adzuna": SourceDefinition("adzuna", "Adzuna", "api", _fetch),
+        "jsearch": SourceDefinition("jsearch", "JSearch", "aggregator", _fetch),
+    }
+    queries = [
+        {"source": "jsearch", "query": "backend"},
+        {"source": "dice", "query": "backend"},
+        {"source": "unknown", "query": "backend"},
+        {"source": "adzuna", "query": "backend"},
+    ]
+
+    filtered, grouped = source_queries_by_phase(
+        queries,
+        registry,
+        ("scraper", "api", "aggregator"),
+        selected_sources=["dice", "jsearch", "unknown"],
+    )
+
+    assert filtered == queries[:3]
+    assert grouped == {
+        "scraper": [{"source": "dice", "query": "backend"}],
+        "api": [],
+        "aggregator": [{"source": "jsearch", "query": "backend"}],
+    }
+
+
+def test_source_queries_by_phase_respects_empty_selection():
+    registry = {
+        "dice": SourceDefinition("dice", "Dice", "scraper", _fetch),
+    }
+
+    filtered, grouped = source_queries_by_phase(
+        [{"source": "dice", "query": "backend"}],
+        registry,
+        ("scraper",),
+        selected_sources=[],
+    )
+
+    assert filtered == []
+    assert grouped == {"scraper": []}

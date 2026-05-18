@@ -6,13 +6,14 @@ Date: 2026-05-18
 
 - Repo path: `/home/corye/openai-cli/Job-Radar`
 - Branch: `main`
-- Git status after latest slice: clean, `main...origin/main [ahead 78]`
-- Last full validation: `1147 passed, 8 skipped`
-- Do not push unless explicitly asked. The 78 local commits after the last push are still local.
+- Git status after latest slice: clean, `main...origin/main [ahead 79]`
+- Last full validation: `1149 passed, 8 skipped`
+- Do not push unless explicitly asked. The 79 local commits after the last push are still local.
 
 ## Latest Local Commits
 
 ```text
+074e271 refactor: extract source query builder
 0d0eabe refactor: extract manual source helpers
 ec9433e refactor: extract source registry helpers
 98de685 refactor: share search profile preparation
@@ -96,6 +97,7 @@ Started reducing `job_radar/gui/main_window.py` by moving display formatting int
   - Shared result scoring/dealbreaker sorting and post-score filtering helpers; CLI now uses the shared scorer and composable post-score filters
 - `job_radar/source_registry.py`
   - Shared source registry dataclasses and display-name selection helpers
+  - Shared selected-query filtering and source phase grouping for fetch orchestration
   - `sources.py` now delegates registry/manual display-name selection while retaining concrete fetcher dictionaries
 - `job_radar/manual_sources.py`
   - Manual job-board URL generators, manual source registry, and manual URL generation helpers
@@ -215,8 +217,8 @@ Current line counts:
  261 job_radar/search_pipeline.py
  122 job_radar/source_queries.py
  117 job_radar/manual_sources.py
-  69 job_radar/source_registry.py
-2162 job_radar/sources.py
+  92 job_radar/source_registry.py
+2154 job_radar/sources.py
  627 job_radar/gui/worker_thread.py
 2320 job_radar/gui/main_window.py
   14 job_radar/gui/demo_report_view_model.py

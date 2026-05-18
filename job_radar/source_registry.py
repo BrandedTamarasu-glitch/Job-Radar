@@ -57,6 +57,29 @@ def selected_manual_source_display_names(
     ]
 
 
+def source_queries_by_phase(
+    queries: Sequence[Mapping[str, Any]],
+    registry: Mapping[str, SourceDefinition],
+    phase_order: Sequence[str],
+    selected_sources: Sequence[str] | None = None,
+) -> tuple[list[Mapping[str, Any]], dict[str, list[Mapping[str, Any]]]]:
+    """Filter queries by selected source keys and group known sources by phase."""
+    selected = set(selected_sources) if selected_sources is not None else None
+    filtered_queries = [
+        query for query in queries
+        if selected is None or query.get("source") in selected
+    ]
+    grouped_queries = {
+        phase: [
+            query for query in filtered_queries
+            if query.get("source") in registry
+            and registry[str(query["source"])].phase == phase
+        ]
+        for phase in phase_order
+    }
+    return filtered_queries, grouped_queries
+
+
 def source_display_name(
     registry: Mapping[str, SourceDefinition],
     fallback_names: Mapping[str, str],

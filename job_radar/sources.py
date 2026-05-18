@@ -33,6 +33,7 @@ from .source_queries import build_search_queries
 from .source_registry import (
     SourceDefinition,
     selected_automated_source_display_names,
+    source_queries_by_phase,
     source_display_name,
 )
 
@@ -2037,21 +2038,12 @@ def fetch_all(
     slow_query_threshold = resolve_slow_query_threshold(slow_query_seconds)
     reset_cache_stats()
     queries = build_search_queries(profile)
-    selected_source_set = set(selected_sources) if selected_sources is not None else None
-    if selected_source_set is not None:
-        queries = [
-            query for query in queries
-            if query["source"] in selected_source_set
-        ]
-
-    queries_by_phase = {
-        phase: [
-            q for q in queries
-            if q["source"] in SOURCE_REGISTRY
-            and SOURCE_REGISTRY[q["source"]].phase == phase
-        ]
-        for phase in SOURCE_PHASE_ORDER
-    }
+    queries, queries_by_phase = source_queries_by_phase(
+        queries,
+        SOURCE_REGISTRY,
+        SOURCE_PHASE_ORDER,
+        selected_sources,
+    )
 
     all_results = []
     run_state = SourceExecutionState(queries)
