@@ -84,7 +84,7 @@ from job_radar.gui.applications_tab import ApplicationsTabCallbacks, build_appli
 from job_radar.gui.dashboard_view_model import build_dashboard_actions
 from job_radar.gui.dashboard_panel import add_dashboard_next_steps
 from job_radar.gui.dialogs import show_message_dialog
-from job_radar.gui.profile_panel import add_profile_field
+from job_radar.gui.profile_panel import add_profile_field, add_profile_summary_panel
 from job_radar.gui.profile_form import ProfileForm
 from job_radar.gui.profile_view_model import (
     build_profile_readiness_display,
@@ -479,42 +479,14 @@ class MainWindow(ctk.CTk):
                 readiness,
                 scoring_signal_guidance_lines(readiness, limit=3),
             )
-            self._add_profile_field(scroll_frame, row, "Profile Readiness:", readiness_display.summary)
-            row += 1
-
-            if readiness_display.guidance_text:
-                readiness_label = ctk.CTkLabel(
-                    scroll_frame,
-                    text=readiness_display.guidance_text,
-                    text_color="gray",
-                    wraplength=680,
-                    justify="left",
-                    anchor="w",
-                )
-                readiness_label.grid(row=row, column=0, columnspan=2, sticky="ew", pady=(0, 12))
-                row += 1
-            if readiness_display.scoring_signals_text:
-                self._add_profile_field(
-                    scroll_frame,
-                    row,
-                    "Scoring Signals:",
-                    readiness_display.scoring_signals_text,
-                )
-                row += 1
-
-            for summary_row in build_profile_summary_rows(profile):
-                self._add_profile_field(scroll_frame, row, summary_row.label, summary_row.value)
-                row += 1
-
-            # Edit Profile button at bottom
-            edit_btn = ctk.CTkButton(
+            add_profile_summary_panel(
                 scroll_frame,
-                text="Edit Profile",
-                height=40,
-                width=150,
-                command=lambda: self._on_edit_profile(profile)
+                row,
+                profile=profile,
+                readiness_display=readiness_display,
+                summary_rows=build_profile_summary_rows(profile),
+                on_edit=self._on_edit_profile,
             )
-            edit_btn.grid(row=row, column=0, columnspan=2, pady=(20, 0))
 
         except Exception as e:
             # Error loading profile

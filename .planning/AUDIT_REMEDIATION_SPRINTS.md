@@ -82,12 +82,12 @@ Current progress:
 - API credential test status formatting and HTTP response mapping now live in `job_radar/gui/api_status_view_model.py`.
 - Installer launch prompt/status/error messages now live in `job_radar/gui/install_status_view_model.py`.
 - Profile tab summary and readiness formatting now live in `job_radar/gui/profile_view_model.py`.
-- Profile tab label/value row construction now lives in `job_radar/gui/profile_panel.py`.
+- Profile tab label/value rows and readiness/summary/edit panel construction now live in `job_radar/gui/profile_panel.py`.
 - Profile dashboard next-step panel construction now lives in `job_radar/gui/dashboard_panel.py`.
 - Centered modal message dialog construction now lives in `job_radar/gui/dialogs.py`.
 - First-run welcome screen construction now lives in `job_radar/gui/welcome_panel.py`.
 - Settings update controls/status, API credential sections/panel orchestration, storage maintenance, diagnostics, Jobicy public-source status, JSearch setup tip, and danger-zone construction now live in `job_radar/gui/settings_panel.py`.
-- Latest validation: `1095 passed, 8 skipped`.
+- Latest validation: `1096 passed, 8 skipped`.
 
 Validation:
 - Full `pytest tests/`

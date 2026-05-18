@@ -4,7 +4,7 @@ from job_radar.gui.applications_tab import _add_application_next_action_queue, b
 from job_radar.gui.dashboard_panel import add_dashboard_next_steps
 from job_radar.gui.dialogs import show_message_dialog
 from job_radar.gui.main_window import MainWindow
-from job_radar.gui.profile_panel import add_profile_field
+from job_radar.gui.profile_panel import add_profile_field, add_profile_summary_panel
 from job_radar.gui.profile_form import PROFILE_FIELD_HINTS, ProfileForm
 from job_radar.gui.search_panel import (
     add_recent_searches_panel,
@@ -62,6 +62,16 @@ def test_profile_tab_includes_dashboard_next_steps():
 
     assert "_dashboard_actions(readiness)" in source
     assert "_add_dashboard_next_steps" in source
+    assert "add_profile_summary_panel" in source
+
+
+def test_profile_summary_panel_includes_readiness_and_edit_action():
+    source = inspect.getsource(add_profile_summary_panel)
+
+    assert "Profile Readiness:" in source
+    assert "Scoring Signals:" in source
+    assert "Edit Profile" in source
+    assert "command=lambda: on_edit(profile)" in source
 
 
 def test_dashboard_actions_use_local_state_sources():
