@@ -78,7 +78,8 @@ Current progress:
 - Settings maintenance cache/app-data/dismissed-review feedback now lives in `job_radar/gui/maintenance_view_model.py`.
 - Live source progress text now lives in `job_radar/gui/search_summary.py`, and GUI progress handlers normalize counters before updating progress bars.
 - API credential test status formatting and HTTP response mapping now live in `job_radar/gui/api_status_view_model.py`.
-- Latest validation: `1075 passed, 8 skipped`.
+- Installer launch prompt/status/error messages now live in `job_radar/gui/install_status_view_model.py`.
+- Latest validation: `1078 passed, 8 skipped`.
 
 Validation:
 - Full `pytest tests/`

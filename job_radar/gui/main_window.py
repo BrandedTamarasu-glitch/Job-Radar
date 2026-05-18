@@ -123,6 +123,12 @@ from job_radar.gui.update_banner import UpdateBanner, DownloadConfirmDialog
 from job_radar.gui.update_status_view_model import build_update_status_display
 from job_radar.gui.changelog_dialog import ChangelogDialog
 from job_radar.gui.installer_dialogs import InstallConfirmDialog, LinuxInstallInstructionsDialog
+from job_radar.gui.install_status_view_model import (
+    install_launch_error_message,
+    install_launch_status_message,
+    install_prompt_message,
+    installer_not_found_message,
+)
 from job_radar.gui.uninstall_dialog import (
     BackupOfferDialog,
     PathPreviewDialog,
@@ -1844,7 +1850,7 @@ class MainWindow(ctk.CTk):
             from tkinter import messagebox
             result = messagebox.askyesno(
                 "Installer Not Found",
-                f"Installer file not found. Download again?\n\n{dest_path}",
+                installer_not_found_message(dest_path),
                 parent=self
             )
             if result and self._update_banner:
@@ -1863,12 +1869,7 @@ class MainWindow(ctk.CTk):
             return
 
         # macOS/Windows: Show confirmation dialog with platform-specific message
-        if sys.platform == "darwin":
-            platform_message = "Opening installer DMG..."
-        elif sys.platform == "win32":
-            platform_message = "Launching installer... Windows may show a security prompt."
-        else:
-            platform_message = "Launching installer..."
+        platform_message = install_prompt_message(sys.platform)
 
         # Show confirmation dialog
         InstallConfirmDialog(
@@ -1881,12 +1882,7 @@ class MainWindow(ctk.CTk):
     def _execute_install(self):
         """Execute installer launch after user confirmation."""
         # Determine platform message for status
-        if sys.platform == "darwin":
-            platform_message = "Opening installer DMG..."
-        elif sys.platform == "win32":
-            platform_message = "Launching installer..."
-        else:
-            platform_message = "Launching installer..."
+        platform_message = install_launch_status_message(sys.platform)
 
         # Update banner to show status
         if self._update_banner:
@@ -1896,12 +1892,10 @@ class MainWindow(ctk.CTk):
         try:
             launch_installer(self._installer_path)
         except RuntimeError as e:
-            error_msg = f"Couldn't launch installer. File saved at: {self._installer_path}\n\n{e}"
-            self._show_install_error(error_msg)
+            self._show_install_error(install_launch_error_message(self._installer_path, e))
             return
         except Exception as e:
-            error_msg = f"Couldn't launch installer. File saved at: {self._installer_path}\n\n{e}"
-            self._show_install_error(error_msg)
+            self._show_install_error(install_launch_error_message(self._installer_path, e))
             return
 
         # On success: Update banner message
