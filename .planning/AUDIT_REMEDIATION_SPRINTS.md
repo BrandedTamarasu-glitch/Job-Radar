@@ -2,7 +2,7 @@
 
 Last updated: 2026-05-18
 
-This plan converts the Review Squad top-to-bottom quality, security, UX, and rebase audit into executable sprints. The current release line is blocked until Sprint 0 is complete and validated.
+This plan converts the Review Squad top-to-bottom quality, security, UX, and rebase audit into executable sprints. The v2.8.0 release has shipped with Sprint 0-2 trust/state work and the completed Sprint 3 architecture cleanup slices listed below.
 
 ## Sprint 0 - Release Blockers
 
@@ -70,6 +70,7 @@ Goal: reduce merge hotspots and duplicated behavior after the trust fixes are st
 - Rename source-health fields to distinguish source failures from slow-query warnings, with migration.
 
 Current progress:
+- v2.8.0 shipped from this sprint on 2026-05-18 after local validation (`1180 passed, 8 skipped`) and a passing tag-triggered GitHub Actions release workflow across tests, platform builds, installers, and release creation.
 - Report rendering has been split into focused HTML and Markdown modules while preserving compatibility wrappers in `job_radar/report.py`.
 - Extracted modules now cover report safety, assets, text helpers, filtering, source warnings, tiers, matching, stats, profile/tracker summaries, manual links, job details, controls, job attributes, result tables, result rows, cards, and Markdown sections.
 - `job_radar/search_pipeline.py` now contains shared search filter parsing, preset/preferred-skill profile preparation, freshness/date resolution, raw-result filtering, scoring/dealbreaker sorting, and post-score filtering helpers for GUI/CLI reuse; the CLI now uses the shared profile preparation, scorer, raw-result date filter, and composable post-score filters.
@@ -116,6 +117,11 @@ Current progress:
 - MainWindow no longer carries the obsolete Settings update-status initializer that moved into `job_radar/gui/settings_panel.py`.
 - Settings update controls/status, section separators, API credential sections/widget registration/panel orchestration, scoring configuration, storage maintenance, diagnostics, source diagnostics textbox refresh, Jobicy public-source status, JSearch setup tip, and danger-zone construction now live in `job_radar/gui/settings_panel.py`.
 - Latest validation: `1180 passed, 8 skipped`.
+
+Remaining Sprint 3 work:
+- Continue reducing `job_radar/gui/main_window.py` through low-risk helper extractions.
+- Consolidate profile schema construction and validation across CLI and GUI.
+- Trim `job_radar/sources.py` compatibility wrappers only where tests and downstream imports prove they are not public surface.
 
 Validation:
 - Full `pytest tests/`

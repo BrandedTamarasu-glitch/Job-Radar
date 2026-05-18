@@ -1,21 +1,21 @@
 # Project State: Job Radar
 
-**Last Updated:** 2026-05-15T00:00:00-07:00
+**Last Updated:** 2026-05-18T14:45:00-07:00
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Accurate job-candidate scoring — if the scoring is wrong, nothing else matters.
-**Current focus:** Audit remediation release blockers
+**Current focus:** Post-v2.8.0 audit remediation cleanup
 
 ## Current Position
 
-**Milestone:** v2.7.x audit remediation
-**Status:** Sprint 0 in progress
-**Last activity:** 2026-05-15 — Review Squad completed a top-to-bottom quality, security, UX, and rebase-readiness audit after v2.7.0. The next production release is blocked until runtime trust/privacy fixes are complete.
+**Milestone:** v2.8.0 shipped
+**Status:** Sprint 3 follow-up cleanup in progress
+**Last activity:** 2026-05-18 — Job Radar v2.8.0 was released from the audit remediation stream after local validation (`1180 passed, 8 skipped`) and a passing tag-triggered GitHub Actions release workflow.
 
-**Next step:** complete Sprint 0 in `.planning/AUDIT_REMEDIATION_SPRINTS.md`, then run full tests and release-readiness validation before tagging again.
+**Next step:** continue low-risk Sprint 3 follow-up work: reduce `job_radar/gui/main_window.py`, consolidate profile schema construction/validation, or trim `job_radar/sources.py` compatibility wrappers where tests prove it is safe.
 
 ## Performance Metrics
 
@@ -48,9 +48,9 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 ### Quality Indicators
 
 **Test Coverage:**
-- 593 tests across 19 test files (added 15 for hiring.cafe mapper + 7 pipeline + 5 dedup in 42-02)
-- 672 passing, 4 pre-existing platform-specific failures (config, installer_launch)
-- Coverage areas: scoring, config, tracker, wizard, report, UX, API, PDF, dedup, accessibility, profile management, GUI, rate limiting, JSearch, USAJobs, hiring.cafe, schema migration, scoring config widget, uninstaller
+- Latest full local suite: `1180 passed, 8 skipped`
+- Release workflow tests passed on Linux, macOS, and Windows for `v2.8.0`
+- Coverage areas include scoring, config, tracker, wizard, report, UX, API, PDF, deduplication, accessibility, profile management, GUI view models, rate limiting, JSearch, USAJobs, hiring.cafe, schema migration, scoring config, update/install flows, and release verification
 
 **Code Stats (v2.1.0 shipped):**
 - ~26,000 LOC Python (source + tests + GUI)
@@ -120,24 +120,25 @@ Full decision log: PROJECT.md Key Decisions table (143 decisions)
 
 See `.planning/AUDIT_REMEDIATION_SPRINTS.md`.
 
-- Sprint 0: Release Blockers — in progress
-- Sprint 1: Must-Fix Trust, State, And Release Hygiene — pending
-- Sprint 2: Persistence And Schema Consolidation — pending
-- Sprint 3: Rebase-Nimble Architecture — pending
+- Sprint 0: Release Blockers — complete
+- Sprint 1: Must-Fix Trust, State, And Release Hygiene — complete
+- Sprint 2: Persistence And Schema Consolidation — complete
+- Sprint 3: Rebase-Nimble Architecture — shipped in v2.8.0 with follow-up cleanup remaining
 - Sprint 4: UX, Accessibility, And Product Polish — pending
 
 ### Blockers/Concerns
 
-- Next production release is blocked until updater integrity, local report assets, and app-data credential storage are complete and validated.
-- Release workflow hardening, URL allowlisting, report/app status sync, and installer metadata identity cleanup are must-fix before the next tag.
+- No current release blocker after v2.8.0.
+- Remaining Sprint 3 work should stay small and compatibility-focused to avoid destabilizing the newly shipped release line.
+- Sprint 4 requires product/UX judgment and targeted screenshot/manual checks.
 
 ## Session Continuity
 
-Last session: 2026-05-15
-Stopped at: Audit remediation Sprint 0 in progress
+Last session: 2026-05-18
+Stopped at: v2.8.0 released; post-release handoff/planning cleanup started
 Resume file: None
 
-**Next step:** Finish Sprint 0 validation, then proceed to Sprint 1 trust/state/release hygiene.
+**Next step:** Continue with a low-risk Sprint 3 follow-up slice, preferably another small `MainWindow` helper extraction with focused GUI/view-model tests before full regression.
 
 ---
 *State initialized: 2026-02-13*
