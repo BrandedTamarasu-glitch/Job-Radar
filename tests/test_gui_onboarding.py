@@ -292,6 +292,13 @@ def test_search_completion_panel_includes_report_actions():
     assert "on_new_search" in source
 
 
+def test_open_report_uses_shared_browser_helper():
+    source = inspect.getsource(MainWindow._open_report)
+
+    assert "open_report_in_browser(" in source
+    assert "auto_open=load_config().get(\"auto_open_browser\", True)" in source
+
+
 def test_search_error_panel_includes_retry_and_back_actions():
     source = inspect.getsource(build_search_error_panel)
 

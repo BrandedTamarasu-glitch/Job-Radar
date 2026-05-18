@@ -9,7 +9,6 @@ import os
 import queue
 import sys
 import threading
-import webbrowser
 from datetime import date
 from datetime import timedelta
 from pathlib import Path
@@ -1813,8 +1812,10 @@ class MainWindow(ctk.CTk):
     def _open_report(self):
         """Open HTML report in default browser."""
         if self._report_path:
-            report_uri = Path(self._report_path).resolve().as_uri()
-            webbrowser.open(report_uri)
+            open_report_in_browser(
+                self._report_path,
+                auto_open=load_config().get("auto_open_browser", True),
+            )
 
     def _show_error_dialog(self, message: str):
         """Show modal error dialog.

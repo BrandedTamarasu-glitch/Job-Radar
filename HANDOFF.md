@@ -9,7 +9,7 @@ Date: 2026-05-18
 - Git status after release: clean and synced with `origin/main`, except preserved untracked `.forgeflow/`
 - Current release: `v2.8.0`
 - Release URL: https://github.com/BrandedTamarasu-glitch/Job-Radar/releases/tag/v2.8.0
-- Last local full validation: `1183 passed, 8 skipped`
+- Last local full validation: `1184 passed, 8 skipped`
 - Release workflow validation: GitHub Actions Release run `26061938202` passed tests, platform builds, installer builds, and release creation.
 
 ## Latest Commits
@@ -62,6 +62,7 @@ The v2.8.0 line includes the audit-remediation architecture work completed so fa
 - Source health writes now distinguish `query_failure_details` from `slow_query_warnings`; legacy `source_warnings` reads remain supported
 - Post-release Settings update status cleanup moved skipped-version and manual update-result status formatting into `job_radar/gui/update_status_view_model.py`
 - Post-release API quota display cleanup moved quota label text/color formatting into `job_radar/gui/api_status_view_model.py`
+- GUI Open Report now uses the shared browser helper instead of direct `webbrowser` calls.
 
 ## Active Plan
 
