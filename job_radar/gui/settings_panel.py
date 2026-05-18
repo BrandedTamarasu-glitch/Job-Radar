@@ -26,6 +26,18 @@ class ApiSectionWidgets:
     quota_labels: dict[str, ctk.CTkLabel]
 
 
+@dataclass(frozen=True)
+class UpdatePanelWidgets:
+    """Widgets MainWindow updates for Settings update controls."""
+
+    update_status_label: ctk.CTkLabel
+    manual_check_button: ctk.CTkButton
+    auto_check_var: ctk.BooleanVar
+    release_notes_label: ctk.CTkButton
+    skipped_status_label: ctk.CTkLabel
+    clear_skipped_button: ctk.CTkButton
+
+
 BACKEND_API_BY_FIELD_ID = {
     "jsearch": "jsearch",
     "usajobs": "usajobs",
@@ -33,6 +45,95 @@ BACKEND_API_BY_FIELD_ID = {
     "authentic_jobs": "authentic_jobs",
     "serpapi": "serpapi",
 }
+
+
+def add_update_settings_panel(
+    parent,
+    *,
+    update_status_text: str,
+    update_status_color: str,
+    auto_check_enabled: bool,
+    update_available: bool,
+    has_skipped_versions: bool,
+    on_manual_check: Callable[[], None],
+    on_auto_check_toggle: Callable[[], None],
+    on_view_release_notes: Callable[[], None],
+    on_clear_skipped: Callable[[], None],
+) -> UpdatePanelWidgets:
+    """Add Settings update controls and return mutable widget references."""
+    ctk.CTkLabel(
+        parent,
+        text="Updates",
+        font=ctk.CTkFont(size=18, weight="bold"),
+    ).pack(pady=(0, 10), anchor="w", padx=10)
+
+    update_status_label = ctk.CTkLabel(
+        parent,
+        text=update_status_text,
+        text_color=update_status_color,
+        font=ctk.CTkFont(size=12),
+    )
+    update_status_label.pack(pady=(0, 5), anchor="w", padx=10)
+
+    manual_check_button = ctk.CTkButton(
+        parent,
+        text="Check for Updates",
+        width=150,
+        command=on_manual_check,
+    )
+    manual_check_button.pack(pady=(10, 10), anchor="w", padx=10)
+
+    auto_check_var = ctk.BooleanVar(value=auto_check_enabled)
+    ctk.CTkSwitch(
+        parent,
+        text="Check for updates automatically on launch",
+        variable=auto_check_var,
+        command=on_auto_check_toggle,
+    ).pack(pady=(0, 10), anchor="w", padx=10)
+
+    release_notes_label = ctk.CTkButton(
+        parent,
+        text="View release notes",
+        fg_color="transparent",
+        text_color=("#3498DB", "#5DADE2"),
+        hover_color=("gray90", "gray20"),
+        font=ctk.CTkFont(size=12, underline=True),
+        anchor="w",
+        width=150,
+        height=25,
+        cursor="hand2",
+        command=on_view_release_notes,
+    )
+    if update_available:
+        release_notes_label.pack(anchor="w", padx=10)
+
+    skipped_status_label = ctk.CTkLabel(
+        parent,
+        text="",
+        font=ctk.CTkFont(size=12),
+        text_color="gray",
+    )
+    skipped_status_label.pack(anchor="w", padx=10)
+
+    clear_skipped_button = ctk.CTkButton(
+        parent,
+        text="Clear skipped versions",
+        width=180,
+        fg_color="transparent",
+        border_width=1,
+        command=on_clear_skipped,
+    )
+    if has_skipped_versions:
+        clear_skipped_button.pack(anchor="w", padx=10, pady=(5, 10))
+
+    return UpdatePanelWidgets(
+        update_status_label=update_status_label,
+        manual_check_button=manual_check_button,
+        auto_check_var=auto_check_var,
+        release_notes_label=release_notes_label,
+        skipped_status_label=skipped_status_label,
+        clear_skipped_button=clear_skipped_button,
+    )
 
 
 def add_api_key_section(

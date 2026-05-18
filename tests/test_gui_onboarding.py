@@ -20,6 +20,7 @@ from job_radar.gui.settings_panel import (
     add_jobicy_api_status,
     add_jsearch_setup_tip,
     add_storage_maintenance_panel,
+    add_update_settings_panel,
 )
 
 
@@ -286,6 +287,16 @@ def test_settings_api_section_helper_builds_fields_and_test_controls():
     assert "on_test(fields)" in source
     assert "api_fields[field_id]" in source
     assert "quota_labels[backend_api]" in source
+
+
+def test_settings_update_panel_builds_status_and_controls():
+    source = inspect.getsource(add_update_settings_panel)
+
+    assert "Updates" in source
+    assert "update_status_text" in source
+    assert "Check for Updates" in source
+    assert "View release notes" in source
+    assert "Clear skipped versions" in source
 
 
 def test_clear_dismissed_reviews_uses_bounded_review_helper():

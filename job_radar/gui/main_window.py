@@ -119,6 +119,7 @@ from job_radar.gui.settings_panel import (
     add_jobicy_api_status,
     add_jsearch_setup_tip,
     add_storage_maintenance_panel,
+    add_update_settings_panel,
 )
 from job_radar.gui.maintenance_view_model import (
     app_data_bundle_validation_message,
@@ -2034,80 +2035,31 @@ class MainWindow(ctk.CTk):
         scroll_frame = ctk.CTkScrollableFrame(parent)
         scroll_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
-        # === Updates Section ===
-        updates_title = ctk.CTkLabel(
-            scroll_frame,
-            text="Updates",
-            font=ctk.CTkFont(size=18, weight="bold")
-        )
-        updates_title.pack(pady=(0, 10), anchor="w", padx=10)
-
-        # Status info line
-        self._refresh_update_status_initial(scroll_frame)
-
-        # Check for Updates button
-        self._manual_check_button = ctk.CTkButton(
-            scroll_frame,
-            text="Check for Updates",
-            width=150,
-            command=self._on_manual_check_click
-        )
-        self._manual_check_button.pack(pady=(10, 10), anchor="w", padx=10)
-
-        # Auto-check toggle
         status_info = self._update_checker.get_update_status()
-        auto_check_enabled = status_info.get("auto_check_enabled", True)
-
-        self._auto_check_var = ctk.BooleanVar(value=auto_check_enabled)
-
-        auto_check_switch = ctk.CTkSwitch(
-            scroll_frame,
-            text="Check for updates automatically on launch",
-            variable=self._auto_check_var,
-            command=self._on_auto_check_toggle
+        update_status = build_update_status_display(
+            current_version=__version__,
+            status_info=status_info,
         )
-        auto_check_switch.pack(pady=(0, 10), anchor="w", padx=10)
-
-        # "View release notes" link (only when update available)
-        self._release_notes_label = ctk.CTkButton(
+        update_widgets = add_update_settings_panel(
             scroll_frame,
-            text="View release notes",
-            fg_color="transparent",
-            text_color=("#3498DB", "#5DADE2"),
-            hover_color=("gray90", "gray20"),
-            font=ctk.CTkFont(size=12, underline=True),
-            anchor="w",
-            width=150,
-            height=25,
-            cursor="hand2",
-            command=self._on_settings_view_notes
+            update_status_text=update_status.text,
+            update_status_color=update_status.color,
+            auto_check_enabled=status_info.get("auto_check_enabled", True),
+            update_available=bool(self._update_version),
+            has_skipped_versions=bool(self._update_checker.get_skipped_versions()),
+            on_manual_check=self._on_manual_check_click,
+            on_auto_check_toggle=self._on_auto_check_toggle,
+            on_view_release_notes=self._on_settings_view_notes,
+            on_clear_skipped=self._on_clear_skipped,
         )
-        # Only pack if update available
-        if self._update_version:
-            self._release_notes_label.pack(anchor="w", padx=10)
+        self._update_status_label = update_widgets.update_status_label
+        self._manual_check_button = update_widgets.manual_check_button
+        self._auto_check_var = update_widgets.auto_check_var
+        self._release_notes_label = update_widgets.release_notes_label
+        self._skipped_status_label = update_widgets.skipped_status_label
+        self._clear_skipped_btn = update_widgets.clear_skipped_button
 
-        # Skipped versions status label
-        self._skipped_status_label = ctk.CTkLabel(
-            scroll_frame,
-            text="",
-            font=ctk.CTkFont(size=12),
-            text_color="gray"
-        )
-        self._skipped_status_label.pack(anchor="w", padx=10)
         self._refresh_skipped_status()
-
-        # "Clear skipped versions" button
-        self._clear_skipped_btn = ctk.CTkButton(
-            scroll_frame,
-            text="Clear skipped versions",
-            width=180,
-            fg_color="transparent",
-            border_width=1,
-            command=self._on_clear_skipped
-        )
-        # Only pack if there are skipped versions
-        if self._update_checker.get_skipped_versions():
-            self._clear_skipped_btn.pack(anchor="w", padx=10, pady=(5, 10))
 
         # Separator between Updates and API Key Settings
         separator = ctk.CTkFrame(scroll_frame, height=1, fg_color="gray")
