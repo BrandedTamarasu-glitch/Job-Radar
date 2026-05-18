@@ -5,7 +5,11 @@ from job_radar.gui.dashboard_panel import add_dashboard_next_steps
 from job_radar.gui.main_window import MainWindow
 from job_radar.gui.profile_panel import add_profile_field
 from job_radar.gui.profile_form import PROFILE_FIELD_HINTS, ProfileForm
-from job_radar.gui.search_panel import add_search_readiness_guidance
+from job_radar.gui.search_panel import (
+    add_recent_searches_panel,
+    add_saved_searches_panel,
+    add_search_readiness_guidance,
+)
 
 
 def test_welcome_screen_exposes_demo_report_preview():
@@ -250,10 +254,10 @@ def test_search_idle_includes_recent_searches_panel():
 
 
 def test_recent_search_panel_loads_and_applies_configs():
-    source = inspect.getsource(MainWindow._add_recent_searches_panel)
+    source = inspect.getsource(add_recent_searches_panel)
 
-    assert "load_recent_search_panel_rows()" in source
-    assert "_apply_recent_search" in source
+    assert "Recent Searches" in source
+    assert "on_apply(cfg)" in source
     assert "row.detail" in source
 
 
@@ -264,12 +268,12 @@ def test_apply_recent_search_uses_search_controls_defaults():
 
 
 def test_saved_search_panel_loads_and_applies_named_searches():
-    source = inspect.getsource(MainWindow._add_saved_searches_panel)
+    source = inspect.getsource(add_saved_searches_panel)
 
     assert "Saved Searches" in source
     assert "Save Current" in source
-    assert "_apply_saved_search" in source
-    assert "load_saved_search_panel_rows()" in source
+    assert "on_apply(cfg)" in source
+    assert "on_save_current" in source
     assert "row.detail" in source
 
 

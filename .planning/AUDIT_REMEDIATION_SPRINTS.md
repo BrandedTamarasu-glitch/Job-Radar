@@ -78,7 +78,7 @@ Current progress:
 - Settings maintenance cache/app-data/dismissed-review feedback now lives in `job_radar/gui/maintenance_view_model.py`.
 - Live source progress text now lives in `job_radar/gui/search_summary.py`, and GUI progress handlers normalize counters before updating progress bars.
 - Search completion label/block text now lives in `job_radar/gui/search_summary.py`.
-- Search idle profile-readiness guidance panel construction now lives in `job_radar/gui/search_panel.py`.
+- Search idle profile-readiness guidance and recent/saved search panel construction now live in `job_radar/gui/search_panel.py`.
 - API credential test status formatting and HTTP response mapping now live in `job_radar/gui/api_status_view_model.py`.
 - Installer launch prompt/status/error messages now live in `job_radar/gui/install_status_view_model.py`.
 - Profile tab summary and readiness formatting now live in `job_radar/gui/profile_view_model.py`.

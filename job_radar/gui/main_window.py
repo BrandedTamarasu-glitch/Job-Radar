@@ -92,7 +92,11 @@ from job_radar.gui.profile_view_model import (
 )
 from job_radar.gui.review_state_view_model import format_review_state_summary
 from job_radar.gui.search_controls import SearchControls
-from job_radar.gui.search_panel import add_search_readiness_guidance
+from job_radar.gui.search_panel import (
+    add_recent_searches_panel,
+    add_saved_searches_panel,
+    add_search_readiness_guidance,
+)
 from job_radar.gui.search_summary import (
     bullet_block_text,
     cancellation_message,
@@ -1065,35 +1069,7 @@ class MainWindow(ctk.CTk):
     def _add_recent_searches_panel(self, parent):
         """Show recent searches with one-click apply controls."""
         rows = load_recent_search_panel_rows()
-        if not rows:
-            return
-
-        panel = ctk.CTkFrame(parent)
-        panel.pack(fill="x", pady=(0, 16))
-        panel.grid_columnconfigure(0, weight=1)
-
-        ctk.CTkLabel(
-            panel,
-            text="Recent Searches",
-            font=ctk.CTkFont(size=13, weight="bold"),
-            anchor="w",
-        ).grid(row=0, column=0, sticky="w", padx=12, pady=(10, 4))
-
-        for index, row in enumerate(rows, start=1):
-            ctk.CTkButton(
-                panel,
-                text=row.label,
-                height=30,
-                command=lambda cfg=row.config: self._apply_recent_search(cfg),
-            ).grid(row=index, column=0, sticky="ew", padx=12, pady=(0, 6))
-            ctk.CTkLabel(
-                panel,
-                text=row.detail,
-                font=ctk.CTkFont(size=11),
-                text_color="gray",
-                anchor="w",
-                justify="left",
-            ).grid(row=index, column=1, sticky="w", padx=(8, 12), pady=(0, 6))
+        add_recent_searches_panel(parent, rows, on_apply=self._apply_recent_search)
 
     def _apply_recent_search(self, config: dict):
         """Apply a recent search config to the current Search controls."""
@@ -1103,57 +1079,12 @@ class MainWindow(ctk.CTk):
     def _add_saved_searches_panel(self, parent):
         """Show named saved searches and a save-current control."""
         rows = load_saved_search_panel_rows()
-        panel = ctk.CTkFrame(parent)
-        panel.pack(fill="x", pady=(0, 16))
-        panel.grid_columnconfigure(0, weight=1)
-
-        ctk.CTkLabel(
-            panel,
-            text="Saved Searches",
-            font=ctk.CTkFont(size=13, weight="bold"),
-            anchor="w",
-        ).grid(row=0, column=0, sticky="w", padx=12, pady=(10, 4))
-
-        ctk.CTkButton(
-            panel,
-            text="Save Current",
-            width=130,
-            command=self._save_current_search,
-            fg_color="transparent",
-            border_width=2,
-        ).grid(row=0, column=1, sticky="e", padx=12, pady=(10, 4))
-
-        if not rows:
-            ctk.CTkLabel(
-                panel,
-                text="No saved searches yet.",
-                font=ctk.CTkFont(size=12),
-                text_color="gray",
-            ).grid(row=1, column=0, sticky="w", padx=12, pady=(0, 8))
-        else:
-            for index, row in enumerate(rows, start=1):
-                ctk.CTkButton(
-                    panel,
-                    text=row.label,
-                    height=30,
-                    command=lambda cfg=row.config: self._apply_saved_search(cfg),
-                ).grid(row=index, column=0, sticky="ew", padx=12, pady=(0, 6))
-                ctk.CTkLabel(
-                    panel,
-                    text=row.detail,
-                    font=ctk.CTkFont(size=11),
-                    text_color="gray",
-                    anchor="w",
-                    justify="left",
-                ).grid(row=index, column=1, sticky="w", padx=(8, 12), pady=(0, 6))
-
-        self._saved_search_status_label = ctk.CTkLabel(
-            panel,
-            text="",
-            font=ctk.CTkFont(size=12),
-            text_color="gray",
+        self._saved_search_status_label = add_saved_searches_panel(
+            parent,
+            rows,
+            on_apply=self._apply_saved_search,
+            on_save_current=self._save_current_search,
         )
-        self._saved_search_status_label.grid(row=5, column=0, columnspan=2, sticky="w", padx=12, pady=(0, 8))
 
     def _apply_saved_search(self, config: dict):
         """Apply a named saved search config to the current Search controls."""
