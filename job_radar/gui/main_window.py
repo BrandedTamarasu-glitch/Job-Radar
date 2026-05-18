@@ -1091,22 +1091,12 @@ class MainWindow(ctk.CTk):
                             # Banner not shown but update available - refresh Settings if exists
                             if self._update_status_label:
                                 self._refresh_update_status()
-                        # If manual check pending, update Settings UI
-                        if self._manual_check_pending:
-                            # Check if version is skipped for status display
-                            if self._update_checker.is_version_skipped(version):
-                                self._on_manual_check_result("Update available! (skipped)")
-                            else:
-                                self._on_manual_check_result("Update available!")
+                        self._handle_manual_update_available(version)
                     elif msg_type == "up_to_date":
-                        # If manual check pending, update Settings UI
-                        if self._manual_check_pending:
-                            self._on_manual_check_result("Up to date!")
+                        self._handle_manual_update_result("Up to date!")
                     elif msg_type == "check_failed":
                         _, error = msg
-                        # If manual check pending, update Settings UI
-                        if self._manual_check_pending:
-                            self._on_manual_check_result("Check failed")
+                        self._handle_manual_update_result("Check failed")
                     # Download worker messages
                     elif msg_type == "download_progress":
                         _, downloaded, total = msg
@@ -1486,6 +1476,18 @@ class MainWindow(ctk.CTk):
 
         # Reset flag
         self._manual_check_pending = False
+
+    def _handle_manual_update_available(self, version: str):
+        """Show the manual-check result for an available update when relevant."""
+        if self._update_checker.is_version_skipped(version):
+            self._handle_manual_update_result("Update available! (skipped)")
+        else:
+            self._handle_manual_update_result("Update available!")
+
+    def _handle_manual_update_result(self, result_text: str):
+        """Update the Settings manual-check result only when a manual check is pending."""
+        if self._manual_check_pending:
+            self._on_manual_check_result(result_text)
 
     def _refresh_update_status(self):
         """Refresh the update status label in Settings tab."""

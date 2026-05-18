@@ -91,13 +91,14 @@ Current progress:
 - Top-level content clearing while preserving the header now lives in `job_radar/gui/window_shell.py`.
 - Main tabview construction and canonical tab names now live in `job_radar/gui/tab_shell.py`.
 - MainWindow now uses one lazy tab-build helper for user and programmatic tab navigation.
+- MainWindow now uses shared manual update-check result helpers for update queue messages.
 - MainWindow now uses one update banner teardown helper for replacement, dismiss, skip, and download cancellation paths.
 - MainWindow now uses one download worker cleanup helper for terminal download queue messages.
 - MainWindow no longer wraps Applications due-date display text that already lives in `job_radar/gui/applications_view_model.py`.
 - MainWindow no longer wraps Profile field rendering that already lives in `job_radar/gui/profile_panel.py`.
 - MainWindow no longer carries the obsolete Settings update-status initializer that moved into `job_radar/gui/settings_panel.py`.
 - Settings update controls/status, section separators, API credential sections/widget registration/panel orchestration, scoring configuration, storage maintenance, diagnostics, Jobicy public-source status, JSearch setup tip, and danger-zone construction now live in `job_radar/gui/settings_panel.py`.
-- Latest validation: `1116 passed, 8 skipped`.
+- Latest validation: `1117 passed, 8 skipped`.
 
 Validation:
 - Full `pytest tests/`

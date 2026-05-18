@@ -455,6 +455,20 @@ def test_update_banner_teardown_uses_shared_helper():
     assert "self._clear_update_banner()" in inspect.getsource(MainWindow._on_download_cancel)
 
 
+def test_update_queue_messages_reuse_manual_result_helpers():
+    queue_source = inspect.getsource(MainWindow._check_queue)
+    available_source = inspect.getsource(MainWindow._handle_manual_update_available)
+    result_source = inspect.getsource(MainWindow._handle_manual_update_result)
+
+    assert "self._handle_manual_update_available(version)" in queue_source
+    assert 'self._handle_manual_update_result("Up to date!")' in queue_source
+    assert 'self._handle_manual_update_result("Check failed")' in queue_source
+    assert "self._update_checker.is_version_skipped(version)" in available_source
+    assert 'self._handle_manual_update_result("Update available! (skipped)")' in available_source
+    assert "self._manual_check_pending" in result_source
+    assert "self._on_manual_check_result(result_text)" in result_source
+
+
 def test_download_queue_cleanup_uses_shared_helper():
     helper_source = inspect.getsource(MainWindow._clear_download_worker)
     queue_source = inspect.getsource(MainWindow._check_queue)
