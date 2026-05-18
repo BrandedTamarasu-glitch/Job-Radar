@@ -85,8 +85,8 @@ Current progress:
 - Profile tab label/value row construction now lives in `job_radar/gui/profile_panel.py`.
 - Profile dashboard next-step panel construction now lives in `job_radar/gui/dashboard_panel.py`.
 - Centered modal message dialog construction now lives in `job_radar/gui/dialogs.py`.
-- Settings storage maintenance, diagnostics, Jobicy public-source status, and JSearch setup tip construction now live in `job_radar/gui/settings_panel.py`.
-- Latest validation: `1091 passed, 8 skipped`.
+- Settings API credential sections, storage maintenance, diagnostics, Jobicy public-source status, and JSearch setup tip construction now live in `job_radar/gui/settings_panel.py`.
+- Latest validation: `1092 passed, 8 skipped`.
 
 Validation:
 - Full `pytest tests/`

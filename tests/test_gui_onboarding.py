@@ -16,6 +16,7 @@ from job_radar.gui.search_panel import (
     build_search_progress_panel,
 )
 from job_radar.gui.settings_panel import (
+    add_api_key_section,
     add_jobicy_api_status,
     add_jsearch_setup_tip,
     add_storage_maintenance_panel,
@@ -276,6 +277,15 @@ def test_settings_api_helpers_include_public_source_and_setup_tip():
     assert "Always available" in jobicy_source
     assert "JSearch API key" in tip_source
     assert "LinkedIn, Indeed, and Glassdoor" in tip_source
+
+
+def test_settings_api_section_helper_builds_fields_and_test_controls():
+    source = inspect.getsource(add_api_key_section)
+
+    assert "Test API Key" in source
+    assert "on_test(fields)" in source
+    assert "api_fields[field_id]" in source
+    assert "quota_labels[backend_api]" in source
 
 
 def test_clear_dismissed_reviews_uses_bounded_review_helper():

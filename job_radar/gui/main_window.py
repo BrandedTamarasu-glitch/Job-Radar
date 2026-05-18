@@ -115,6 +115,7 @@ from job_radar.gui.search_summary import (
     zero_result_lines,
 )
 from job_radar.gui.settings_panel import (
+    add_api_key_section,
     add_jobicy_api_status,
     add_jsearch_setup_tip,
     add_storage_maintenance_panel,
@@ -2292,115 +2293,16 @@ class MainWindow(ctk.CTk):
         signup_url : str
             Signup URL for the API
         """
-        # Section frame
-        section_frame = ctk.CTkFrame(parent, fg_color="transparent")
-        section_frame.pack(fill="x", pady=(10, 20), padx=10)
-
-        # Title
-        title_label = ctk.CTkLabel(
-            section_frame,
-            text=title,
-            font=ctk.CTkFont(size=14, weight="bold")
+        widgets = add_api_key_section(
+            parent,
+            title,
+            fields,
+            signup_url,
+            on_test=self._test_api_keys,
         )
-        title_label.pack(anchor="w", pady=(0, 5))
-
-        # Signup URL
-        url_label = ctk.CTkLabel(
-            section_frame,
-            text=signup_url,
-            font=ctk.CTkFont(size=10),
-            text_color="gray"
-        )
-        url_label.pack(anchor="w", pady=(0, 10))
-
-        # Fields
-        for env_var, label, field_id in fields:
-            field_frame = ctk.CTkFrame(section_frame, fg_color="transparent")
-            field_frame.pack(fill="x", pady=5)
-
-            # Label
-            lbl = ctk.CTkLabel(
-                field_frame,
-                text=f"{label}:",
-                width=180,
-                anchor="w"
-            )
-            lbl.pack(side="left", padx=(0, 10))
-
-            # Entry field (masked by default)
-            current_value = os.getenv(env_var, "")
-            entry = ctk.CTkEntry(
-                field_frame,
-                width=300,
-                show="*" if "KEY" in env_var or "PASSWORD" in env_var else ""
-            )
-            entry.insert(0, current_value)
-            entry.pack(side="left", padx=(0, 10))
-
-            self._api_fields[field_id] = (entry, env_var)
-
-            # Show/Hide toggle for masked fields
-            if "KEY" in env_var or "PASSWORD" in env_var:
-                show_var = ctk.BooleanVar(value=False)
-
-                def toggle_visibility(e=entry, v=show_var):
-                    if v.get():
-                        e.configure(show="")
-                    else:
-                        e.configure(show="*")
-
-                show_btn = ctk.CTkButton(
-                    field_frame,
-                    text="Show",
-                    width=60,
-                    command=lambda: (show_var.set(not show_var.get()), toggle_visibility())
-                )
-                show_btn.pack(side="left")
-
-        # Test button and status
-        test_frame = ctk.CTkFrame(section_frame, fg_color="transparent")
-        test_frame.pack(fill="x", pady=(10, 0))
-
-        test_btn = ctk.CTkButton(
-            test_frame,
-            text="Test API Key",
-            width=120,
-            command=lambda: self._test_api_keys(fields)
-        )
-        test_btn.pack(side="left", padx=(0, 10))
-
-        status_label = ctk.CTkLabel(
-            test_frame,
-            text="",
-            anchor="w"
-        )
-        status_label.pack(side="left")
-
-        # Quota usage label
-        quota_label = ctk.CTkLabel(
-            test_frame,
-            text="",
-            font=ctk.CTkFont(size=10),
-            text_color="gray"
-        )
-        quota_label.pack(side="left", padx=(10, 0))
-
-        # Store quota label reference using first field's backend API name
-        # Map field_id to backend API for quota lookup
-        backend_api_map = {
-            "jsearch": "jsearch",
-            "usajobs": "usajobs",
-            "adzuna_id": "adzuna",
-            "authentic_jobs": "authentic_jobs",
-            "serpapi": "serpapi",
-        }
-        first_field_id = fields[0][2]
-        backend_api = backend_api_map.get(first_field_id)
-        if backend_api:
-            self._quota_labels[backend_api] = quota_label
-
-        # Store status label reference (use first field's ID as section ID)
-        self._api_status_labels[fields[0][2]] = status_label
+        self._api_fields.update(widgets.api_fields)
+        self._api_status_labels.update(widgets.status_labels)
+        self._quota_labels.update(widgets.quota_labels)
 
     def _test_api_keys(self, fields):
         """Test API keys by making validation requests.
