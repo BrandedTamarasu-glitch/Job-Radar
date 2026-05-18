@@ -10,6 +10,8 @@ from job_radar.gui.maintenance_view_model import (
     build_local_maintenance_summary,
     cache_clear_error_message,
     cache_clear_success_message,
+    dismissed_review_cleanup_error_message,
+    dismissed_review_cleanup_success_message,
     format_feedback_diagnostics_lines,
     format_local_maintenance_lines,
 )
@@ -125,6 +127,12 @@ def test_maintenance_status_messages_are_consistent_for_settings(tmp_path):
     )
     assert app_data_export_error_message(OSError("disk full")) == (
         "Failed to export app data: disk full"
+    )
+    assert dismissed_review_cleanup_success_message(4) == (
+        "Cleared 4 dismissed review item(s)"
+    )
+    assert dismissed_review_cleanup_error_message(RuntimeError("busy")) == (
+        "Dismissed review cleanup failed: busy"
     )
 
 

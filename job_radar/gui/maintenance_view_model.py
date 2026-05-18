@@ -180,6 +180,16 @@ def cache_clear_error_message(error: object) -> str:
     return f"Failed to clear cache: {error}"
 
 
+def dismissed_review_cleanup_success_message(removed: int) -> str:
+    """Return Settings feedback after clearing dismissed review items."""
+    return f"Cleared {removed} dismissed review item(s)"
+
+
+def dismissed_review_cleanup_error_message(error: object) -> str:
+    """Return Settings feedback after dismissed review cleanup fails."""
+    return f"Dismissed review cleanup failed: {error}"
+
+
 def app_data_export_success_message(export_path: Path) -> str:
     """Return Settings feedback after app-data export succeeds."""
     return f"Exported app data to {export_path}"

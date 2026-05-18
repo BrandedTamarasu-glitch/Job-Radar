@@ -208,7 +208,7 @@ def test_clear_dismissed_reviews_uses_bounded_review_helper():
 
     assert 'clear_review_state_by_state("dismissed", limit=50)' in source
     assert "review_state_counts()" in source
-    assert "Cleared" in source
+    assert "dismissed_review_cleanup_success_message" in source
 
 
 def test_real_search_records_recent_search_before_progress():

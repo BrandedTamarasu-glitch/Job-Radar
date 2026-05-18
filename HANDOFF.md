@@ -95,6 +95,7 @@ Started reducing `job_radar/gui/main_window.py` by moving display formatting int
   - relative last-check time formatting
 - `job_radar/gui/maintenance_view_model.py`
   - Settings cache/app-data maintenance status messages
+  - dismissed review cleanup status messages
 - `job_radar/gui/search_summary.py`
   - live source progress text helpers
   - source progress counter display text
@@ -106,7 +107,7 @@ Current line counts:
 3332 job_radar/gui/main_window.py
  287 job_radar/gui/applications_tab.py
  297 job_radar/gui/applications_view_model.py
- 265 job_radar/gui/maintenance_view_model.py
+ 275 job_radar/gui/maintenance_view_model.py
  188 job_radar/gui/search_summary.py
   78 job_radar/gui/update_status_view_model.py
  478 job_radar/saved_searches.py

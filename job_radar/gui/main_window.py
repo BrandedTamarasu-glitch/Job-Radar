@@ -96,6 +96,8 @@ from job_radar.gui.maintenance_view_model import (
     build_local_maintenance_summary,
     cache_clear_error_message,
     cache_clear_success_message,
+    dismissed_review_cleanup_error_message,
+    dismissed_review_cleanup_success_message,
     format_feedback_diagnostics_lines,
     format_local_maintenance_lines,
 )
@@ -1014,10 +1016,10 @@ class MainWindow(ctk.CTk):
             clear_review_state_by_state("dismissed", limit=50)
             after = review_state_counts().get("dismissed", 0)
             removed = max(0, before - after)
-            message = f"Cleared {removed} dismissed review item(s)"
+            message = dismissed_review_cleanup_success_message(removed)
             color = "green"
         except Exception as e:
-            message = f"Dismissed review cleanup failed: {e}"
+            message = dismissed_review_cleanup_error_message(e)
             color = "red"
 
         if self._cache_status_label:
