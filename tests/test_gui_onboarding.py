@@ -10,6 +10,7 @@ from job_radar.gui.search_panel import (
     add_saved_searches_panel,
     add_search_readiness_guidance,
     build_search_completion_panel,
+    build_search_error_panel,
     build_search_progress_panel,
 )
 
@@ -159,6 +160,15 @@ def test_search_completion_panel_includes_report_actions():
     assert "New Search" in source
     assert "on_open_report" in source
     assert "on_new_search" in source
+
+
+def test_search_error_panel_includes_retry_and_back_actions():
+    source = inspect.getsource(build_search_error_panel)
+
+    assert "Search failed" in source
+    assert "error_message(message)" in source
+    assert "Try Again" in source
+    assert "Back to Search" in source
 
 
 def test_search_run_metadata_records_review_counts():

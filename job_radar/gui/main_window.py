@@ -97,13 +97,13 @@ from job_radar.gui.search_panel import (
     add_saved_searches_panel,
     add_search_readiness_guidance,
     build_search_completion_panel,
+    build_search_error_panel,
     build_search_progress_panel,
 )
 from job_radar.gui.search_summary import (
     bullet_block_text,
     cancellation_message,
     cache_summary_line,
-    error_message,
     review_queue_text,
     search_context_lines,
     source_fetching_message,
@@ -2019,46 +2019,12 @@ class MainWindow(ctk.CTk):
         for widget in self._search_content.winfo_children():
             widget.destroy()
 
-        content_frame = ctk.CTkFrame(self._search_content, fg_color="transparent")
-        content_frame.grid(row=0, column=0)
-
-        error_label = ctk.CTkLabel(
-            content_frame,
-            text="Search failed",
-            font=ctk.CTkFont(size=16, weight="bold"),
-            text_color="red"
+        build_search_error_panel(
+            self._search_content,
+            message=message,
+            on_retry=self._start_real_search,
+            on_back_to_search=self._show_search_idle,
         )
-        error_label.pack(pady=(0, 12))
-
-        detail_label = ctk.CTkLabel(
-            content_frame,
-            text=error_message(message),
-            font=ctk.CTkFont(size=12),
-            text_color="gray",
-            wraplength=420,
-            justify="center"
-        )
-        detail_label.pack(pady=(0, 20))
-
-        retry_btn = ctk.CTkButton(
-            content_frame,
-            text="Try Again",
-            height=40,
-            width=200,
-            command=self._start_real_search
-        )
-        retry_btn.pack(pady=(0, 15))
-
-        new_search_btn = ctk.CTkButton(
-            content_frame,
-            text="Back to Search",
-            height=40,
-            width=200,
-            command=self._show_search_idle,
-            fg_color="transparent",
-            border_width=2
-        )
-        new_search_btn.pack()
 
     def _open_report(self):
         """Open HTML report in default browser."""

@@ -10,7 +10,7 @@ import customtkinter as ctk
 
 from job_radar.profile_readiness import ProfileReadiness
 from job_radar.saved_searches import SearchPanelRow
-from job_radar.gui.search_summary import completion_color, completion_message
+from job_radar.gui.search_summary import completion_color, completion_message, error_message
 
 
 @dataclass(frozen=True)
@@ -303,6 +303,52 @@ def build_search_completion_panel(
         height=40,
         width=200,
         command=on_new_search,
+        fg_color="transparent",
+        border_width=2,
+    ).pack()
+
+
+def build_search_error_panel(
+    parent,
+    *,
+    message: str,
+    on_retry: Callable[[], None],
+    on_back_to_search: Callable[[], None],
+) -> None:
+    """Display search failure state with retry and reset actions."""
+    content_frame = ctk.CTkFrame(parent, fg_color="transparent")
+    content_frame.grid(row=0, column=0)
+
+    ctk.CTkLabel(
+        content_frame,
+        text="Search failed",
+        font=ctk.CTkFont(size=16, weight="bold"),
+        text_color="red",
+    ).pack(pady=(0, 12))
+
+    ctk.CTkLabel(
+        content_frame,
+        text=error_message(message),
+        font=ctk.CTkFont(size=12),
+        text_color="gray",
+        wraplength=420,
+        justify="center",
+    ).pack(pady=(0, 20))
+
+    ctk.CTkButton(
+        content_frame,
+        text="Try Again",
+        height=40,
+        width=200,
+        command=on_retry,
+    ).pack(pady=(0, 15))
+
+    ctk.CTkButton(
+        content_frame,
+        text="Back to Search",
+        height=40,
+        width=200,
+        command=on_back_to_search,
         fg_color="transparent",
         border_width=2,
     ).pack()
