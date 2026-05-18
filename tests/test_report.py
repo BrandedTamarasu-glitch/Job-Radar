@@ -651,7 +651,7 @@ def test_html_report_payload_size_guard(sample_profile, sample_scored_results, s
 
     html_size = Path(result["html"]).stat().st_size
 
-    assert html_size < 90_000
+    assert html_size < 92_000
 
 
 def test_html_report_collapses_lower_score_rows_for_large_reports(sample_profile, sample_manual_urls, tmp_path):

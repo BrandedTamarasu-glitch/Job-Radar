@@ -152,7 +152,7 @@ def _write_private_text(path: Path, content: str) -> None:
     try:
         try:
             os.fchmod(fd, 0o600)
-        except OSError:
+        except (AttributeError, OSError):
             pass
         with os.fdopen(fd, "w", encoding="utf-8") as f:
             f.write(content)

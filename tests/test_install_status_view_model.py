@@ -26,7 +26,7 @@ def test_install_error_messages_include_recovery_context():
     path = Path("/tmp/Job-Radar.dmg")
 
     assert install_launch_error_message(path, RuntimeError("blocked")) == (
-        "Couldn't launch installer. File saved at: /tmp/Job-Radar.dmg\n\nblocked"
+        f"Couldn't launch installer. File saved at: {path}\n\nblocked"
     )
     assert installer_not_found_message("/tmp/missing.dmg") == (
         "Installer file not found. Download again?\n\n/tmp/missing.dmg"
