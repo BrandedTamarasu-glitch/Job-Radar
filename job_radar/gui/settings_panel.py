@@ -85,6 +85,12 @@ API_CREDENTIAL_SECTIONS = (
 )
 
 
+def add_settings_separator(parent, *, height: int = 2, fg_color: str = "gray70", pady=(20, 10)) -> None:
+    """Add a horizontal separator between Settings sections."""
+    separator = ctk.CTkFrame(parent, height=height, fg_color=fg_color)
+    separator.pack(fill="x", pady=pady, padx=10)
+
+
 def add_api_credentials_panel(
     parent,
     *,

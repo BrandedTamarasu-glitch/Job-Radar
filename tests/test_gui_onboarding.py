@@ -25,6 +25,7 @@ from job_radar.gui.settings_panel import (
     add_jobicy_api_status,
     add_jsearch_setup_tip,
     add_scoring_config_panel,
+    add_settings_separator,
     add_storage_maintenance_panel,
     add_update_settings_panel,
 )
@@ -379,6 +380,16 @@ def test_settings_update_panel_builds_status_and_controls():
     assert "Check for Updates" in source
     assert "View release notes" in source
     assert "Clear skipped versions" in source
+
+
+def test_settings_separator_helper_keeps_section_dividers_consistent():
+    source = inspect.getsource(add_settings_separator)
+    tab_source = inspect.getsource(MainWindow._build_settings_tab)
+
+    assert "ctk.CTkFrame(parent, height=height, fg_color=fg_color)" in source
+    assert "separator.pack(fill=\"x\", pady=pady, padx=10)" in source
+    assert "add_settings_separator(scroll_frame" in tab_source
+    assert 'height=1, fg_color="gray", pady=(10, 20)' in tab_source
 
 
 def test_settings_danger_zone_includes_uninstall_action():

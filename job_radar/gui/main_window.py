@@ -121,6 +121,7 @@ from job_radar.gui.settings_panel import (
     add_api_key_section,
     add_danger_zone,
     add_scoring_config_panel,
+    add_settings_separator,
     add_storage_maintenance_panel,
     add_update_settings_panel,
 )
@@ -1918,9 +1919,7 @@ class MainWindow(ctk.CTk):
 
         self._refresh_skipped_status()
 
-        # Separator between Updates and API Key Settings
-        separator = ctk.CTkFrame(scroll_frame, height=1, fg_color="gray")
-        separator.pack(fill="x", pady=(10, 20), padx=10)
+        add_settings_separator(scroll_frame, height=1, fg_color="gray", pady=(10, 20))
 
         # Load current env values from the app-data credential file.
         env_path = get_api_credentials_path()
@@ -1939,9 +1938,7 @@ class MainWindow(ctk.CTk):
             show_jsearch_tip=not os.getenv("JSEARCH_API_KEY", "").strip(),
         )
 
-        # Separator between API settings and scoring config
-        separator = ctk.CTkFrame(scroll_frame, height=2, fg_color="gray70")
-        separator.pack(fill="x", pady=(20, 10), padx=10)
+        add_settings_separator(scroll_frame)
 
         maintenance_widgets = add_storage_maintenance_panel(
             scroll_frame,
@@ -1958,9 +1955,7 @@ class MainWindow(ctk.CTk):
         self._cache_status_label = maintenance_widgets.cache_status_label
         self._source_diagnostics_textbox = maintenance_widgets.source_diagnostics_textbox
 
-        # Separator between storage maintenance and scoring config
-        separator = ctk.CTkFrame(scroll_frame, height=2, fg_color="gray70")
-        separator.pack(fill="x", pady=(20, 10), padx=10)
+        add_settings_separator(scroll_frame)
 
         # Load profile for scoring config widget
         try:
@@ -1975,9 +1970,7 @@ class MainWindow(ctk.CTk):
             on_save=self._on_scoring_saved,
         )
 
-        # Separator before Danger Zone
-        danger_separator = ctk.CTkFrame(scroll_frame, height=2, fg_color="gray70")
-        danger_separator.pack(fill="x", pady=(20, 10), padx=10)
+        add_settings_separator(scroll_frame)
 
         add_danger_zone(scroll_frame, on_uninstall=self._start_uninstall)
 

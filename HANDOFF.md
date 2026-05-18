@@ -6,13 +6,14 @@ Date: 2026-05-16
 
 - Repo path: `/home/corye/openai-cli/Job-Radar`
 - Branch: `main`
-- Git status before latest slice: clean, `main...origin/main [ahead 42]`
-- Last full validation: `1103 passed, 8 skipped`
-- Do not push unless explicitly asked. The 42 local commits after the last push are still local.
+- Git status before latest slice: clean, `main...origin/main [ahead 43]`
+- Last full validation: `1104 passed, 8 skipped`
+- Do not push unless explicitly asked. The 43 local commits after the last push are still local.
 
 ## Latest Local Commits
 
 ```text
+d414df8 refactor: centralize lazy tab building
 d5a4a43 refactor: reuse search success flow
 3ba8423 refactor: extract main tab shell
 fb8f391 refactor: extract settings scoring panel
@@ -20,7 +21,6 @@ fb8f391 refactor: extract settings scoring panel
 257a42f refactor: extract search idle shell
 de0ded2 refactor: extract profile summary panel
 afb16fa refactor: extract welcome screen panel
-4df1da4 refactor: extract settings api panel
 ```
 
 ## Recently Pushed
@@ -138,6 +138,7 @@ Started reducing `job_radar/gui/main_window.py` by moving display formatting int
   - Shared lazy tab-build helper for user and programmatic tab navigation
 - `job_radar/gui/settings_panel.py`
   - Settings update controls/status panel construction
+  - Settings section separator construction
   - Settings storage maintenance and diagnostics panel construction
   - Settings Jobicy public-source status and JSearch setup tip construction
   - Settings API credential section construction
@@ -149,12 +150,12 @@ Current line counts:
 
 ```text
 2149 job_radar/report.py
-2382 job_radar/gui/main_window.py
+2375 job_radar/gui/main_window.py
   44 job_radar/gui/dialogs.py
   70 job_radar/gui/welcome_panel.py
   11 job_radar/gui/window_shell.py
   17 job_radar/gui/tab_shell.py
- 551 job_radar/gui/settings_panel.py
+ 557 job_radar/gui/settings_panel.py
  480 job_radar/gui/search_panel.py
   76 job_radar/gui/profile_panel.py
   62 job_radar/gui/dashboard_panel.py
@@ -187,7 +188,7 @@ rtk .venv/bin/python -m pytest tests/
 Latest result:
 
 ```text
-1103 passed, 8 skipped
+1104 passed, 8 skipped
 ```
 
 ## Active Plan
