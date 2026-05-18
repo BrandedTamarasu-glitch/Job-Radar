@@ -100,6 +100,8 @@ Started reducing `job_radar/gui/main_window.py` by moving display formatting int
   - live source progress text helpers
   - source progress counter display text
   - search completion label/block text helpers
+- `job_radar/gui/search_panel.py`
+  - Search idle profile-readiness guidance panel construction
 - `job_radar/gui/api_status_view_model.py`
   - API credential test status text/color formatting
   - API credential test HTTP response status mapping
@@ -118,7 +120,8 @@ Current line counts:
 
 ```text
 2149 job_radar/report.py
-3254 job_radar/gui/main_window.py
+3232 job_radar/gui/main_window.py
+  48 job_radar/gui/search_panel.py
   23 job_radar/gui/profile_panel.py
   62 job_radar/gui/dashboard_panel.py
   75 job_radar/gui/api_status_view_model.py

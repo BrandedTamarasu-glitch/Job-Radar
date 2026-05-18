@@ -5,6 +5,7 @@ from job_radar.gui.dashboard_panel import add_dashboard_next_steps
 from job_radar.gui.main_window import MainWindow
 from job_radar.gui.profile_panel import add_profile_field
 from job_radar.gui.profile_form import PROFILE_FIELD_HINTS, ProfileForm
+from job_radar.gui.search_panel import add_search_readiness_guidance
 
 
 def test_welcome_screen_exposes_demo_report_preview():
@@ -28,11 +29,11 @@ def test_search_idle_includes_profile_readiness_guidance():
 
 
 def test_profile_readiness_guidance_links_to_profile_tab():
-    source = inspect.getsource(MainWindow._add_search_readiness_guidance)
+    source = inspect.getsource(add_search_readiness_guidance)
 
     assert "Profile readiness:" in source
     assert "Review Profile" in source
-    assert "command=self._show_profile_tab" in source
+    assert "command=on_review_profile" in source
 
 
 def test_profile_tab_includes_dashboard_next_steps():
