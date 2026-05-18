@@ -105,14 +105,18 @@ Started reducing `job_radar/gui/main_window.py` by moving display formatting int
   - API credential test HTTP response status mapping
 - `job_radar/gui/install_status_view_model.py`
   - installer launch prompt/status/error messages
+- `job_radar/gui/profile_view_model.py`
+  - Profile tab summary row formatting
+  - Profile tab load error text
 
 Current line counts:
 
 ```text
 2149 job_radar/report.py
-3340 job_radar/gui/main_window.py
+3301 job_radar/gui/main_window.py
   75 job_radar/gui/api_status_view_model.py
   31 job_radar/gui/install_status_view_model.py
+  55 job_radar/gui/profile_view_model.py
  287 job_radar/gui/applications_tab.py
  297 job_radar/gui/applications_view_model.py
  275 job_radar/gui/maintenance_view_model.py
@@ -139,7 +143,7 @@ rtk .venv/bin/python -m pytest tests/
 Latest result:
 
 ```text
-1079 passed, 8 skipped
+1082 passed, 8 skipped
 ```
 
 ## Active Plan

@@ -83,6 +83,7 @@ from job_radar.gui.applications_view_model import (
 from job_radar.gui.applications_tab import ApplicationsTabCallbacks, build_applications_tab_content
 from job_radar.gui.dashboard_view_model import build_dashboard_actions
 from job_radar.gui.profile_form import ProfileForm
+from job_radar.gui.profile_view_model import build_profile_summary_rows, profile_load_error_message
 from job_radar.gui.review_state_view_model import format_review_state_summary
 from job_radar.gui.search_controls import SearchControls
 from job_radar.gui.search_summary import (
@@ -532,48 +533,8 @@ class MainWindow(ctk.CTk):
                 self._add_profile_field(scroll_frame, row, "Scoring Signals:", "\n".join(scoring_items))
                 row += 1
 
-            # Name
-            self._add_profile_field(scroll_frame, row, "Name:", profile.get("name", "N/A"))
-            row += 1
-
-            # Target Titles
-            titles = ", ".join(profile.get("target_titles", []))
-            self._add_profile_field(scroll_frame, row, "Target Titles:", titles or "N/A")
-            row += 1
-
-            # Core Skills
-            core_skills = ", ".join(profile.get("core_skills", []))
-            self._add_profile_field(scroll_frame, row, "Core Skills:", core_skills or "N/A")
-            row += 1
-
-            # Secondary Skills (if present)
-            if "secondary_skills" in profile and profile["secondary_skills"]:
-                secondary_skills = ", ".join(profile["secondary_skills"])
-                self._add_profile_field(scroll_frame, row, "Secondary Skills:", secondary_skills)
-                row += 1
-
-            # Level / Years Experience
-            level = profile.get("level", "N/A")
-            years = profile.get("years_experience", "N/A")
-            self._add_profile_field(scroll_frame, row, "Level / Experience:", f"{level} / {years} years")
-            row += 1
-
-            # Location / Arrangement
-            location = profile.get("location", "N/A")
-            arrangement = ", ".join(profile.get("arrangement", [])) if profile.get("arrangement") else "N/A"
-            self._add_profile_field(scroll_frame, row, "Location / Arrangement:", f"{location} / {arrangement}")
-            row += 1
-
-            # Dealbreakers (if present)
-            if "dealbreakers" in profile and profile["dealbreakers"]:
-                dealbreakers = ", ".join(profile["dealbreakers"])
-                self._add_profile_field(scroll_frame, row, "Dealbreakers:", dealbreakers)
-                row += 1
-
-            # Compensation Floor (if present)
-            if "comp_floor" in profile and profile["comp_floor"]:
-                comp_formatted = f"${profile['comp_floor']:,}"
-                self._add_profile_field(scroll_frame, row, "Compensation Floor:", comp_formatted)
+            for summary_row in build_profile_summary_rows(profile):
+                self._add_profile_field(scroll_frame, row, summary_row.label, summary_row.value)
                 row += 1
 
             # Edit Profile button at bottom
@@ -590,7 +551,7 @@ class MainWindow(ctk.CTk):
             # Error loading profile
             error_label = ctk.CTkLabel(
                 scroll_frame,
-                text=f"Could not load profile: {e}",
+                text=profile_load_error_message(e),
                 text_color="red"
             )
             error_label.pack(pady=20)
