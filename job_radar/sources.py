@@ -31,7 +31,11 @@ from .source_config import (
     source_cache_ttl,
 )
 from .source_execution import SourceExecutionState
-from .source_mappers import map_adzuna_to_job_result, map_authenticjobs_to_job_result
+from .source_mappers import (
+    map_adzuna_to_job_result,
+    map_authenticjobs_to_job_result,
+    map_jsearch_to_job_result,
+)
 from .source_models import JobResult
 from .source_parsing import (
     _DATE_RE,
@@ -720,10 +724,6 @@ def fetch_authenticjobs(query: str, location: str = "", verbose: bool = False) -
 # JSearch API fetcher (LinkedIn, Indeed, Glassdoor aggregator)
 # ---------------------------------------------------------------------------
 
-# Known JSearch publishers that we treat as separate sources
-JSEARCH_KNOWN_SOURCES = {"LinkedIn", "Indeed", "Glassdoor"}
-
-
 def fetch_jsearch(query: str, location: str = "", verbose: bool = False) -> list[JobResult]:
     """Fetch job listings from JSearch API (aggregates LinkedIn, Indeed, Glassdoor)."""
     results = []
@@ -786,90 +786,6 @@ def fetch_jsearch(query: str, location: str = "", verbose: bool = False) -> list
 
     log.info("[JSearch] Found %d results for '%s'", len(results), query)
     return results
-
-
-def map_jsearch_to_job_result(item: dict) -> JobResult | None:
-    """Map JSearch API response item to JobResult.
-
-    Uses job_publisher field for source attribution (LinkedIn, Indeed, Glassdoor).
-    Unknown publishers are mapped to "jsearch_other".
-    """
-    # Extract and validate required fields
-    title = item.get("job_title", "").strip()
-    company = item.get("employer_name", "").strip()
-    url = item.get("job_apply_link", "").strip()
-
-    if not title or not company or not url:
-        log.debug("[JSearch] Skipping job with missing required fields: title=%s, company=%s, url=%s",
-                 bool(title), bool(company), bool(url))
-        return None
-
-    # Source attribution: use original publisher, not "JSearch"
-    publisher = item.get("job_publisher", "")
-    if publisher in JSEARCH_KNOWN_SOURCES:
-        source = publisher.lower()  # "LinkedIn" -> "linkedin"
-    else:
-        source = "jsearch_other"
-        if publisher:
-            log.debug("[JSearch] Unknown publisher '%s' mapped to jsearch_other", publisher)
-
-    # Location normalization
-    is_remote = item.get("job_is_remote", False)
-    if is_remote:
-        location = "Remote"
-    else:
-        city = item.get("job_city", "")
-        state = item.get("job_state", "")
-        if city and state:
-            location = f"{city}, {state}"
-        else:
-            location = item.get("job_country", "Unknown")
-
-    # Salary fields
-    salary_min = item.get("job_min_salary")
-    salary_max = item.get("job_max_salary")
-
-    # Format salary string
-    if salary_min and salary_max:
-        salary = f"${salary_min:,.0f} - ${salary_max:,.0f}"
-    elif salary_min:
-        salary = f"${salary_min:,.0f}+"
-    else:
-        salary = "Not specified"
-
-    # Description cleaning
-    description_raw = item.get("job_description", "")
-    description = strip_html_and_normalize(description_raw)
-    if len(description) > 500:
-        description = description[:497] + "..."
-
-    # Date posted (extract YYYY-MM-DD)
-    date_posted = item.get("job_posted_at_datetime_utc", "")
-    if len(date_posted) >= 10:
-        date_posted = date_posted[:10]
-
-    # Arrangement detection
-    arrangement = _parse_arrangement(f"{title} {description} {location}")
-
-    # Employment type
-    emp_type = item.get("job_employment_type", "")
-
-    return JobResult(
-        title=_clean_field(title, _MAX_TITLE),
-        company=_clean_field(company, _MAX_COMPANY),
-        location=_clean_field(location, _MAX_LOCATION),
-        arrangement=arrangement,
-        salary=salary,
-        date_posted=date_posted,
-        description=description,
-        url=url,
-        source=source,
-        employment_type=emp_type,
-        parse_confidence="high",
-        salary_min=salary_min,
-        salary_max=salary_max,
-        salary_currency="USD" if salary_min or salary_max else None,
-    )
 
 
 # ---------------------------------------------------------------------------
