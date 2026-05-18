@@ -279,3 +279,210 @@ def map_usajobs_to_job_result(item: dict) -> JobResult | None:
         salary_max=salary_max,
         salary_currency="USD" if salary_min or salary_max else None,
     )
+
+
+def map_serpapi_to_job_result(item: dict) -> JobResult | None:
+    """Map SerpAPI Google Jobs response item to JobResult."""
+    title = item.get("title", "").strip()
+    company = item.get("company_name", "").strip()
+
+    apply_options = item.get("apply_options", [])
+    url = ""
+    if apply_options and isinstance(apply_options, list):
+        url = apply_options[0].get("link", "").strip()
+    if not url:
+        url = item.get("share_link", "").strip()
+
+    if not title or not company or not url:
+        log.debug("[SerpAPI] Skipping job with missing required fields: title=%s, company=%s, url=%s",
+                  bool(title), bool(company), bool(url))
+        return None
+
+    location_raw = item.get("location", "")
+    location = parse_location_to_city_state(location_raw)
+
+    extensions = item.get("detected_extensions", {})
+    if extensions.get("work_from_home"):
+        arrangement = "remote"
+    else:
+        arrangement = _parse_arrangement(f"{title} {item.get('description', '')}")
+
+    description_raw = item.get("description", "")
+    description = strip_html_and_normalize(description_raw)
+    if len(description) > 500:
+        description = description[:497] + "..."
+
+    emp_type = extensions.get("schedule_type", "")
+    salary = "Not specified"
+    date_posted = extensions.get("posted_at", "")
+
+    return JobResult(
+        title=_clean_field(title, _MAX_TITLE),
+        company=_clean_field(company, _MAX_COMPANY),
+        location=_clean_field(location, _MAX_LOCATION),
+        arrangement=arrangement,
+        salary=salary,
+        date_posted=date_posted,
+        description=description,
+        url=url,
+        source="serpapi",
+        employment_type=emp_type,
+        parse_confidence="high",
+    )
+
+
+def map_jobicy_to_job_result(item: dict) -> JobResult | None:
+    """Map Jobicy API response item to JobResult."""
+    title = item.get("jobTitle", "").strip()
+    company = item.get("companyName", "").strip()
+    url = item.get("url", "").strip()
+
+    if not title or not company or not url:
+        log.debug("[Jobicy] Skipping job with missing required fields: title=%s, company=%s, url=%s",
+                  bool(title), bool(company), bool(url))
+        return None
+
+    location_raw = item.get("jobGeo", "")
+    location = location_raw if location_raw else "Remote"
+    arrangement = "remote"
+
+    description_raw = item.get("jobDescription", "")
+    if not description_raw:
+        description_raw = item.get("jobExcerpt", "")
+    description = strip_html_and_normalize(description_raw)
+    if len(description) > 500:
+        description = description[:497] + "..."
+
+    if not description:
+        log.debug("[Jobicy] Skipping job with empty description: %s at %s", title, company)
+        return None
+
+    emp_type = item.get("jobType", "")
+
+    salary_min_str = item.get("annualSalaryMin", "")
+    salary_max_str = item.get("annualSalaryMax", "")
+    salary_currency = item.get("salaryCurrency", "USD")
+    salary_min = None
+    salary_max = None
+
+    if salary_min_str and salary_max_str:
+        try:
+            salary_min = float(salary_min_str)
+            salary_max = float(salary_max_str)
+            salary = f"{salary_currency} {int(salary_min):,}-{int(salary_max):,}/yr"
+        except (ValueError, TypeError):
+            salary = "Not specified"
+    elif salary_min_str:
+        try:
+            salary_min = float(salary_min_str)
+            salary = f"{salary_currency} {int(salary_min):,}+/yr"
+        except (ValueError, TypeError):
+            salary = "Not specified"
+    else:
+        salary = "Not specified"
+
+    date_posted = item.get("pubDate", "")
+
+    return JobResult(
+        title=_clean_field(title, _MAX_TITLE),
+        company=_clean_field(company, _MAX_COMPANY),
+        location=_clean_field(location, _MAX_LOCATION),
+        arrangement=arrangement,
+        salary=salary,
+        date_posted=date_posted,
+        description=description,
+        url=url,
+        source="jobicy",
+        employment_type=emp_type,
+        parse_confidence="high",
+        salary_min=salary_min,
+        salary_max=salary_max,
+        salary_currency=salary_currency,
+    )
+
+
+def _normalize_salary_to_annual(value: float, period: str) -> float:
+    """Convert salary to annual equivalent."""
+    period_lower = period.lower()
+    if period_lower in ("hour", "hourly"):
+        return value * 2080
+    elif period_lower in ("month", "monthly"):
+        return value * 12
+    elif period_lower in ("year", "yearly", "annual", "annually"):
+        return value
+    else:
+        if value < 500:
+            return value * 2080
+        elif value < 20000:
+            return value * 12
+        return value
+
+
+def _format_hiringcafe_salary(salary_min: float | None, salary_max: float | None) -> str:
+    """Format salary to standardized $XXXK range per user decision."""
+    if salary_min and salary_max:
+        return f"${int(salary_min / 1000)}K - ${int(salary_max / 1000)}K"
+    elif salary_min:
+        return f"${int(salary_min / 1000)}K+"
+    return "Not listed"
+
+
+def map_hiringcafe_to_job_result(item: dict) -> JobResult | None:
+    """Map hiring.cafe response item to JobResult."""
+    title = item.get("title", "").strip()
+    company = item.get("company", "").strip()
+    url = item.get("url", "").strip()
+
+    if not title or not company or not url:
+        log.debug("[hiring.cafe] Skipping job with missing required fields: "
+                  "title=%s, company=%s, url=%s",
+                  bool(title), bool(company), bool(url))
+        return None
+
+    salary_min_raw = item.get("salary_min")
+    salary_max_raw = item.get("salary_max")
+    salary_period = item.get("salary_period", "yearly")
+
+    salary_min = None
+    salary_max = None
+    if salary_min_raw is not None:
+        try:
+            salary_min = _normalize_salary_to_annual(float(salary_min_raw), salary_period)
+        except (ValueError, TypeError):
+            pass
+    if salary_max_raw is not None:
+        try:
+            salary_max = _normalize_salary_to_annual(float(salary_max_raw), salary_period)
+        except (ValueError, TypeError):
+            pass
+
+    salary = _format_hiringcafe_salary(salary_min, salary_max)
+
+    location_raw = item.get("location", "")
+    location = parse_location_to_city_state(location_raw)
+
+    description_raw = item.get("description", "")
+    description = strip_html_and_normalize(description_raw)
+    if len(description) > 500:
+        description = description[:497] + "..."
+
+    arrangement = _parse_arrangement(f"{title} {description} {location}")
+    emp_type = item.get("employment_type", "")
+    date_posted = item.get("date_posted", "")
+
+    return JobResult(
+        title=_clean_field(title, _MAX_TITLE),
+        company=_clean_field(company, _MAX_COMPANY),
+        location=_clean_field(location, _MAX_LOCATION),
+        arrangement=arrangement,
+        salary=salary,
+        date_posted=date_posted,
+        description=description,
+        url=url,
+        source="hiringcafe",
+        employment_type=emp_type,
+        parse_confidence="high",
+        salary_min=salary_min,
+        salary_max=salary_max,
+        salary_currency="USD" if salary_min or salary_max else None,
+    )

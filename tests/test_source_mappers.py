@@ -3,7 +3,10 @@
 from job_radar.source_mappers import (
     map_adzuna_to_job_result,
     map_authenticjobs_to_job_result,
+    map_hiringcafe_to_job_result,
+    map_jobicy_to_job_result,
     map_jsearch_to_job_result,
+    map_serpapi_to_job_result,
     map_usajobs_to_job_result,
 )
 
@@ -119,3 +122,64 @@ def test_map_usajobs_to_job_result_maps_valid_descriptor():
 
 def test_map_usajobs_to_job_result_rejects_missing_required_fields():
     assert map_usajobs_to_job_result({"MatchedObjectDescriptor": {}}) is None
+
+
+def test_map_serpapi_to_job_result_maps_apply_option():
+    result = map_serpapi_to_job_result({
+        "title": "Software Engineer",
+        "company_name": "Acme",
+        "apply_options": [{"link": "https://example.com/apply"}],
+        "location": "Austin, Texas, United States",
+        "description": "<p>Work from anywhere</p>",
+        "detected_extensions": {"work_from_home": True, "schedule_type": "Full-time"},
+    })
+
+    assert result is not None
+    assert result.source == "serpapi"
+    assert result.url == "https://example.com/apply"
+    assert result.arrangement == "remote"
+
+
+def test_map_jobicy_to_job_result_requires_clean_description():
+    assert map_jobicy_to_job_result({
+        "jobTitle": "Backend Engineer",
+        "companyName": "Acme",
+        "url": "https://example.com/job",
+        "jobDescription": "",
+        "jobExcerpt": "",
+    }) is None
+
+
+def test_map_jobicy_to_job_result_maps_salary_range():
+    result = map_jobicy_to_job_result({
+        "jobTitle": "Backend Engineer",
+        "companyName": "Acme",
+        "url": "https://example.com/job",
+        "jobDescription": "Build APIs",
+        "annualSalaryMin": "120000",
+        "annualSalaryMax": "150000",
+        "salaryCurrency": "USD",
+    })
+
+    assert result is not None
+    assert result.source == "jobicy"
+    assert result.salary == "USD 120,000-150,000/yr"
+    assert result.arrangement == "remote"
+
+
+def test_map_hiringcafe_to_job_result_normalizes_hourly_salary():
+    result = map_hiringcafe_to_job_result({
+        "title": "Backend Engineer",
+        "company": "Acme",
+        "url": "https://example.com/job",
+        "location": "Remote",
+        "description": "Remote API work",
+        "salary_min": 75,
+        "salary_max": 100,
+        "salary_period": "hourly",
+    })
+
+    assert result is not None
+    assert result.source == "hiringcafe"
+    assert result.salary == "$156K - $208K"
+    assert result.arrangement == "remote"
