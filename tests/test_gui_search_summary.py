@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 import pytest
 
+from job_radar.gui.search_panel import update_source_progress_widgets
 from job_radar.gui.search_summary import (
     bullet_block_text,
     cache_summary_line,
@@ -35,6 +36,18 @@ from job_radar.gui.worker_thread import (
 )
 from job_radar.profile_readiness import assess_profile_readiness
 from job_radar.sources import JobResult
+
+
+class _FakeWidget:
+    def __init__(self):
+        self.text = None
+        self.value = None
+
+    def configure(self, **kwargs):
+        self.text = kwargs.get("text")
+
+    def set(self, value):
+        self.value = value
 
 
 @pytest.fixture(autouse=True)
@@ -213,6 +226,24 @@ def test_source_progress_display_text_is_consistent():
     assert source_fetching_message("Dice") == "Fetching Dice..."
     assert source_progress_count_text(2, 5) == "Source 2 of 5"
     assert source_job_count_line("RemoteOK", 3) == "RemoteOK: 3 jobs found\n"
+
+
+def test_update_source_progress_widgets_normalizes_and_updates_display():
+    label = _FakeWidget()
+    progress = _FakeWidget()
+    count = _FakeWidget()
+
+    update_source_progress_widgets(label, progress, count, "Dice", 9, 3)
+
+    assert label.text == "Fetching Dice..."
+    assert progress.value == 1
+    assert count.text == "Source 3 of 3"
+
+    update_source_progress_widgets(label, progress, count, "RemoteOK", 1, 2, update_label=False)
+
+    assert label.text == "Fetching Dice..."
+    assert progress.value == 0.5
+    assert count.text == "Source 1 of 2"
 
 
 def test_filter_by_company_applies_include_and_exclude_terms():

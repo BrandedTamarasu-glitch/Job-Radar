@@ -6,13 +6,14 @@ Date: 2026-05-16
 
 - Repo path: `/home/corye/openai-cli/Job-Radar`
 - Branch: `main`
-- Git status before latest slice: clean, `main...origin/main [ahead 51]`
-- Last full validation: `1112 passed, 8 skipped`
-- Do not push unless explicitly asked. The 51 local commits after the last push are still local.
+- Git status before latest slice: clean, `main...origin/main [ahead 52]`
+- Last full validation: `1114 passed, 8 skipped`
+- Do not push unless explicitly asked. The 52 local commits after the last push are still local.
 
 ## Latest Local Commits
 
 ```text
+aa92d65 refactor: centralize source diagnostics text
 9aafa8f refactor: centralize maintenance text
 452e22a refactor: remove profile field wrapper
 42c92e0 refactor: extract profile content clearing
@@ -20,7 +21,6 @@ Date: 2026-05-16
 0442575 refactor: centralize demo report feedback
 5a2a8b8 refactor: extract search content clearing
 3e70a0c refactor: centralize search readiness guidance
-3e6cd0a refactor: extract settings separator helper
 ```
 
 ## Recently Pushed
@@ -108,6 +108,7 @@ Started reducing `job_radar/gui/main_window.py` by moving display formatting int
   - search readiness guidance line composition
 - `job_radar/gui/search_panel.py`
   - Search state content clearing helper
+  - Search source-progress widget updates
   - Search idle controls/action shell construction
   - Search idle profile-readiness guidance panel construction
   - Search success message replacement helper
@@ -160,14 +161,14 @@ Current line counts:
 
 ```text
 2149 job_radar/report.py
-2334 job_radar/gui/main_window.py
+2346 job_radar/gui/main_window.py
   14 job_radar/gui/demo_report_view_model.py
   44 job_radar/gui/dialogs.py
   70 job_radar/gui/welcome_panel.py
   11 job_radar/gui/window_shell.py
   17 job_radar/gui/tab_shell.py
  557 job_radar/gui/settings_panel.py
- 486 job_radar/gui/search_panel.py
+ 507 job_radar/gui/search_panel.py
   82 job_radar/gui/profile_panel.py
   62 job_radar/gui/dashboard_panel.py
   75 job_radar/gui/api_status_view_model.py
@@ -200,7 +201,7 @@ rtk .venv/bin/python -m pytest tests/
 Latest result:
 
 ```text
-1112 passed, 8 skipped
+1114 passed, 8 skipped
 ```
 
 ## Active Plan

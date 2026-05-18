@@ -20,6 +20,7 @@ from job_radar.gui.search_panel import (
     pack_search_idle_actions,
     build_search_progress_panel,
     replace_success_message,
+    update_source_progress_widgets,
 )
 from job_radar.gui.search_summary import search_readiness_guidance_lines
 from job_radar.gui.maintenance_view_model import feedback_diagnostics_text, local_maintenance_text
@@ -496,6 +497,17 @@ def test_search_progress_panel_exposes_updatable_widgets():
     assert "Source 0 of 0" in source
     assert "command=on_cancel" in source
     assert "SearchProgressWidgets" in source
+
+
+def test_source_progress_events_reuse_progress_widget_helper():
+    helper_source = inspect.getsource(update_source_progress_widgets)
+
+    assert "normalize_source_progress(current, total)" in helper_source
+    assert "source_fetching_message(source)" in helper_source
+    assert "source_progress_count_text(current, total)" in helper_source
+    assert "update_source_progress_widgets(" in inspect.getsource(MainWindow._on_source_started)
+    assert "update_label=False" in inspect.getsource(MainWindow._on_source_complete)
+    assert "update_source_progress_widgets(" in inspect.getsource(MainWindow._update_progress)
 
 
 def test_search_idle_includes_recent_searches_panel():

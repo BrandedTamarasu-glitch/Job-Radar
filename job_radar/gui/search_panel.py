@@ -16,7 +16,10 @@ from job_radar.gui.search_summary import (
     completion_color,
     completion_message,
     error_message,
+    source_fetching_message,
+    source_progress_count_text,
 )
+from job_radar.gui.worker_thread import normalize_source_progress
 
 
 @dataclass(frozen=True)
@@ -113,6 +116,24 @@ def build_search_idle_shell(
         preview_button=preview_button,
         warning_label=warning_label,
     )
+
+
+def update_source_progress_widgets(
+    progress_label,
+    progress_bar,
+    progress_count,
+    source: str,
+    current: int,
+    total: int,
+    *,
+    update_label: bool = True,
+) -> None:
+    """Update Search progress widgets with normalized source progress."""
+    current, total = normalize_source_progress(current, total)
+    if update_label:
+        progress_label.configure(text=source_fetching_message(source))
+    progress_bar.set(current / total)
+    progress_count.configure(text=source_progress_count_text(current, total))
 
 
 def pack_search_idle_actions(widgets: SearchIdleWidgets) -> None:
