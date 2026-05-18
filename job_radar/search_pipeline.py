@@ -133,6 +133,38 @@ def filter_by_location_strictness(results: list, strictness: str | None = None) 
     return filtered
 
 
+def apply_result_filters(
+    results: list,
+    search_config: dict,
+    *,
+    date_filter_func=None,
+) -> tuple[list, str | None, str | None]:
+    """Apply date, company, skill, and location filters to raw search results."""
+    if date_filter_func is None:
+        from job_radar.search import filter_by_date
+
+        date_filter_func = filter_by_date
+
+    from_date, to_date = resolve_date_filter(search_config)
+    if from_date and to_date:
+        results = date_filter_func(results, from_date, to_date)
+
+    results = filter_by_company(
+        results,
+        include=search_config.get("include_companies"),
+        exclude=search_config.get("exclude_companies"),
+    )
+    results = filter_by_required_skills(
+        results,
+        search_config.get("required_skills"),
+    )
+    results = filter_by_location_strictness(
+        results,
+        search_config.get("location_strictness"),
+    )
+    return results, from_date, to_date
+
+
 def score_results(results: list, profile: dict, score_func=None) -> tuple[list[dict], int]:
     """Score results, remove dealbreakers, and sort highest score first."""
     if score_func is None:

@@ -3,6 +3,7 @@
 from datetime import date
 
 from job_radar.search_pipeline import (
+    apply_result_filters,
     apply_scored_result_filters,
     apply_preferred_skills,
     filter_by_company,
@@ -63,6 +64,53 @@ def test_shared_company_and_location_filters():
     assert [job.company for job in filter_by_location_strictness(jobs, "exclude_onsite")] == [
         "Northstar Tools"
     ]
+
+
+def test_apply_result_filters_combines_raw_filters():
+    jobs = [
+        JobResult(
+            title="Engineer",
+            company="Northstar Tools",
+            location="Anywhere",
+            arrangement="unknown",
+            salary="Not listed",
+            date_posted="2026-05-18",
+            description="Remote NodeJS and Kubernetes role",
+            url="https://example.com/1",
+            source="Dice",
+        ),
+        JobResult(
+            title="Engineer",
+            company="LedgerWorks",
+            location="New York, NY",
+            arrangement="on-site",
+            salary="Not listed",
+            date_posted="2026-05-18",
+            description="Build Python services",
+            url="https://example.com/2",
+            source="Dice",
+        ),
+    ]
+
+    def date_filter(results, from_date, to_date):
+        assert (from_date, to_date) == ("2026-05-01", "2026-05-18")
+        return results
+
+    filtered, from_date, to_date = apply_result_filters(
+        jobs,
+        {
+            "from_date": "2026-05-01",
+            "to_date": "2026-05-18",
+            "include_companies": "northstar, ledger",
+            "exclude_companies": "ledger",
+            "required_skills": "node.js",
+            "location_strictness": "remote_only",
+        },
+        date_filter_func=date_filter,
+    )
+
+    assert (from_date, to_date) == ("2026-05-01", "2026-05-18")
+    assert [job.company for job in filtered] == ["Northstar Tools"]
 
 
 def test_score_results_filters_dealbreakers_and_sorts_descending():

@@ -16,6 +16,7 @@ from pathlib import Path
 import requests
 
 from job_radar.search_pipeline import (
+    apply_result_filters,
     apply_scored_result_filters,
     apply_preferred_skills,
     filter_by_company,
@@ -347,23 +348,11 @@ class SearchWorker:
                 self._queue.put(("cancelled",))
                 return
 
-            # Step 3: Apply date filter if specified
-            from_date, to_date = resolve_date_filter(self._search_config)
-            if from_date and to_date:
-                results = filter_by_date(results, from_date, to_date)
-
-            results = filter_by_company(
+            # Step 3: Apply raw result filters
+            results, from_date, to_date = apply_result_filters(
                 results,
-                include=self._search_config.get("include_companies"),
-                exclude=self._search_config.get("exclude_companies"),
-            )
-            results = filter_by_required_skills(
-                results,
-                self._search_config.get("required_skills"),
-            )
-            results = filter_by_location_strictness(
-                results,
-                self._search_config.get("location_strictness"),
+                self._search_config,
+                date_filter_func=filter_by_date,
             )
 
             if self._stop_event.is_set():
