@@ -121,12 +121,15 @@ Started reducing `job_radar/gui/main_window.py` by moving display formatting int
   - Profile tab label/value row construction
 - `job_radar/gui/dashboard_panel.py`
   - Profile dashboard next-step panel construction
+- `job_radar/gui/dialogs.py`
+  - Centered modal message dialog construction
 
 Current line counts:
 
 ```text
 2149 job_radar/report.py
-2987 job_radar/gui/main_window.py
+2931 job_radar/gui/main_window.py
+  44 job_radar/gui/dialogs.py
  391 job_radar/gui/search_panel.py
   23 job_radar/gui/profile_panel.py
   62 job_radar/gui/dashboard_panel.py
@@ -159,7 +162,7 @@ rtk .venv/bin/python -m pytest tests/
 Latest result:
 
 ```text
-1089 passed, 8 skipped
+1090 passed, 8 skipped
 ```
 
 ## Active Plan

@@ -84,7 +84,8 @@ Current progress:
 - Profile tab summary and readiness formatting now live in `job_radar/gui/profile_view_model.py`.
 - Profile tab label/value row construction now lives in `job_radar/gui/profile_panel.py`.
 - Profile dashboard next-step panel construction now lives in `job_radar/gui/dashboard_panel.py`.
-- Latest validation: `1089 passed, 8 skipped`.
+- Centered modal message dialog construction now lives in `job_radar/gui/dialogs.py`.
+- Latest validation: `1090 passed, 8 skipped`.
 
 Validation:
 - Full `pytest tests/`

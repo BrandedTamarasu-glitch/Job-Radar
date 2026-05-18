@@ -83,6 +83,7 @@ from job_radar.gui.applications_view_model import (
 from job_radar.gui.applications_tab import ApplicationsTabCallbacks, build_applications_tab_content
 from job_radar.gui.dashboard_view_model import build_dashboard_actions
 from job_radar.gui.dashboard_panel import add_dashboard_next_steps
+from job_radar.gui.dialogs import show_message_dialog
 from job_radar.gui.profile_panel import add_profile_field
 from job_radar.gui.profile_form import ProfileForm
 from job_radar.gui.profile_view_model import (
@@ -2013,38 +2014,7 @@ class MainWindow(ctk.CTk):
         message : str
             Error message to display
         """
-        # Create modal dialog
-        dialog = ctk.CTkToplevel(self)
-        dialog.title("Error")
-        dialog.geometry("400x200")
-
-        # Make modal
-        dialog.transient(self)
-        dialog.grab_set()
-
-        # Center dialog on parent
-        dialog.update_idletasks()
-        x = self.winfo_x() + (self.winfo_width() - dialog.winfo_width()) // 2
-        y = self.winfo_y() + (self.winfo_height() - dialog.winfo_height()) // 2
-        dialog.geometry(f"+{x}+{y}")
-
-        # Error message
-        error_label = ctk.CTkLabel(
-            dialog,
-            text=message,
-            wraplength=350,
-            font=ctk.CTkFont(size=13)
-        )
-        error_label.pack(pady=30, padx=20)
-
-        # OK button
-        ok_btn = ctk.CTkButton(
-            dialog,
-            text="OK",
-            width=100,
-            command=dialog.destroy
-        )
-        ok_btn.pack(pady=(0, 20))
+        show_message_dialog(self, title="Error", message=message)
 
     def _build_settings_tab(self, parent):
         """Build Settings tab with Updates section and API key configuration.
@@ -2946,39 +2916,13 @@ class MainWindow(ctk.CTk):
         message : str
             Info message to display
         """
-        # Create modal dialog
-        dialog = ctk.CTkToplevel(self)
-        dialog.title("Success")
-        dialog.geometry("400x150")
-
-        # Make modal
-        dialog.transient(self)
-        dialog.grab_set()
-
-        # Center dialog on parent
-        dialog.update_idletasks()
-        x = self.winfo_x() + (self.winfo_width() - dialog.winfo_width()) // 2
-        y = self.winfo_y() + (self.winfo_height() - dialog.winfo_height()) // 2
-        dialog.geometry(f"+{x}+{y}")
-
-        # Info message
-        info_label = ctk.CTkLabel(
-            dialog,
-            text=message,
-            wraplength=350,
-            font=ctk.CTkFont(size=13),
-            text_color="green"
+        show_message_dialog(
+            self,
+            title="Success",
+            message=message,
+            geometry="400x150",
+            text_color="green",
         )
-        info_label.pack(pady=30, padx=20)
-
-        # OK button
-        ok_btn = ctk.CTkButton(
-            dialog,
-            text="OK",
-            width=100,
-            command=dialog.destroy
-        )
-        ok_btn.pack(pady=(0, 20))
 
 
 def launch_gui():

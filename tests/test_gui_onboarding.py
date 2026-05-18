@@ -2,6 +2,7 @@ import inspect
 
 from job_radar.gui.applications_tab import _add_application_next_action_queue, build_applications_tab_content
 from job_radar.gui.dashboard_panel import add_dashboard_next_steps
+from job_radar.gui.dialogs import show_message_dialog
 from job_radar.gui.main_window import MainWindow
 from job_radar.gui.profile_panel import add_profile_field
 from job_radar.gui.profile_form import PROFILE_FIELD_HINTS, ProfileForm
@@ -179,6 +180,15 @@ def test_search_cancelled_panel_includes_new_search_action():
     assert "cancellation_message()" in source
     assert "New Search" in source
     assert "on_new_search" in source
+
+
+def test_modal_message_dialog_centers_and_closes():
+    source = inspect.getsource(show_message_dialog)
+
+    assert "CTkToplevel(parent)" in source
+    assert "dialog.grab_set()" in source
+    assert "dialog.geometry(f\"+{x}+{y}\")" in source
+    assert "command=dialog.destroy" in source
 
 
 def test_search_run_metadata_records_review_counts():
