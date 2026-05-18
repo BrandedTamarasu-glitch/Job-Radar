@@ -96,14 +96,13 @@ from job_radar.gui.search_panel import (
     add_recent_searches_panel,
     add_saved_searches_panel,
     add_search_readiness_guidance,
+    build_search_completion_panel,
     build_search_progress_panel,
 )
 from job_radar.gui.search_summary import (
     bullet_block_text,
     cancellation_message,
     cache_summary_line,
-    completion_color,
-    completion_message,
     error_message,
     review_queue_text,
     search_context_lines,
@@ -1184,106 +1183,32 @@ class MainWindow(ctk.CTk):
         for widget in self._search_content.winfo_children():
             widget.destroy()
 
-        # Content frame (centered)
-        content_frame = ctk.CTkFrame(self._search_content, fg_color="transparent")
-        content_frame.grid(row=0, column=0)
-
-        # Completion message
-        completion_label = ctk.CTkLabel(
-            content_frame,
-            text=completion_message(job_count),
-            font=ctk.CTkFont(size=16, weight="bold"),
-            text_color=completion_color(job_count)
-        )
-        completion_label.pack(pady=(0, 15))
-
         warning_message = source_warning_message(summary)
-        if warning_message:
-            warning_label = ctk.CTkLabel(
-                content_frame,
-                text=warning_message,
-                font=ctk.CTkFont(size=12),
-                text_color="orange",
-                wraplength=420,
-                justify="center"
-            )
-            warning_label.pack(pady=(0, 12))
-
         next_actions = zero_result_lines(job_count, self._load_current_profile_for_guidance())
         next_action_text = bullet_block_text("Try next", next_actions)
-        if next_action_text:
-            next_action_label = ctk.CTkLabel(
-                content_frame,
-                text=next_action_text,
-                font=ctk.CTkFont(size=12),
-                text_color="gray",
-                wraplength=420,
-                justify="left"
-            )
-            next_action_label.pack(pady=(0, 16))
 
         summary_lines = source_summary_lines(summary)
         cache_line = cache_summary_line(summary)
         if cache_line:
             summary_lines.append(cache_line)
-        if summary_lines:
-            summary_box = ctk.CTkTextbox(
-                content_frame,
-                width=420,
-                height=min(180, max(80, len(summary_lines) * 24)),
-                state="normal"
-            )
-            summary_box.insert("end", "\n".join(summary_lines))
-            summary_box.configure(state="disabled")
-            summary_box.pack(pady=(0, 20))
 
         context_lines = search_context_lines(summary, self._active_search_config)
         context_text = bullet_block_text("Run context", context_lines)
-        if context_text:
-            context_label = ctk.CTkLabel(
-                content_frame,
-                text=context_text,
-                font=ctk.CTkFont(size=12),
-                text_color="gray",
-                wraplength=420,
-                justify="left",
-            )
-            context_label.pack(pady=(0, 16))
 
         review_lines = self._review_state_summary_lines()
         review_text = review_queue_text(review_lines)
-        if review_text:
-            review_box = ctk.CTkLabel(
-                content_frame,
-                text=review_text,
-                font=ctk.CTkFont(size=12),
-                text_color="gray",
-                wraplength=420,
-                justify="center",
-            )
-            review_box.pack(pady=(0, 16))
 
-        # Open Report button
-        open_report_btn = ctk.CTkButton(
-            content_frame,
-            text="Open Report",
-            height=40,
-            width=200,
-            command=self._open_report
+        build_search_completion_panel(
+            self._search_content,
+            job_count=job_count,
+            warning_message=warning_message,
+            next_action_text=next_action_text,
+            summary_lines=summary_lines,
+            context_text=context_text,
+            review_text=review_text,
+            on_open_report=self._open_report,
+            on_new_search=self._show_search_idle,
         )
-        open_report_btn.pack(pady=(0, 15))
-
-        # New Search button
-        new_search_btn = ctk.CTkButton(
-            content_frame,
-            text="New Search",
-            height=40,
-            width=200,
-            command=self._show_search_idle,
-            fg_color="transparent",
-            border_width=2
-        )
-        new_search_btn.pack()
 
     def _review_state_summary_lines(self) -> list[str]:
         """Return persisted review-state summary lines for the Search completion screen."""

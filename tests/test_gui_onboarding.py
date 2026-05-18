@@ -9,6 +9,7 @@ from job_radar.gui.search_panel import (
     add_recent_searches_panel,
     add_saved_searches_panel,
     add_search_readiness_guidance,
+    build_search_completion_panel,
     build_search_progress_panel,
 )
 
@@ -147,6 +148,17 @@ def test_search_complete_includes_review_state_summary():
 
     assert "_review_state_summary_lines" in source
     assert "review_queue_text" in source
+    assert "build_search_completion_panel" in source
+
+
+def test_search_completion_panel_includes_report_actions():
+    source = inspect.getsource(build_search_completion_panel)
+
+    assert "completion_message(job_count)" in source
+    assert "Open Report" in source
+    assert "New Search" in source
+    assert "on_open_report" in source
+    assert "on_new_search" in source
 
 
 def test_search_run_metadata_records_review_counts():

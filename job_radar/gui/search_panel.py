@@ -10,6 +10,7 @@ import customtkinter as ctk
 
 from job_radar.profile_readiness import ProfileReadiness
 from job_radar.saved_searches import SearchPanelRow
+from job_radar.gui.search_summary import completion_color, completion_message
 
 
 @dataclass(frozen=True)
@@ -212,3 +213,96 @@ def build_search_progress_panel(parent, *, on_cancel: Callable[[], None]) -> Sea
         progress_count=progress_count,
         job_count_display=job_count_display,
     )
+
+
+def build_search_completion_panel(
+    parent,
+    *,
+    job_count: int,
+    warning_message: str | None,
+    next_action_text: str | None,
+    summary_lines: Sequence[str],
+    context_text: str | None,
+    review_text: str | None,
+    on_open_report: Callable[[], None],
+    on_new_search: Callable[[], None],
+) -> None:
+    """Display completion state with report actions and run context."""
+    content_frame = ctk.CTkFrame(parent, fg_color="transparent")
+    content_frame.grid(row=0, column=0)
+
+    ctk.CTkLabel(
+        content_frame,
+        text=completion_message(job_count),
+        font=ctk.CTkFont(size=16, weight="bold"),
+        text_color=completion_color(job_count),
+    ).pack(pady=(0, 15))
+
+    if warning_message:
+        ctk.CTkLabel(
+            content_frame,
+            text=warning_message,
+            font=ctk.CTkFont(size=12),
+            text_color="orange",
+            wraplength=420,
+            justify="center",
+        ).pack(pady=(0, 12))
+
+    if next_action_text:
+        ctk.CTkLabel(
+            content_frame,
+            text=next_action_text,
+            font=ctk.CTkFont(size=12),
+            text_color="gray",
+            wraplength=420,
+            justify="left",
+        ).pack(pady=(0, 16))
+
+    if summary_lines:
+        summary_box = ctk.CTkTextbox(
+            content_frame,
+            width=420,
+            height=min(180, max(80, len(summary_lines) * 24)),
+            state="normal",
+        )
+        summary_box.insert("end", "\n".join(summary_lines))
+        summary_box.configure(state="disabled")
+        summary_box.pack(pady=(0, 20))
+
+    if context_text:
+        ctk.CTkLabel(
+            content_frame,
+            text=context_text,
+            font=ctk.CTkFont(size=12),
+            text_color="gray",
+            wraplength=420,
+            justify="left",
+        ).pack(pady=(0, 16))
+
+    if review_text:
+        ctk.CTkLabel(
+            content_frame,
+            text=review_text,
+            font=ctk.CTkFont(size=12),
+            text_color="gray",
+            wraplength=420,
+            justify="center",
+        ).pack(pady=(0, 16))
+
+    ctk.CTkButton(
+        content_frame,
+        text="Open Report",
+        height=40,
+        width=200,
+        command=on_open_report,
+    ).pack(pady=(0, 15))
+
+    ctk.CTkButton(
+        content_frame,
+        text="New Search",
+        height=40,
+        width=200,
+        command=on_new_search,
+        fg_color="transparent",
+        border_width=2,
+    ).pack()
