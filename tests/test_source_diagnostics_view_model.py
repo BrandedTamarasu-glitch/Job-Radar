@@ -10,6 +10,7 @@ from job_radar.gui.source_diagnostics_view_model import (
     format_source_coverage_lines,
     format_source_diagnostics_lines,
     format_source_toggle_recommendations,
+    load_pre_run_source_strategy_lines,
     source_diagnostics_text,
 )
 
@@ -326,6 +327,27 @@ def test_pre_run_source_strategy_lines_prioritize_actionable_guidance():
 
 def test_pre_run_source_strategy_lines_returns_empty_without_history():
     assert format_pre_run_source_strategy_lines([]) == []
+
+
+def test_load_pre_run_source_strategy_lines_handles_history_loader_errors():
+    history = [
+        {
+            "sources": [{"name": "Dice", "job_count": 0, "duration_seconds": 1.0}],
+            "failed_sources": ["Dice", "Dice"],
+        }
+    ]
+
+    def load_history(limit):
+        assert limit == 20
+        return history
+
+    def fail_history(limit):
+        raise OSError("history unavailable")
+
+    assert load_pre_run_source_strategy_lines(load_history) == [
+        "Before rerunning: Dice has recent reliability issues; consider unchecking it in Sources."
+    ]
+    assert load_pre_run_source_strategy_lines(fail_history) == []
 
 
 def test_source_selection_strategy_lines_recommend_specific_source_choices():

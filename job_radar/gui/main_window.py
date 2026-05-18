@@ -133,7 +133,7 @@ from job_radar.gui.maintenance_view_model import (
     local_maintenance_text,
 )
 from job_radar.gui.source_diagnostics_view_model import (
-    format_pre_run_source_strategy_lines,
+    load_pre_run_source_strategy_lines,
     format_source_toggle_recommendations,
     build_source_diagnostics,
     source_diagnostics_text,
@@ -1604,11 +1604,7 @@ class MainWindow(ctk.CTk):
 
     def _pre_run_source_strategy_lines(self) -> list[str]:
         """Return current source strategy guidance for the Search tab."""
-        try:
-            history = get_source_health_history(limit=20)
-        except Exception:
-            return []
-        return format_pre_run_source_strategy_lines(history)
+        return load_pre_run_source_strategy_lines(get_source_health_history)
 
     def _local_maintenance_text(self) -> str:
         """Return current local maintenance summary text for Settings."""

@@ -6,13 +6,14 @@ Date: 2026-05-18
 
 - Repo path: `/home/corye/openai-cli/Job-Radar`
 - Branch: `main`
-- Git status after latest slice: clean, `main...origin/main [ahead 64]`
-- Last full validation: `1120 passed, 8 skipped`
-- Do not push unless explicitly asked. The 64 local commits after the last push are still local.
+- Git status after latest slice: clean, `main...origin/main [ahead 65]`
+- Last full validation: `1121 passed, 8 skipped`
+- Do not push unless explicitly asked. The 65 local commits after the last push are still local.
 
 ## Latest Local Commits
 
 ```text
+8817f3d refactor: centralize profile guidance loading
 9fd446f refactor: centralize review summary loading
 b511736 refactor: centralize search completion content
 5e6e0c0 refactor: extract manual update button reset
@@ -109,6 +110,7 @@ Started reducing `job_radar/gui/main_window.py` by moving display formatting int
   - Settings local maintenance and feedback diagnostics text composition
 - `job_radar/gui/source_diagnostics_view_model.py`
   - Settings source diagnostics text composition
+  - Search-tab pre-run source strategy guidance loading
 - `job_radar/gui/search_summary.py`
   - live source progress text helpers
   - source progress counter display text
@@ -179,7 +181,7 @@ Current line counts:
 
 ```text
 2149 job_radar/report.py
-2306 job_radar/gui/main_window.py
+2302 job_radar/gui/main_window.py
   14 job_radar/gui/demo_report_view_model.py
   44 job_radar/gui/dialogs.py
   70 job_radar/gui/welcome_panel.py
@@ -195,7 +197,7 @@ Current line counts:
  287 job_radar/gui/applications_tab.py
  297 job_radar/gui/applications_view_model.py
  287 job_radar/gui/maintenance_view_model.py
- 464 job_radar/gui/source_diagnostics_view_model.py
+ 472 job_radar/gui/source_diagnostics_view_model.py
  258 job_radar/gui/search_summary.py
   78 job_radar/gui/update_status_view_model.py
   32 job_radar/gui/review_state_view_model.py
@@ -220,7 +222,7 @@ rtk .venv/bin/python -m pytest tests/
 Latest result:
 
 ```text
-1120 passed, 8 skipped
+1121 passed, 8 skipped
 ```
 
 ## Active Plan

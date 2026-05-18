@@ -337,6 +337,14 @@ def format_pre_run_source_strategy_lines(
     return lines[:limit]
 
 
+def load_pre_run_source_strategy_lines(history_loader, *, limit: int = 2) -> list[str]:
+    """Return Search-tab source strategy guidance, falling back to no guidance on load errors."""
+    try:
+        return format_pre_run_source_strategy_lines(history_loader(limit=20), limit=limit)
+    except Exception:
+        return []
+
+
 def format_source_selection_strategy_lines(
     history: list[dict[str, Any]],
     *,
