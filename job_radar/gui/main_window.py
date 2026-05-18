@@ -96,6 +96,7 @@ from job_radar.gui.search_panel import (
     add_recent_searches_panel,
     add_saved_searches_panel,
     add_search_readiness_guidance,
+    build_search_progress_panel,
 )
 from job_radar.gui.search_summary import (
     bullet_block_text,
@@ -1160,55 +1161,14 @@ class MainWindow(ctk.CTk):
         for widget in self._search_content.winfo_children():
             widget.destroy()
 
-        # Content frame (centered)
-        content_frame = ctk.CTkFrame(self._search_content, fg_color="transparent")
-        content_frame.grid(row=0, column=0)
-
-        # Progress label
-        self._progress_label = ctk.CTkLabel(
-            content_frame,
-            text="Starting search...",
-            font=ctk.CTkFont(size=14)
+        widgets = build_search_progress_panel(
+            self._search_content,
+            on_cancel=self._cancel_search,
         )
-        self._progress_label.pack(pady=(0, 15))
-
-        # Progress bar
-        self._progress_bar = ctk.CTkProgressBar(
-            content_frame,
-            width=400
-        )
-        self._progress_bar.set(0)
-        self._progress_bar.pack(pady=(0, 10))
-
-        # Progress count
-        self._progress_count = ctk.CTkLabel(
-            content_frame,
-            text="Source 0 of 0",
-            font=ctk.CTkFont(size=12),
-            text_color="gray"
-        )
-        self._progress_count.pack(pady=(0, 15))
-
-        # Per-source job count display (scrollable textbox)
-        self._job_count_display = ctk.CTkTextbox(
-            content_frame,
-            width=400,
-            height=100,
-            state="disabled"
-        )
-        self._job_count_display.pack(pady=(0, 20))
-
-        # Cancel button
-        cancel_btn = ctk.CTkButton(
-            content_frame,
-            text="Cancel",
-            height=35,
-            width=150,
-            command=self._cancel_search,
-            fg_color="red",
-            hover_color="darkred"
-        )
-        cancel_btn.pack()
+        self._progress_label = widgets.progress_label
+        self._progress_bar = widgets.progress_bar
+        self._progress_count = widgets.progress_count
+        self._job_count_display = widgets.job_count_display
 
     def _show_search_complete(self, job_count: int, summary: dict | None = None):
         """Display completion state with Open Report and New Search buttons.

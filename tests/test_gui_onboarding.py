@@ -9,6 +9,7 @@ from job_radar.gui.search_panel import (
     add_recent_searches_panel,
     add_saved_searches_panel,
     add_search_readiness_guidance,
+    build_search_progress_panel,
 )
 
 
@@ -244,6 +245,15 @@ def test_real_search_stores_active_config_for_completion_metadata():
     source = inspect.getsource(MainWindow._start_real_search)
 
     assert "self._active_search_config = search_config.copy()" in source
+
+
+def test_search_progress_panel_exposes_updatable_widgets():
+    source = inspect.getsource(build_search_progress_panel)
+
+    assert "Starting search..." in source
+    assert "Source 0 of 0" in source
+    assert "command=on_cancel" in source
+    assert "SearchProgressWidgets" in source
 
 
 def test_search_idle_includes_recent_searches_panel():

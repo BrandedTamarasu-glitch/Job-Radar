@@ -3,12 +3,23 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
+from dataclasses import dataclass
 from typing import Any
 
 import customtkinter as ctk
 
 from job_radar.profile_readiness import ProfileReadiness
 from job_radar.saved_searches import SearchPanelRow
+
+
+@dataclass(frozen=True)
+class SearchProgressWidgets:
+    """Widgets MainWindow updates while a search is running."""
+
+    progress_label: ctk.CTkLabel
+    progress_bar: ctk.CTkProgressBar
+    progress_count: ctk.CTkLabel
+    job_count_display: ctk.CTkTextbox
 
 
 def add_search_readiness_guidance(
@@ -148,3 +159,56 @@ def add_saved_searches_panel(
     )
     status_label.grid(row=5, column=0, columnspan=2, sticky="w", padx=12, pady=(0, 8))
     return status_label
+
+
+def build_search_progress_panel(parent, *, on_cancel: Callable[[], None]) -> SearchProgressWidgets:
+    """Display progress state with progress bar, per-source job counts, and cancel button."""
+    content_frame = ctk.CTkFrame(parent, fg_color="transparent")
+    content_frame.grid(row=0, column=0)
+
+    progress_label = ctk.CTkLabel(
+        content_frame,
+        text="Starting search...",
+        font=ctk.CTkFont(size=14),
+    )
+    progress_label.pack(pady=(0, 15))
+
+    progress_bar = ctk.CTkProgressBar(
+        content_frame,
+        width=400,
+    )
+    progress_bar.set(0)
+    progress_bar.pack(pady=(0, 10))
+
+    progress_count = ctk.CTkLabel(
+        content_frame,
+        text="Source 0 of 0",
+        font=ctk.CTkFont(size=12),
+        text_color="gray",
+    )
+    progress_count.pack(pady=(0, 15))
+
+    job_count_display = ctk.CTkTextbox(
+        content_frame,
+        width=400,
+        height=100,
+        state="disabled",
+    )
+    job_count_display.pack(pady=(0, 20))
+
+    ctk.CTkButton(
+        content_frame,
+        text="Cancel",
+        height=35,
+        width=150,
+        command=on_cancel,
+        fg_color="red",
+        hover_color="darkred",
+    ).pack()
+
+    return SearchProgressWidgets(
+        progress_label=progress_label,
+        progress_bar=progress_bar,
+        progress_count=progress_count,
+        job_count_display=job_count_display,
+    )
