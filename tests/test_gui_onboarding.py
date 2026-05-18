@@ -23,6 +23,7 @@ from job_radar.gui.settings_panel import (
     add_danger_zone,
     add_jobicy_api_status,
     add_jsearch_setup_tip,
+    add_scoring_config_panel,
     add_storage_maintenance_panel,
     add_update_settings_panel,
 )
@@ -341,6 +342,14 @@ def test_settings_danger_zone_includes_uninstall_action():
     assert "Danger Zone" in source
     assert "Uninstall Job Radar" in source
     assert "command=on_uninstall" in source
+
+
+def test_settings_scoring_panel_builds_widget_with_save_callback():
+    source = inspect.getsource(add_scoring_config_panel)
+
+    assert "ScoringConfigWidget" in source
+    assert "on_save_callback=on_save" in source
+    assert "scoring_config.pack" in source
 
 
 def test_clear_dismissed_reviews_uses_bounded_review_helper():

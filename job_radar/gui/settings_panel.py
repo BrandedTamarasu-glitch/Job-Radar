@@ -5,8 +5,11 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 import os
+from typing import Any
 
 import customtkinter as ctk
+
+from job_radar.gui.scoring_config import ScoringConfigWidget
 
 
 @dataclass(frozen=True)
@@ -530,3 +533,19 @@ def add_danger_zone(parent, *, on_uninstall: Callable[[], None]) -> None:
         hover_color="darkred",
         command=on_uninstall,
     ).pack(anchor="w", pady=(10, 0))
+
+
+def add_scoring_config_panel(
+    parent,
+    *,
+    profile: dict[str, Any] | None,
+    on_save: Callable[[], None],
+) -> ScoringConfigWidget:
+    """Add the scoring configuration widget and return it."""
+    scoring_config = ScoringConfigWidget(
+        parent,
+        profile=profile,
+        on_save_callback=on_save,
+    )
+    scoring_config.pack(fill="x", padx=10, pady=(10, 20))
+    return scoring_config

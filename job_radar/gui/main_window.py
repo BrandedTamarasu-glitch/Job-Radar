@@ -119,6 +119,7 @@ from job_radar.gui.settings_panel import (
     add_api_credentials_panel,
     add_api_key_section,
     add_danger_zone,
+    add_scoring_config_panel,
     add_storage_maintenance_panel,
     add_update_settings_panel,
 )
@@ -142,7 +143,6 @@ from job_radar.gui.source_diagnostics_view_model import (
     build_source_diagnostics,
 )
 from job_radar.gui.worker_thread import create_search_worker, create_download_worker, normalize_source_progress
-from job_radar.gui.scoring_config import ScoringConfigWidget
 from job_radar.gui.update_banner import UpdateBanner, DownloadConfirmDialog
 from job_radar.gui.update_status_view_model import build_update_status_display
 from job_radar.gui.changelog_dialog import ChangelogDialog
@@ -1987,13 +1987,11 @@ class MainWindow(ctk.CTk):
         except Exception:
             profile = None
 
-        # Scoring configuration widget
-        self._scoring_config = ScoringConfigWidget(
+        self._scoring_config = add_scoring_config_panel(
             scroll_frame,
             profile=profile,
-            on_save_callback=self._on_scoring_saved
+            on_save=self._on_scoring_saved,
         )
-        self._scoring_config.pack(fill="x", padx=10, pady=(10, 20))
 
         # Separator before Danger Zone
         danger_separator = ctk.CTkFrame(scroll_frame, height=2, fg_color="gray70")
