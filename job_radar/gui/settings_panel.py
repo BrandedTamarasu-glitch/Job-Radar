@@ -41,6 +41,14 @@ class UpdatePanelWidgets:
     clear_skipped_button: ctk.CTkButton
 
 
+def refresh_source_diagnostics_textbox(textbox, text: str) -> None:
+    """Replace Settings source diagnostics text while preserving read-only state."""
+    textbox.configure(state="normal")
+    textbox.delete("1.0", "end")
+    textbox.insert("end", text)
+    textbox.configure(state="disabled")
+
+
 BACKEND_API_BY_FIELD_ID = {
     "jsearch": "jsearch",
     "usajobs": "usajobs",

@@ -119,6 +119,7 @@ from job_radar.gui.settings_panel import (
     add_settings_separator,
     add_storage_maintenance_panel,
     add_update_settings_panel,
+    refresh_source_diagnostics_textbox,
 )
 from job_radar.gui.maintenance_view_model import (
     app_data_bundle_validation_message,
@@ -1646,10 +1647,10 @@ class MainWindow(ctk.CTk):
         """Refresh source diagnostics text in Settings."""
         if not self._source_diagnostics_textbox:
             return
-        self._source_diagnostics_textbox.configure(state="normal")
-        self._source_diagnostics_textbox.delete("1.0", "end")
-        self._source_diagnostics_textbox.insert("end", self._source_diagnostics_text())
-        self._source_diagnostics_textbox.configure(state="disabled")
+        refresh_source_diagnostics_textbox(
+            self._source_diagnostics_textbox,
+            self._source_diagnostics_text(),
+        )
 
     def _start_real_search(self):
         """Start real search operation with full pipeline execution."""

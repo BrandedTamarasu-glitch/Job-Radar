@@ -36,6 +36,7 @@ from job_radar.gui.settings_panel import (
     add_settings_separator,
     add_storage_maintenance_panel,
     add_update_settings_panel,
+    refresh_source_diagnostics_textbox,
 )
 from job_radar.gui.tab_shell import MAIN_TAB_NAMES, build_main_tabview
 from job_radar.gui.welcome_panel import build_welcome_screen
@@ -393,6 +394,16 @@ def test_source_diagnostics_text_is_composed_outside_main_window():
 
     assert "load_source_diagnostics_text(get_source_health_history)" in helper_source
     assert "format_source_diagnostics_lines(history" in text_source
+
+
+def test_source_diagnostics_refresh_uses_settings_panel_helper():
+    helper_source = inspect.getsource(refresh_source_diagnostics_textbox)
+    window_source = inspect.getsource(MainWindow._refresh_source_diagnostics)
+
+    assert 'textbox.delete("1.0", "end")' in helper_source
+    assert 'textbox.insert("end", text)' in helper_source
+    assert 'textbox.configure(state="disabled")' in helper_source
+    assert "refresh_source_diagnostics_textbox" in window_source
 
 
 def test_feedback_diagnostics_can_be_copied_from_settings():

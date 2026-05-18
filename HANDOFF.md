@@ -6,14 +6,15 @@ Date: 2026-05-18
 
 - Repo path: `/home/corye/openai-cli/Job-Radar`
 - Branch: `main`
-- Git status after latest slice: clean, `main...origin/main [ahead 101]`
-- Last full validation: `1175 passed, 8 skipped`
-- Do not push unless explicitly asked. The 101 local commits after the last push are still local.
+- Git status after latest slice: clean, `main...origin/main [ahead 102]`
+- Last full validation: `1176 passed, 8 skipped`
+- Do not push unless explicitly asked. The 102 local commits after the last push are still local.
 
 ## Latest Local Commits
 
 ```text
-(current) refactor: remove legacy source warnings summary
+(current) refactor: centralize source diagnostics refresh
+0df14ca refactor: remove legacy source warnings summary
 bbe74e6 refactor: stop persisting legacy source warnings
 9dcb54d refactor: centralize source display names
 aa55c8a refactor: centralize source registry construction
@@ -248,6 +249,7 @@ Started reducing `job_radar/gui/main_window.py` by moving display formatting int
   - Settings update controls/status panel construction
   - Settings section separator construction
   - Settings storage maintenance and diagnostics panel construction
+  - Settings source diagnostics textbox refresh helper
   - Settings Jobicy public-source status and JSearch setup tip construction
   - Settings API credential section construction
   - Settings API credential widget registration
@@ -272,13 +274,13 @@ Current line counts:
  142 job_radar/source_registry.py
  440 job_radar/sources.py
  627 job_radar/gui/worker_thread.py
-2320 job_radar/gui/main_window.py
+2321 job_radar/gui/main_window.py
   14 job_radar/gui/demo_report_view_model.py
   44 job_radar/gui/dialogs.py
   70 job_radar/gui/welcome_panel.py
   11 job_radar/gui/window_shell.py
   17 job_radar/gui/tab_shell.py
- 581 job_radar/gui/settings_panel.py
+ 589 job_radar/gui/settings_panel.py
  507 job_radar/gui/search_panel.py
   82 job_radar/gui/profile_panel.py
   62 job_radar/gui/dashboard_panel.py
@@ -313,7 +315,7 @@ rtk .venv/bin/python -m pytest tests/
 Latest result:
 
 ```text
-1175 passed, 8 skipped
+1176 passed, 8 skipped
 ```
 
 ## Active Plan

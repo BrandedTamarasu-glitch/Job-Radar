@@ -114,8 +114,8 @@ Current progress:
 - MainWindow no longer wraps Applications due-date display text that already lives in `job_radar/gui/applications_view_model.py`.
 - MainWindow no longer wraps Profile field rendering that already lives in `job_radar/gui/profile_panel.py`.
 - MainWindow no longer carries the obsolete Settings update-status initializer that moved into `job_radar/gui/settings_panel.py`.
-- Settings update controls/status, section separators, API credential sections/widget registration/panel orchestration, scoring configuration, storage maintenance, diagnostics, Jobicy public-source status, JSearch setup tip, and danger-zone construction now live in `job_radar/gui/settings_panel.py`.
-- Latest validation: `1175 passed, 8 skipped`.
+- Settings update controls/status, section separators, API credential sections/widget registration/panel orchestration, scoring configuration, storage maintenance, diagnostics, source diagnostics textbox refresh, Jobicy public-source status, JSearch setup tip, and danger-zone construction now live in `job_radar/gui/settings_panel.py`.
+- Latest validation: `1176 passed, 8 skipped`.
 
 Validation:
 - Full `pytest tests/`
