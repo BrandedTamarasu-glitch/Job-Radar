@@ -81,6 +81,9 @@ from job_radar.gui.search_summary import (
     completion_message,
     error_message,
     search_context_lines,
+    source_fetching_message,
+    source_job_count_line,
+    source_progress_count_text,
     source_summary_lines,
     source_warning_message,
     zero_result_lines,
@@ -102,7 +105,7 @@ from job_radar.gui.source_diagnostics_view_model import (
     format_source_toggle_recommendations,
     build_source_diagnostics,
 )
-from job_radar.gui.worker_thread import create_search_worker, create_download_worker
+from job_radar.gui.worker_thread import create_search_worker, create_download_worker, normalize_source_progress
 from job_radar.gui.scoring_config import ScoringConfigWidget
 from job_radar.gui.update_banner import UpdateBanner, DownloadConfirmDialog
 from job_radar.gui.update_status_view_model import build_update_status_display
@@ -2174,9 +2177,10 @@ class MainWindow(ctk.CTk):
         total : int
             Total number of sources
         """
-        self._progress_label.configure(text=f"Fetching {source_name}...")
+        current, total = normalize_source_progress(current, total)
+        self._progress_label.configure(text=source_fetching_message(source_name))
         self._progress_bar.set(current / total)
-        self._progress_count.configure(text=f"Source {current} of {total}")
+        self._progress_count.configure(text=source_progress_count_text(current, total))
 
     def _on_source_complete(self, source_name: str, current: int, total: int, job_count: int):
         """Handle source complete message and display per-source job count.
@@ -2193,12 +2197,13 @@ class MainWindow(ctk.CTk):
             Number of jobs found from this source
         """
         # Update progress bar
+        current, total = normalize_source_progress(current, total)
         self._progress_bar.set(current / total)
-        self._progress_count.configure(text=f"Source {current} of {total}")
+        self._progress_count.configure(text=source_progress_count_text(current, total))
 
         # Add job count to display
         self._job_count_display.configure(state="normal")
-        self._job_count_display.insert("end", f"{source_name}: {job_count} jobs found\n")
+        self._job_count_display.insert("end", source_job_count_line(source_name, job_count))
         self._job_count_display.configure(state="disabled")
 
     def _update_progress(self, source: str, current: int, total: int):
@@ -2213,9 +2218,10 @@ class MainWindow(ctk.CTk):
         total : int
             Total number of sources
         """
-        self._progress_label.configure(text=f"Fetching {source}...")
+        current, total = normalize_source_progress(current, total)
+        self._progress_label.configure(text=source_fetching_message(source))
         self._progress_bar.set(current / total)
-        self._progress_count.configure(text=f"Source {current} of {total}")
+        self._progress_count.configure(text=source_progress_count_text(current, total))
 
     def _on_search_complete(self, job_count: int, report_path: str, summary: dict | None = None):
         """Handle search completion.

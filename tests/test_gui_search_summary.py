@@ -13,6 +13,9 @@ from job_radar.gui.search_summary import (
     completion_message,
     error_message,
     search_context_lines,
+    source_fetching_message,
+    source_job_count_line,
+    source_progress_count_text,
     source_summary_lines,
     source_warning_message,
     zero_result_lines,
@@ -170,6 +173,12 @@ def test_normalize_source_progress_clamps_display_bounds():
     assert normalize_source_progress(9, 3) == (3, 3)
     assert normalize_source_progress(-1, 0) == (0, 1)
     assert normalize_source_progress("bad", "bad") == (0, 1)
+
+
+def test_source_progress_display_text_is_consistent():
+    assert source_fetching_message("Dice") == "Fetching Dice..."
+    assert source_progress_count_text(2, 5) == "Source 2 of 5"
+    assert source_job_count_line("RemoteOK", 3) == "RemoteOK: 3 jobs found\n"
 
 
 def test_filter_by_company_applies_include_and_exclude_terms():

@@ -75,6 +75,21 @@ def cache_summary_line(summary: dict | None) -> str | None:
     return "Cache: " + ", ".join(parts)
 
 
+def source_fetching_message(source_name: str) -> str:
+    """Return GUI progress text for a source fetch."""
+    return f"Fetching {source_name}..."
+
+
+def source_progress_count_text(current: int, total: int) -> str:
+    """Return compact source progress counter text."""
+    return f"Source {current} of {total}"
+
+
+def source_job_count_line(source_name: str, job_count: int) -> str:
+    """Return one source job-count line for the live progress log."""
+    return f"{source_name}: {job_count} jobs found\n"
+
+
 def search_context_lines(
     summary: dict | None,
     search_config: dict | None = None,
