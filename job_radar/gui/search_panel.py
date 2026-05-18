@@ -10,7 +10,12 @@ import customtkinter as ctk
 
 from job_radar.profile_readiness import ProfileReadiness
 from job_radar.saved_searches import SearchPanelRow
-from job_radar.gui.search_summary import completion_color, completion_message, error_message
+from job_radar.gui.search_summary import (
+    cancellation_message,
+    completion_color,
+    completion_message,
+    error_message,
+)
 
 
 @dataclass(frozen=True)
@@ -349,6 +354,38 @@ def build_search_error_panel(
         height=40,
         width=200,
         command=on_back_to_search,
+        fg_color="transparent",
+        border_width=2,
+    ).pack()
+
+
+def build_search_cancelled_panel(parent, *, on_new_search: Callable[[], None]) -> None:
+    """Display search cancellation state with a reset action."""
+    content_frame = ctk.CTkFrame(parent, fg_color="transparent")
+    content_frame.grid(row=0, column=0)
+
+    ctk.CTkLabel(
+        content_frame,
+        text="Search cancelled",
+        font=ctk.CTkFont(size=16, weight="bold"),
+        text_color="orange",
+    ).pack(pady=(0, 12))
+
+    ctk.CTkLabel(
+        content_frame,
+        text=cancellation_message(),
+        font=ctk.CTkFont(size=12),
+        text_color="gray",
+        wraplength=420,
+        justify="center",
+    ).pack(pady=(0, 20))
+
+    ctk.CTkButton(
+        content_frame,
+        text="New Search",
+        height=40,
+        width=200,
+        command=on_new_search,
         fg_color="transparent",
         border_width=2,
     ).pack()

@@ -9,6 +9,7 @@ from job_radar.gui.search_panel import (
     add_recent_searches_panel,
     add_saved_searches_panel,
     add_search_readiness_guidance,
+    build_search_cancelled_panel,
     build_search_completion_panel,
     build_search_error_panel,
     build_search_progress_panel,
@@ -169,6 +170,15 @@ def test_search_error_panel_includes_retry_and_back_actions():
     assert "error_message(message)" in source
     assert "Try Again" in source
     assert "Back to Search" in source
+
+
+def test_search_cancelled_panel_includes_new_search_action():
+    source = inspect.getsource(build_search_cancelled_panel)
+
+    assert "Search cancelled" in source
+    assert "cancellation_message()" in source
+    assert "New Search" in source
+    assert "on_new_search" in source
 
 
 def test_search_run_metadata_records_review_counts():

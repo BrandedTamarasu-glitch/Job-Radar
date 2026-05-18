@@ -96,13 +96,13 @@ from job_radar.gui.search_panel import (
     add_recent_searches_panel,
     add_saved_searches_panel,
     add_search_readiness_guidance,
+    build_search_cancelled_panel,
     build_search_completion_panel,
     build_search_error_panel,
     build_search_progress_panel,
 )
 from job_radar.gui.search_summary import (
     bullet_block_text,
-    cancellation_message,
     cache_summary_line,
     review_queue_text,
     search_context_lines,
@@ -1980,37 +1980,10 @@ class MainWindow(ctk.CTk):
         for widget in self._search_content.winfo_children():
             widget.destroy()
 
-        content_frame = ctk.CTkFrame(self._search_content, fg_color="transparent")
-        content_frame.grid(row=0, column=0)
-
-        cancel_label = ctk.CTkLabel(
-            content_frame,
-            text="Search cancelled",
-            font=ctk.CTkFont(size=16, weight="bold"),
-            text_color="orange"
+        build_search_cancelled_panel(
+            self._search_content,
+            on_new_search=self._show_search_idle,
         )
-        cancel_label.pack(pady=(0, 12))
-
-        detail_label = ctk.CTkLabel(
-            content_frame,
-            text=cancellation_message(),
-            font=ctk.CTkFont(size=12),
-            text_color="gray",
-            wraplength=420,
-            justify="center"
-        )
-        detail_label.pack(pady=(0, 20))
-
-        new_search_btn = ctk.CTkButton(
-            content_frame,
-            text="New Search",
-            height=40,
-            width=200,
-            command=self._show_search_idle,
-            fg_color="transparent",
-            border_width=2
-        )
-        new_search_btn.pack()
 
     def _show_search_error(self, message: str):
         """Display a persistent search error state with retry controls."""

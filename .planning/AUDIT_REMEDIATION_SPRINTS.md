@@ -78,13 +78,13 @@ Current progress:
 - Settings maintenance cache/app-data/dismissed-review feedback now lives in `job_radar/gui/maintenance_view_model.py`.
 - Live source progress text now lives in `job_radar/gui/search_summary.py`, and GUI progress handlers normalize counters before updating progress bars.
 - Search completion label/block text now lives in `job_radar/gui/search_summary.py`.
-- Search idle profile-readiness guidance, recent/saved search panels, search progress, search completion, and search error panel construction now live in `job_radar/gui/search_panel.py`.
+- Search idle profile-readiness guidance, recent/saved search panels, search progress, search completion, search error, and cancellation panel construction now live in `job_radar/gui/search_panel.py`.
 - API credential test status formatting and HTTP response mapping now live in `job_radar/gui/api_status_view_model.py`.
 - Installer launch prompt/status/error messages now live in `job_radar/gui/install_status_view_model.py`.
 - Profile tab summary and readiness formatting now live in `job_radar/gui/profile_view_model.py`.
 - Profile tab label/value row construction now lives in `job_radar/gui/profile_panel.py`.
 - Profile dashboard next-step panel construction now lives in `job_radar/gui/dashboard_panel.py`.
-- Latest validation: `1088 passed, 8 skipped`.
+- Latest validation: `1089 passed, 8 skipped`.
 
 Validation:
 - Full `pytest tests/`
