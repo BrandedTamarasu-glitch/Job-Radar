@@ -145,6 +145,7 @@ from job_radar.gui.scoring_config import ScoringConfigWidget
 from job_radar.gui.update_banner import UpdateBanner, DownloadConfirmDialog
 from job_radar.gui.update_status_view_model import build_update_status_display
 from job_radar.gui.changelog_dialog import ChangelogDialog
+from job_radar.gui.welcome_panel import build_welcome_screen
 from job_radar.gui.installer_dialogs import InstallConfirmDialog, LinuxInstallInstructionsDialog
 from job_radar.gui.install_status_view_model import (
     install_launch_error_message,
@@ -306,66 +307,11 @@ class MainWindow(ctk.CTk):
                 continue
             widget.destroy()
 
-        # Content frame (centered using place - avoids grid overlay issues)
-        content_frame = ctk.CTkFrame(self, fg_color="transparent")
-        content_frame.place(in_=self, relx=0.5, rely=0.5, anchor="center")
-
-        # Title
-        title = ctk.CTkLabel(
-            content_frame,
-            text="Welcome to Job Radar",
-            font=ctk.CTkFont(size=20, weight="bold")
+        self._welcome_status_label = build_welcome_screen(
+            self,
+            on_get_started=self._on_get_started,
+            on_preview_demo=self._open_demo_report,
         )
-        title.pack(pady=(0, 20))
-
-        # Description paragraphs
-        desc1 = ctk.CTkLabel(
-            content_frame,
-            text="Job Radar searches multiple job boards, scores each listing against your profile, "
-                 "and generates a ranked report — so you focus on the best matches.",
-            wraplength=500,
-            justify="left"
-        )
-        desc1.pack(pady=(0, 15))
-
-        desc2 = ctk.CTkLabel(
-            content_frame,
-            text="Set up your profile to get started. You'll enter your skills, target titles, and preferences.",
-            wraplength=500,
-            justify="left"
-        )
-        desc2.pack(pady=(0, 30))
-
-        # Get Started button
-        get_started_btn = ctk.CTkButton(
-            content_frame,
-            text="Get Started",
-            height=40,
-            width=200,
-            command=self._on_get_started
-        )
-        get_started_btn.pack()
-
-        preview_btn = ctk.CTkButton(
-            content_frame,
-            text="Preview Demo Report",
-            height=36,
-            width=200,
-            command=self._open_demo_report,
-            fg_color="transparent",
-            border_width=2,
-        )
-        preview_btn.pack(pady=(12, 0))
-
-        self._welcome_status_label = ctk.CTkLabel(
-            content_frame,
-            text="",
-            font=ctk.CTkFont(size=12),
-            text_color="gray",
-            wraplength=500,
-            justify="center",
-        )
-        self._welcome_status_label.pack(pady=(14, 0))
 
     def _on_get_started(self):
         """Handle Get Started button click - show profile form in create mode."""

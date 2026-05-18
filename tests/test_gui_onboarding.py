@@ -24,13 +24,16 @@ from job_radar.gui.settings_panel import (
     add_storage_maintenance_panel,
     add_update_settings_panel,
 )
+from job_radar.gui.welcome_panel import build_welcome_screen
 
 
 def test_welcome_screen_exposes_demo_report_preview():
-    source = inspect.getsource(MainWindow._show_welcome_screen)
+    source = inspect.getsource(build_welcome_screen)
 
     assert "Preview Demo Report" in source
-    assert "command=self._open_demo_report" in source
+    assert "command=on_preview_demo" in source
+    assert "Get Started" in source
+    assert "on_get_started" in source
 
 
 def test_demo_report_feedback_supports_welcome_and_search_contexts():
