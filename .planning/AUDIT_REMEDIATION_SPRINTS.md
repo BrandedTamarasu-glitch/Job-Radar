@@ -1,6 +1,6 @@
 # Audit Remediation Sprints
 
-Last updated: 2026-05-16
+Last updated: 2026-05-18
 
 This plan converts the Review Squad top-to-bottom quality, security, UX, and rebase audit into executable sprints. The current release line is blocked until Sprint 0 is complete and validated.
 
@@ -91,6 +91,7 @@ Current progress:
 - Top-level content clearing while preserving the header now lives in `job_radar/gui/window_shell.py`.
 - Main tabview construction and canonical tab names now live in `job_radar/gui/tab_shell.py`.
 - MainWindow now uses one lazy tab-build helper for user and programmatic tab navigation.
+- MainWindow now uses a shared available-update queue handling helper.
 - MainWindow now uses shared manual update-check result helpers for update queue messages.
 - MainWindow now uses one update banner teardown helper for replacement, dismiss, skip, and download cancellation paths.
 - MainWindow now uses one download worker cleanup helper for terminal download queue messages.

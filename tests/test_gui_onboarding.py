@@ -457,10 +457,18 @@ def test_update_banner_teardown_uses_shared_helper():
 
 def test_update_queue_messages_reuse_manual_result_helpers():
     queue_source = inspect.getsource(MainWindow._check_queue)
+    update_source = inspect.getsource(MainWindow._handle_update_available)
     available_source = inspect.getsource(MainWindow._handle_manual_update_available)
     result_source = inspect.getsource(MainWindow._handle_manual_update_result)
 
-    assert "self._handle_manual_update_available(version)" in queue_source
+    assert "self._handle_update_available(version, release_url, tag_name)" in queue_source
+    assert "self._update_tag = tag_name" in update_source
+    assert "self._update_version = version" in update_source
+    assert "self._update_release_url = release_url" in update_source
+    assert "self._update_checker.should_show_banner(version)" in update_source
+    assert "self._show_update_banner(version, release_url)" in update_source
+    assert "self._refresh_update_status()" in update_source
+    assert "self._handle_manual_update_available(version)" in update_source
     assert 'self._handle_manual_update_result("Up to date!")' in queue_source
     assert 'self._handle_manual_update_result("Check failed")' in queue_source
     assert "self._update_checker.is_version_skipped(version)" in available_source

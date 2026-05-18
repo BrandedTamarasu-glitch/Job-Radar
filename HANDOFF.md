@@ -1,18 +1,19 @@
 # Job Radar Handoff
 
-Date: 2026-05-16
+Date: 2026-05-18
 
 ## Current State
 
 - Repo path: `/home/corye/openai-cli/Job-Radar`
 - Branch: `main`
-- Git status before latest slice: clean, `main...origin/main [ahead 57]`
+- Git status after latest slice: clean, `main...origin/main [ahead 59]`
 - Last full validation: `1117 passed, 8 skipped`
-- Do not push unless explicitly asked. The 57 local commits after the last push are still local.
+- Do not push unless explicitly asked. The 59 local commits after the last push are still local.
 
 ## Latest Local Commits
 
 ```text
+a63f519 refactor: centralize manual update results
 5903fed refactor: centralize download worker cleanup
 a748f7a refactor: centralize update banner teardown
 9f4e71a refactor: remove update status initializer
@@ -143,6 +144,7 @@ Started reducing `job_radar/gui/main_window.py` by moving display formatting int
   - Main tabview construction and canonical tab names
 - `job_radar/gui/main_window.py`
   - Shared lazy tab-build helper for user and programmatic tab navigation
+  - Shared available-update queue handling helper
   - Shared manual update-check result helpers
   - Shared update banner teardown helper
   - Shared download worker reference cleanup helper
@@ -166,7 +168,7 @@ Current line counts:
 
 ```text
 2149 job_radar/report.py
-2311 job_radar/gui/main_window.py
+2314 job_radar/gui/main_window.py
   14 job_radar/gui/demo_report_view_model.py
   44 job_radar/gui/dialogs.py
   70 job_radar/gui/welcome_panel.py

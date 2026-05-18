@@ -1081,17 +1081,7 @@ class MainWindow(ctk.CTk):
                     # Update checker messages
                     elif msg_type == "update_available":
                         _, version, release_url, tag_name = msg
-                        # Store tag and version info for later use
-                        self._update_tag = tag_name
-                        self._update_version = version
-                        self._update_release_url = release_url
-                        if self._update_checker.should_show_banner(version):
-                            self._show_update_banner(version, release_url)
-                        else:
-                            # Banner not shown but update available - refresh Settings if exists
-                            if self._update_status_label:
-                                self._refresh_update_status()
-                        self._handle_manual_update_available(version)
+                        self._handle_update_available(version, release_url, tag_name)
                     elif msg_type == "up_to_date":
                         self._handle_manual_update_result("Up to date!")
                     elif msg_type == "check_failed":
@@ -1359,6 +1349,19 @@ class MainWindow(ctk.CTk):
         """Clear completed download worker references."""
         self._download_worker = None
         self._download_thread = None
+
+    def _handle_update_available(self, version: str, release_url: str, tag_name: str):
+        """Store and surface available-update state from the update checker."""
+        self._update_tag = tag_name
+        self._update_version = version
+        self._update_release_url = release_url
+
+        if self._update_checker.should_show_banner(version):
+            self._show_update_banner(version, release_url)
+        elif self._update_status_label:
+            self._refresh_update_status()
+
+        self._handle_manual_update_available(version)
 
     def _on_install_now(self, dest_path: str):
         """Handle Install Now / Open Download button click from banner.
