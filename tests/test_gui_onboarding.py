@@ -22,6 +22,7 @@ from job_radar.gui.search_panel import (
     replace_success_message,
 )
 from job_radar.gui.search_summary import search_readiness_guidance_lines
+from job_radar.gui.maintenance_view_model import feedback_diagnostics_text, local_maintenance_text
 from job_radar.gui.settings_panel import (
     add_api_credentials_panel,
     add_api_key_section,
@@ -349,22 +350,29 @@ def test_search_complete_loads_profile_for_zero_result_guidance():
 
 def test_settings_tab_includes_local_maintenance_summary():
     source = inspect.getsource(MainWindow._build_settings_tab)
-    helper_source = inspect.getsource(add_storage_maintenance_panel)
+    helper_source = inspect.getsource(MainWindow._local_maintenance_text)
+    text_source = inspect.getsource(local_maintenance_text)
+    panel_source = inspect.getsource(add_storage_maintenance_panel)
 
     assert "_local_maintenance_text()" in source
-    assert "Storage Maintenance" in helper_source
-    assert "Clear Dismissed Reviews" in helper_source
+    assert "local_maintenance_text(get_data_dir(), get_results_dir())" in helper_source
+    assert "build_local_maintenance_summary" in text_source
+    assert "format_local_maintenance_lines" in text_source
+    assert "Storage Maintenance" in panel_source
+    assert "Clear Dismissed Reviews" in panel_source
 
 
 def test_settings_tab_includes_privacy_safe_feedback_diagnostics():
     source = inspect.getsource(MainWindow._build_settings_tab)
     panel_source = inspect.getsource(add_storage_maintenance_panel)
     helper_source = inspect.getsource(MainWindow._feedback_diagnostics_text)
+    text_source = inspect.getsource(feedback_diagnostics_text)
 
     assert "Feedback Diagnostics" in panel_source
     assert "_feedback_diagnostics_text()" in source
-    assert "build_feedback_diagnostics_summary" in helper_source
-    assert "format_feedback_diagnostics_lines" in helper_source
+    assert "feedback_diagnostics_text(get_data_dir(), get_results_dir())" in helper_source
+    assert "build_feedback_diagnostics_summary" in text_source
+    assert "format_feedback_diagnostics_lines" in text_source
 
 
 def test_feedback_diagnostics_can_be_copied_from_settings():

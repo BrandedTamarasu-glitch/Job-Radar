@@ -75,7 +75,7 @@ Current progress:
 - GUI display formatting cleanup has started by moving saved-search panel loading/rows/feedback, Applications pipeline rows, follow-up queue rows, filters, and Applications export/import/edit feedback into view-model helpers.
 - Applications tab construction now lives in a focused `job_radar/gui/applications_tab.py` helper while `MainWindow` retains behavior callbacks.
 - Settings update status formatting now lives in `job_radar/gui/update_status_view_model.py`.
-- Settings maintenance cache/app-data/dismissed-review feedback now lives in `job_radar/gui/maintenance_view_model.py`.
+- Settings maintenance cache/app-data/dismissed-review feedback and local diagnostics text composition now live in `job_radar/gui/maintenance_view_model.py`.
 - Live source progress text now lives in `job_radar/gui/search_summary.py`, and GUI progress handlers normalize counters before updating progress bars.
 - Search completion label/block text and Search-tab readiness guidance line composition now live in `job_radar/gui/search_summary.py`.
 - Search state content clearing, idle controls/action shell, profile-readiness guidance, success message replacement, recent/saved search panels, search progress, search completion, search error, and cancellation panel construction now live in `job_radar/gui/search_panel.py`.
@@ -93,7 +93,7 @@ Current progress:
 - MainWindow no longer wraps Applications due-date display text that already lives in `job_radar/gui/applications_view_model.py`.
 - MainWindow no longer wraps Profile field rendering that already lives in `job_radar/gui/profile_panel.py`.
 - Settings update controls/status, section separators, API credential sections/panel orchestration, scoring configuration, storage maintenance, diagnostics, Jobicy public-source status, JSearch setup tip, and danger-zone construction now live in `job_radar/gui/settings_panel.py`.
-- Latest validation: `1109 passed, 8 skipped`.
+- Latest validation: `1111 passed, 8 skipped`.
 
 Validation:
 - Full `pytest tests/`

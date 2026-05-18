@@ -11,9 +11,11 @@ from job_radar.gui.maintenance_view_model import (
     cache_clear_error_message,
     cache_clear_success_message,
     dismissed_review_cleanup_error_message,
+    feedback_diagnostics_text,
     dismissed_review_cleanup_success_message,
     format_feedback_diagnostics_lines,
     format_local_maintenance_lines,
+    local_maintenance_text,
 )
 
 
@@ -73,6 +75,19 @@ def test_local_maintenance_lines_include_suggestions_for_large_state(tmp_path):
     assert any("retained-run cap" in line for line in lines)
 
 
+def test_local_maintenance_text_joins_summary_lines(tmp_path):
+    data_dir = tmp_path / "data"
+    results_dir = data_dir / "results"
+    data_dir.mkdir()
+    results_dir.mkdir()
+
+    text = local_maintenance_text(data_dir, results_dir)
+
+    assert "Local data:" in text
+    assert "HTTP cache:" in text
+    assert "\n" in text
+
+
 def test_feedback_diagnostics_summary_is_privacy_safe(tmp_path):
     data_dir = tmp_path / "private-user" / "data"
     results_dir = data_dir / "results"
@@ -115,6 +130,19 @@ def test_feedback_diagnostics_summary_is_privacy_safe(tmp_path):
     assert "private-application-note" not in text
     assert "secret saved search" not in text
     assert "tokenish-cache-name" not in text
+
+
+def test_feedback_diagnostics_text_joins_redacted_lines(tmp_path):
+    data_dir = tmp_path / "private-user" / "data"
+    results_dir = data_dir / "results"
+    data_dir.mkdir(parents=True)
+    results_dir.mkdir()
+
+    text = feedback_diagnostics_text(data_dir, results_dir)
+
+    assert "Feedback diagnostics (redacted):" in text
+    assert "Privacy: do not include API keys" in text
+    assert "private-user" not in text
 
 
 def test_maintenance_status_messages_are_consistent_for_settings(tmp_path):

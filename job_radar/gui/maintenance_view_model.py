@@ -170,6 +170,18 @@ def format_feedback_diagnostics_lines(summary: FeedbackDiagnosticsSummary) -> li
     return lines
 
 
+def local_maintenance_text(data_dir: Path, results_dir: Path) -> str:
+    """Return Settings-ready local maintenance summary text."""
+    summary = build_local_maintenance_summary(data_dir, results_dir)
+    return "\n".join(format_local_maintenance_lines(summary))
+
+
+def feedback_diagnostics_text(data_dir: Path, results_dir: Path) -> str:
+    """Return privacy-safe feedback diagnostics text for Settings."""
+    summary = build_feedback_diagnostics_summary(data_dir, results_dir)
+    return "\n".join(format_feedback_diagnostics_lines(summary))
+
+
 def cache_clear_success_message(removed: int, cache_dir: Path) -> str:
     """Return Settings feedback after clearing cached responses."""
     return f"Removed {removed} cached response file(s) from {cache_dir}"

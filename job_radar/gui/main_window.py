@@ -130,14 +130,13 @@ from job_radar.gui.maintenance_view_model import (
     app_data_bundle_validation_message,
     app_data_export_error_message,
     app_data_export_success_message,
-    build_feedback_diagnostics_summary,
     build_local_maintenance_summary,
     cache_clear_error_message,
     cache_clear_success_message,
     dismissed_review_cleanup_error_message,
     dismissed_review_cleanup_success_message,
-    format_feedback_diagnostics_lines,
-    format_local_maintenance_lines,
+    feedback_diagnostics_text,
+    local_maintenance_text,
 )
 from job_radar.gui.source_diagnostics_view_model import (
     format_source_diagnostics_lines,
@@ -1642,13 +1641,11 @@ class MainWindow(ctk.CTk):
 
     def _local_maintenance_text(self) -> str:
         """Return current local maintenance summary text for Settings."""
-        summary = build_local_maintenance_summary(get_data_dir(), get_results_dir())
-        return "\n".join(format_local_maintenance_lines(summary))
+        return local_maintenance_text(get_data_dir(), get_results_dir())
 
     def _feedback_diagnostics_text(self) -> str:
         """Return privacy-safe feedback diagnostics text for Settings."""
-        summary = build_feedback_diagnostics_summary(get_data_dir(), get_results_dir())
-        return "\n".join(format_feedback_diagnostics_lines(summary))
+        return feedback_diagnostics_text(get_data_dir(), get_results_dir())
 
     def _on_copy_feedback_diagnostics(self):
         """Copy privacy-safe feedback diagnostics to the clipboard."""
