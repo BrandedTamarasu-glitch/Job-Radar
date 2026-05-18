@@ -5,6 +5,7 @@ from job_radar.source_parsing import (
     _clean_field,
     _parse_arrangement,
     _strip_html,
+    location_matches,
     parse_location_to_city_state,
     strip_html_and_normalize,
 )
@@ -34,3 +35,10 @@ def test_parse_arrangement_prefers_remote():
 
 def test_strip_html_removes_tags_without_entity_decoding():
     assert _strip_html("<p>Python &amp; React</p>") == "Python &amp; React"
+
+
+def test_location_matches_city_or_state_parts():
+    assert location_matches("San Francisco, CA", "CA")
+    assert location_matches("San Francisco, CA", "San Francisco")
+    assert not location_matches("Austin, TX", "California")
+    assert not location_matches("", "California")

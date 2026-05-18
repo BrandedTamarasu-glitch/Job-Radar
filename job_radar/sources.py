@@ -55,6 +55,7 @@ from .source_parsing import (
     _clean_field,
     _parse_arrangement,
     _strip_html,
+    location_matches,
     parse_location_to_city_state,
     strip_html_and_normalize,
 )
@@ -958,7 +959,7 @@ def fetch_hiringcafe(query: str, location: str = "", verbose: bool = False) -> l
                         if job.arrangement == "remote":
                             results.append(job)
                         # Local jobs: check if location matches target
-                        elif _location_matches(job.location, location):
+                        elif location_matches(job.location, location):
                             results.append(job)
                     else:
                         # No location filter: include all
@@ -974,26 +975,6 @@ def fetch_hiringcafe(query: str, location: str = "", verbose: bool = False) -> l
 
     log.info("[hiring.cafe] Found %d results for '%s'", len(results), query)
     return results
-
-
-def _location_matches(job_location: str, target_location: str) -> bool:
-    """Check if job location matches target (city, state, or abbreviation).
-
-    Args:
-        job_location: Job location string (e.g., "San Francisco, CA")
-        target_location: Target location string (e.g., "California" or "CA")
-
-    Returns:
-        True if locations match, False otherwise
-    """
-    if not job_location or not target_location:
-        return False
-
-    job_parts = job_location.lower().replace(",", " ").split()
-    target_parts = target_location.lower().replace(",", " ").split()
-
-    # Check if any target part appears in job location
-    return any(part in job_parts for part in target_parts if len(part) > 1)
 
 
 # ---------------------------------------------------------------------------

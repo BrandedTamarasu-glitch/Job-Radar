@@ -107,3 +107,14 @@ _SKIP_TOKENS = {"Easy Apply", "Apply Now", "\u2022", "•", ""}
 def _strip_html(text: str) -> str:
     """Remove HTML tags from text."""
     return re.sub(r'<[^>]+>', ' ', text).strip()
+
+
+def location_matches(job_location: str, target_location: str) -> bool:
+    """Check if job location matches target city, state, or abbreviation."""
+    if not job_location or not target_location:
+        return False
+
+    job_parts = job_location.lower().replace(",", " ").split()
+    target_parts = target_location.lower().replace(",", " ").split()
+
+    return any(part in job_parts for part in target_parts if len(part) > 1)

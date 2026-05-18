@@ -78,7 +78,7 @@ Current progress:
 - `job_radar/source_queries.py` now contains automated source query construction and HN Hiring skill-slug mapping while `job_radar/sources.py` preserves the existing `build_search_queries` import path.
 - `job_radar/source_config.py` now contains source fetch parallelism, slow-query threshold, and per-source cache TTL resolution while `job_radar/sources.py` preserves existing config helper imports.
 - `job_radar/source_models.py` now contains the shared `JobResult` data model while `job_radar/sources.py` preserves the existing import path.
-- `job_radar/source_parsing.py` now contains source text cleanup, location normalization, arrangement parsing, and Dice parsing constants while `job_radar/sources.py` preserves existing parsing helper imports.
+- `job_radar/source_parsing.py` now contains source text cleanup, location normalization, arrangement parsing, Dice parsing constants, and local source location matching while `job_radar/sources.py` preserves existing parsing helper imports.
 - `job_radar/source_mappers.py` now contains the Adzuna, Authentic Jobs, JSearch, USAJobs, SerpAPI, Jobicy, and hiring.cafe API response mappers plus hiring.cafe salary helpers while `job_radar/sources.py` preserves the existing mapper import paths.
 - `job_radar/source_api_fetchers.py` now contains the SerpAPI and Jobicy API fetchers while `job_radar/sources.py` preserves the existing fetcher import paths and registry wiring.
 - GUI display formatting cleanup has started by moving saved-search panel loading/rows/feedback, Applications pipeline rows, follow-up queue rows, filters, and Applications export/import/edit feedback into view-model helpers.
@@ -113,7 +113,7 @@ Current progress:
 - MainWindow no longer wraps Profile field rendering that already lives in `job_radar/gui/profile_panel.py`.
 - MainWindow no longer carries the obsolete Settings update-status initializer that moved into `job_radar/gui/settings_panel.py`.
 - Settings update controls/status, section separators, API credential sections/widget registration/panel orchestration, scoring configuration, storage maintenance, diagnostics, Jobicy public-source status, JSearch setup tip, and danger-zone construction now live in `job_radar/gui/settings_panel.py`.
-- Latest validation: `1172 passed, 8 skipped`.
+- Latest validation: `1173 passed, 8 skipped`.
 
 Validation:
 - Full `pytest tests/`
