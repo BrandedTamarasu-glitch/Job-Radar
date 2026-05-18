@@ -1116,18 +1116,15 @@ class MainWindow(ctk.CTk):
                         _, dest_path = msg
                         if self._update_banner:
                             self._update_banner.show_complete(dest_path)
-                        self._download_worker = None
-                        self._download_thread = None
+                        self._clear_download_worker()
                     elif msg_type == "download_failed":
                         _, error = msg
                         if self._update_banner:
                             self._update_banner.show_failure(error)
-                        self._download_worker = None
-                        self._download_thread = None
+                        self._clear_download_worker()
                     elif msg_type == "download_cancelled":
                         self._clear_update_banner()
-                        self._download_worker = None
-                        self._download_thread = None
+                        self._clear_download_worker()
                     elif msg_type == "asset_ready":
                         _, asset, version = msg
                         # Show confirmation dialog
@@ -1367,6 +1364,11 @@ class MainWindow(ctk.CTk):
         if self._update_banner:
             self._update_banner.destroy()
             self._update_banner = None
+
+    def _clear_download_worker(self):
+        """Clear completed download worker references."""
+        self._download_worker = None
+        self._download_thread = None
 
     def _on_install_now(self, dest_path: str):
         """Handle Install Now / Open Download button click from banner.

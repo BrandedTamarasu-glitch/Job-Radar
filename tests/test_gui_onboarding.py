@@ -455,6 +455,15 @@ def test_update_banner_teardown_uses_shared_helper():
     assert "self._clear_update_banner()" in inspect.getsource(MainWindow._on_download_cancel)
 
 
+def test_download_queue_cleanup_uses_shared_helper():
+    helper_source = inspect.getsource(MainWindow._clear_download_worker)
+    queue_source = inspect.getsource(MainWindow._check_queue)
+
+    assert "self._download_worker = None" in helper_source
+    assert "self._download_thread = None" in helper_source
+    assert queue_source.count("self._clear_download_worker()") == 3
+
+
 def test_settings_separator_helper_keeps_section_dividers_consistent():
     source = inspect.getsource(add_settings_separator)
     tab_source = inspect.getsource(MainWindow._build_settings_tab)

@@ -6,13 +6,14 @@ Date: 2026-05-16
 
 - Repo path: `/home/corye/openai-cli/Job-Radar`
 - Branch: `main`
-- Git status before latest slice: clean, `main...origin/main [ahead 55]`
-- Last full validation: `1115 passed, 8 skipped`
-- Do not push unless explicitly asked. The 55 local commits after the last push are still local.
+- Git status before latest slice: clean, `main...origin/main [ahead 56]`
+- Last full validation: `1116 passed, 8 skipped`
+- Do not push unless explicitly asked. The 56 local commits after the last push are still local.
 
 ## Latest Local Commits
 
 ```text
+a748f7a refactor: centralize update banner teardown
 9f4e71a refactor: remove update status initializer
 b4a2275 refactor: centralize api section registration
 1ee8106 refactor: centralize search progress updates
@@ -20,7 +21,6 @@ aa92d65 refactor: centralize source diagnostics text
 9aafa8f refactor: centralize maintenance text
 452e22a refactor: remove profile field wrapper
 42c92e0 refactor: extract profile content clearing
-4984bdf refactor: remove application due text wrapper
 ```
 
 ## Recently Pushed
@@ -144,6 +144,7 @@ Started reducing `job_radar/gui/main_window.py` by moving display formatting int
 - `job_radar/gui/main_window.py`
   - Shared lazy tab-build helper for user and programmatic tab navigation
   - Shared update banner teardown helper
+  - Shared download worker reference cleanup helper
   - Removed redundant Applications due-text wrapper in favor of the view-model helper
   - Removed obsolete Profile field wrapper after Profile row rendering moved to `profile_panel.py`
   - Removed obsolete Settings update-status initializer after update panel extraction
@@ -164,7 +165,7 @@ Current line counts:
 
 ```text
 2149 job_radar/report.py
-2307 job_radar/gui/main_window.py
+2309 job_radar/gui/main_window.py
   14 job_radar/gui/demo_report_view_model.py
   44 job_radar/gui/dialogs.py
   70 job_radar/gui/welcome_panel.py
@@ -204,7 +205,7 @@ rtk .venv/bin/python -m pytest tests/
 Latest result:
 
 ```text
-1115 passed, 8 skipped
+1116 passed, 8 skipped
 ```
 
 ## Active Plan
