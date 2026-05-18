@@ -192,6 +192,15 @@ def cache_clear_error_message(error: object) -> str:
     return f"Failed to clear cache: {error}"
 
 
+def clear_cache_status(*, clear_cache_func, cache_dir_func) -> str:
+    """Clear cached responses and return Settings status text."""
+    try:
+        removed = clear_cache_func()
+        return cache_clear_success_message(removed, cache_dir_func())
+    except OSError as e:
+        return cache_clear_error_message(e)
+
+
 def dismissed_review_cleanup_success_message(removed: int) -> str:
     """Return Settings feedback after clearing dismissed review items."""
     return f"Cleared {removed} dismissed review item(s)"

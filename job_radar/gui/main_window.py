@@ -126,8 +126,7 @@ from job_radar.gui.maintenance_view_model import (
     app_data_export_error_message,
     app_data_export_success_message,
     build_local_maintenance_summary,
-    cache_clear_error_message,
-    cache_clear_success_message,
+    clear_cache_status,
     clear_dismissed_reviews_status,
     feedback_diagnostics_text,
     local_maintenance_text,
@@ -1569,11 +1568,10 @@ class MainWindow(ctk.CTk):
         """Handle 'Clear HTTP Cache' button click in Settings tab."""
         from job_radar.cache import clear_cache, get_cache_dir
 
-        try:
-            removed = clear_cache()
-            message = cache_clear_success_message(removed, get_cache_dir())
-        except OSError as e:
-            message = cache_clear_error_message(e)
+        message = clear_cache_status(
+            clear_cache_func=clear_cache,
+            cache_dir_func=get_cache_dir,
+        )
 
         if self._cache_status_label:
             self._cache_status_label.configure(text=message)

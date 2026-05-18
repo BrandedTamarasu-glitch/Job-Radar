@@ -10,6 +10,7 @@ from job_radar.gui.maintenance_view_model import (
     build_local_maintenance_summary,
     cache_clear_error_message,
     cache_clear_success_message,
+    clear_cache_status,
     clear_dismissed_reviews_status,
     dismissed_review_cleanup_error_message,
     feedback_diagnostics_text,
@@ -181,6 +182,23 @@ def test_app_data_bundle_validation_message_handles_valid_and_invalid_results():
         files=[],
         errors=["missing manifest", "bad checksum"],
     ) == "Bundle validation failed: missing manifest; bad checksum"
+
+
+def test_clear_cache_status_returns_success_and_error(tmp_path):
+    cache_dir = tmp_path / "cache"
+
+    assert clear_cache_status(
+        clear_cache_func=lambda: 3,
+        cache_dir_func=lambda: cache_dir,
+    ) == f"Removed 3 cached response file(s) from {cache_dir}"
+
+    def fail_clear():
+        raise OSError("locked")
+
+    assert clear_cache_status(
+        clear_cache_func=fail_clear,
+        cache_dir_func=lambda: cache_dir,
+    ) == "Failed to clear cache: locked"
 
 
 def test_clear_dismissed_reviews_status_returns_success_and_error():
