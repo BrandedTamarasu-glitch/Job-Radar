@@ -6,19 +6,21 @@ Date: 2026-05-16
 
 - Repo path: `/home/corye/openai-cli/Job-Radar`
 - Branch: `main`
-- Git status before reboot: clean, `main...origin/main [ahead 6]`
-- Last full validation: `1059 passed, 8 skipped`
-- Do not push unless explicitly asked. The 6 local commits after the last push are still local.
+- Git status before latest slice: clean, `main...origin/main [ahead 40]`
+- Last full validation: `1100 passed, 8 skipped`
+- Do not push unless explicitly asked. The 40 local commits after the last push are still local.
 
 ## Latest Local Commits
 
 ```text
-45c1d50 refactor: centralize saved search status copy
-ba01044 refactor: centralize search history detail text
-e888f85 refactor: move application filter options to view model
-5368e5e refactor: move application row display to view model
-34954ac refactor: move follow-up queue display to view model
-c41e4d7 refactor: move follow-up due labels to view model
+fb8f391 refactor: extract settings scoring panel
+11dfc71 refactor: extract window shell clearing helper
+257a42f refactor: extract search idle shell
+de0ded2 refactor: extract profile summary panel
+afb16fa refactor: extract welcome screen panel
+4df1da4 refactor: extract settings api panel
+9bce3af refactor: extract settings danger zone
+c07c1ab refactor: extract settings update panel
 ```
 
 ## Recently Pushed
@@ -129,6 +131,8 @@ Started reducing `job_radar/gui/main_window.py` by moving display formatting int
   - First-run welcome screen construction
 - `job_radar/gui/window_shell.py`
   - Top-level content clearing while preserving the header
+- `job_radar/gui/tab_shell.py`
+  - Main tabview construction and canonical tab names
 - `job_radar/gui/settings_panel.py`
   - Settings update controls/status panel construction
   - Settings storage maintenance and diagnostics panel construction
@@ -142,10 +146,11 @@ Current line counts:
 
 ```text
 2149 job_radar/report.py
-2400 job_radar/gui/main_window.py
+2393 job_radar/gui/main_window.py
   44 job_radar/gui/dialogs.py
   70 job_radar/gui/welcome_panel.py
   11 job_radar/gui/window_shell.py
+  17 job_radar/gui/tab_shell.py
  551 job_radar/gui/settings_panel.py
  465 job_radar/gui/search_panel.py
   76 job_radar/gui/profile_panel.py
@@ -179,7 +184,7 @@ rtk .venv/bin/python -m pytest tests/
 Latest result:
 
 ```text
-1099 passed, 8 skipped
+1100 passed, 8 skipped
 ```
 
 ## Active Plan

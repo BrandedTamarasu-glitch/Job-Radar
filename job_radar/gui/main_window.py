@@ -147,6 +147,7 @@ from job_radar.gui.update_banner import UpdateBanner, DownloadConfirmDialog
 from job_radar.gui.update_status_view_model import build_update_status_display
 from job_radar.gui.changelog_dialog import ChangelogDialog
 from job_radar.gui.welcome_panel import build_welcome_screen
+from job_radar.gui.tab_shell import build_main_tabview
 from job_radar.gui.window_shell import clear_content_except_header
 from job_radar.gui.installer_dialogs import InstallConfirmDialog, LinuxInstallInstructionsDialog
 from job_radar.gui.install_status_view_model import (
@@ -397,15 +398,7 @@ class MainWindow(ctk.CTk):
         """Display tabbed interface for users with existing profiles."""
         clear_content_except_header(self)
 
-        # Create tabview (row 2 for content, row 1 reserved for banner)
-        self._tabview = ctk.CTkTabview(self, command=self._on_tab_change)
-        self._tabview.grid(row=2, column=0, sticky="nsew", padx=20, pady=(0, 20))
-
-        # Add tabs
-        self._tabview.add("Profile")
-        self._tabview.add("Search")
-        self._tabview.add("Applications")
-        self._tabview.add("Settings")
+        self._tabview = build_main_tabview(self, self._on_tab_change)
 
         # Track which tabs have been built (lazy loading)
         self._tabs_built = set()

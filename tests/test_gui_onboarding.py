@@ -27,6 +27,7 @@ from job_radar.gui.settings_panel import (
     add_storage_maintenance_panel,
     add_update_settings_panel,
 )
+from job_radar.gui.tab_shell import MAIN_TAB_NAMES, build_main_tabview
 from job_radar.gui.welcome_panel import build_welcome_screen
 from job_radar.gui.window_shell import clear_content_except_header
 
@@ -46,6 +47,16 @@ def test_window_shell_clear_preserves_header_row():
     assert 'widget.winfo_manager() == "grid"' in source
     assert 'widget.grid_info().get("row") == 0' in source
     assert "widget.destroy()" in source
+
+
+def test_main_tab_shell_registers_expected_tabs():
+    source = inspect.getsource(build_main_tabview)
+
+    assert MAIN_TAB_NAMES == ("Profile", "Search", "Applications", "Settings")
+    assert "ctk.CTkTabview(parent, command=on_tab_change)" in source
+    assert "row=2" in source
+    assert "for tab_name in MAIN_TAB_NAMES" in source
+    assert "tabview.add(tab_name)" in source
 
 
 def test_demo_report_feedback_supports_welcome_and_search_contexts():
