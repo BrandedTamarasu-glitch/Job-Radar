@@ -116,6 +116,7 @@ from job_radar.gui.search_summary import (
 )
 from job_radar.gui.settings_panel import (
     add_api_key_section,
+    add_danger_zone,
     add_jobicy_api_status,
     add_jsearch_setup_tip,
     add_storage_maintenance_panel,
@@ -2197,39 +2198,7 @@ class MainWindow(ctk.CTk):
         danger_separator = ctk.CTkFrame(scroll_frame, height=2, fg_color="gray70")
         danger_separator.pack(fill="x", pady=(20, 10), padx=10)
 
-        # Danger Zone section
-        danger_section = ctk.CTkFrame(scroll_frame, fg_color="transparent")
-        danger_section.pack(fill="x", pady=(10, 20), padx=10)
-
-        # Section title
-        danger_title = ctk.CTkLabel(
-            danger_section,
-            text="Danger Zone",
-            font=ctk.CTkFont(size=16, weight="bold"),
-            text_color="red"
-        )
-        danger_title.pack(anchor="w", pady=(0, 5))
-
-        # Description
-        danger_desc = ctk.CTkLabel(
-            danger_section,
-            text="Remove Job Radar and all associated data from your system",
-            font=ctk.CTkFont(size=12),
-            text_color="gray"
-        )
-        danger_desc.pack(anchor="w", pady=(0, 10))
-
-        # Uninstall button
-        uninstall_btn = ctk.CTkButton(
-            danger_section,
-            text="Uninstall Job Radar",
-            height=40,
-            width=200,
-            fg_color="red",
-            hover_color="darkred",
-            command=self._start_uninstall
-        )
-        uninstall_btn.pack(anchor="w", pady=(10, 0))
+        add_danger_zone(scroll_frame, on_uninstall=self._start_uninstall)
 
     def _add_api_section(self, parent, title, fields, signup_url):
         """Add an API configuration section with fields and test button.

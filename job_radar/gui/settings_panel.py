@@ -426,3 +426,33 @@ def add_jsearch_setup_tip(parent) -> None:
         text_color="#5DADE2",
         wraplength=600,
     ).pack(pady=10, padx=10)
+
+
+def add_danger_zone(parent, *, on_uninstall: Callable[[], None]) -> None:
+    """Add destructive settings actions."""
+    danger_section = ctk.CTkFrame(parent, fg_color="transparent")
+    danger_section.pack(fill="x", pady=(10, 20), padx=10)
+
+    ctk.CTkLabel(
+        danger_section,
+        text="Danger Zone",
+        font=ctk.CTkFont(size=16, weight="bold"),
+        text_color="red",
+    ).pack(anchor="w", pady=(0, 5))
+
+    ctk.CTkLabel(
+        danger_section,
+        text="Remove Job Radar and all associated data from your system",
+        font=ctk.CTkFont(size=12),
+        text_color="gray",
+    ).pack(anchor="w", pady=(0, 10))
+
+    ctk.CTkButton(
+        danger_section,
+        text="Uninstall Job Radar",
+        height=40,
+        width=200,
+        fg_color="red",
+        hover_color="darkred",
+        command=on_uninstall,
+    ).pack(anchor="w", pady=(10, 0))
