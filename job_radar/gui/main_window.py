@@ -1508,27 +1508,6 @@ class MainWindow(ctk.CTk):
         )
         self._update_status_label.configure(text=display.text, text_color=display.color)
 
-    def _refresh_update_status_initial(self, parent):
-        """Create and populate the initial update status label in Settings tab.
-
-        Parameters
-        ----------
-        parent
-            Parent widget (scroll_frame)
-        """
-        status_info = self._update_checker.get_update_status()
-        display = build_update_status_display(
-            current_version=__version__,
-            status_info=status_info,
-        )
-        self._update_status_label = ctk.CTkLabel(
-            parent,
-            text=display.text,
-            text_color=display.color,
-            font=ctk.CTkFont(size=12)
-        )
-        self._update_status_label.pack(pady=(0, 5), anchor="w", padx=10)
-
     def _on_manual_check_click(self):
         """Handle manual Check for Updates button click in Settings tab."""
         # Disable button and show "Checking..." state
