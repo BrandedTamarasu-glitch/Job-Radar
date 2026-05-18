@@ -391,8 +391,7 @@ def test_source_diagnostics_text_is_composed_outside_main_window():
     helper_source = inspect.getsource(MainWindow._source_diagnostics_text)
     text_source = inspect.getsource(source_diagnostics_text)
 
-    assert "get_source_health_history(limit=20)" in helper_source
-    assert "source_diagnostics_text(history)" in helper_source
+    assert "load_source_diagnostics_text(get_source_health_history)" in helper_source
     assert "format_source_diagnostics_lines(history" in text_source
 
 

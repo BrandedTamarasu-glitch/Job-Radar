@@ -11,6 +11,7 @@ from job_radar.gui.source_diagnostics_view_model import (
     format_source_diagnostics_lines,
     format_source_toggle_recommendations,
     load_pre_run_source_strategy_lines,
+    load_source_diagnostics_text,
     source_diagnostics_text,
 )
 
@@ -200,6 +201,24 @@ def test_format_source_diagnostics_lines_handles_empty_and_cache_totals():
         "Cache totals: 2 hits, 1 misses, 1 writes, 0 uncached requests",
         "Cache freshness: 67% served from cache, 1 live refreshes",
     ]
+
+
+def test_load_source_diagnostics_text_loads_recent_history():
+    history = [
+        {
+            "sources": [{"name": "RemoteOK", "job_count": 3, "duration_seconds": 1.0}],
+            "failed_sources": [],
+        }
+    ]
+
+    def load_history(limit):
+        assert limit == 20
+        return history
+
+    text = load_source_diagnostics_text(load_history)
+
+    assert "RemoteOK" in text
+    assert "Source controls:" in text
 
 
 def test_format_source_diagnostics_lines_includes_source_control_guidance():

@@ -76,7 +76,7 @@ Current progress:
 - Applications tab construction now lives in a focused `job_radar/gui/applications_tab.py` helper while `MainWindow` retains behavior callbacks.
 - Settings update status formatting now lives in `job_radar/gui/update_status_view_model.py`.
 - Settings maintenance cache/app-data/dismissed-review feedback and local diagnostics text composition now live in `job_radar/gui/maintenance_view_model.py`.
-- Settings source diagnostics text composition and Search-tab pre-run source strategy guidance loading now live in `job_radar/gui/source_diagnostics_view_model.py`.
+- Settings source diagnostics text composition/history loading and Search-tab pre-run source strategy guidance loading now live in `job_radar/gui/source_diagnostics_view_model.py`.
 - Live source progress text now lives in `job_radar/gui/search_summary.py`, and GUI progress handlers normalize counters before updating progress bars.
 - Search completion label/block text, completion content block composition, and Search-tab readiness guidance line composition now live in `job_radar/gui/search_summary.py`.
 - Search state content clearing, source-progress widget updates, idle controls/action shell, profile-readiness guidance, success message replacement, recent/saved search panels, search progress, search completion, search error, and cancellation panel construction now live in `job_radar/gui/search_panel.py`.
@@ -102,7 +102,7 @@ Current progress:
 - MainWindow no longer wraps Profile field rendering that already lives in `job_radar/gui/profile_panel.py`.
 - MainWindow no longer carries the obsolete Settings update-status initializer that moved into `job_radar/gui/settings_panel.py`.
 - Settings update controls/status, section separators, API credential sections/widget registration/panel orchestration, scoring configuration, storage maintenance, diagnostics, Jobicy public-source status, JSearch setup tip, and danger-zone construction now live in `job_radar/gui/settings_panel.py`.
-- Latest validation: `1121 passed, 8 skipped`.
+- Latest validation: `1122 passed, 8 skipped`.
 
 Validation:
 - Full `pytest tests/`

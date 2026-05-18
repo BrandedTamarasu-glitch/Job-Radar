@@ -208,6 +208,11 @@ def source_diagnostics_text(history: list[dict[str, Any]], *, limit: int = 5) ->
     return "\n".join(format_source_diagnostics_lines(history, limit=limit))
 
 
+def load_source_diagnostics_text(history_loader, *, history_limit: int = 20) -> str:
+    """Load source history and return Settings diagnostics text."""
+    return source_diagnostics_text(history_loader(limit=history_limit))
+
+
 def format_preset_strategy_lines(history: list[dict[str, Any]], limit: int = 3) -> list[str]:
     """Return preset strategy recommendations from recent source outcomes."""
     stats_by_preset: dict[str, dict[str, Any]] = {}
