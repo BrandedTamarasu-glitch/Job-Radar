@@ -480,10 +480,21 @@ def test_update_queue_messages_reuse_manual_result_helpers():
 def test_download_queue_cleanup_uses_shared_helper():
     helper_source = inspect.getsource(MainWindow._clear_download_worker)
     queue_source = inspect.getsource(MainWindow._check_queue)
+    complete_source = inspect.getsource(MainWindow._handle_download_complete)
+    failed_source = inspect.getsource(MainWindow._handle_download_failed)
+    cancelled_source = inspect.getsource(MainWindow._handle_download_cancelled)
 
     assert "self._download_worker = None" in helper_source
     assert "self._download_thread = None" in helper_source
-    assert queue_source.count("self._clear_download_worker()") == 3
+    assert "self._handle_download_complete(dest_path)" in queue_source
+    assert "self._handle_download_failed(error)" in queue_source
+    assert "self._handle_download_cancelled()" in queue_source
+    assert "self._update_banner.show_complete(dest_path)" in complete_source
+    assert "self._update_banner.show_failure(error)" in failed_source
+    assert "self._clear_update_banner()" in cancelled_source
+    assert complete_source.count("self._clear_download_worker()") == 1
+    assert failed_source.count("self._clear_download_worker()") == 1
+    assert cancelled_source.count("self._clear_download_worker()") == 1
 
 
 def test_settings_separator_helper_keeps_section_dividers_consistent():

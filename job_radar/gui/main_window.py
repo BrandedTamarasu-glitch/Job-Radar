@@ -1094,17 +1094,12 @@ class MainWindow(ctk.CTk):
                             self._update_banner.update_progress(downloaded, total)
                     elif msg_type == "download_complete":
                         _, dest_path = msg
-                        if self._update_banner:
-                            self._update_banner.show_complete(dest_path)
-                        self._clear_download_worker()
+                        self._handle_download_complete(dest_path)
                     elif msg_type == "download_failed":
                         _, error = msg
-                        if self._update_banner:
-                            self._update_banner.show_failure(error)
-                        self._clear_download_worker()
+                        self._handle_download_failed(error)
                     elif msg_type == "download_cancelled":
-                        self._clear_update_banner()
-                        self._clear_download_worker()
+                        self._handle_download_cancelled()
                     elif msg_type == "asset_ready":
                         _, asset, version = msg
                         # Show confirmation dialog
@@ -1349,6 +1344,23 @@ class MainWindow(ctk.CTk):
         """Clear completed download worker references."""
         self._download_worker = None
         self._download_thread = None
+
+    def _handle_download_complete(self, dest_path: str):
+        """Show completed download state and clear worker references."""
+        if self._update_banner:
+            self._update_banner.show_complete(dest_path)
+        self._clear_download_worker()
+
+    def _handle_download_failed(self, error: str):
+        """Show failed download state and clear worker references."""
+        if self._update_banner:
+            self._update_banner.show_failure(error)
+        self._clear_download_worker()
+
+    def _handle_download_cancelled(self):
+        """Clear update UI and worker references after cancellation."""
+        self._clear_update_banner()
+        self._clear_download_worker()
 
     def _handle_update_available(self, version: str, release_url: str, tag_name: str):
         """Store and surface available-update state from the update checker."""
