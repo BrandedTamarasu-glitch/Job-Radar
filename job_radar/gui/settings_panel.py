@@ -316,6 +316,30 @@ def add_api_key_section(
     )
 
 
+def add_registered_api_key_section(
+    parent,
+    title,
+    fields,
+    signup_url,
+    *,
+    api_fields: dict,
+    status_labels: dict,
+    quota_labels: dict,
+    on_test: Callable[[list[tuple[str, str, str]]], None],
+) -> None:
+    """Add an API key section and merge its widget references into caller registries."""
+    widgets = add_api_key_section(
+        parent,
+        title,
+        fields,
+        signup_url,
+        on_test=on_test,
+    )
+    api_fields.update(widgets.api_fields)
+    status_labels.update(widgets.status_labels)
+    quota_labels.update(widgets.quota_labels)
+
+
 def _is_secret_field(env_var: str) -> bool:
     return "KEY" in env_var or "PASSWORD" in env_var
 

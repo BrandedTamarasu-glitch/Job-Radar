@@ -118,7 +118,7 @@ from job_radar.gui.search_summary import (
 )
 from job_radar.gui.settings_panel import (
     add_api_credentials_panel,
-    add_api_key_section,
+    add_registered_api_key_section,
     add_danger_zone,
     add_scoring_config_panel,
     add_settings_separator,
@@ -1946,29 +1946,17 @@ class MainWindow(ctk.CTk):
         add_danger_zone(scroll_frame, on_uninstall=self._start_uninstall)
 
     def _add_api_section(self, parent, title, fields, signup_url):
-        """Add an API configuration section with fields and test button.
-
-        Parameters
-        ----------
-        parent
-            Parent widget
-        title : str
-            Section title
-        fields : list of tuple
-            List of (env_var_name, label, field_id) tuples
-        signup_url : str
-            Signup URL for the API
-        """
-        widgets = add_api_key_section(
+        """Add an API configuration section and register its widget references."""
+        add_registered_api_key_section(
             parent,
             title,
             fields,
             signup_url,
+            api_fields=self._api_fields,
+            status_labels=self._api_status_labels,
+            quota_labels=self._quota_labels,
             on_test=self._test_api_keys,
         )
-        self._api_fields.update(widgets.api_fields)
-        self._api_status_labels.update(widgets.status_labels)
-        self._quota_labels.update(widgets.quota_labels)
 
     def _test_api_keys(self, fields):
         """Test API keys by making validation requests.

@@ -28,6 +28,7 @@ from job_radar.gui.source_diagnostics_view_model import source_diagnostics_text
 from job_radar.gui.settings_panel import (
     add_api_credentials_panel,
     add_api_key_section,
+    add_registered_api_key_section,
     add_danger_zone,
     add_jobicy_api_status,
     add_jsearch_setup_tip,
@@ -409,11 +410,18 @@ def test_settings_api_helpers_include_public_source_and_setup_tip():
 
 def test_settings_api_section_helper_builds_fields_and_test_controls():
     source = inspect.getsource(add_api_key_section)
+    registered_source = inspect.getsource(add_registered_api_key_section)
+    window_source = inspect.getsource(MainWindow._add_api_section)
 
     assert "Test API Key" in source
     assert "on_test(fields)" in source
     assert "api_fields[field_id]" in source
     assert "quota_labels[backend_api]" in source
+    assert "add_api_key_section(" in registered_source
+    assert "api_fields.update(widgets.api_fields)" in registered_source
+    assert "status_labels.update(widgets.status_labels)" in registered_source
+    assert "quota_labels.update(widgets.quota_labels)" in registered_source
+    assert "add_registered_api_key_section(" in window_source
 
 
 def test_settings_api_credentials_panel_lists_sources_and_save_action():

@@ -6,13 +6,14 @@ Date: 2026-05-16
 
 - Repo path: `/home/corye/openai-cli/Job-Radar`
 - Branch: `main`
-- Git status before latest slice: clean, `main...origin/main [ahead 52]`
+- Git status before latest slice: clean, `main...origin/main [ahead 53]`
 - Last full validation: `1114 passed, 8 skipped`
-- Do not push unless explicitly asked. The 52 local commits after the last push are still local.
+- Do not push unless explicitly asked. The 53 local commits after the last push are still local.
 
 ## Latest Local Commits
 
 ```text
+1ee8106 refactor: centralize search progress updates
 aa92d65 refactor: centralize source diagnostics text
 9aafa8f refactor: centralize maintenance text
 452e22a refactor: remove profile field wrapper
@@ -20,7 +21,6 @@ aa92d65 refactor: centralize source diagnostics text
 4984bdf refactor: remove application due text wrapper
 0442575 refactor: centralize demo report feedback
 5a2a8b8 refactor: extract search content clearing
-3e70a0c refactor: centralize search readiness guidance
 ```
 
 ## Recently Pushed
@@ -153,6 +153,7 @@ Started reducing `job_radar/gui/main_window.py` by moving display formatting int
   - Settings storage maintenance and diagnostics panel construction
   - Settings Jobicy public-source status and JSearch setup tip construction
   - Settings API credential section construction
+  - Settings API credential widget registration
   - Settings API credential panel orchestration
   - Settings scoring configuration panel construction
   - Settings danger-zone construction
@@ -161,13 +162,13 @@ Current line counts:
 
 ```text
 2149 job_radar/report.py
-2346 job_radar/gui/main_window.py
+2334 job_radar/gui/main_window.py
   14 job_radar/gui/demo_report_view_model.py
   44 job_radar/gui/dialogs.py
   70 job_radar/gui/welcome_panel.py
   11 job_radar/gui/window_shell.py
   17 job_radar/gui/tab_shell.py
- 557 job_radar/gui/settings_panel.py
+ 581 job_radar/gui/settings_panel.py
  507 job_radar/gui/search_panel.py
   82 job_radar/gui/profile_panel.py
   62 job_radar/gui/dashboard_panel.py
