@@ -1,5 +1,6 @@
 import inspect
 
+from job_radar.gui.applications_tab import _add_application_next_action_queue, build_applications_tab_content
 from job_radar.gui.main_window import MainWindow
 from job_radar.gui.profile_form import PROFILE_FIELD_HINTS, ProfileForm
 
@@ -70,22 +71,21 @@ def test_show_tab_builds_lazy_tabs_before_navigation():
 
 
 def test_applications_tab_includes_next_action_queue():
-    source = inspect.getsource(MainWindow._build_applications_tab)
+    source = inspect.getsource(build_applications_tab_content)
 
     assert "get_application_next_actions" in source
     assert "filter_application_next_actions" in source
-    assert "_set_application_followup_filter" in source
     assert "_add_application_next_action_queue" in source
     assert "limit=5" in source
 
 
 def test_application_next_action_queue_includes_complete_action():
-    source = inspect.getsource(MainWindow._add_application_next_action_queue)
+    source = inspect.getsource(_add_application_next_action_queue)
 
     assert "Complete" in source
-    assert "_complete_application_next_action" in source
+    assert "callbacks.complete_next_action" in source
     assert "Snooze 3d" in source
-    assert "_snooze_application_next_action" in source
+    assert "callbacks.snooze_next_action" in source
 
 
 def test_complete_application_next_action_clears_followup_details():
@@ -108,13 +108,13 @@ def test_snooze_application_next_action_moves_due_date_forward():
 
 
 def test_applications_tab_includes_direct_edit_controls():
-    source = inspect.getsource(MainWindow._build_applications_tab)
+    source = inspect.getsource(build_applications_tab_content)
 
     assert "Export Calendar" in source
-    assert "_export_application_followups_ics" in source
-    assert "_prompt_application_next_action" in source
-    assert "_prompt_application_due_date" in source
-    assert "_prompt_application_notes" in source
+    assert "callbacks.export_calendar" in source
+    assert "callbacks.prompt_next_action" in source
+    assert "callbacks.prompt_due_date" in source
+    assert "callbacks.prompt_notes" in source
     assert "Edit Notes" in source
 
 

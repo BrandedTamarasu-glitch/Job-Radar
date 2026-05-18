@@ -25,7 +25,6 @@ from job_radar.api_config import (
     save_api_credentials,
 )
 from job_radar.application_templates import (
-    get_application_note_templates,
     render_application_note_template,
 )
 from job_radar.applications_export import (
@@ -59,24 +58,19 @@ from job_radar.gui.applications_view_model import (
     application_calendar_export_error_message,
     application_calendar_export_success_message,
     application_detail_update_error_message,
-    application_followup_filter_options,
     application_followup_snooze_error_message,
     application_followup_update_error_message,
-    application_next_action_row,
-    application_pipeline_display_row,
     application_status_from_label,
     application_status_import_error_message,
     application_status_import_success_message,
-    application_status_menu_labels,
     application_status_update_error_message,
     application_template_insert_error_message,
     applications_csv_export_error_message,
     applications_csv_export_success_message,
-    build_applications_view_model,
-    filter_application_next_actions,
     format_next_action_due_text,
     normalize_application_detail_input,
 )
+from job_radar.gui.applications_tab import ApplicationsTabCallbacks, build_applications_tab_content
 from job_radar.gui.dashboard_view_model import build_dashboard_actions
 from job_radar.gui.profile_form import ProfileForm
 from job_radar.gui.review_state_view_model import format_review_state_summary
@@ -739,251 +733,37 @@ class MainWindow(ctk.CTk):
 
     def _build_applications_tab(self, parent):
         """Build Applications tab with grouped pipeline statuses."""
-        for widget in parent.winfo_children():
-            widget.destroy()
-
-        scroll_frame = ctk.CTkScrollableFrame(parent)
-        scroll_frame.pack(fill="both", expand=True, padx=10, pady=10)
-        scroll_frame.grid_columnconfigure(0, weight=1)
-
-        header_frame = ctk.CTkFrame(scroll_frame, fg_color="transparent")
-        header_frame.grid(row=0, column=0, sticky="ew", pady=(0, 12))
-        header_frame.grid_columnconfigure(0, weight=1)
-
-        ctk.CTkLabel(
-            header_frame,
-            text="Applications",
-            font=ctk.CTkFont(size=18, weight="bold"),
-        ).grid(row=0, column=0, sticky="w")
-
-        actions_frame = ctk.CTkFrame(header_frame, fg_color="transparent")
-        actions_frame.grid(row=0, column=1, sticky="e")
-
-        ctk.CTkButton(
-            actions_frame,
-            text="Export CSV",
-            width=120,
-            command=self._export_applications_csv,
-        ).pack(side="left", padx=(0, 8))
-
-        ctk.CTkButton(
-            actions_frame,
-            text="Import Status JSON",
-            width=150,
-            command=lambda: self._import_report_status_updates(parent),
-        ).pack(side="left", padx=(0, 8))
-
-        ctk.CTkButton(
-            actions_frame,
-            text="Export Calendar",
-            width=140,
-            command=self._export_application_followups_ics,
-        ).pack(side="left", padx=(0, 8))
-
-        ctk.CTkButton(
-            actions_frame,
-            text="Refresh",
-            width=100,
-            command=lambda: self._build_applications_tab(parent),
-        ).pack(side="left")
-
-        filter_frame = ctk.CTkFrame(scroll_frame, fg_color="transparent")
-        filter_frame.grid(row=1, column=0, sticky="w", pady=(0, 8))
-
-        ctk.CTkLabel(
-            filter_frame,
-            text="Follow-ups:",
-            font=ctk.CTkFont(size=12, weight="bold"),
-        ).pack(side="left", padx=(0, 8))
-
-        for filter_key, label in application_followup_filter_options():
-            ctk.CTkButton(
-                filter_frame,
-                text=label,
-                width=84,
-                height=28,
-                fg_color=None if self._application_followup_filter == filter_key else "transparent",
-                border_width=0 if self._application_followup_filter == filter_key else 2,
-                command=lambda key=filter_key: self._set_application_followup_filter(parent, key),
-            ).pack(side="left", padx=(0, 6))
-
-        self._applications_export_status_label = ctk.CTkLabel(
-            scroll_frame,
-            text="",
-            font=ctk.CTkFont(size=12),
-            text_color="gray",
+        self._applications_export_status_label = build_applications_tab_content(
+            parent,
+            followup_filter=self._application_followup_filter,
+            callbacks=ApplicationsTabCallbacks(
+                export_csv=self._export_applications_csv,
+                import_status_updates=lambda: self._import_report_status_updates(parent),
+                export_calendar=self._export_application_followups_ics,
+                refresh=lambda: self._build_applications_tab(parent),
+                set_followup_filter=lambda key: self._set_application_followup_filter(parent, key),
+                update_status=lambda row, selected: self._update_application_status_from_menu(
+                    parent,
+                    row,
+                    selected,
+                ),
+                prompt_next_action=lambda row: self._prompt_application_next_action(parent, row),
+                prompt_due_date=lambda row: self._prompt_application_due_date(parent, row),
+                prompt_notes=lambda row: self._prompt_application_notes(parent, row),
+                insert_note_template=lambda row, key: self._insert_application_note_template(
+                    parent,
+                    row,
+                    key,
+                ),
+                complete_next_action=lambda action: self._complete_application_next_action(parent, action),
+                snooze_next_action=lambda action: self._snooze_application_next_action(parent, action),
+            ),
         )
-        self._applications_export_status_label.grid(row=2, column=0, sticky="w", pady=(0, 8))
-
-        applications = get_all_application_statuses()
-        next_actions = get_application_next_actions(
-            applications=applications,
-            limit=5,
-        )
-        filtered_next_actions = filter_application_next_actions(
-            next_actions,
-            self._application_followup_filter,
-        )
-        groups = build_applications_view_model(applications)
-        total_rows = sum(group.count for group in groups)
-
-        if total_rows == 0:
-            ctk.CTkLabel(
-                scroll_frame,
-                text="No application pipeline entries yet.",
-                font=ctk.CTkFont(size=14),
-                text_color="gray",
-            ).grid(row=3, column=0, sticky="w", pady=20)
-            return
-
-        row_index = 3
-        if filtered_next_actions:
-            self._add_application_next_action_queue(scroll_frame, row_index, filtered_next_actions)
-            row_index += 1
-
-        for group in groups:
-            group_frame = ctk.CTkFrame(scroll_frame)
-            group_frame.grid(row=row_index, column=0, sticky="ew", pady=(0, 10))
-            group_frame.grid_columnconfigure(0, weight=1)
-            row_index += 1
-
-            ctk.CTkLabel(
-                group_frame,
-                text=f"{group.label} ({group.count})",
-                font=ctk.CTkFont(size=14, weight="bold"),
-            ).grid(row=0, column=0, sticky="w", padx=10, pady=(8, 4))
-
-            if group.count == 0:
-                ctk.CTkLabel(
-                    group_frame,
-                    text="No jobs in this status.",
-                    text_color="gray",
-                ).grid(row=1, column=0, sticky="w", padx=10, pady=(0, 8))
-                continue
-
-            templates = get_application_note_templates()
-            for item_index, item in enumerate(group.rows, start=1):
-                display_row = application_pipeline_display_row(item)
-
-                ctk.CTkLabel(
-                    group_frame,
-                    text=display_row.heading,
-                    font=ctk.CTkFont(size=13, weight="bold"),
-                    anchor="w",
-                ).grid(row=item_index * 3 - 2, column=0, sticky="ew", padx=16, pady=(4, 0))
-
-                ctk.CTkLabel(
-                    group_frame,
-                    text=display_row.detail_text,
-                    text_color="gray",
-                    wraplength=760,
-                    anchor="w",
-                    justify="left",
-                ).grid(row=item_index * 3 - 1, column=0, sticky="ew", padx=16, pady=(0, 4))
-
-                edit_frame = ctk.CTkFrame(group_frame, fg_color="transparent")
-                edit_frame.grid(row=item_index * 3, column=0, sticky="w", padx=16, pady=(0, 8))
-                status_menu = ctk.CTkOptionMenu(
-                    edit_frame,
-                    values=application_status_menu_labels(item.status),
-                    width=150,
-                    command=lambda selected, row=item: self._update_application_status_from_menu(
-                        parent,
-                        row,
-                        selected,
-                    ),
-                )
-                status_menu.set(item.status_label)
-                status_menu.pack(side="left", padx=(0, 10))
-                ctk.CTkButton(
-                    edit_frame,
-                    text="Set Next",
-                    width=100,
-                    height=28,
-                    command=lambda row=item: self._prompt_application_next_action(parent, row),
-                ).pack(side="left", padx=(0, 6))
-                ctk.CTkButton(
-                    edit_frame,
-                    text="Set Due",
-                    width=90,
-                    height=28,
-                    command=lambda row=item: self._prompt_application_due_date(parent, row),
-                ).pack(side="left", padx=(0, 10))
-                ctk.CTkButton(
-                    edit_frame,
-                    text="Edit Notes",
-                    width=110,
-                    height=28,
-                    command=lambda row=item: self._prompt_application_notes(parent, row),
-                ).pack(side="left", padx=(0, 10))
-                for template in templates:
-                    ctk.CTkButton(
-                        edit_frame,
-                        text=f"Add {template.label}",
-                        width=140,
-                        height=28,
-                        command=lambda row=item, key=template.key: self._insert_application_note_template(
-                            parent,
-                            row,
-                            key,
-                        ),
-                    ).pack(side="left", padx=(0, 6))
 
     def _set_application_followup_filter(self, parent, followup_filter: str):
         """Set the Applications follow-up filter and rebuild the tab."""
         self._application_followup_filter = followup_filter
         self._build_applications_tab(parent)
-
-    def _add_application_next_action_queue(self, parent, row_index: int, next_actions: list[dict]):
-        """Add a compact follow-up queue to the Applications tab."""
-        queue_frame = ctk.CTkFrame(parent)
-        queue_frame.grid(row=row_index, column=0, sticky="ew", pady=(0, 12))
-        queue_frame.grid_columnconfigure(0, weight=1)
-
-        ctk.CTkLabel(
-            queue_frame,
-            text="Next Actions",
-            font=ctk.CTkFont(size=14, weight="bold"),
-        ).grid(row=0, column=0, sticky="w", padx=10, pady=(8, 4))
-
-        for index, action in enumerate(next_actions, start=1):
-            row = application_next_action_row(action)
-
-            action_frame = ctk.CTkFrame(queue_frame, fg_color="transparent")
-            action_frame.grid(row=index * 2 - 1, column=0, sticky="ew", padx=16, pady=(4, 0))
-            action_frame.grid_columnconfigure(0, weight=1)
-
-            ctk.CTkLabel(
-                action_frame,
-                text=f"{index}. {action['next_action']} — {row.title} at {row.company}",
-                font=ctk.CTkFont(size=13, weight="bold"),
-                anchor="w",
-            ).grid(row=0, column=0, sticky="ew")
-
-            ctk.CTkButton(
-                action_frame,
-                text="Complete",
-                width=96,
-                height=28,
-                command=lambda queued=action: self._complete_application_next_action(parent, queued),
-            ).grid(row=0, column=1, sticky="e", padx=(12, 0))
-
-            ctk.CTkButton(
-                action_frame,
-                text="Snooze 3d",
-                width=96,
-                height=28,
-                command=lambda queued=action: self._snooze_application_next_action(parent, queued),
-            ).grid(row=0, column=2, sticky="e", padx=(6, 0))
-
-            ctk.CTkLabel(
-                queue_frame,
-                text=f"{row.due_text} | {row.status_label}",
-                text_color="gray",
-                wraplength=760,
-                anchor="w",
-                justify="left",
-            ).grid(row=index * 2, column=0, sticky="ew", padx=16, pady=(0, 6))
 
     def _format_next_action_due_text(self, action: dict) -> str:
         """Return a compact due-date label for an application next action."""

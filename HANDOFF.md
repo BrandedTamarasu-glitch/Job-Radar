@@ -85,12 +85,16 @@ Started reducing `job_radar/gui/main_window.py` by moving display formatting int
   - report status import feedback
   - follow-up calendar export feedback
   - Applications edit/follow-up failure feedback
+- `job_radar/gui/applications_tab.py`
+  - Applications tab construction
+  - Applications follow-up queue construction
 
 Current line counts:
 
 ```text
 2149 job_radar/report.py
-3629 job_radar/gui/main_window.py
+3409 job_radar/gui/main_window.py
+ 287 job_radar/gui/applications_tab.py
  297 job_radar/gui/applications_view_model.py
  462 job_radar/saved_searches.py
 ```
@@ -146,8 +150,8 @@ Still planned in Sprint 4:
 
 Continue with small, low-risk `MainWindow` extractions before attempting larger tab splitting:
 
-1. Extract Applications tab building into a focused helper only after view-model formatting is stable.
-2. Move more search-panel state loading and empty-state text out of `MainWindow` if it stays low-risk.
+1. Move more search-panel state loading and empty-state text out of `MainWindow` if it stays low-risk.
+2. Continue extracting tab construction only where callbacks stay simple and tests remain behavior-oriented.
 3. After a few more GUI slices, commit the GUI architecture cleanup docs and code.
 
 Suggested validation for the next GUI slice:
