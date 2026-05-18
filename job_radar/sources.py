@@ -31,6 +31,7 @@ from .source_config import (
     source_cache_ttl,
 )
 from .source_execution import SourceExecutionState
+from .source_api_fetchers import fetch_jobicy, fetch_serpapi
 from .source_mappers import (
     _format_hiringcafe_salary,
     _normalize_salary_to_annual,
@@ -993,129 +994,6 @@ def _location_matches(job_location: str, target_location: str) -> bool:
 
     # Check if any target part appears in job location
     return any(part in job_parts for part in target_parts if len(part) > 1)
-
-
-def fetch_serpapi(query: str, location: str = "", verbose: bool = False) -> list[JobResult]:
-    """Fetch job listings from SerpAPI Google Jobs API."""
-    results = []
-
-    # Check credentials
-    api_key = get_api_key("SERPAPI_API_KEY", "SerpAPI")
-    if not api_key:
-        return results
-
-    # Check rate limit
-    if not check_rate_limit("serpapi", verbose=verbose):
-        return results
-
-    # Build API URL
-    params = {
-        "engine": "google_jobs",
-        "q": query,
-        "api_key": api_key,
-    }
-    if location:
-        params["location"] = location
-
-    url = "https://serpapi.com/search?" + urllib.parse.urlencode(params)
-
-    # Fetch with retry
-    try:
-        body = fetch_with_retry(
-            url,
-            headers=HEADERS,
-            use_cache=True,
-            cache_ttl_seconds=source_cache_ttl("serpapi"),
-        )
-        if body is None:
-            log.debug("[SerpAPI] Fetch failed for '%s'", query)
-            return results
-
-        data = _json.loads(body)
-        items = data.get("jobs_results", [])
-
-        for item in items:
-            job = map_serpapi_to_job_result(item)
-            if job:
-                results.append(job)
-
-    except _json.JSONDecodeError as e:
-        log.debug("[SerpAPI] JSON parse error: %s", e)
-    except Exception as e:
-        error_str = str(e).lower()
-        if "401" in error_str or "403" in error_str or "unauthorized" in error_str:
-            log.error("[SerpAPI] Authentication failed - run 'job-radar --setup-apis' to reconfigure")
-        else:
-            log.debug("[SerpAPI] Request failed: %s", e)
-
-    log.info("[SerpAPI] Found %d results for '%s'", len(results), query)
-    return results
-
-
-def fetch_jobicy(query: str, location: str = "", verbose: bool = False) -> list[JobResult]:
-    """Fetch remote job listings from Jobicy API.
-
-    Jobicy is a public API (no key required) but rate limited to 1 request/hour.
-    Returns remote-focused job listings with HTML descriptions cleaned.
-    """
-    results = []
-
-    # Check rate limit (no API key needed, but strict rate limit)
-    if not check_rate_limit("jobicy", verbose=verbose):
-        return results
-
-    # Build API URL
-    params = {"count": "20"}
-
-    # Map location to Jobicy geo filter if applicable
-    if location:
-        location_lower = location.lower()
-        if any(term in location_lower for term in ["usa", "united states", "us"]):
-            params["geo"] = "usa"
-        elif any(term in location_lower for term in ["uk", "united kingdom", "britain"]):
-            params["geo"] = "uk"
-        elif any(term in location_lower for term in ["canada"]):
-            params["geo"] = "canada"
-        elif any(term in location_lower for term in ["europe"]):
-            params["geo"] = "europe"
-        # For specific cities/states, skip geo filter (Jobicy uses broad regions)
-
-    # Use query as tag parameter for filtering
-    if query:
-        params["tag"] = query.lower().replace(" ", "-")
-
-    url = "https://jobicy.com/api/v2/remote-jobs?" + urllib.parse.urlencode(params)
-
-    # Fetch with retry
-    try:
-        body = fetch_with_retry(
-            url,
-            headers=HEADERS,
-            use_cache=True,
-            cache_ttl_seconds=source_cache_ttl("jobicy"),
-        )
-        if body is None:
-            log.debug("[Jobicy] Fetch failed for '%s'", query)
-            return results
-
-        data = _json.loads(body)
-        # Jobicy returns {"jobs": [...]} wrapper
-        items = data.get("jobs", [])
-        if not isinstance(items, list):
-            items = []
-
-        for item in items:
-            job = map_jobicy_to_job_result(item)
-            if job:
-                results.append(job)
-
-    except _json.JSONDecodeError as e:
-        log.debug("[Jobicy] JSON parse error: %s", e)
-    except Exception as e:
-        log.debug("[Jobicy] Request failed: %s", e)
-
-    log.info("[Jobicy] Found %d results for '%s'", len(results), query)
-    return results
 
 
 # ---------------------------------------------------------------------------
