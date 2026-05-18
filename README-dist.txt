@@ -1,7 +1,7 @@
-Job Radar v1.1
+Job Radar v2.8.0
 ==============
 
-A job search tool that scores listings against your candidate profile.
+A desktop and command-line job search tool that scores listings against your candidate profile.
 
 GETTING STARTED
 ---------------
@@ -14,13 +14,13 @@ GETTING STARTED
    - Linux:   ./job-radar --help
 
 4. Create your profile:
-   - Copy profiles/_template.json to profiles/your_name.json
-   - Edit the file with your details (name, skills, target job titles)
+   - Launch the GUI for guided setup, including optional PDF resume import
+   - Or run the CLI and follow the interactive profile wizard
 
 5. Run a search:
-   - Windows: job-radar.exe --profile profiles/your_name.json
-   - macOS:   ./job-radar --profile profiles/your_name.json
-   - Linux:   ./job-radar --profile profiles/your_name.json
+   - Windows: job-radar.exe
+   - macOS:   ./job-radar
+   - Linux:   ./job-radar
 
 REQUIREMENTS
 ------------

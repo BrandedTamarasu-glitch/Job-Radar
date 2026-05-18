@@ -2,12 +2,20 @@
 
 ## Unreleased
 
+No unreleased changes yet.
+
+## v2.8.0 — 2026-05-18
+
 ### Improvements
 - **Report renderer decomposition** - Split report rendering hotspots into focused modules for cards, result rows, result tables, Markdown sections, safety helpers, source warnings, profile/tracker summaries, and controls while keeping compatibility wrappers for existing report imports.
-- **Report stability coverage** - Added focused tests for extracted HTML and Markdown report renderers, including unsafe URL handling, empty states, large-report row caps, card sections, manual links, and profile summaries.
+- **Search/source architecture cleanup** - Moved source query construction, registries, config helpers, data models, parsing helpers, mappers, API fetchers, and scraper implementations into focused modules while preserving patch-compatible `job_radar.sources` wrappers.
+- **Shared search pipeline cleanup** - Expanded shared search profile preparation, raw filtering, scoring, and post-score filtering helpers used by CLI and GUI adapters.
+- **GUI maintenance/view-model cleanup** - Moved Settings maintenance status, source diagnostics refresh, cache clear, app-data export/validation, dismissed-review cleanup, search panel, profile panel, dashboard, tab shell, and dialog helpers out of `MainWindow`.
+- **Source health field clarity** - New tracker and GUI worker summaries write canonical `query_failure_details` and `slow_query_warnings` fields without persisting new ambiguous `source_warnings` aliases; legacy history remains readable.
+- **Sprint 3 architecture documentation** - Updated handoff and audit remediation planning docs to reflect the completed report, source, search-pipeline, and GUI cleanup slices.
 
 ### Validation
-- Full automated regression for report decomposition: 1052 passed, 8 skipped.
+- Full automated regression for v2.8.0 release docs/build checkpoint: 1180 passed, 8 skipped.
 
 ## v2.7.0 — 2026-05-15
 
