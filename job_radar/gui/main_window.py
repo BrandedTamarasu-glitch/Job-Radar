@@ -53,6 +53,20 @@ from job_radar.tracker import (
     update_application_status,
 )
 from job_radar.update_checker import UpdateChecker, launch_installer, cleanup_old_installers, extract_summary
+from job_radar.gui.api_status_view_model import (
+    ApiStatusDisplay,
+    api_error_status,
+    api_http_status,
+    api_invalid_credentials_status,
+    api_invalid_key_status,
+    api_missing_credentials_status,
+    api_missing_key_status,
+    api_network_error_status,
+    api_testing_status,
+    api_timeout_status,
+    api_unexpected_status,
+    api_valid_status,
+)
 from job_radar.gui.applications_view_model import (
     append_application_note,
     application_calendar_export_error_message,
@@ -2968,13 +2982,21 @@ class MainWindow(ctk.CTk):
             elif "SERPAPI_API_KEY" in field_values:
                 self._test_serpapi(field_values["SERPAPI_API_KEY"], status_label)
 
-        status_label.configure(text="Testing...", text_color="gray")
+        self._configure_api_status(status_label, api_testing_status())
         threading.Thread(target=test_thread, daemon=True).start()
+
+    def _configure_api_status(self, status_label, display: ApiStatusDisplay):
+        """Apply API credential test status display data to a label."""
+        status_label.configure(text=display.text, text_color=display.color)
+
+    def _configure_api_status_async(self, status_label, display: ApiStatusDisplay):
+        """Apply API credential test status display data from a worker thread."""
+        self.after(0, lambda: self._configure_api_status(status_label, display))
 
     def _test_jsearch(self, api_key, status_label):
         """Test JSearch API key."""
         if not api_key:
-            self.after(0, lambda: status_label.configure(text="⚠ No API key provided", text_color="orange"))
+            self._configure_api_status_async(status_label, api_missing_key_status())
             return
 
         try:
@@ -2987,18 +3009,21 @@ class MainWindow(ctk.CTk):
             response = requests.get(url, headers=headers, params=params, timeout=10)
 
             if response.status_code == 200:
-                self.after(0, lambda: status_label.configure(text="✓ Valid", text_color="green"))
+                self._configure_api_status_async(status_label, api_valid_status())
             elif response.status_code in (401, 403):
-                self.after(0, lambda: status_label.configure(text="✗ Invalid key", text_color="red"))
+                self._configure_api_status_async(status_label, api_invalid_key_status())
             else:
-                self.after(0, lambda: status_label.configure(text=f"⚠ Unexpected status {response.status_code}", text_color="orange"))
-        except (requests.Timeout, requests.RequestException) as e:
-            self.after(0, lambda: status_label.configure(text="⚠ Network error", text_color="orange"))
+                self._configure_api_status_async(status_label, api_unexpected_status(response.status_code))
+        except (requests.Timeout, requests.RequestException):
+            self._configure_api_status_async(status_label, api_network_error_status())
 
     def _test_usajobs(self, email, api_key, status_label):
         """Test USAJobs API credentials."""
         if not email or not api_key:
-            self.after(0, lambda: status_label.configure(text="⚠ Both email and API key required", text_color="orange"))
+            self._configure_api_status_async(
+                status_label,
+                api_missing_credentials_status("email and API key"),
+            )
             return
 
         try:
@@ -3012,18 +3037,21 @@ class MainWindow(ctk.CTk):
             response = requests.get(url, headers=headers, params=params, timeout=10)
 
             if response.status_code == 200:
-                self.after(0, lambda: status_label.configure(text="✓ Valid", text_color="green"))
+                self._configure_api_status_async(status_label, api_valid_status())
             elif response.status_code in (401, 403):
-                self.after(0, lambda: status_label.configure(text="✗ Invalid credentials", text_color="red"))
+                self._configure_api_status_async(status_label, api_invalid_credentials_status())
             else:
-                self.after(0, lambda: status_label.configure(text=f"⚠ Unexpected status {response.status_code}", text_color="orange"))
-        except (requests.Timeout, requests.RequestException) as e:
-            self.after(0, lambda: status_label.configure(text="⚠ Network error", text_color="orange"))
+                self._configure_api_status_async(status_label, api_unexpected_status(response.status_code))
+        except (requests.Timeout, requests.RequestException):
+            self._configure_api_status_async(status_label, api_network_error_status())
 
     def _test_adzuna(self, app_id, app_key, status_label):
         """Test Adzuna API credentials."""
         if not app_id or not app_key:
-            self.after(0, lambda: status_label.configure(text="⚠ Both App ID and App Key required", text_color="orange"))
+            self._configure_api_status_async(
+                status_label,
+                api_missing_credentials_status("App ID and App Key"),
+            )
             return
 
         try:
@@ -3037,18 +3065,18 @@ class MainWindow(ctk.CTk):
             response = requests.get(url, params=params, timeout=10)
 
             if response.status_code == 200:
-                self.after(0, lambda: status_label.configure(text="✓ Valid", text_color="green"))
+                self._configure_api_status_async(status_label, api_valid_status())
             elif response.status_code in (401, 403):
-                self.after(0, lambda: status_label.configure(text="✗ Invalid credentials", text_color="red"))
+                self._configure_api_status_async(status_label, api_invalid_credentials_status())
             else:
-                self.after(0, lambda: status_label.configure(text=f"⚠ Unexpected status {response.status_code}", text_color="orange"))
-        except (requests.Timeout, requests.RequestException) as e:
-            self.after(0, lambda: status_label.configure(text="⚠ Network error", text_color="orange"))
+                self._configure_api_status_async(status_label, api_unexpected_status(response.status_code))
+        except (requests.Timeout, requests.RequestException):
+            self._configure_api_status_async(status_label, api_network_error_status())
 
     def _test_authentic_jobs(self, api_key, status_label):
         """Test Authentic Jobs API key."""
         if not api_key:
-            self.after(0, lambda: status_label.configure(text="⚠ No API key provided", text_color="orange"))
+            self._configure_api_status_async(status_label, api_missing_key_status())
             return
 
         try:
@@ -3063,18 +3091,18 @@ class MainWindow(ctk.CTk):
             response = requests.get(url, params=params, timeout=10)
 
             if response.status_code == 200:
-                self.after(0, lambda: status_label.configure(text="✓ Valid", text_color="green"))
+                self._configure_api_status_async(status_label, api_valid_status())
             elif response.status_code in (401, 403):
-                self.after(0, lambda: status_label.configure(text="✗ Invalid key", text_color="red"))
+                self._configure_api_status_async(status_label, api_invalid_key_status())
             else:
-                self.after(0, lambda: status_label.configure(text=f"⚠ Unexpected status {response.status_code}", text_color="orange"))
-        except (requests.Timeout, requests.RequestException) as e:
-            self.after(0, lambda: status_label.configure(text="⚠ Network error", text_color="orange"))
+                self._configure_api_status_async(status_label, api_unexpected_status(response.status_code))
+        except (requests.Timeout, requests.RequestException):
+            self._configure_api_status_async(status_label, api_network_error_status())
 
     def _test_serpapi(self, api_key, status_label):
         """Test SerpAPI key."""
         if not api_key:
-            self.after(0, lambda: status_label.configure(text="⚠ No API key provided", text_color="orange"))
+            self._configure_api_status_async(status_label, api_missing_key_status())
             return
 
         try:
@@ -3082,17 +3110,16 @@ class MainWindow(ctk.CTk):
             response = requests.get(url, timeout=10)
 
             if response.status_code == 200:
-                self.after(0, lambda: status_label.configure(text="✓ Valid", text_color="green"))
+                self._configure_api_status_async(status_label, api_valid_status())
             elif response.status_code in (401, 403):
-                self.after(0, lambda: status_label.configure(text="✗ Invalid key", text_color="red"))
+                self._configure_api_status_async(status_label, api_invalid_key_status())
             else:
-                self.after(0, lambda: status_label.configure(
-                    text=f"⚠ HTTP {response.status_code}", text_color="orange"))
+                self._configure_api_status_async(status_label, api_http_status(response.status_code))
 
         except requests.Timeout:
-            self.after(0, lambda: status_label.configure(text="⚠ Timeout", text_color="orange"))
+            self._configure_api_status_async(status_label, api_timeout_status())
         except requests.RequestException as e:
-            self.after(0, lambda: status_label.configure(text=f"⚠ Error: {e}", text_color="orange"))
+            self._configure_api_status_async(status_label, api_error_status(e))
 
     def _save_api_keys(self):
         """Save API keys to the app-data credential file atomically."""
