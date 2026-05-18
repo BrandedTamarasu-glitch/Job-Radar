@@ -72,6 +72,7 @@ Goal: reduce merge hotspots and duplicated behavior after the trust fixes are st
 Current progress:
 - Report rendering has been split into focused HTML and Markdown modules while preserving compatibility wrappers in `job_radar/report.py`.
 - Extracted modules now cover report safety, assets, text helpers, filtering, source warnings, tiers, matching, stats, profile/tracker summaries, manual links, job details, controls, job attributes, result tables, result rows, cards, and Markdown sections.
+- `job_radar/search_pipeline.py` now contains shared search filter parsing, profile preference, freshness/date resolution, and result filtering helpers for GUI/CLI reuse.
 - GUI display formatting cleanup has started by moving saved-search panel loading/rows/feedback, Applications pipeline rows, follow-up queue rows, filters, and Applications export/import/edit feedback into view-model helpers.
 - Applications tab construction now lives in a focused `job_radar/gui/applications_tab.py` helper while `MainWindow` retains behavior callbacks.
 - Settings update status formatting now lives in `job_radar/gui/update_status_view_model.py`.
@@ -104,7 +105,7 @@ Current progress:
 - MainWindow no longer wraps Profile field rendering that already lives in `job_radar/gui/profile_panel.py`.
 - MainWindow no longer carries the obsolete Settings update-status initializer that moved into `job_radar/gui/settings_panel.py`.
 - Settings update controls/status, section separators, API credential sections/widget registration/panel orchestration, scoring configuration, storage maintenance, diagnostics, Jobicy public-source status, JSearch setup tip, and danger-zone construction now live in `job_radar/gui/settings_panel.py`.
-- Latest validation: `1124 passed, 8 skipped`.
+- Latest validation: `1128 passed, 8 skipped`.
 
 Validation:
 - Full `pytest tests/`
