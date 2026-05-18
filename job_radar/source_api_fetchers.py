@@ -11,12 +11,14 @@ from .source_config import source_cache_ttl
 from .source_mappers import (
     map_adzuna_to_job_result,
     map_authenticjobs_to_job_result,
+    map_hiringcafe_to_job_result,
     map_jobicy_to_job_result,
     map_jsearch_to_job_result,
     map_serpapi_to_job_result,
     map_usajobs_to_job_result,
 )
 from .source_models import JobResult
+from .source_parsing import location_matches
 
 log = logging.getLogger(__name__)
 
@@ -27,6 +29,9 @@ HEADERS = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     "Accept-Language": "en-US,en;q=0.5",
 }
+
+_HIRINGCAFE_API_URL = "https://hiring.cafe/api/jobs/search"
+_HIRINGCAFE_PER_QUERY_LIMIT = 50
 
 
 def fetch_adzuna(
@@ -306,6 +311,71 @@ def fetch_usajobs(
             log.debug("[USAJobs] Request failed: %s", e)
 
     log.info("[USAJobs] Found %d results for '%s'", len(results), query)
+    return results
+
+
+def fetch_hiringcafe(
+    query: str,
+    location: str = "",
+    verbose: bool = False,
+    *,
+    check_rate_limit_func=check_rate_limit,
+    fetch_with_retry_func=fetch_with_retry,
+    mapper_func=map_hiringcafe_to_job_result,
+) -> list[JobResult]:
+    """Fetch job listings from hiring.cafe."""
+    results = []
+
+    if not check_rate_limit_func("hiringcafe", verbose=verbose):
+        return results
+
+    params = {
+        "q": query,
+        "limit": _HIRINGCAFE_PER_QUERY_LIMIT,
+    }
+    if location:
+        params["location"] = location
+
+    url = _HIRINGCAFE_API_URL + "?" + urllib.parse.urlencode(params)
+
+    try:
+        body = fetch_with_retry_func(
+            url,
+            headers=HEADERS,
+            use_cache=True,
+            retries=1,
+            cache_ttl_seconds=source_cache_ttl("hiringcafe"),
+        )
+        if body is None:
+            log.debug("[hiring.cafe] Fetch failed for '%s'", query)
+            return results
+
+        try:
+            data = _json.loads(body)
+            items = data.get("jobs", []) or data.get("data", []) or data.get("results", [])
+        except _json.JSONDecodeError:
+            log.debug("[hiring.cafe] Response is not JSON, attempting HTML parsing")
+            return results
+
+        for item in items:
+            try:
+                job = mapper_func(item)
+                if job:
+                    if location:
+                        if job.arrangement == "remote":
+                            results.append(job)
+                        elif location_matches(job.location, location):
+                            results.append(job)
+                    else:
+                        results.append(job)
+            except Exception as e:
+                log.debug("[hiring.cafe] Skipping malformed job: %s", e)
+                continue
+
+    except Exception as e:
+        log.debug("[hiring.cafe] Request failed: %s", e)
+
+    log.info("[hiring.cafe] Found %d results for '%s'", len(results), query)
     return results
 
 

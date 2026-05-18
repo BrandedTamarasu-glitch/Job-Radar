@@ -34,6 +34,7 @@ from .source_execution import SourceExecutionState
 from .source_api_fetchers import (
     fetch_adzuna as _fetch_adzuna_api,
     fetch_authenticjobs as _fetch_authenticjobs_api,
+    fetch_hiringcafe as _fetch_hiringcafe_api,
     fetch_jobicy,
     fetch_jsearch as _fetch_jsearch_api,
     fetch_serpapi,
@@ -62,7 +63,6 @@ from .source_parsing import (
     _clean_field,
     _parse_arrangement,
     _strip_html,
-    location_matches,
     parse_location_to_city_state,
     strip_html_and_normalize,
 )
@@ -670,93 +670,16 @@ def fetch_usajobs(query: str, location: str = "", profile: dict = None, verbose:
 # SerpAPI Google Jobs fetcher
 # ---------------------------------------------------------------------------
 
-# hiring.cafe fetcher configuration constants
-_HIRINGCAFE_API_URL = "https://hiring.cafe/api/jobs/search"  # Discovered endpoint
-_HIRINGCAFE_PER_QUERY_LIMIT = 50  # Per user decision (overrides phase goal max of 1000)
-
-
 def fetch_hiringcafe(query: str, location: str = "", verbose: bool = False) -> list[JobResult]:
-    """Fetch job listings from hiring.cafe.
-
-    hiring.cafe is an AI-powered job search platform with remote-focused positions
-    and transparent salary information. Uses discovered internal API endpoint.
-
-    Args:
-        query: Job title search query
-        location: Optional location filter (remote jobs always included)
-        verbose: Enable verbose logging
-
-    Returns:
-        List of JobResult objects, empty list on failure (silent skip)
-    """
-    results = []
-
-    # Check rate limit (60 req/hour)
-    if not check_rate_limit("hiringcafe", verbose=verbose):
-        return results
-
-    # Build request URL with query parameters
-    params = {
-        "q": query,
-        "limit": _HIRINGCAFE_PER_QUERY_LIMIT,
-    }
-    if location:
-        params["location"] = location
-
-    url = _HIRINGCAFE_API_URL + "?" + urllib.parse.urlencode(params)
-
-    # Fetch with retry (retries=1 per user decision "No retry -- fail fast")
-    try:
-        body = fetch_with_retry(
-            url,
-            headers=HEADERS,
-            use_cache=True,
-            retries=1,
-            cache_ttl_seconds=source_cache_ttl("hiringcafe"),
-        )
-        if body is None:
-            log.debug("[hiring.cafe] Fetch failed for '%s'", query)
-            return results
-
-        # Try parsing as JSON first (API endpoint)
-        try:
-            data = _json.loads(body)
-            items = data.get("jobs", []) or data.get("data", []) or data.get("results", [])
-        except _json.JSONDecodeError:
-            # If JSON parsing fails, might be HTML - try BeautifulSoup fallback
-            log.debug("[hiring.cafe] Response is not JSON, attempting HTML parsing")
-            soup = BeautifulSoup(body, "html.parser")
-            # NOTE: HTML parsing pattern would go here if needed
-            # For now, return empty list since we expect JSON
-            return results
-
-        # Parse each item with individual error handling
-        for item in items:
-            try:
-                job = map_hiringcafe_to_job_result(item)
-                if job:
-                    # Location filtering: include if location matches OR arrangement is remote
-                    if location:
-                        # Remote jobs always included regardless of location preference
-                        if job.arrangement == "remote":
-                            results.append(job)
-                        # Local jobs: check if location matches target
-                        elif location_matches(job.location, location):
-                            results.append(job)
-                    else:
-                        # No location filter: include all
-                        results.append(job)
-            except Exception as e:
-                # Skip malformed individual job, keep processing others
-                log.debug("[hiring.cafe] Skipping malformed job: %s", e)
-                continue
-
-    except Exception as e:
-        # Silent skip on any failure (per user decision)
-        log.debug("[hiring.cafe] Request failed: %s", e)
-
-    log.info("[hiring.cafe] Found %d results for '%s'", len(results), query)
-    return results
+    """Fetch job listings from hiring.cafe."""
+    return _fetch_hiringcafe_api(
+        query,
+        location,
+        verbose,
+        check_rate_limit_func=check_rate_limit,
+        fetch_with_retry_func=fetch_with_retry,
+        mapper_func=map_hiringcafe_to_job_result,
+    )
 
 
 # ---------------------------------------------------------------------------
