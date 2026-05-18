@@ -55,6 +55,12 @@ def replace_success_message(parent, existing_label, message: str):
     return success_label
 
 
+def clear_search_content(parent) -> None:
+    """Remove all widgets from the Search content frame before rendering a new state."""
+    for widget in parent.winfo_children():
+        widget.destroy()
+
+
 def build_search_idle_shell(
     parent,
     *,

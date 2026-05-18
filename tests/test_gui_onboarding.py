@@ -14,6 +14,7 @@ from job_radar.gui.search_panel import (
     build_search_cancelled_panel,
     build_search_completion_panel,
     build_search_error_panel,
+    clear_search_content,
     pack_search_idle_actions,
     build_search_progress_panel,
     replace_success_message,
@@ -97,6 +98,18 @@ def test_search_idle_includes_profile_readiness_guidance():
     source = inspect.getsource(MainWindow._show_search_idle)
 
     assert "_add_search_readiness_guidance" in source
+    assert "clear_search_content(self._search_content)" in source
+
+
+def test_search_state_views_reuse_clear_content_helper():
+    helper_source = inspect.getsource(clear_search_content)
+
+    assert "for widget in parent.winfo_children()" in helper_source
+    assert "widget.destroy()" in helper_source
+    assert "clear_search_content(self._search_content)" in inspect.getsource(MainWindow._show_search_progress)
+    assert "clear_search_content(self._search_content)" in inspect.getsource(MainWindow._show_search_complete)
+    assert "clear_search_content(self._search_content)" in inspect.getsource(MainWindow._on_search_cancelled)
+    assert "clear_search_content(self._search_content)" in inspect.getsource(MainWindow._show_search_error)
 
 
 def test_profile_readiness_guidance_links_to_profile_tab():

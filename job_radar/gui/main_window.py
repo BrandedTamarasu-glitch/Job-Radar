@@ -95,13 +95,14 @@ from job_radar.gui.search_panel import (
     add_recent_searches_panel,
     add_saved_searches_panel,
     add_search_readiness_guidance,
-    replace_success_message,
     build_search_idle_shell,
     build_search_cancelled_panel,
     build_search_completion_panel,
     build_search_error_panel,
     build_search_progress_panel,
+    clear_search_content,
     pack_search_idle_actions,
+    replace_success_message,
 )
 from job_radar.gui.search_summary import (
     bullet_block_text,
@@ -870,9 +871,7 @@ class MainWindow(ctk.CTk):
 
     def _show_search_idle(self):
         """Display idle state with search controls and Run Search button."""
-        # Clear current content
-        for widget in self._search_content.winfo_children():
-            widget.destroy()
+        clear_search_content(self._search_content)
 
         # Clear worker references
         self._worker = None
@@ -1017,9 +1016,7 @@ class MainWindow(ctk.CTk):
 
     def _show_search_progress(self):
         """Display progress state with progress bar, per-source job counts, and cancel button."""
-        # Clear current content
-        for widget in self._search_content.winfo_children():
-            widget.destroy()
+        clear_search_content(self._search_content)
 
         widgets = build_search_progress_panel(
             self._search_content,
@@ -1040,9 +1037,7 @@ class MainWindow(ctk.CTk):
         summary : dict | None
             Optional per-source completion and warning summary.
         """
-        # Clear current content
-        for widget in self._search_content.winfo_children():
-            widget.destroy()
+        clear_search_content(self._search_content)
 
         warning_message = source_warning_message(summary)
         next_actions = zero_result_lines(job_count, self._load_current_profile_for_guidance())
@@ -1838,8 +1833,7 @@ class MainWindow(ctk.CTk):
         """Handle search cancellation."""
         self._worker = None
         self._worker_thread = None
-        for widget in self._search_content.winfo_children():
-            widget.destroy()
+        clear_search_content(self._search_content)
 
         build_search_cancelled_panel(
             self._search_content,
@@ -1850,8 +1844,7 @@ class MainWindow(ctk.CTk):
         """Display a persistent search error state with retry controls."""
         self._worker = None
         self._worker_thread = None
-        for widget in self._search_content.winfo_children():
-            widget.destroy()
+        clear_search_content(self._search_content)
 
         build_search_error_panel(
             self._search_content,
