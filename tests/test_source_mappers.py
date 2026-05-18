@@ -4,6 +4,7 @@ from job_radar.source_mappers import (
     map_adzuna_to_job_result,
     map_authenticjobs_to_job_result,
     map_jsearch_to_job_result,
+    map_usajobs_to_job_result,
 )
 
 
@@ -90,3 +91,31 @@ def test_map_jsearch_to_job_result_maps_unknown_publisher_to_other():
     assert result is not None
     assert result.source == "jsearch_other"
     assert result.location == "Remote"
+
+
+def test_map_usajobs_to_job_result_maps_valid_descriptor():
+    result = map_usajobs_to_job_result({
+        "MatchedObjectDescriptor": {
+            "PositionTitle": "Program Analyst",
+            "OrganizationName": "Agency",
+            "PositionURI": "https://www.usajobs.gov/job/1",
+            "PositionLocationDisplay": "Washington, DC",
+            "PositionRemuneration": [{
+                "MinimumRange": "80000",
+                "MaximumRange": "100000",
+            }],
+            "UserArea": {"Details": {"JobSummary": "<p>Hybrid policy work</p>"}},
+            "PublicationStartDate": "2026-05-18T00:00:00Z",
+            "PositionSchedule": [{"Name": "Full-time"}],
+        }
+    })
+
+    assert result is not None
+    assert result.source == "usajobs"
+    assert result.salary == "$80,000 - $100,000"
+    assert result.date_posted == "2026-05-18"
+    assert result.arrangement == "hybrid"
+
+
+def test_map_usajobs_to_job_result_rejects_missing_required_fields():
+    assert map_usajobs_to_job_result({"MatchedObjectDescriptor": {}}) is None

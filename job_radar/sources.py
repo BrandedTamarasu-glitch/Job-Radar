@@ -35,6 +35,7 @@ from .source_mappers import (
     map_adzuna_to_job_result,
     map_authenticjobs_to_job_result,
     map_jsearch_to_job_result,
+    map_usajobs_to_job_result,
 )
 from .source_models import JobResult
 from .source_parsing import (
@@ -874,92 +875,6 @@ def fetch_usajobs(query: str, location: str = "", profile: dict = None, verbose:
 
     log.info("[USAJobs] Found %d results for '%s'", len(results), query)
     return results
-
-
-def map_usajobs_to_job_result(item: dict) -> JobResult | None:
-    """Map USAJobs API response item to JobResult.
-
-    Handles nested MatchedObjectDescriptor structure.
-    """
-    # USAJobs uses nested MatchedObjectDescriptor
-    descriptor = item.get("MatchedObjectDescriptor", {})
-
-    # Extract and validate required fields
-    title = descriptor.get("PositionTitle", "").strip()
-    company = descriptor.get("OrganizationName", "").strip()
-    url = descriptor.get("PositionURI", "").strip()
-
-    if not title or not company or not url:
-        log.debug("[USAJobs] Skipping job with missing required fields: title=%s, company=%s, url=%s",
-                 bool(title), bool(company), bool(url))
-        return None
-
-    # Location normalization
-    location = descriptor.get("PositionLocationDisplay", "")
-    if not location:
-        # Fallback to first item in PositionLocation array
-        locations = descriptor.get("PositionLocation", [])
-        if locations and isinstance(locations, list):
-            loc_obj = locations[0]
-            city = loc_obj.get("LocationName", "")
-            state = loc_obj.get("CountrySubDivisionCode", "")
-            location = f"{city}, {state}" if city and state else (city or "Unknown")
-
-    # Salary fields (PositionRemuneration array)
-    salary = "Not specified"
-    salary_min = None
-    salary_max = None
-    remuneration = descriptor.get("PositionRemuneration", [])
-    if remuneration and isinstance(remuneration, list):
-        rem = remuneration[0]
-        min_range = rem.get("MinimumRange")
-        max_range = rem.get("MaximumRange")
-        if min_range and max_range:
-            try:
-                salary_min = float(min_range)
-                salary_max = float(max_range)
-                salary = f"${salary_min:,.0f} - ${salary_max:,.0f}"
-            except (ValueError, TypeError):
-                pass
-
-    # Description cleaning
-    user_area = descriptor.get("UserArea", {})
-    details = user_area.get("Details", {}) if isinstance(user_area, dict) else {}
-    description_raw = details.get("JobSummary", "") if isinstance(details, dict) else ""
-    description = strip_html_and_normalize(description_raw)
-    if len(description) > 500:
-        description = description[:497] + "..."
-
-    # Date posted (extract YYYY-MM-DD)
-    date_posted = descriptor.get("PublicationStartDate", "")
-    if len(date_posted) >= 10:
-        date_posted = date_posted[:10]
-
-    # Arrangement detection
-    arrangement = _parse_arrangement(f"{title} {description}")
-
-    # Employment type (PositionSchedule array)
-    emp_type = ""
-    schedules = descriptor.get("PositionSchedule", [])
-    if schedules and isinstance(schedules, list) and len(schedules) > 0:
-        emp_type = schedules[0].get("Name", "")
-
-    return JobResult(
-        title=_clean_field(title, _MAX_TITLE),
-        company=_clean_field(company, _MAX_COMPANY),
-        location=_clean_field(location, _MAX_LOCATION),
-        arrangement=arrangement,
-        salary=salary,
-        date_posted=date_posted,
-        description=description,
-        url=url,
-        source="usajobs",
-        employment_type=emp_type,
-        parse_confidence="high",
-        salary_min=salary_min,
-        salary_max=salary_max,
-        salary_currency="USD" if salary_min or salary_max else None,
-    )
 
 
 # ---------------------------------------------------------------------------
