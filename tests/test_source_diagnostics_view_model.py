@@ -10,6 +10,7 @@ from job_radar.gui.source_diagnostics_view_model import (
     format_source_coverage_lines,
     format_source_diagnostics_lines,
     format_source_toggle_recommendations,
+    source_diagnostics_text,
 )
 
 
@@ -176,6 +177,19 @@ def test_format_source_diagnostics_lines_handles_empty_and_cache_totals():
             "cache_stats": {"hits": 2, "misses": 1, "writes": 1, "disabled": 0},
         }
     ])
+
+    text = source_diagnostics_text([
+        {
+            "sources": [
+                {"name": "RemoteOK", "job_count": 3, "warning_count": 0, "duration_seconds": 65.0},
+            ],
+            "failed_sources": [],
+            "cache_stats": {"hits": 2, "misses": 1, "writes": 1, "disabled": 0},
+        }
+    ])
+    assert "RemoteOK" in text
+    assert "Cache totals:" in text
+    assert "\n" in text
 
     assert lines == [
         "Source controls: use Search > Sources to temporarily disable unreliable sources, then refresh diagnostics after reruns.",

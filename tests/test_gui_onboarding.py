@@ -23,6 +23,7 @@ from job_radar.gui.search_panel import (
 )
 from job_radar.gui.search_summary import search_readiness_guidance_lines
 from job_radar.gui.maintenance_view_model import feedback_diagnostics_text, local_maintenance_text
+from job_radar.gui.source_diagnostics_view_model import source_diagnostics_text
 from job_radar.gui.settings_panel import (
     add_api_credentials_panel,
     add_api_key_section,
@@ -373,6 +374,15 @@ def test_settings_tab_includes_privacy_safe_feedback_diagnostics():
     assert "feedback_diagnostics_text(get_data_dir(), get_results_dir())" in helper_source
     assert "build_feedback_diagnostics_summary" in text_source
     assert "format_feedback_diagnostics_lines" in text_source
+
+
+def test_source_diagnostics_text_is_composed_outside_main_window():
+    helper_source = inspect.getsource(MainWindow._source_diagnostics_text)
+    text_source = inspect.getsource(source_diagnostics_text)
+
+    assert "get_source_health_history(limit=20)" in helper_source
+    assert "source_diagnostics_text(history)" in helper_source
+    assert "format_source_diagnostics_lines(history" in text_source
 
 
 def test_feedback_diagnostics_can_be_copied_from_settings():

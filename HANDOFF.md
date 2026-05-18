@@ -6,13 +6,14 @@ Date: 2026-05-16
 
 - Repo path: `/home/corye/openai-cli/Job-Radar`
 - Branch: `main`
-- Git status before latest slice: clean, `main...origin/main [ahead 50]`
-- Last full validation: `1111 passed, 8 skipped`
-- Do not push unless explicitly asked. The 50 local commits after the last push are still local.
+- Git status before latest slice: clean, `main...origin/main [ahead 51]`
+- Last full validation: `1112 passed, 8 skipped`
+- Do not push unless explicitly asked. The 51 local commits after the last push are still local.
 
 ## Latest Local Commits
 
 ```text
+9aafa8f refactor: centralize maintenance text
 452e22a refactor: remove profile field wrapper
 42c92e0 refactor: extract profile content clearing
 4984bdf refactor: remove application due text wrapper
@@ -20,7 +21,6 @@ Date: 2026-05-16
 5a2a8b8 refactor: extract search content clearing
 3e70a0c refactor: centralize search readiness guidance
 3e6cd0a refactor: extract settings separator helper
-d414df8 refactor: centralize lazy tab building
 ```
 
 ## Recently Pushed
@@ -99,6 +99,8 @@ Started reducing `job_radar/gui/main_window.py` by moving display formatting int
   - Settings cache/app-data maintenance status messages
   - dismissed review cleanup status messages
   - Settings local maintenance and feedback diagnostics text composition
+- `job_radar/gui/source_diagnostics_view_model.py`
+  - Settings source diagnostics text composition
 - `job_radar/gui/search_summary.py`
   - live source progress text helpers
   - source progress counter display text
@@ -174,6 +176,7 @@ Current line counts:
  287 job_radar/gui/applications_tab.py
  297 job_radar/gui/applications_view_model.py
  287 job_radar/gui/maintenance_view_model.py
+ 464 job_radar/gui/source_diagnostics_view_model.py
  222 job_radar/gui/search_summary.py
   78 job_radar/gui/update_status_view_model.py
  478 job_radar/saved_searches.py
@@ -197,7 +200,7 @@ rtk .venv/bin/python -m pytest tests/
 Latest result:
 
 ```text
-1111 passed, 8 skipped
+1112 passed, 8 skipped
 ```
 
 ## Active Plan

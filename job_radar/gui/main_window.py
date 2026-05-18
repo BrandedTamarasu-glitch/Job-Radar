@@ -139,10 +139,10 @@ from job_radar.gui.maintenance_view_model import (
     local_maintenance_text,
 )
 from job_radar.gui.source_diagnostics_view_model import (
-    format_source_diagnostics_lines,
     format_pre_run_source_strategy_lines,
     format_source_toggle_recommendations,
     build_source_diagnostics,
+    source_diagnostics_text,
 )
 from job_radar.gui.worker_thread import create_search_worker, create_download_worker, normalize_source_progress
 from job_radar.gui.update_banner import UpdateBanner, DownloadConfirmDialog
@@ -1629,7 +1629,7 @@ class MainWindow(ctk.CTk):
     def _source_diagnostics_text(self) -> str:
         """Return current source diagnostics text for the Settings tab."""
         history = get_source_health_history(limit=20)
-        return "\n".join(format_source_diagnostics_lines(history))
+        return source_diagnostics_text(history)
 
     def _pre_run_source_strategy_lines(self) -> list[str]:
         """Return current source strategy guidance for the Search tab."""
