@@ -7,7 +7,6 @@ import re
 import time
 import urllib.parse
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass
 from datetime import date
 
 from bs4 import BeautifulSoup
@@ -33,6 +32,7 @@ from .source_config import (
     source_cache_ttl,
 )
 from .source_execution import SourceExecutionState
+from .source_models import JobResult
 from .source_queries import build_search_queries
 from .source_registry import (
     SourceDefinition,
@@ -42,29 +42,6 @@ from .source_registry import (
 )
 
 log = logging.getLogger(__name__)
-
-
-@dataclass
-class JobResult:
-    """A single job listing result."""
-    title: str
-    company: str
-    location: str
-    arrangement: str  # remote, hybrid, onsite, unknown
-    salary: str
-    date_posted: str
-    description: str
-    url: str
-    source: str
-    apply_info: str = ""
-    employment_type: str = ""  # full-time, contract, C2H, part-time, etc.
-    parse_confidence: str = "high"  # high, medium, low
-    salary_min: float | None = None
-    salary_max: float | None = None
-    salary_currency: str | None = None
-
-    def __hash__(self):
-        return hash((self.title, self.company, self.source))
 
 
 HEADERS = {
