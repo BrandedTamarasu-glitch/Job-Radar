@@ -100,6 +100,7 @@ from job_radar.gui.source_diagnostics_view_model import (
 from job_radar.gui.worker_thread import create_search_worker, create_download_worker
 from job_radar.gui.scoring_config import ScoringConfigWidget
 from job_radar.gui.update_banner import UpdateBanner, DownloadConfirmDialog
+from job_radar.gui.update_status_view_model import build_update_status_display
 from job_radar.gui.changelog_dialog import ChangelogDialog
 from job_radar.gui.installer_dialogs import InstallConfirmDialog, LinuxInstallInstructionsDialog
 from job_radar.gui.uninstall_dialog import (
@@ -1941,58 +1942,16 @@ class MainWindow(ctk.CTk):
             return
 
         status_info = self._update_checker.get_update_status()
-        last_check = status_info.get("last_check")
-        check_success = status_info.get("check_success")
-
-        # Format relative time
-        if last_check:
-            try:
-                from datetime import datetime, timezone
-                last_check_dt = datetime.fromisoformat(last_check)
-                now = datetime.now(timezone.utc)
-                elapsed = now - last_check_dt
-
-                if elapsed.total_seconds() < 300:  # < 5 minutes
-                    relative_time = "Just now"
-                elif elapsed.total_seconds() < 3600:  # < 1 hour
-                    minutes = int(elapsed.total_seconds() / 60)
-                    relative_time = f"{minutes}m ago"
-                elif elapsed.total_seconds() < 86400:  # < 1 day
-                    hours = int(elapsed.total_seconds() / 3600)
-                    relative_time = f"{hours}h ago"
-                else:
-                    days = int(elapsed.total_seconds() / 86400)
-                    relative_time = f"{days}d ago"
-            except Exception:
-                relative_time = "Unknown"
-        else:
-            relative_time = "Never"
-
-        # Determine status
-        if relative_time == "Never":
-            status = "Never checked"
-            status_color = "gray"
-        elif check_success:
-            status = "Up to date"
-            status_color = "green"
-        elif check_success is False:
-            status = "Check failed"
-            status_color = "orange"
-        else:
-            status = "Unknown"
-            status_color = "gray"
-
-        # Check for skipped version or available update
-        if self._update_version and self._update_checker.is_version_skipped(self._update_version):
-            status = f"v{self._update_version} available (skipped)"
-            status_color = "gray"
-        elif self._update_version:
-            status = f"v{self._update_version} available"
-            status_color = "orange"
-
-        # Update label
-        status_text = f"v{__version__} -- Last checked: {relative_time} -- {status}"
-        self._update_status_label.configure(text=status_text, text_color=status_color)
+        display = build_update_status_display(
+            current_version=__version__,
+            status_info=status_info,
+            update_version=self._update_version,
+            update_skipped=bool(
+                self._update_version
+                and self._update_checker.is_version_skipped(self._update_version)
+            ),
+        )
+        self._update_status_label.configure(text=display.text, text_color=display.color)
 
     def _refresh_update_status_initial(self, parent):
         """Create and populate the initial update status label in Settings tab.
@@ -2003,53 +1962,14 @@ class MainWindow(ctk.CTk):
             Parent widget (scroll_frame)
         """
         status_info = self._update_checker.get_update_status()
-        last_check = status_info.get("last_check")
-        check_success = status_info.get("check_success")
-
-        # Format relative time
-        if last_check:
-            try:
-                from datetime import datetime, timezone
-                last_check_dt = datetime.fromisoformat(last_check)
-                now = datetime.now(timezone.utc)
-                elapsed = now - last_check_dt
-
-                if elapsed.total_seconds() < 300:  # < 5 minutes
-                    relative_time = "Just now"
-                elif elapsed.total_seconds() < 3600:  # < 1 hour
-                    minutes = int(elapsed.total_seconds() / 60)
-                    relative_time = f"{minutes}m ago"
-                elif elapsed.total_seconds() < 86400:  # < 1 day
-                    hours = int(elapsed.total_seconds() / 3600)
-                    relative_time = f"{hours}h ago"
-                else:
-                    days = int(elapsed.total_seconds() / 86400)
-                    relative_time = f"{days}d ago"
-            except Exception:
-                relative_time = "Unknown"
-        else:
-            relative_time = "Never"
-
-        # Determine status
-        if relative_time == "Never":
-            status = "Never checked"
-            status_color = "gray"
-        elif check_success:
-            status = "Up to date"
-            status_color = "green"
-        elif check_success is False:
-            status = "Check failed"
-            status_color = "orange"
-        else:
-            status = "Unknown"
-            status_color = "gray"
-
-        # Create status label
-        status_text = f"v{__version__} -- Last checked: {relative_time} -- {status}"
+        display = build_update_status_display(
+            current_version=__version__,
+            status_info=status_info,
+        )
         self._update_status_label = ctk.CTkLabel(
             parent,
-            text=status_text,
-            text_color=status_color,
+            text=display.text,
+            text_color=display.color,
             font=ctk.CTkFont(size=12)
         )
         self._update_status_label.pack(pady=(0, 5), anchor="w", padx=10)

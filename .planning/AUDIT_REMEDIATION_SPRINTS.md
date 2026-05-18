@@ -74,7 +74,8 @@ Current progress:
 - Extracted modules now cover report safety, assets, text helpers, filtering, source warnings, tiers, matching, stats, profile/tracker summaries, manual links, job details, controls, job attributes, result tables, result rows, cards, and Markdown sections.
 - GUI display formatting cleanup has started by moving saved-search panel loading/rows/feedback, Applications pipeline rows, follow-up queue rows, filters, and Applications export/import/edit feedback into view-model helpers.
 - Applications tab construction now lives in a focused `job_radar/gui/applications_tab.py` helper while `MainWindow` retains behavior callbacks.
-- Latest validation: `1064 passed, 8 skipped`.
+- Settings update status formatting now lives in `job_radar/gui/update_status_view_model.py`.
+- Latest validation: `1069 passed, 8 skipped`.
 
 Validation:
 - Full `pytest tests/`
