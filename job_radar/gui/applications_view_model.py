@@ -205,6 +205,36 @@ def application_pipeline_display_row(row: ApplicationRow) -> ApplicationPipeline
     return ApplicationPipelineDisplayRow(heading=heading, detail_text=detail_text)
 
 
+def applications_csv_export_success_message(export_path: object) -> str:
+    """Return Applications tab feedback after CSV export succeeds."""
+    return f"Exported to {export_path}"
+
+
+def applications_csv_export_error_message(error: object) -> str:
+    """Return Applications tab feedback after CSV export fails."""
+    return f"Export failed: {error}"
+
+
+def application_status_import_success_message(changed_count: int) -> str:
+    """Return Applications tab feedback after report status import succeeds."""
+    return f"Imported {changed_count} status update(s)"
+
+
+def application_status_import_error_message(error: object) -> str:
+    """Return Applications tab feedback after report status import fails."""
+    return f"Status import failed: {error}"
+
+
+def application_calendar_export_success_message(export_path: object) -> str:
+    """Return Applications tab feedback after follow-up calendar export succeeds."""
+    return f"Exported calendar to {export_path}"
+
+
+def application_calendar_export_error_message(error: object) -> str:
+    """Return Applications tab feedback after follow-up calendar export fails."""
+    return f"Calendar export failed: {error}"
+
+
 def append_application_note(existing_notes: str | None, note: str) -> str:
     """Append a rendered note template to an application's existing notes."""
     existing = (existing_notes or "").strip()

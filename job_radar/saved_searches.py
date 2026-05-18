@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from copy import deepcopy
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -31,6 +32,15 @@ SEARCH_CONFIG_KEYS = (
     "location_strictness",
     "match_calibration",
 )
+
+
+@dataclass(frozen=True)
+class SearchPanelRow:
+    """Display-ready row for recent/saved search panels."""
+
+    label: str
+    detail: str
+    config: dict[str, Any]
 
 
 def get_saved_searches_path() -> Path:
@@ -252,6 +262,28 @@ def format_search_history_detail(item: dict[str, Any]) -> str:
     return f"{format_run_summary(item)}\n{format_search_insight(item)}"
 
 
+def recent_search_panel_rows(
+    items: list[dict[str, Any]],
+    limit: int = 3,
+) -> list[SearchPanelRow]:
+    """Return display rows for the recent-search panel."""
+    return [
+        _search_panel_row(item, fallback_label="Custom search")
+        for item in items[:limit]
+    ]
+
+
+def saved_search_panel_rows(
+    items: list[dict[str, Any]],
+    limit: int = 3,
+) -> list[SearchPanelRow]:
+    """Return display rows for the saved-search panel."""
+    return [
+        _search_panel_row(item, fallback_label="Saved search")
+        for item in prioritize_changed_searches(items, limit=limit)
+    ]
+
+
 def saved_search_success_message(name: str) -> str:
     """Return GUI feedback after saving a named search."""
     return f"Saved: {name}"
@@ -316,6 +348,14 @@ def _normalize_search_items(items: Any) -> list[dict[str, Any]]:
                     normalized_item[key]["review"] = _normalize_review_counts(review)
         normalized.append(normalized_item)
     return normalized
+
+
+def _search_panel_row(item: dict[str, Any], fallback_label: str) -> SearchPanelRow:
+    return SearchPanelRow(
+        label=str(item.get("name") or fallback_label),
+        detail=format_search_history_detail(item),
+        config=dict(item.get("config") or {}),
+    )
 
 
 def _timestamp(now: datetime | None = None) -> str:

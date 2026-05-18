@@ -12,7 +12,9 @@ from job_radar.saved_searches import (
     prioritize_changed_searches,
     record_search_run,
     record_recent_search,
+    recent_search_panel_rows,
     saved_search_error_message,
+    saved_search_panel_rows,
     saved_search_success_message,
     save_named_search,
     summarize_search_config,
@@ -346,6 +348,56 @@ def test_format_search_history_detail_combines_summary_and_insight():
         "Last run: 12 results, +4 vs previous, 5 new, 3 high-score | 2 runs\n"
         "Change: +4 total, +3 new, +2 high-score vs previous."
     )
+
+
+def test_recent_search_panel_rows_format_display_rows():
+    rows = recent_search_panel_rows(
+        [
+            {
+                "name": "",
+                "config": {"preset": "remote-backend"},
+                "run_count": 1,
+                "last_result_stats": {"total": 5, "new": 2, "high_score": 1},
+            },
+            {"name": "Second", "config": {"preset": "contract"}},
+        ],
+        limit=1,
+    )
+
+    assert len(rows) == 1
+    assert rows[0].label == "Custom search"
+    assert rows[0].config == {"preset": "remote-backend"}
+    assert rows[0].detail == (
+        "Last run: 5 results, 2 new, 1 high-score | 1 run\n"
+        "Comparison starts after the next completed run."
+    )
+
+
+def test_saved_search_panel_rows_prioritize_changed_searches():
+    rows = saved_search_panel_rows(
+        [
+            {
+                "name": "Flat",
+                "config": {"preset": "flat"},
+                "run_count": 2,
+                "previous_result_stats": {"total": 5, "new": 1, "high_score": 1},
+                "last_result_stats": {"total": 5, "new": 1, "high_score": 1},
+            },
+            {
+                "name": "Changed",
+                "config": {"preset": "changed"},
+                "run_count": 2,
+                "previous_result_stats": {"total": 5, "new": 1, "high_score": 1},
+                "last_result_stats": {"total": 9, "new": 3, "high_score": 2},
+            },
+        ],
+        limit=1,
+    )
+
+    assert len(rows) == 1
+    assert rows[0].label == "Changed"
+    assert rows[0].config == {"preset": "changed"}
+    assert rows[0].detail.startswith("Last run: 9 results")
 
 
 def test_saved_search_status_messages_are_consistent_for_gui():

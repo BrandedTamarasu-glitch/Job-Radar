@@ -72,7 +72,8 @@ Goal: reduce merge hotspots and duplicated behavior after the trust fixes are st
 Current progress:
 - Report rendering has been split into focused HTML and Markdown modules while preserving compatibility wrappers in `job_radar/report.py`.
 - Extracted modules now cover report safety, assets, text helpers, filtering, source warnings, tiers, matching, stats, profile/tracker summaries, manual links, job details, controls, job attributes, result tables, result rows, cards, and Markdown sections.
-- Latest validation: `1052 passed, 8 skipped`.
+- GUI display formatting cleanup has started by moving saved-search panel rows, saved-search feedback, Applications pipeline rows, follow-up queue rows, filters, and Applications export/import feedback into view-model helpers.
+- Latest validation: `1062 passed, 8 skipped`.
 
 Validation:
 - Full `pytest tests/`

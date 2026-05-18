@@ -56,11 +56,17 @@ from job_radar.tracker import (
 from job_radar.update_checker import UpdateChecker, launch_installer, cleanup_old_installers, extract_summary
 from job_radar.gui.applications_view_model import (
     append_application_note,
+    application_calendar_export_error_message,
+    application_calendar_export_success_message,
     application_followup_filter_options,
     application_next_action_row,
     application_pipeline_display_row,
     application_status_from_label,
+    application_status_import_error_message,
+    application_status_import_success_message,
     application_status_menu_labels,
+    applications_csv_export_error_message,
+    applications_csv_export_success_message,
     build_applications_view_model,
     filter_application_next_actions,
     format_next_action_due_text,
@@ -106,12 +112,12 @@ from job_radar.gui.uninstall_dialog import (
 from job_radar.rate_limits import get_quota_usage
 from job_radar.review_state import clear_review_state_by_state, review_state_counts
 from job_radar.saved_searches import (
-    format_search_history_detail,
     load_search_history,
-    prioritize_changed_searches,
     record_search_run,
     record_recent_search,
+    recent_search_panel_rows,
     saved_search_error_message,
+    saved_search_panel_rows,
     saved_search_success_message,
     save_named_search,
     summarize_search_config,
@@ -1148,13 +1154,13 @@ class MainWindow(ctk.CTk):
             export_path = export_applications_csv(applications, output_path)
             if self._applications_export_status_label is not None:
                 self._applications_export_status_label.configure(
-                    text=f"Exported to {export_path}",
+                    text=applications_csv_export_success_message(export_path),
                     text_color="green",
                 )
         except Exception as e:
             if self._applications_export_status_label is not None:
                 self._applications_export_status_label.configure(
-                    text=f"Export failed: {e}",
+                    text=applications_csv_export_error_message(e),
                     text_color="red",
                 )
 
@@ -1179,13 +1185,13 @@ class MainWindow(ctk.CTk):
             self._build_applications_tab(parent)
             if self._applications_export_status_label is not None:
                 self._applications_export_status_label.configure(
-                    text=f"Imported {changed} status update(s)",
+                    text=application_status_import_success_message(changed),
                     text_color="green",
                 )
         except Exception as e:
             if self._applications_export_status_label is not None:
                 self._applications_export_status_label.configure(
-                    text=f"Status import failed: {e}",
+                    text=application_status_import_error_message(e),
                     text_color="red",
                 )
 
@@ -1197,13 +1203,13 @@ class MainWindow(ctk.CTk):
             export_path = export_application_followups_ics(applications, output_path)
             if self._applications_export_status_label is not None:
                 self._applications_export_status_label.configure(
-                    text=f"Exported calendar to {export_path}",
+                    text=application_calendar_export_success_message(export_path),
                     text_color="green",
                 )
         except Exception as e:
             if self._applications_export_status_label is not None:
                 self._applications_export_status_label.configure(
-                    text=f"Calendar export failed: {e}",
+                    text=application_calendar_export_error_message(e),
                     text_color="red",
                 )
 
@@ -1352,11 +1358,11 @@ class MainWindow(ctk.CTk):
     def _add_recent_searches_panel(self, parent):
         """Show recent searches with one-click apply controls."""
         try:
-            recent_searches = load_search_history().get("recent", [])[:3]
+            rows = recent_search_panel_rows(load_search_history().get("recent", []))
         except Exception:
             return
 
-        if not recent_searches:
+        if not rows:
             return
 
         panel = ctk.CTkFrame(parent)
@@ -1370,18 +1376,16 @@ class MainWindow(ctk.CTk):
             anchor="w",
         ).grid(row=0, column=0, sticky="w", padx=12, pady=(10, 4))
 
-        for index, item in enumerate(recent_searches[:3], start=1):
-            name = item.get("name") or "Custom search"
-            config = item.get("config") or {}
+        for index, row in enumerate(rows, start=1):
             ctk.CTkButton(
                 panel,
-                text=name,
+                text=row.label,
                 height=30,
-                command=lambda cfg=config: self._apply_recent_search(cfg),
+                command=lambda cfg=row.config: self._apply_recent_search(cfg),
             ).grid(row=index, column=0, sticky="ew", padx=12, pady=(0, 6))
             ctk.CTkLabel(
                 panel,
-                text=format_search_history_detail(item),
+                text=row.detail,
                 font=ctk.CTkFont(size=11),
                 text_color="gray",
                 anchor="w",
@@ -1396,9 +1400,9 @@ class MainWindow(ctk.CTk):
     def _add_saved_searches_panel(self, parent):
         """Show named saved searches and a save-current control."""
         try:
-            saved_searches = load_search_history().get("saved", [])
+            rows = saved_search_panel_rows(load_search_history().get("saved", []))
         except Exception:
-            saved_searches = []
+            rows = []
 
         panel = ctk.CTkFrame(parent)
         panel.pack(fill="x", pady=(0, 16))
@@ -1420,7 +1424,7 @@ class MainWindow(ctk.CTk):
             border_width=2,
         ).grid(row=0, column=1, sticky="e", padx=12, pady=(10, 4))
 
-        if not saved_searches:
+        if not rows:
             ctk.CTkLabel(
                 panel,
                 text="No saved searches yet.",
@@ -1428,21 +1432,16 @@ class MainWindow(ctk.CTk):
                 text_color="gray",
             ).grid(row=1, column=0, sticky="w", padx=12, pady=(0, 8))
         else:
-            for index, item in enumerate(
-                prioritize_changed_searches(saved_searches, limit=3),
-                start=1,
-            ):
-                name = item.get("name") or "Saved search"
-                config = item.get("config") or {}
+            for index, row in enumerate(rows, start=1):
                 ctk.CTkButton(
                     panel,
-                    text=name,
+                    text=row.label,
                     height=30,
-                    command=lambda cfg=config: self._apply_saved_search(cfg),
+                    command=lambda cfg=row.config: self._apply_saved_search(cfg),
                 ).grid(row=index, column=0, sticky="ew", padx=12, pady=(0, 6))
                 ctk.CTkLabel(
                     panel,
-                    text=format_search_history_detail(item),
+                    text=row.detail,
                     font=ctk.CTkFont(size=11),
                     text_color="gray",
                     anchor="w",

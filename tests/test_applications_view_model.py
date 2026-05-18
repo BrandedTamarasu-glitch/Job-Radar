@@ -4,11 +4,17 @@ from job_radar.gui.applications_view_model import (
     APPLICATION_STATUS_ORDER,
     ApplicationRow,
     append_application_note,
+    application_calendar_export_error_message,
+    application_calendar_export_success_message,
     application_followup_filter_options,
     application_next_action_row,
     application_pipeline_display_row,
     application_status_from_label,
+    application_status_import_error_message,
+    application_status_import_success_message,
     application_status_menu_labels,
+    applications_csv_export_error_message,
+    applications_csv_export_success_message,
     build_applications_view_model,
     filter_application_next_actions,
     format_next_action_due_text,
@@ -232,6 +238,21 @@ def test_application_pipeline_display_row_uses_defaults_without_details():
 
     assert display.heading == "Untitled — Unknown company"
     assert display.detail_text == "No follow-up details."
+
+
+def test_application_export_import_status_messages_are_consistent_for_gui():
+    assert applications_csv_export_success_message("/tmp/apps.csv") == "Exported to /tmp/apps.csv"
+    assert applications_csv_export_error_message(ValueError("disk full")) == "Export failed: disk full"
+    assert application_status_import_success_message(3) == "Imported 3 status update(s)"
+    assert application_status_import_error_message(ValueError("bad json")) == (
+        "Status import failed: bad json"
+    )
+    assert application_calendar_export_success_message("/tmp/followups.ics") == (
+        "Exported calendar to /tmp/followups.ics"
+    )
+    assert application_calendar_export_error_message(ValueError("bad date")) == (
+        "Calendar export failed: bad date"
+    )
 
 
 def test_application_status_from_label_maps_display_labels_to_tracker_values():

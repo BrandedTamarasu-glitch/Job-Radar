@@ -243,8 +243,8 @@ def test_recent_search_panel_loads_and_applies_configs():
 
     assert "load_search_history()" in source
     assert "_apply_recent_search" in source
-    assert "recent_searches[:3]" in source
-    assert "format_search_history_detail(item)" in source
+    assert "recent_search_panel_rows" in source
+    assert "row.detail" in source
 
 
 def test_apply_recent_search_uses_search_controls_defaults():
@@ -259,8 +259,8 @@ def test_saved_search_panel_loads_and_applies_named_searches():
     assert "Saved Searches" in source
     assert "Save Current" in source
     assert "_apply_saved_search" in source
-    assert "prioritize_changed_searches(saved_searches, limit=3)" in source
-    assert "format_search_history_detail(item)" in source
+    assert "saved_search_panel_rows" in source
+    assert "row.detail" in source
 
 
 def test_save_current_search_persists_named_search():
