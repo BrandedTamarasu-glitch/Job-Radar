@@ -6,14 +6,15 @@ Date: 2026-05-18
 
 - Repo path: `/home/corye/openai-cli/Job-Radar`
 - Branch: `main`
-- Git status after latest slice: clean, `main...origin/main [ahead 104]`
-- Last full validation: `1178 passed, 8 skipped`
-- Do not push unless explicitly asked. The 104 local commits after the last push are still local.
+- Git status after latest slice: clean, `main...origin/main [ahead 105]`
+- Last full validation: `1180 passed, 8 skipped`
+- Do not push unless explicitly asked. The 105 local commits after the last push are still local.
 
 ## Latest Local Commits
 
 ```text
-(current) refactor: centralize cache clear status
+(current) refactor: centralize app data status
+3e88566 refactor: centralize cache clear status
 e83496e refactor: centralize dismissed review cleanup
 999cf50 refactor: centralize source diagnostics refresh
 0df14ca refactor: remove legacy source warnings summary
@@ -184,6 +185,7 @@ Started reducing `job_radar/gui/main_window.py` by moving display formatting int
 - `job_radar/gui/maintenance_view_model.py`
   - Settings cache/app-data maintenance status messages
   - Settings cache clear action status helper
+  - Settings app-data export/validation status helpers
   - dismissed review cleanup status messages
   - dismissed review cleanup action status helper
   - Settings local maintenance and feedback diagnostics text composition
@@ -278,7 +280,7 @@ Current line counts:
  142 job_radar/source_registry.py
  440 job_radar/sources.py
  627 job_radar/gui/worker_thread.py
-2312 job_radar/gui/main_window.py
+2307 job_radar/gui/main_window.py
   14 job_radar/gui/demo_report_view_model.py
   44 job_radar/gui/dialogs.py
   70 job_radar/gui/welcome_panel.py
@@ -293,7 +295,7 @@ Current line counts:
   88 job_radar/gui/profile_view_model.py
  287 job_radar/gui/applications_tab.py
  297 job_radar/gui/applications_view_model.py
- 312 job_radar/gui/maintenance_view_model.py
+ 338 job_radar/gui/maintenance_view_model.py
  477 job_radar/gui/source_diagnostics_view_model.py
  258 job_radar/gui/search_summary.py
   78 job_radar/gui/update_status_view_model.py
@@ -319,7 +321,7 @@ rtk .venv/bin/python -m pytest tests/
 Latest result:
 
 ```text
-1178 passed, 8 skipped
+1180 passed, 8 skipped
 ```
 
 ## Active Plan

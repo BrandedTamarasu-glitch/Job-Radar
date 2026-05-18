@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import platform
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -237,6 +238,21 @@ def app_data_export_error_message(error: object) -> str:
     return f"Failed to export app data: {error}"
 
 
+def export_app_data_status(
+    *,
+    results_dir_func,
+    export_func,
+    today_func=date.today,
+) -> str:
+    """Export app data and return Settings status text."""
+    try:
+        output_path = Path(results_dir_func()) / f"job-radar-data-{today_func().isoformat()}.zip"
+        export_path = export_func(output_path)
+        return app_data_export_success_message(export_path)
+    except OSError as e:
+        return app_data_export_error_message(e)
+
+
 def app_data_bundle_validation_message(
     *,
     is_valid: bool,
@@ -248,6 +264,16 @@ def app_data_bundle_validation_message(
         file_noun = "file" if len(files) == 1 else "files"
         return f"Bundle is valid: {len(files)} {file_noun} ready to restore"
     return "Bundle validation failed: " + "; ".join(errors)
+
+
+def validate_app_data_bundle_status(value: str, *, validate_func) -> str:
+    """Validate an app-data bundle path and return Settings status text."""
+    result = validate_func(value)
+    return app_data_bundle_validation_message(
+        is_valid=result.is_valid,
+        files=result.files,
+        errors=result.errors,
+    )
 
 
 def _directory_file_count_and_size(path: Path) -> tuple[int, int]:

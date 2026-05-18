@@ -15,9 +15,11 @@ from job_radar.gui.maintenance_view_model import (
     dismissed_review_cleanup_error_message,
     feedback_diagnostics_text,
     dismissed_review_cleanup_success_message,
+    export_app_data_status,
     format_feedback_diagnostics_lines,
     format_local_maintenance_lines,
     local_maintenance_text,
+    validate_app_data_bundle_status,
 )
 
 
@@ -182,6 +184,44 @@ def test_app_data_bundle_validation_message_handles_valid_and_invalid_results():
         files=[],
         errors=["missing manifest", "bad checksum"],
     ) == "Bundle validation failed: missing manifest; bad checksum"
+
+
+def test_export_app_data_status_returns_success_and_error(tmp_path):
+    class FixedDate:
+        @staticmethod
+        def isoformat():
+            return "2026-05-18"
+
+    exported_paths = []
+
+    assert export_app_data_status(
+        results_dir_func=lambda: tmp_path,
+        export_func=lambda output_path: exported_paths.append(output_path) or output_path,
+        today_func=lambda: FixedDate(),
+    ) == f"Exported app data to {tmp_path / 'job-radar-data-2026-05-18.zip'}"
+    assert exported_paths == [tmp_path / "job-radar-data-2026-05-18.zip"]
+
+    def fail_export(output_path):
+        raise OSError("disk full")
+
+    assert export_app_data_status(
+        results_dir_func=lambda: tmp_path,
+        export_func=fail_export,
+        today_func=lambda: FixedDate(),
+    ) == "Failed to export app data: disk full"
+
+
+def test_validate_app_data_bundle_status_formats_validator_result():
+    result = type("Result", (), {
+        "is_valid": True,
+        "files": ["profile.json"],
+        "errors": [],
+    })()
+
+    assert validate_app_data_bundle_status(
+        "/tmp/bundle.zip",
+        validate_func=lambda value: result,
+    ) == "Bundle is valid: 1 file ready to restore"
 
 
 def test_clear_cache_status_returns_success_and_error(tmp_path):
