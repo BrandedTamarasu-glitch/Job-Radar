@@ -88,8 +88,9 @@ Current progress:
 - First-run welcome screen construction now lives in `job_radar/gui/welcome_panel.py`.
 - Top-level content clearing while preserving the header now lives in `job_radar/gui/window_shell.py`.
 - Main tabview construction and canonical tab names now live in `job_radar/gui/tab_shell.py`.
+- MainWindow now uses one lazy tab-build helper for user and programmatic tab navigation.
 - Settings update controls/status, API credential sections/panel orchestration, scoring configuration, storage maintenance, diagnostics, Jobicy public-source status, JSearch setup tip, and danger-zone construction now live in `job_radar/gui/settings_panel.py`.
-- Latest validation: `1102 passed, 8 skipped`.
+- Latest validation: `1103 passed, 8 skipped`.
 
 Validation:
 - Full `pytest tests/`

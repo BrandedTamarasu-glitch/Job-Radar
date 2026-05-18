@@ -67,7 +67,7 @@ def test_profile_save_navigation_reuses_search_success_flow():
 
     assert '_show_search_tab_with_success("Profile created successfully!")' in created_source
     assert '_show_search_tab_with_success("Profile updated successfully!")' in updated_source
-    assert '"Search" not in self._tabs_built' in helper_source
+    assert 'self._build_tab_if_needed("Search")' in helper_source
     assert 'self._tabview.set("Search")' in helper_source
     assert "self._show_success_message(message)" in helper_source
 
@@ -153,11 +153,20 @@ def test_profile_field_helper_builds_label_value_rows():
 
 def test_show_tab_builds_lazy_tabs_before_navigation():
     source = inspect.getsource(MainWindow._show_tab)
+    helper_source = inspect.getsource(MainWindow._build_tab_if_needed)
 
-    assert 'tab_name not in self._tabs_built' in source
-    assert '_build_search_tab(self._tabview.tab("Search"))' in source
-    assert '_build_applications_tab(self._tabview.tab("Applications"))' in source
+    assert "self._build_tab_if_needed(tab_name)" in source
+    assert 'tab_name in self._tabs_built' in helper_source
+    assert '_build_search_tab(self._tabview.tab("Search"))' in helper_source
+    assert '_build_applications_tab(self._tabview.tab("Applications"))' in helper_source
     assert "self._tabview.set(tab_name)" in source
+
+
+def test_tab_change_reuses_lazy_tab_builder():
+    source = inspect.getsource(MainWindow._on_tab_change)
+
+    assert "current_tab = self._tabview.get()" in source
+    assert "self._build_tab_if_needed(current_tab)" in source
 
 
 def test_applications_tab_includes_next_action_queue():

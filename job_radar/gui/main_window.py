@@ -356,10 +356,7 @@ class MainWindow(ctk.CTk):
 
     def _show_search_tab_with_success(self, message: str):
         """Build and select the Search tab, then display a success message."""
-        # Manually trigger tab build before programmatic switch (lazy loading workaround)
-        if "Search" not in self._tabs_built:
-            self._build_search_tab(self._tabview.tab("Search"))
-            self._tabs_built.add("Search")
+        self._build_tab_if_needed("Search")
         self._tabview.set("Search")
         self._show_success_message(message)
 
@@ -405,16 +402,25 @@ class MainWindow(ctk.CTk):
     def _on_tab_change(self):
         """Handle tab change - lazy-build tabs on first access."""
         current_tab = self._tabview.get()
+        self._build_tab_if_needed(current_tab)
 
-        # Build tab if not already built
-        if current_tab not in self._tabs_built:
-            if current_tab == "Search":
-                self._build_search_tab(self._tabview.tab("Search"))
-            elif current_tab == "Applications":
-                self._build_applications_tab(self._tabview.tab("Applications"))
-            elif current_tab == "Settings":
-                self._build_settings_tab(self._tabview.tab("Settings"))
-            self._tabs_built.add(current_tab)
+    def _build_tab_if_needed(self, tab_name: str):
+        """Build lazy tab content once for the requested tab."""
+        if tab_name in self._tabs_built:
+            return
+
+        if tab_name == "Profile":
+            self._build_profile_tab(self._tabview.tab("Profile"))
+        elif tab_name == "Search":
+            self._build_search_tab(self._tabview.tab("Search"))
+        elif tab_name == "Applications":
+            self._build_applications_tab(self._tabview.tab("Applications"))
+        elif tab_name == "Settings":
+            self._build_settings_tab(self._tabview.tab("Settings"))
+        else:
+            return
+
+        self._tabs_built.add(tab_name)
 
     def _build_profile_tab(self, parent):
         """Build Profile tab with profile summary display and Edit button.
@@ -922,16 +928,7 @@ class MainWindow(ctk.CTk):
     def _show_tab(self, tab_name: str):
         """Navigate to a tab, building lazy content first when needed."""
         if self._tabview is not None:
-            if tab_name not in self._tabs_built:
-                if tab_name == "Profile":
-                    self._build_profile_tab(self._tabview.tab("Profile"))
-                elif tab_name == "Search":
-                    self._build_search_tab(self._tabview.tab("Search"))
-                elif tab_name == "Applications":
-                    self._build_applications_tab(self._tabview.tab("Applications"))
-                elif tab_name == "Settings":
-                    self._build_settings_tab(self._tabview.tab("Settings"))
-                self._tabs_built.add(tab_name)
+            self._build_tab_if_needed(tab_name)
             self._tabview.set(tab_name)
 
     def _add_recent_searches_panel(self, parent):
