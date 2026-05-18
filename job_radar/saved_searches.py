@@ -284,6 +284,22 @@ def saved_search_panel_rows(
     ]
 
 
+def load_recent_search_panel_rows(limit: int = 3) -> list[SearchPanelRow]:
+    """Load display rows for the recent-search panel, falling back to empty."""
+    try:
+        return recent_search_panel_rows(load_search_history().get("recent", []), limit=limit)
+    except Exception:
+        return []
+
+
+def load_saved_search_panel_rows(limit: int = 3) -> list[SearchPanelRow]:
+    """Load display rows for the saved-search panel, falling back to empty."""
+    try:
+        return saved_search_panel_rows(load_search_history().get("saved", []), limit=limit)
+    except Exception:
+        return []
+
+
 def saved_search_success_message(name: str) -> str:
     """Return GUI feedback after saving a named search."""
     return f"Saved: {name}"

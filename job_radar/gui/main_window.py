@@ -112,11 +112,11 @@ from job_radar.rate_limits import get_quota_usage
 from job_radar.review_state import clear_review_state_by_state, review_state_counts
 from job_radar.saved_searches import (
     load_search_history,
+    load_recent_search_panel_rows,
+    load_saved_search_panel_rows,
     record_search_run,
     record_recent_search,
-    recent_search_panel_rows,
     saved_search_error_message,
-    saved_search_panel_rows,
     saved_search_success_message,
     save_named_search,
     summarize_search_config,
@@ -1142,11 +1142,7 @@ class MainWindow(ctk.CTk):
 
     def _add_recent_searches_panel(self, parent):
         """Show recent searches with one-click apply controls."""
-        try:
-            rows = recent_search_panel_rows(load_search_history().get("recent", []))
-        except Exception:
-            return
-
+        rows = load_recent_search_panel_rows()
         if not rows:
             return
 
@@ -1184,11 +1180,7 @@ class MainWindow(ctk.CTk):
 
     def _add_saved_searches_panel(self, parent):
         """Show named saved searches and a save-current control."""
-        try:
-            rows = saved_search_panel_rows(load_search_history().get("saved", []))
-        except Exception:
-            rows = []
-
+        rows = load_saved_search_panel_rows()
         panel = ctk.CTkFrame(parent)
         panel.pack(fill="x", pady=(0, 16))
         panel.grid_columnconfigure(0, weight=1)

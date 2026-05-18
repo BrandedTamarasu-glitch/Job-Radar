@@ -8,6 +8,8 @@ from job_radar.saved_searches import (
     format_search_insight,
     format_run_summary,
     load_search_history,
+    load_recent_search_panel_rows,
+    load_saved_search_panel_rows,
     normalize_search_config,
     prioritize_changed_searches,
     record_search_run,
@@ -398,6 +400,16 @@ def test_saved_search_panel_rows_prioritize_changed_searches():
     assert rows[0].label == "Changed"
     assert rows[0].config == {"preset": "changed"}
     assert rows[0].detail.startswith("Last run: 9 results")
+
+
+def test_load_search_panel_rows_recover_from_missing_state(monkeypatch):
+    def raise_load_error():
+        raise OSError("cannot read")
+
+    monkeypatch.setattr("job_radar.saved_searches.load_search_history", raise_load_error)
+
+    assert load_recent_search_panel_rows() == []
+    assert load_saved_search_panel_rows() == []
 
 
 def test_saved_search_status_messages_are_consistent_for_gui():

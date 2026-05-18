@@ -78,6 +78,8 @@ Started reducing `job_radar/gui/main_window.py` by moving display formatting int
   - `format_search_history_detail`
   - `recent_search_panel_rows`
   - `saved_search_panel_rows`
+  - `load_recent_search_panel_rows`
+  - `load_saved_search_panel_rows`
   - `saved_search_success_message`
   - `saved_search_error_message`
 - `job_radar/gui/applications_view_model.py`
@@ -93,10 +95,10 @@ Current line counts:
 
 ```text
 2149 job_radar/report.py
-3409 job_radar/gui/main_window.py
+3401 job_radar/gui/main_window.py
  287 job_radar/gui/applications_tab.py
  297 job_radar/gui/applications_view_model.py
- 462 job_radar/saved_searches.py
+ 478 job_radar/saved_searches.py
 ```
 
 ## Validation Commands Used
@@ -117,7 +119,7 @@ rtk .venv/bin/python -m pytest tests/
 Latest result:
 
 ```text
-1063 passed, 8 skipped
+1064 passed, 8 skipped
 ```
 
 ## Active Plan
