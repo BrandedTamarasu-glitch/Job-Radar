@@ -6,13 +6,14 @@ Date: 2026-05-18
 
 - Repo path: `/home/corye/openai-cli/Job-Radar`
 - Branch: `main`
-- Git status after latest slice: clean, `main...origin/main [ahead 67]`
-- Last full validation: `1123 passed, 8 skipped`
-- Do not push unless explicitly asked. The 67 local commits after the last push are still local.
+- Git status after latest slice: clean, `main...origin/main [ahead 68]`
+- Last full validation: `1124 passed, 8 skipped`
+- Do not push unless explicitly asked. The 68 local commits after the last push are still local.
 
 ## Latest Local Commits
 
 ```text
+094a521 refactor: centralize asset queue handling
 99bf735 refactor: centralize source diagnostics loading
 7565e2e refactor: centralize source strategy loading
 8817f3d refactor: centralize profile guidance loading
@@ -165,6 +166,7 @@ Started reducing `job_radar/gui/main_window.py` by moving display formatting int
   - Shared download worker reference cleanup helper
   - Shared terminal download queue handling helpers
   - Shared download progress and asset queue handling helpers
+  - Shared legacy worker queue handling helpers
   - Removed redundant Applications due-text wrapper in favor of the view-model helper
   - Removed obsolete Profile field wrapper after Profile row rendering moved to `profile_panel.py`
   - Removed obsolete Settings update-status initializer after update panel extraction
@@ -185,7 +187,7 @@ Current line counts:
 
 ```text
 2149 job_radar/report.py
-2312 job_radar/gui/main_window.py
+2320 job_radar/gui/main_window.py
   14 job_radar/gui/demo_report_view_model.py
   44 job_radar/gui/dialogs.py
   70 job_radar/gui/welcome_panel.py
@@ -226,7 +228,7 @@ rtk .venv/bin/python -m pytest tests/
 Latest result:
 
 ```text
-1123 passed, 8 skipped
+1124 passed, 8 skipped
 ```
 
 ## Active Plan

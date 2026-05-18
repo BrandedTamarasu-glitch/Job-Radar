@@ -525,6 +525,18 @@ def test_asset_queue_messages_use_shared_helpers():
     assert "self._update_banner.show_failure(error)" in failed_source
 
 
+def test_legacy_worker_queue_messages_use_shared_helpers():
+    queue_source = inspect.getsource(MainWindow._check_queue)
+    progress_source = inspect.getsource(MainWindow._handle_legacy_progress)
+    complete_source = inspect.getsource(MainWindow._handle_legacy_complete)
+
+    assert "self._handle_legacy_progress(source, current, total)" in queue_source
+    assert "self._handle_legacy_complete(total)" in queue_source
+    assert "self._update_progress(source, current, total)" in progress_source
+    assert 'self._update_progress("Complete", total, total)' in complete_source
+    assert "self.after(2000, self._show_search_idle)" in complete_source
+
+
 def test_settings_separator_helper_keeps_section_dividers_consistent():
     source = inspect.getsource(add_settings_separator)
     tab_source = inspect.getsource(MainWindow._build_settings_tab)

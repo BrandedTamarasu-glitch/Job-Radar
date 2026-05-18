@@ -1091,11 +1091,10 @@ class MainWindow(ctk.CTk):
                     # Backward compatibility with mock worker messages
                     elif msg_type == "progress":
                         _, source, current, total = msg
-                        self._update_progress(source, current, total)
+                        self._handle_legacy_progress(source, current, total)
                     elif msg_type == "complete":
                         _, total = msg
-                        self._update_progress("Complete", total, total)
-                        self.after(2000, self._show_search_idle)
+                        self._handle_legacy_complete(total)
 
                 except queue.Empty:
                     break
@@ -1352,6 +1351,15 @@ class MainWindow(ctk.CTk):
         """Show installer asset resolution failure when the update banner is visible."""
         if self._update_banner:
             self._update_banner.show_failure(error)
+
+    def _handle_legacy_progress(self, source: str, current: int, total: int):
+        """Handle backward-compatible mock-worker progress messages."""
+        self._update_progress(source, current, total)
+
+    def _handle_legacy_complete(self, total: int):
+        """Handle backward-compatible mock-worker completion messages."""
+        self._update_progress("Complete", total, total)
+        self.after(2000, self._show_search_idle)
 
     def _handle_update_available(self, version: str, release_url: str, tag_name: str):
         """Store and surface available-update state from the update checker."""
