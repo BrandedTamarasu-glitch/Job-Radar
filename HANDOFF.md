@@ -6,13 +6,14 @@ Date: 2026-05-18
 
 - Repo path: `/home/corye/openai-cli/Job-Radar`
 - Branch: `main`
-- Git status after latest slice: clean, `main...origin/main [ahead 82]`
-- Last full validation: `1160 passed, 8 skipped`
-- Do not push unless explicitly asked. The 82 local commits after the last push are still local.
+- Git status after latest slice: clean, `main...origin/main [ahead 83]`
+- Last full validation: `1162 passed, 8 skipped`
+- Do not push unless explicitly asked. The 83 local commits after the last push are still local.
 
 ## Latest Local Commits
 
 ```text
+d16ad4a refactor: extract source parsing helpers
 e6d656f refactor: extract source job model
 7049d4d refactor: extract source config helpers
 fe8d098 refactor: group source queries by phase
@@ -117,6 +118,9 @@ Started reducing `job_radar/gui/main_window.py` by moving display formatting int
 - `job_radar/source_parsing.py`
   - Shared source text cleanup, location normalization, arrangement parsing, and Dice parsing constants
   - `sources.py` re-exports parsing helpers used by existing tests/imports
+- `job_radar/source_mappers.py`
+  - Adzuna API response mapper
+  - `sources.py` re-exports `map_adzuna_to_job_result` for existing tests/imports
 - `job_radar/gui/applications_view_model.py`
   - `format_next_action_due_text`
   - `ApplicationNextActionRow`
@@ -227,13 +231,14 @@ Current line counts:
 2149 job_radar/report.py
 1138 job_radar/search.py
  261 job_radar/search_pipeline.py
+  76 job_radar/source_mappers.py
  109 job_radar/source_parsing.py
   27 job_radar/source_models.py
  117 job_radar/source_config.py
  122 job_radar/source_queries.py
  117 job_radar/manual_sources.py
   92 job_radar/source_registry.py
-1914 job_radar/sources.py
+1844 job_radar/sources.py
  627 job_radar/gui/worker_thread.py
 2320 job_radar/gui/main_window.py
   14 job_radar/gui/demo_report_view_model.py
