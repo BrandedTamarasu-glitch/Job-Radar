@@ -12,6 +12,7 @@ from .source_mappers import (
     map_adzuna_to_job_result,
     map_authenticjobs_to_job_result,
     map_jobicy_to_job_result,
+    map_jsearch_to_job_result,
     map_serpapi_to_job_result,
 )
 from .source_models import JobResult
@@ -155,6 +156,73 @@ def fetch_authenticjobs(
             log.debug("[Authentic Jobs] Request failed: %s", e)
 
     log.info("[Authentic Jobs] Found %d results for '%s'", len(results), query)
+    return results
+
+
+def fetch_jsearch(
+    query: str,
+    location: str = "",
+    verbose: bool = False,
+    *,
+    get_api_key_func=get_api_key,
+    check_rate_limit_func=check_rate_limit,
+    fetch_with_retry_func=fetch_with_retry,
+) -> list[JobResult]:
+    """Fetch job listings from JSearch API."""
+    results = []
+
+    api_key = get_api_key_func("JSEARCH_API_KEY", "JSearch")
+    if not api_key:
+        return results
+
+    if not check_rate_limit_func("jsearch", verbose=verbose):
+        return results
+
+    headers = {
+        **HEADERS,
+        "X-RapidAPI-Key": api_key,
+        "X-RapidAPI-Host": "jsearch.p.rapidapi.com"
+    }
+    params = {
+        "query": query,
+        "page": "1",
+        "num_pages": "1",
+        "date_posted": "week",
+    }
+    if location:
+        params["location"] = location
+
+    url = "https://jsearch.p.rapidapi.com/search?" + urllib.parse.urlencode(params)
+
+    try:
+        body = fetch_with_retry_func(
+            url,
+            headers=headers,
+            use_cache=True,
+            cache_ttl_seconds=source_cache_ttl("jsearch"),
+        )
+        if body is None:
+            log.debug("[JSearch] Fetch failed for '%s'", query)
+            return results
+
+        data = _json.loads(body)
+        items = data.get("data", [])
+
+        for item in items:
+            job = map_jsearch_to_job_result(item)
+            if job:
+                results.append(job)
+
+    except _json.JSONDecodeError as e:
+        log.debug("[JSearch] JSON parse error: %s", e)
+    except Exception as e:
+        error_str = str(e).lower()
+        if "401" in error_str or "403" in error_str or "unauthorized" in error_str:
+            log.error("[JSearch] Authentication failed - run 'job-radar --setup-apis' to reconfigure")
+        else:
+            log.debug("[JSearch] Request failed: %s", e)
+
+    log.info("[JSearch] Found %d results for '%s'", len(results), query)
     return results
 
 

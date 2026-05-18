@@ -35,6 +35,7 @@ from .source_api_fetchers import (
     fetch_adzuna as _fetch_adzuna_api,
     fetch_authenticjobs as _fetch_authenticjobs_api,
     fetch_jobicy,
+    fetch_jsearch as _fetch_jsearch_api,
     fetch_serpapi,
 )
 from .source_mappers import (
@@ -637,66 +638,14 @@ def fetch_authenticjobs(query: str, location: str = "", verbose: bool = False) -
 
 def fetch_jsearch(query: str, location: str = "", verbose: bool = False) -> list[JobResult]:
     """Fetch job listings from JSearch API (aggregates LinkedIn, Indeed, Glassdoor)."""
-    results = []
-
-    # Check credentials
-    api_key = get_api_key("JSEARCH_API_KEY", "JSearch")
-    if not api_key:
-        return results
-
-    # Check rate limit (uses "jsearch" backend shared across linkedin/indeed/glassdoor)
-    if not check_rate_limit("jsearch", verbose=verbose):
-        return results
-
-    # Build API URL
-    headers = {
-        **HEADERS,
-        "X-RapidAPI-Key": api_key,
-        "X-RapidAPI-Host": "jsearch.p.rapidapi.com"
-    }
-    params = {
-        "query": query,
-        "page": "1",
-        "num_pages": "1",
-        "date_posted": "week",
-    }
-    if location:
-        params["location"] = location
-
-    url = "https://jsearch.p.rapidapi.com/search?" + urllib.parse.urlencode(params)
-
-    # Fetch with retry
-    try:
-        body = fetch_with_retry(
-            url,
-            headers=headers,
-            use_cache=True,
-            cache_ttl_seconds=source_cache_ttl("jsearch"),
-        )
-        if body is None:
-            log.debug("[JSearch] Fetch failed for '%s'", query)
-            return results
-
-        data = _json.loads(body)
-        items = data.get("data", [])
-
-        for item in items:
-            job = map_jsearch_to_job_result(item)
-            if job:
-                results.append(job)
-
-    except _json.JSONDecodeError as e:
-        log.debug("[JSearch] JSON parse error: %s", e)
-    except Exception as e:
-        # Check for HTTPError-like exceptions
-        error_str = str(e).lower()
-        if "401" in error_str or "403" in error_str or "unauthorized" in error_str:
-            log.error("[JSearch] Authentication failed - run 'job-radar --setup-apis' to reconfigure")
-        else:
-            log.debug("[JSearch] Request failed: %s", e)
-
-    log.info("[JSearch] Found %d results for '%s'", len(results), query)
-    return results
+    return _fetch_jsearch_api(
+        query,
+        location,
+        verbose,
+        get_api_key_func=get_api_key,
+        check_rate_limit_func=check_rate_limit,
+        fetch_with_retry_func=fetch_with_retry,
+    )
 
 
 # ---------------------------------------------------------------------------
