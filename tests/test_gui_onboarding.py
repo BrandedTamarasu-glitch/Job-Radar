@@ -22,7 +22,7 @@ from job_radar.gui.search_panel import (
     replace_success_message,
     update_source_progress_widgets,
 )
-from job_radar.gui.search_summary import search_readiness_guidance_lines
+from job_radar.gui.search_summary import search_completion_content, search_readiness_guidance_lines
 from job_radar.gui.maintenance_view_model import feedback_diagnostics_text, local_maintenance_text
 from job_radar.gui.source_diagnostics_view_model import source_diagnostics_text
 from job_radar.gui.settings_panel import (
@@ -267,9 +267,11 @@ def test_calendar_export_writes_followup_ics_file():
 
 def test_search_complete_includes_review_state_summary():
     source = inspect.getsource(MainWindow._show_search_complete)
+    summary_source = inspect.getsource(search_completion_content)
 
     assert "_review_state_summary_lines" in source
-    assert "review_queue_text" in source
+    assert "search_completion_content" in source
+    assert "review_queue_text(review_lines or [])" in summary_source
     assert "build_search_completion_panel" in source
 
 
@@ -346,9 +348,12 @@ def test_profile_form_renders_field_hints():
 
 def test_search_complete_loads_profile_for_zero_result_guidance():
     source = inspect.getsource(MainWindow._show_search_complete)
+    summary_source = inspect.getsource(search_completion_content)
 
-    assert "zero_result_lines(job_count, self._load_current_profile_for_guidance())" in source
-    assert "search_context_lines(summary, self._active_search_config)" in source
+    assert "profile=self._load_current_profile_for_guidance()" in source
+    assert "search_config=self._active_search_config" in source
+    assert "zero_result_lines(job_count, profile)" in summary_source
+    assert "search_context_lines(summary, search_config)" in summary_source
 
 
 def test_settings_tab_includes_local_maintenance_summary():

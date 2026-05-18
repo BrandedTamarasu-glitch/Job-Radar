@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from job_radar.profile_readiness import (
     ProfileReadiness,
     assess_profile_readiness,
@@ -9,6 +11,40 @@ from job_radar.profile_readiness import (
     scoring_signal_guidance_lines,
 )
 from job_radar.report import ZERO_RESULTS_TIPS
+
+
+@dataclass(frozen=True)
+class SearchCompletionContent:
+    """Preformatted copy blocks for the GUI search completion panel."""
+
+    warning_message: str | None
+    next_action_text: str | None
+    summary_lines: list[str]
+    context_text: str | None
+    review_text: str | None
+
+
+def search_completion_content(
+    job_count: int,
+    summary: dict | None,
+    *,
+    profile: dict | None = None,
+    search_config: dict | None = None,
+    review_lines: list[str] | None = None,
+) -> SearchCompletionContent:
+    """Return all text blocks needed by the GUI completion panel."""
+    summary_lines = source_summary_lines(summary)
+    cache_line = cache_summary_line(summary)
+    if cache_line:
+        summary_lines.append(cache_line)
+
+    return SearchCompletionContent(
+        warning_message=source_warning_message(summary),
+        next_action_text=bullet_block_text("Try next", zero_result_lines(job_count, profile)),
+        summary_lines=summary_lines,
+        context_text=bullet_block_text("Run context", search_context_lines(summary, search_config)),
+        review_text=review_queue_text(review_lines or []),
+    )
 
 
 def completion_message(job_count: int) -> str:

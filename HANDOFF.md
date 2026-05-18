@@ -6,13 +6,14 @@ Date: 2026-05-18
 
 - Repo path: `/home/corye/openai-cli/Job-Radar`
 - Branch: `main`
-- Git status after latest slice: clean, `main...origin/main [ahead 61]`
+- Git status after latest slice: clean, `main...origin/main [ahead 62]`
 - Last full validation: `1117 passed, 8 skipped`
-- Do not push unless explicitly asked. The 61 local commits after the last push are still local.
+- Do not push unless explicitly asked. The 62 local commits after the last push are still local.
 
 ## Latest Local Commits
 
 ```text
+5e6e0c0 refactor: extract manual update button reset
 35fb9dc refactor: centralize download queue results
 4985940 refactor: centralize update availability handling
 a63f519 refactor: centralize manual update results
@@ -108,6 +109,7 @@ Started reducing `job_radar/gui/main_window.py` by moving display formatting int
   - live source progress text helpers
   - source progress counter display text
   - search completion label/block text helpers
+  - search completion content block composition
   - search readiness guidance line composition
 - `job_radar/gui/search_panel.py`
   - Search state content clearing helper
@@ -172,7 +174,7 @@ Current line counts:
 
 ```text
 2149 job_radar/report.py
-2326 job_radar/gui/main_window.py
+2313 job_radar/gui/main_window.py
   14 job_radar/gui/demo_report_view_model.py
   44 job_radar/gui/dialogs.py
   70 job_radar/gui/welcome_panel.py
@@ -189,7 +191,7 @@ Current line counts:
  297 job_radar/gui/applications_view_model.py
  287 job_radar/gui/maintenance_view_model.py
  464 job_radar/gui/source_diagnostics_view_model.py
- 222 job_radar/gui/search_summary.py
+ 258 job_radar/gui/search_summary.py
   78 job_radar/gui/update_status_view_model.py
  478 job_radar/saved_searches.py
 ```

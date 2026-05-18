@@ -16,6 +16,7 @@ from job_radar.gui.search_summary import (
     completion_message,
     error_message,
     review_queue_text,
+    search_completion_content,
     search_context_lines,
     search_readiness_guidance_lines,
     source_fetching_message,
@@ -196,6 +197,35 @@ def test_bullet_block_and_review_queue_text_format_compact_labels():
         "Review queue: 2 shortlisted | 1 maybe later"
     )
     assert review_queue_text([]) is None
+
+
+def test_search_completion_content_collects_completion_blocks():
+    summary = {
+        "query_failures": 1,
+        "failed_sources": ["Dice"],
+        "sources": [{"name": "RemoteOK", "job_count": 2, "warning_count": 0}],
+        "cache_stats": {"hits": 1, "misses": 0, "writes": 0, "disabled": 0},
+    }
+    content = search_completion_content(
+        0,
+        summary,
+        search_config={"new_only": True},
+        review_lines=["2 shortlisted"],
+    )
+
+    assert "1 source query failed" in content.warning_message
+    assert content.next_action_text.startswith("Try next:")
+    assert content.summary_lines == [
+        "RemoteOK: 2 jobs",
+        "Cache: 1 hits, 0 misses",
+    ]
+    assert content.context_text == (
+        "Run context:\n"
+        "- Some source queries failed, so totals may be lower than usual.\n"
+        "- This run was served from cache, so results may match a recent run.\n"
+        "- Active filters: new-only."
+    )
+    assert content.review_text == "Review queue: 2 shortlisted"
 
 
 def test_search_readiness_guidance_lines_blend_readiness_and_scoring_signals():

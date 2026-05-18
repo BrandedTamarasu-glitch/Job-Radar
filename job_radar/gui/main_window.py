@@ -106,15 +106,9 @@ from job_radar.gui.search_panel import (
     update_source_progress_widgets,
 )
 from job_radar.gui.search_summary import (
-    bullet_block_text,
-    cache_summary_line,
-    review_queue_text,
-    search_context_lines,
+    search_completion_content,
     search_readiness_guidance_lines,
     source_job_count_line,
-    source_summary_lines,
-    source_warning_message,
-    zero_result_lines,
 )
 from job_radar.gui.settings_panel import (
     add_api_credentials_panel,
@@ -1011,29 +1005,22 @@ class MainWindow(ctk.CTk):
         """
         clear_search_content(self._search_content)
 
-        warning_message = source_warning_message(summary)
-        next_actions = zero_result_lines(job_count, self._load_current_profile_for_guidance())
-        next_action_text = bullet_block_text("Try next", next_actions)
-
-        summary_lines = source_summary_lines(summary)
-        cache_line = cache_summary_line(summary)
-        if cache_line:
-            summary_lines.append(cache_line)
-
-        context_lines = search_context_lines(summary, self._active_search_config)
-        context_text = bullet_block_text("Run context", context_lines)
-
-        review_lines = self._review_state_summary_lines()
-        review_text = review_queue_text(review_lines)
+        content = search_completion_content(
+            job_count,
+            summary,
+            profile=self._load_current_profile_for_guidance(),
+            search_config=self._active_search_config,
+            review_lines=self._review_state_summary_lines(),
+        )
 
         build_search_completion_panel(
             self._search_content,
             job_count=job_count,
-            warning_message=warning_message,
-            next_action_text=next_action_text,
-            summary_lines=summary_lines,
-            context_text=context_text,
-            review_text=review_text,
+            warning_message=content.warning_message,
+            next_action_text=content.next_action_text,
+            summary_lines=content.summary_lines,
+            context_text=content.context_text,
+            review_text=content.review_text,
             on_open_report=self._open_report,
             on_new_search=self._show_search_idle,
         )
