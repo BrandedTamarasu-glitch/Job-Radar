@@ -1070,8 +1070,7 @@ class MainWindow(ctk.CTk):
                     # Download worker messages
                     elif msg_type == "download_progress":
                         _, downloaded, total = msg
-                        if self._update_banner:
-                            self._update_banner.update_progress(downloaded, total)
+                        self._handle_download_progress(downloaded, total)
                     elif msg_type == "download_complete":
                         _, dest_path = msg
                         self._handle_download_complete(dest_path)
@@ -1082,17 +1081,10 @@ class MainWindow(ctk.CTk):
                         self._handle_download_cancelled()
                     elif msg_type == "asset_ready":
                         _, asset, version = msg
-                        # Show confirmation dialog
-                        DownloadConfirmDialog(
-                            self,
-                            version,
-                            asset['size'],
-                            on_confirm=lambda: self._start_download(asset, version)
-                        )
+                        self._handle_asset_ready(asset, version)
                     elif msg_type == "asset_failed":
                         _, error = msg
-                        if self._update_banner:
-                            self._update_banner.show_failure(error)
+                        self._handle_asset_failed(error)
                     elif msg_type == "release_notes_ready":
                         _, version, body = msg
                         self._show_changelog_dialog(version, body)
@@ -1325,6 +1317,11 @@ class MainWindow(ctk.CTk):
         self._download_worker = None
         self._download_thread = None
 
+    def _handle_download_progress(self, downloaded: int, total: int):
+        """Show download progress when the update banner is visible."""
+        if self._update_banner:
+            self._update_banner.update_progress(downloaded, total)
+
     def _handle_download_complete(self, dest_path: str):
         """Show completed download state and clear worker references."""
         if self._update_banner:
@@ -1341,6 +1338,20 @@ class MainWindow(ctk.CTk):
         """Clear update UI and worker references after cancellation."""
         self._clear_update_banner()
         self._clear_download_worker()
+
+    def _handle_asset_ready(self, asset: dict, version: str):
+        """Show the installer asset confirmation dialog."""
+        DownloadConfirmDialog(
+            self,
+            version,
+            asset['size'],
+            on_confirm=lambda: self._start_download(asset, version)
+        )
+
+    def _handle_asset_failed(self, error: str):
+        """Show installer asset resolution failure when the update banner is visible."""
+        if self._update_banner:
+            self._update_banner.show_failure(error)
 
     def _handle_update_available(self, version: str, release_url: str, tag_name: str):
         """Store and surface available-update state from the update checker."""

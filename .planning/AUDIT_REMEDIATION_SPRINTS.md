@@ -98,11 +98,12 @@ Current progress:
 - MainWindow now uses one update banner teardown helper for replacement, dismiss, skip, and download cancellation paths.
 - MainWindow now uses one download worker cleanup helper for terminal download queue messages.
 - MainWindow now uses shared terminal download queue handling helpers.
+- MainWindow now uses shared download progress and asset queue handling helpers.
 - MainWindow no longer wraps Applications due-date display text that already lives in `job_radar/gui/applications_view_model.py`.
 - MainWindow no longer wraps Profile field rendering that already lives in `job_radar/gui/profile_panel.py`.
 - MainWindow no longer carries the obsolete Settings update-status initializer that moved into `job_radar/gui/settings_panel.py`.
 - Settings update controls/status, section separators, API credential sections/widget registration/panel orchestration, scoring configuration, storage maintenance, diagnostics, Jobicy public-source status, JSearch setup tip, and danger-zone construction now live in `job_radar/gui/settings_panel.py`.
-- Latest validation: `1122 passed, 8 skipped`.
+- Latest validation: `1123 passed, 8 skipped`.
 
 Validation:
 - Full `pytest tests/`
