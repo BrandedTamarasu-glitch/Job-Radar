@@ -114,6 +114,7 @@ from job_radar.gui.search_summary import (
     source_warning_message,
     zero_result_lines,
 )
+from job_radar.gui.settings_panel import add_storage_maintenance_panel
 from job_radar.gui.maintenance_view_model import (
     app_data_bundle_validation_message,
     app_data_export_error_message,
@@ -2245,134 +2246,20 @@ class MainWindow(ctk.CTk):
         separator = ctk.CTkFrame(scroll_frame, height=2, fg_color="gray70")
         separator.pack(fill="x", pady=(20, 10), padx=10)
 
-        # === Storage Maintenance Section ===
-        storage_title = ctk.CTkLabel(
+        maintenance_widgets = add_storage_maintenance_panel(
             scroll_frame,
-            text="Storage Maintenance",
-            font=ctk.CTkFont(size=18, weight="bold")
+            maintenance_text=self._local_maintenance_text(),
+            feedback_diagnostics_text=self._feedback_diagnostics_text(),
+            source_diagnostics_text=self._source_diagnostics_text(),
+            on_clear_cache=self._on_clear_cache,
+            on_clear_dismissed_reviews=self._on_clear_dismissed_reviews,
+            on_export_app_data=self._on_export_app_data,
+            on_validate_app_data_bundle=self._on_validate_app_data_bundle,
+            on_copy_feedback_diagnostics=self._on_copy_feedback_diagnostics,
+            on_refresh_source_diagnostics=self._refresh_source_diagnostics,
         )
-        storage_title.pack(pady=(10, 10), anchor="w", padx=10)
-
-        storage_desc = ctk.CTkLabel(
-            scroll_frame,
-            text="Cached job-board responses are temporary and can be cleared without removing your profile, reports, or application status.",
-            wraplength=600,
-            justify="left",
-            text_color="gray"
-        )
-        storage_desc.pack(pady=(0, 10), anchor="w", padx=10)
-
-        maintenance_box = ctk.CTkTextbox(
-            scroll_frame,
-            width=620,
-            height=120,
-            state="normal",
-        )
-        maintenance_box.insert("end", self._local_maintenance_text())
-        maintenance_box.configure(state="disabled")
-        maintenance_box.pack(pady=(0, 10), anchor="w", padx=10)
-
-        clear_cache_btn = ctk.CTkButton(
-            scroll_frame,
-            text="Clear HTTP Cache",
-            width=180,
-            fg_color="transparent",
-            border_width=1,
-            command=self._on_clear_cache
-        )
-        clear_cache_btn.pack(pady=(0, 5), anchor="w", padx=10)
-
-        clear_dismissed_btn = ctk.CTkButton(
-            scroll_frame,
-            text="Clear Dismissed Reviews",
-            width=210,
-            fg_color="transparent",
-            border_width=1,
-            command=self._on_clear_dismissed_reviews
-        )
-        clear_dismissed_btn.pack(pady=(0, 5), anchor="w", padx=10)
-
-        export_data_btn = ctk.CTkButton(
-            scroll_frame,
-            text="Export App Data",
-            width=180,
-            fg_color="transparent",
-            border_width=1,
-            command=self._on_export_app_data
-        )
-        export_data_btn.pack(pady=(0, 5), anchor="w", padx=10)
-
-        validate_data_btn = ctk.CTkButton(
-            scroll_frame,
-            text="Validate App Data Bundle",
-            width=220,
-            fg_color="transparent",
-            border_width=1,
-            command=self._on_validate_app_data_bundle
-        )
-        validate_data_btn.pack(pady=(0, 5), anchor="w", padx=10)
-
-        self._cache_status_label = ctk.CTkLabel(
-            scroll_frame,
-            text="",
-            font=ctk.CTkFont(size=12),
-            text_color="gray"
-        )
-        self._cache_status_label.pack(pady=(0, 10), anchor="w", padx=10)
-
-        feedback_title = ctk.CTkLabel(
-            scroll_frame,
-            text="Feedback Diagnostics",
-            font=ctk.CTkFont(size=16, weight="bold")
-        )
-        feedback_title.pack(pady=(10, 8), anchor="w", padx=10)
-
-        feedback_box = ctk.CTkTextbox(
-            scroll_frame,
-            width=620,
-            height=150,
-            state="normal",
-        )
-        feedback_box.insert("end", self._feedback_diagnostics_text())
-        feedback_box.configure(state="disabled")
-        feedback_box.pack(pady=(0, 10), anchor="w", padx=10)
-
-        copy_feedback_btn = ctk.CTkButton(
-            scroll_frame,
-            text="Copy Feedback Diagnostics",
-            width=230,
-            fg_color="transparent",
-            border_width=1,
-            command=self._on_copy_feedback_diagnostics
-        )
-        copy_feedback_btn.pack(pady=(0, 10), anchor="w", padx=10)
-
-        diagnostics_title = ctk.CTkLabel(
-            scroll_frame,
-            text="Performance Diagnostics",
-            font=ctk.CTkFont(size=16, weight="bold")
-        )
-        diagnostics_title.pack(pady=(10, 8), anchor="w", padx=10)
-
-        self._source_diagnostics_textbox = ctk.CTkTextbox(
-            scroll_frame,
-            width=620,
-            height=130,
-            state="normal"
-        )
-        self._source_diagnostics_textbox.insert("end", self._source_diagnostics_text())
-        self._source_diagnostics_textbox.configure(state="disabled")
-        self._source_diagnostics_textbox.pack(pady=(0, 8), anchor="w", padx=10)
-
-        refresh_diagnostics_btn = ctk.CTkButton(
-            scroll_frame,
-            text="Refresh Diagnostics",
-            width=180,
-            fg_color="transparent",
-            border_width=1,
-            command=self._refresh_source_diagnostics
-        )
-        refresh_diagnostics_btn.pack(pady=(0, 10), anchor="w", padx=10)
+        self._cache_status_label = maintenance_widgets.cache_status_label
+        self._source_diagnostics_textbox = maintenance_widgets.source_diagnostics_textbox
 
         # Separator between storage maintenance and scoring config
         separator = ctk.CTkFrame(scroll_frame, height=2, fg_color="gray70")

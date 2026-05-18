@@ -15,6 +15,7 @@ from job_radar.gui.search_panel import (
     build_search_error_panel,
     build_search_progress_panel,
 )
+from job_radar.gui.settings_panel import add_storage_maintenance_panel
 
 
 def test_welcome_screen_exposes_demo_report_preview():
@@ -234,28 +235,30 @@ def test_search_complete_loads_profile_for_zero_result_guidance():
 
 def test_settings_tab_includes_local_maintenance_summary():
     source = inspect.getsource(MainWindow._build_settings_tab)
+    helper_source = inspect.getsource(add_storage_maintenance_panel)
 
     assert "_local_maintenance_text()" in source
-    assert "Storage Maintenance" in source
-    assert "Clear Dismissed Reviews" in source
+    assert "Storage Maintenance" in helper_source
+    assert "Clear Dismissed Reviews" in helper_source
 
 
 def test_settings_tab_includes_privacy_safe_feedback_diagnostics():
     source = inspect.getsource(MainWindow._build_settings_tab)
+    panel_source = inspect.getsource(add_storage_maintenance_panel)
     helper_source = inspect.getsource(MainWindow._feedback_diagnostics_text)
 
-    assert "Feedback Diagnostics" in source
+    assert "Feedback Diagnostics" in panel_source
     assert "_feedback_diagnostics_text()" in source
     assert "build_feedback_diagnostics_summary" in helper_source
     assert "format_feedback_diagnostics_lines" in helper_source
 
 
 def test_feedback_diagnostics_can_be_copied_from_settings():
-    source = inspect.getsource(MainWindow._build_settings_tab)
+    source = inspect.getsource(add_storage_maintenance_panel)
     handler_source = inspect.getsource(MainWindow._on_copy_feedback_diagnostics)
 
     assert "Copy Feedback Diagnostics" in source
-    assert "command=self._on_copy_feedback_diagnostics" in source
+    assert "command=on_copy_feedback_diagnostics" in source
     assert "self.clipboard_clear()" in handler_source
     assert "self.clipboard_append(text)" in handler_source
     assert "Copied redacted feedback diagnostics to clipboard" in handler_source

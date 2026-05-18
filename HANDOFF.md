@@ -123,13 +123,16 @@ Started reducing `job_radar/gui/main_window.py` by moving display formatting int
   - Profile dashboard next-step panel construction
 - `job_radar/gui/dialogs.py`
   - Centered modal message dialog construction
+- `job_radar/gui/settings_panel.py`
+  - Settings storage maintenance and diagnostics panel construction
 
 Current line counts:
 
 ```text
 2149 job_radar/report.py
-2931 job_radar/gui/main_window.py
+2818 job_radar/gui/main_window.py
   44 job_radar/gui/dialogs.py
+ 154 job_radar/gui/settings_panel.py
  391 job_radar/gui/search_panel.py
   23 job_radar/gui/profile_panel.py
   62 job_radar/gui/dashboard_panel.py
