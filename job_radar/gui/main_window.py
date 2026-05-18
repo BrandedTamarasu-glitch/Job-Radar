@@ -83,7 +83,11 @@ from job_radar.gui.applications_view_model import (
 from job_radar.gui.applications_tab import ApplicationsTabCallbacks, build_applications_tab_content
 from job_radar.gui.dashboard_view_model import build_dashboard_actions
 from job_radar.gui.profile_form import ProfileForm
-from job_radar.gui.profile_view_model import build_profile_summary_rows, profile_load_error_message
+from job_radar.gui.profile_view_model import (
+    build_profile_readiness_display,
+    build_profile_summary_rows,
+    profile_load_error_message,
+)
 from job_radar.gui.review_state_view_model import format_review_state_summary
 from job_radar.gui.search_controls import SearchControls
 from job_radar.gui.search_summary import (
@@ -510,18 +514,17 @@ class MainWindow(ctk.CTk):
             dashboard_actions = self._dashboard_actions(readiness)
             row = self._add_dashboard_next_steps(scroll_frame, row, dashboard_actions)
 
-            readiness_text = (
-                f"{readiness.status} ({readiness.score}/{readiness.max_score})"
+            readiness_display = build_profile_readiness_display(
+                readiness,
+                scoring_signal_guidance_lines(readiness, limit=3),
             )
-            self._add_profile_field(scroll_frame, row, "Profile Readiness:", readiness_text)
+            self._add_profile_field(scroll_frame, row, "Profile Readiness:", readiness_display.summary)
             row += 1
 
-            readiness_items = list(readiness.missing_required or readiness.recommendations[:3])
-            scoring_items = scoring_signal_guidance_lines(readiness, limit=3)
-            if readiness_items:
+            if readiness_display.guidance_text:
                 readiness_label = ctk.CTkLabel(
                     scroll_frame,
-                    text="\n".join(f"- {item}" for item in readiness_items),
+                    text=readiness_display.guidance_text,
                     text_color="gray",
                     wraplength=680,
                     justify="left",
@@ -529,8 +532,13 @@ class MainWindow(ctk.CTk):
                 )
                 readiness_label.grid(row=row, column=0, columnspan=2, sticky="ew", pady=(0, 12))
                 row += 1
-            if scoring_items:
-                self._add_profile_field(scroll_frame, row, "Scoring Signals:", "\n".join(scoring_items))
+            if readiness_display.scoring_signals_text:
+                self._add_profile_field(
+                    scroll_frame,
+                    row,
+                    "Scoring Signals:",
+                    readiness_display.scoring_signals_text,
+                )
                 row += 1
 
             for summary_row in build_profile_summary_rows(profile):

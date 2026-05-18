@@ -14,6 +14,28 @@ class ProfileSummaryRow:
     value: str
 
 
+@dataclass(frozen=True)
+class ProfileReadinessDisplay:
+    """Display-ready profile readiness text."""
+
+    summary: str
+    guidance_text: str | None
+    scoring_signals_text: str | None
+
+
+def build_profile_readiness_display(readiness: Any, scoring_items: list[str]) -> ProfileReadinessDisplay:
+    """Return Profile tab readiness summary and detail text."""
+    summary = f"{readiness.status} ({readiness.score}/{readiness.max_score})"
+    guidance_items = list(readiness.missing_required or readiness.recommendations[:3])
+    guidance_text = "\n".join(f"- {item}" for item in guidance_items) if guidance_items else None
+    scoring_signals_text = "\n".join(scoring_items) if scoring_items else None
+    return ProfileReadinessDisplay(
+        summary=summary,
+        guidance_text=guidance_text,
+        scoring_signals_text=scoring_signals_text,
+    )
+
+
 def build_profile_summary_rows(profile: dict[str, Any]) -> list[ProfileSummaryRow]:
     """Return display rows for the Profile tab summary."""
     rows = [
