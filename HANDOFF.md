@@ -6,13 +6,14 @@ Date: 2026-05-18
 
 - Repo path: `/home/corye/openai-cli/Job-Radar`
 - Branch: `main`
-- Git status after latest slice: clean, `main...origin/main [ahead 92]`
+- Git status after latest slice: clean, `main...origin/main [ahead 93]`
 - Last full validation: `1173 passed, 8 skipped`
-- Do not push unless explicitly asked. The 92 local commits after the last push are still local.
+- Do not push unless explicitly asked. The 93 local commits after the last push are still local.
 
 ## Latest Local Commits
 
 ```text
+71f661c refactor: extract jsearch fetcher
 30f1587 refactor: extract authentic jobs fetcher
 d8f34ad refactor: extract adzuna fetcher
 9269f78 refactor: share source location matching
@@ -133,7 +134,7 @@ Started reducing `job_radar/gui/main_window.py` by moving display formatting int
   - hiring.cafe salary normalization/formatting helpers
   - `sources.py` re-exports moved mappers for existing tests/imports
 - `job_radar/source_api_fetchers.py`
-  - Adzuna, Authentic Jobs, JSearch, SerpAPI, and Jobicy API fetchers
+  - Adzuna, Authentic Jobs, JSearch, USAJobs, SerpAPI, and Jobicy API fetchers
   - `sources.py` keeps patch-compatible wrappers/re-exports for existing tests/imports and registry wiring
 - `job_radar/gui/applications_view_model.py`
   - `format_next_action_due_text`
@@ -245,7 +246,7 @@ Current line counts:
 2149 job_radar/report.py
 1138 job_radar/search.py
  261 job_radar/search_pipeline.py
- 334 job_radar/source_api_fetchers.py
+ 417 job_radar/source_api_fetchers.py
  488 job_radar/source_mappers.py
  120 job_radar/source_parsing.py
   27 job_radar/source_models.py
@@ -253,7 +254,7 @@ Current line counts:
  122 job_radar/source_queries.py
  117 job_radar/manual_sources.py
   92 job_radar/source_registry.py
-1068 job_radar/sources.py
+ 998 job_radar/sources.py
  627 job_radar/gui/worker_thread.py
 2320 job_radar/gui/main_window.py
   14 job_radar/gui/demo_report_view_model.py

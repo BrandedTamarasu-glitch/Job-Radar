@@ -37,6 +37,7 @@ from .source_api_fetchers import (
     fetch_jobicy,
     fetch_jsearch as _fetch_jsearch_api,
     fetch_serpapi,
+    fetch_usajobs as _fetch_usajobs_api,
 )
 from .source_mappers import (
     _format_hiringcafe_salary,
@@ -654,86 +655,15 @@ def fetch_jsearch(query: str, location: str = "", verbose: bool = False) -> list
 
 def fetch_usajobs(query: str, location: str = "", profile: dict = None, verbose: bool = False) -> list[JobResult]:
     """Fetch job listings from USAJobs federal government API."""
-    results = []
-
-    # Check credentials (both API key and email required)
-    api_key = get_api_key("USAJOBS_API_KEY", "USAJobs")
-    email = get_api_key("USAJOBS_EMAIL", "USAJobs")
-    if not api_key or not email:
-        return results
-
-    # Check rate limit
-    if not check_rate_limit("usajobs", verbose=verbose):
-        return results
-
-    # Build request with required headers
-    headers = {
-        "Host": "data.usajobs.gov",
-        "User-Agent": email,  # REQUIRED: must contain email from API registration
-        "Authorization-Key": api_key
-    }
-
-    params = {
-        "Keyword": query,
-        "ResultsPerPage": "50",
-    }
-
-    # Location filter
-    if location:
-        params["LocationName"] = location
-
-    # Optional federal filters from profile
-    if profile:
-        gs_min = profile.get("gs_grade_min")
-        gs_max = profile.get("gs_grade_max")
-        if gs_min:
-            params["PayGradeLow"] = f"{gs_min:02d}"  # Format as 2-digit string
-        if gs_max:
-            params["PayGradeHigh"] = f"{gs_max:02d}"
-
-        agencies = profile.get("preferred_agencies", [])
-        if agencies:
-            # Semicolon-delimited agency codes
-            params["Organization"] = ";".join(agencies)
-
-        # Security clearance not available as API parameter (per research)
-
-    url = "https://data.usajobs.gov/api/search?" + urllib.parse.urlencode(params)
-
-    # Fetch with retry
-    try:
-        body = fetch_with_retry(
-            url,
-            headers=headers,
-            use_cache=True,
-            cache_ttl_seconds=source_cache_ttl("usajobs"),
-        )
-        if body is None:
-            log.debug("[USAJobs] Fetch failed for '%s'", query)
-            return results
-
-        data = _json.loads(body)
-        # USAJobs uses nested structure
-        search_result = data.get("SearchResult", {})
-        items = search_result.get("SearchResultItems", [])
-
-        for item in items:
-            job = map_usajobs_to_job_result(item)
-            if job:
-                results.append(job)
-
-    except _json.JSONDecodeError as e:
-        log.debug("[USAJobs] JSON parse error: %s", e)
-    except Exception as e:
-        # Check for HTTPError-like exceptions
-        error_str = str(e).lower()
-        if "401" in error_str or "403" in error_str or "unauthorized" in error_str:
-            log.error("[USAJobs] Authentication failed - run 'job-radar --setup-apis' to reconfigure")
-        else:
-            log.debug("[USAJobs] Request failed: %s", e)
-
-    log.info("[USAJobs] Found %d results for '%s'", len(results), query)
-    return results
+    return _fetch_usajobs_api(
+        query,
+        location,
+        profile,
+        verbose,
+        get_api_key_func=get_api_key,
+        check_rate_limit_func=check_rate_limit,
+        fetch_with_retry_func=fetch_with_retry,
+    )
 
 
 # ---------------------------------------------------------------------------
