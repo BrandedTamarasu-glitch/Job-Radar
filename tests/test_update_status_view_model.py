@@ -4,6 +4,7 @@ from job_radar.gui.update_status_view_model import (
     build_update_status_display,
     format_last_check_relative_time,
     format_skipped_versions_status,
+    manual_update_available_result,
 )
 
 
@@ -91,3 +92,8 @@ def test_build_update_status_display_prioritizes_available_update():
 def test_format_skipped_versions_status_lists_skipped_versions():
     assert format_skipped_versions_status([]) == ""
     assert format_skipped_versions_status(["2.7.0", "2.8.0"]) == "Skipped: v2.7.0, v2.8.0"
+
+
+def test_manual_update_available_result_mentions_skipped_state():
+    assert manual_update_available_result(skipped=False) == "Update available!"
+    assert manual_update_available_result(skipped=True) == "Update available! (skipped)"

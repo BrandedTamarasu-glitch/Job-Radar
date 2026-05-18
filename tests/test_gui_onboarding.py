@@ -497,7 +497,8 @@ def test_update_queue_messages_reuse_manual_result_helpers():
     assert 'self._handle_manual_update_result("Up to date!")' in queue_source
     assert 'self._handle_manual_update_result("Check failed")' in queue_source
     assert "self._update_checker.is_version_skipped(version)" in available_source
-    assert 'self._handle_manual_update_result("Update available! (skipped)")' in available_source
+    assert "manual_update_available_result(" in available_source
+    assert "skipped=self._update_checker.is_version_skipped(version)" in available_source
     assert "self._manual_check_pending" in result_source
     assert "self._on_manual_check_result(result_text)" in result_source
     assert "self.after(3000, self._reset_manual_check_button)" in manual_result_source

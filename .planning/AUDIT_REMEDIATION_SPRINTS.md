@@ -116,8 +116,8 @@ Current progress:
 - MainWindow no longer wraps Profile field rendering that already lives in `job_radar/gui/profile_panel.py`.
 - MainWindow no longer carries the obsolete Settings update-status initializer that moved into `job_radar/gui/settings_panel.py`.
 - Settings update controls/status, section separators, API credential sections/widget registration/panel orchestration, scoring configuration, storage maintenance, diagnostics, source diagnostics textbox refresh, Jobicy public-source status, JSearch setup tip, and danger-zone construction now live in `job_radar/gui/settings_panel.py`.
-- Skipped-version Settings status text now lives in `job_radar/gui/update_status_view_model.py`.
-- Latest validation: `1181 passed, 8 skipped`.
+- Skipped-version and manual update-result Settings status text now live in `job_radar/gui/update_status_view_model.py`.
+- Latest validation: `1182 passed, 8 skipped`.
 
 Remaining Sprint 3 work:
 - Continue reducing `job_radar/gui/main_window.py` through low-risk helper extractions.

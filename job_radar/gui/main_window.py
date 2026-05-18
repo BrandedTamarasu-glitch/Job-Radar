@@ -141,6 +141,7 @@ from job_radar.gui.update_banner import UpdateBanner, DownloadConfirmDialog
 from job_radar.gui.update_status_view_model import (
     build_update_status_display,
     format_skipped_versions_status,
+    manual_update_available_result,
 )
 from job_radar.gui.changelog_dialog import ChangelogDialog
 from job_radar.gui.welcome_panel import build_welcome_screen
@@ -1488,10 +1489,11 @@ class MainWindow(ctk.CTk):
 
     def _handle_manual_update_available(self, version: str):
         """Show the manual-check result for an available update when relevant."""
-        if self._update_checker.is_version_skipped(version):
-            self._handle_manual_update_result("Update available! (skipped)")
-        else:
-            self._handle_manual_update_result("Update available!")
+        self._handle_manual_update_result(
+            manual_update_available_result(
+                skipped=self._update_checker.is_version_skipped(version)
+            )
+        )
 
     def _handle_manual_update_result(self, result_text: str):
         """Update the Settings manual-check result only when a manual check is pending."""

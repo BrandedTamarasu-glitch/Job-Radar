@@ -75,6 +75,13 @@ def format_skipped_versions_status(skipped_versions: list[str] | tuple[str, ...]
     return f"Skipped: {', '.join('v' + version for version in skipped_versions)}"
 
 
+def manual_update_available_result(*, skipped: bool) -> str:
+    """Return the manual update-check button text for an available update."""
+    if skipped:
+        return "Update available! (skipped)"
+    return "Update available!"
+
+
 def _base_update_status(relative_time: str, check_success: object) -> tuple[str, str]:
     if relative_time == "Never":
         return "Never checked", "gray"
