@@ -2,7 +2,11 @@
 
 ## Unreleased
 
-No unreleased changes yet.
+### Improvements
+- **Settings update view-model cleanup** - Moved skipped-version status text formatting out of `MainWindow` into the update status view model with focused coverage.
+
+### Validation
+- Full automated regression after post-release cleanup: 1181 passed, 8 skipped.
 
 ## v2.8.0 — 2026-05-18
 

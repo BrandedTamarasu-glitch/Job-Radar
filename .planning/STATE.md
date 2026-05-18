@@ -48,7 +48,7 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 ### Quality Indicators
 
 **Test Coverage:**
-- Latest full local suite: `1180 passed, 8 skipped`
+- Latest full local suite: `1181 passed, 8 skipped`
 - Release workflow tests passed on Linux, macOS, and Windows for `v2.8.0`
 - Coverage areas include scoring, config, tracker, wizard, report, UX, API, PDF, deduplication, accessibility, profile management, GUI view models, rate limiting, JSearch, USAJobs, hiring.cafe, schema migration, scoring config, update/install flows, and release verification
 

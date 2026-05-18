@@ -138,7 +138,10 @@ from job_radar.gui.source_diagnostics_view_model import (
 )
 from job_radar.gui.worker_thread import create_search_worker, create_download_worker
 from job_radar.gui.update_banner import UpdateBanner, DownloadConfirmDialog
-from job_radar.gui.update_status_view_model import build_update_status_display
+from job_radar.gui.update_status_view_model import (
+    build_update_status_display,
+    format_skipped_versions_status,
+)
 from job_radar.gui.changelog_dialog import ChangelogDialog
 from job_radar.gui.welcome_panel import build_welcome_screen
 from job_radar.gui.tab_shell import build_main_tabview
@@ -1536,12 +1539,7 @@ class MainWindow(ctk.CTk):
             return
 
         skipped = self._update_checker.get_skipped_versions()
-        if skipped:
-            self._skipped_status_label.configure(
-                text=f"Skipped: {', '.join('v' + v for v in skipped)}"
-            )
-        else:
-            self._skipped_status_label.configure(text="")
+        self._skipped_status_label.configure(text=format_skipped_versions_status(skipped))
 
     def _on_settings_view_notes(self):
         """Handle 'View release notes' link click in Settings tab."""

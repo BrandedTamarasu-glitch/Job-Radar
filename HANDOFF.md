@@ -9,7 +9,7 @@ Date: 2026-05-18
 - Git status after release: clean and synced with `origin/main`, except preserved untracked `.forgeflow/`
 - Current release: `v2.8.0`
 - Release URL: https://github.com/BrandedTamarasu-glitch/Job-Radar/releases/tag/v2.8.0
-- Last local full validation: `1180 passed, 8 skipped`
+- Last local full validation: `1181 passed, 8 skipped`
 - Release workflow validation: GitHub Actions Release run `26061938202` passed tests, platform builds, installer builds, and release creation.
 
 ## Latest Commits
@@ -60,6 +60,7 @@ The v2.8.0 line includes the audit-remediation architecture work completed so fa
 - Source architecture split across registry, manual-source, query, config, model, parsing, mapper, API-fetcher, and scraper modules while `job_radar/sources.py` preserves compatibility imports/wrappers
 - GUI helper extraction across settings, search, profile, dashboard, applications, update, diagnostics, dialogs, welcome, tab shell, and window shell modules
 - Source health writes now distinguish `query_failure_details` from `slow_query_warnings`; legacy `source_warnings` reads remain supported
+- Post-release Settings update status cleanup moved skipped-version status formatting into `job_radar/gui/update_status_view_model.py`
 
 ## Active Plan
 
@@ -87,7 +88,7 @@ Still planned in Sprint 4:
 
 ## Recommended Next Slice
 
-Start with a small post-release Sprint 3 slice:
+Continue with another small post-release Sprint 3 slice:
 
 1. Inspect `job_radar/gui/main_window.py` for remaining text/state helpers that can move into existing view-model modules.
 2. Prefer one narrow extraction with behavior-oriented tests.

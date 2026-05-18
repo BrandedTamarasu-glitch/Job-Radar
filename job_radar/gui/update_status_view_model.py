@@ -68,6 +68,13 @@ def format_last_check_relative_time(
     return f"{int(total_seconds / 86400)}d ago"
 
 
+def format_skipped_versions_status(skipped_versions: list[str] | tuple[str, ...]) -> str:
+    """Format the Settings skipped-version status line."""
+    if not skipped_versions:
+        return ""
+    return f"Skipped: {', '.join('v' + version for version in skipped_versions)}"
+
+
 def _base_update_status(relative_time: str, check_success: object) -> tuple[str, str]:
     if relative_time == "Never":
         return "Never checked", "gray"

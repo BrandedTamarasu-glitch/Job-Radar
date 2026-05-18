@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 from job_radar.gui.update_status_view_model import (
     build_update_status_display,
     format_last_check_relative_time,
+    format_skipped_versions_status,
 )
 
 
@@ -85,3 +86,8 @@ def test_build_update_status_display_prioritizes_available_update():
     assert display.color == "orange"
     assert skipped.text == "v2.7.0 -- Last checked: 10m ago -- v2.8.0 available (skipped)"
     assert skipped.color == "gray"
+
+
+def test_format_skipped_versions_status_lists_skipped_versions():
+    assert format_skipped_versions_status([]) == ""
+    assert format_skipped_versions_status(["2.7.0", "2.8.0"]) == "Skipped: v2.7.0, v2.8.0"
