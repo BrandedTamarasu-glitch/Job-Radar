@@ -10,7 +10,6 @@ import urllib.parse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import date
-from typing import Callable
 
 from bs4 import BeautifulSoup
 
@@ -19,11 +18,15 @@ from .api_config import get_api_key
 from .rate_limits import check_rate_limit
 from .deduplication import deduplicate_cross_source
 from .source_execution import SourceExecutionState
+from .source_registry import (
+    ManualSourceDefinition,
+    SourceDefinition,
+    selected_automated_source_display_names,
+    selected_manual_source_display_names,
+    source_display_name,
+)
 
 log = logging.getLogger(__name__)
-
-
-QueryFetcher = Callable[[dict, dict], list["JobResult"]]
 
 
 @dataclass
@@ -47,20 +50,6 @@ class JobResult:
 
     def __hash__(self):
         return hash((self.title, self.company, self.source))
-
-
-@dataclass(frozen=True)
-class SourceDefinition:
-    """Metadata and query runner for an automated job source."""
-
-    key: str
-    display_name: str
-    phase: str
-    fetcher: QueryFetcher
-
-    def fetch(self, query: dict, profile: dict) -> list[JobResult]:
-        """Run this source's fetcher for one query dict."""
-        return self.fetcher(query, profile)
 
 
 HEADERS = {
@@ -2023,15 +2012,6 @@ def generate_weworkremotely_url(query: str) -> str:
     return f"https://weworkremotely.com/remote-jobs/search?term={urllib.parse.quote_plus(query)}"
 
 
-@dataclass(frozen=True)
-class ManualSourceDefinition:
-    """Metadata and URL generator for manual check sources."""
-
-    key: str
-    display_name: str
-    generator: Callable[[str, str], str]
-
-
 def _generate_weworkremotely_manual_url(title: str, location: str) -> str:
     """Generate a WWR manual URL with the same signature as location-aware sources."""
     return generate_weworkremotely_url(title)
@@ -2052,12 +2032,7 @@ MANUAL_SOURCE_REGISTRY = {
 
 def get_manual_source_display_names(selected_sources: list[str] | None = None) -> list[str]:
     """Return manual source display names for selected source keys."""
-    selected = set(selected_sources) if selected_sources is not None else None
-    return [
-        source.display_name
-        for source in MANUAL_SOURCE_REGISTRY.values()
-        if selected is None or source.key in selected
-    ]
+    return selected_manual_source_display_names(MANUAL_SOURCE_REGISTRY, selected_sources)
 
 
 def generate_manual_urls(
@@ -2291,22 +2266,16 @@ def get_automated_source_display_names() -> list[str]:
 
 def get_selected_source_display_names(selected_sources: list[str] | None = None) -> list[str]:
     """Return automated source display names for selected source keys."""
-    selected = set(selected_sources) if selected_sources is not None else None
-    return [
-        source.display_name
-        for phase in SOURCE_PHASE_ORDER
-        for source in SOURCE_REGISTRY.values()
-        if source.phase == phase
-        and (selected is None or source.key in selected)
-    ]
+    return selected_automated_source_display_names(
+        SOURCE_REGISTRY,
+        SOURCE_PHASE_ORDER,
+        selected_sources,
+    )
 
 
 def _source_display_name(source: str) -> str:
     """Return a human-readable source name for query or result source keys."""
-    definition = SOURCE_REGISTRY.get(source)
-    if definition:
-        return definition.display_name
-    return _SOURCE_DISPLAY_NAMES.get(source, source)
+    return source_display_name(SOURCE_REGISTRY, _SOURCE_DISPLAY_NAMES, source)
 
 
 def get_source_display_name(source: str) -> str:

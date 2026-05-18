@@ -6,23 +6,24 @@ Date: 2026-05-18
 
 - Repo path: `/home/corye/openai-cli/Job-Radar`
 - Branch: `main`
-- Git status after latest slice: clean, `main...origin/main [ahead 75]`
-- Last full validation: `1133 passed, 8 skipped`
-- Do not push unless explicitly asked. The 75 local commits after the last push are still local.
+- Git status after latest slice: clean, `main...origin/main [ahead 76]`
+- Last full validation: `1138 passed, 8 skipped`
+- Do not push unless explicitly asked. The 76 local commits after the last push are still local.
 
 ## Latest Local Commits
 
 ```text
-9c9cb6e refactor: use shared scored filters in cli
-96da08b refactor: use shared raw filters in cli
-4ee2f9f refactor: use shared scorer in cli
-2d4623f refactor: share raw result filtering
-997b015 refactor: share scored result filtering
+98de685 refactor: share search profile preparation
+4ffd8e2 refactor: use shared scored filters in cli
+fcdec9c refactor: use shared raw filters in cli
+30f4428 refactor: use shared scorer in cli
+314aa3a refactor: share raw result filtering
+e23f5cb refactor: share scored result filtering
 905b824 refactor: extract shared search pipeline helpers
 74cfb91 refactor: centralize legacy queue handling
-094a521 refactor: centralize asset queue handling
-99bf735 refactor: centralize source diagnostics loading
-7565e2e refactor: centralize source strategy loading
+6bc8bae refactor: centralize asset queue handling
+3a22fd6 refactor: centralize source diagnostics loading
+20dde8a refactor: centralize source strategy loading
 8817f3d refactor: centralize profile guidance loading
 9fd446f refactor: centralize review summary loading
 b511736 refactor: centralize search completion content
@@ -91,6 +92,9 @@ Started reducing `job_radar/gui/main_window.py` by moving display formatting int
   - Shared preset/preferred-skill profile preparation used by CLI and GUI
   - Shared raw-result date/company/skill/location filtering; CLI now uses the shared raw-result filter for date filtering
   - Shared result scoring/dealbreaker sorting and post-score filtering helpers; CLI now uses the shared scorer and composable post-score filters
+- `job_radar/source_registry.py`
+  - Shared source registry dataclasses and display-name selection helpers
+  - `sources.py` now delegates registry/manual display-name selection while retaining concrete fetcher dictionaries
 - `job_radar/gui/applications_view_model.py`
   - `format_next_action_due_text`
   - `ApplicationNextActionRow`
@@ -201,6 +205,8 @@ Current line counts:
 2149 job_radar/report.py
 1138 job_radar/search.py
  261 job_radar/search_pipeline.py
+  69 job_radar/source_registry.py
+2441 job_radar/sources.py
  627 job_radar/gui/worker_thread.py
 2320 job_radar/gui/main_window.py
   14 job_radar/gui/demo_report_view_model.py
