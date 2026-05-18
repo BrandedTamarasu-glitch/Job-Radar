@@ -28,6 +28,33 @@ class ManualSourceDefinition:
     generator: Callable[[str, str], str]
 
 
+SOURCE_PHASE_ORDER = ("scraper", "api", "aggregator")
+
+_AUTOMATED_SOURCE_SPECS = (
+    ("dice", "Dice", "scraper"),
+    ("hn_hiring", "HN Hiring", "scraper"),
+    ("remoteok", "RemoteOK", "scraper"),
+    ("weworkremotely", "We Work Remotely", "scraper"),
+    ("adzuna", "Adzuna", "api"),
+    ("authentic_jobs", "Authentic Jobs", "api"),
+    ("usajobs", "USAJobs (Federal)", "api"),
+    ("jobicy", "Jobicy (Remote)", "api"),
+    ("hiringcafe", "hiring.cafe", "api"),
+    ("jsearch", "JSearch", "aggregator"),
+    ("serpapi", "SerpAPI (Google Jobs)", "aggregator"),
+)
+
+
+def build_source_registry(
+    fetchers: Mapping[str, Callable[[dict, dict], list[Any]]],
+) -> dict[str, SourceDefinition]:
+    """Build the automated source registry from per-source query fetchers."""
+    return {
+        key: SourceDefinition(key, display_name, phase, fetchers[key])
+        for key, display_name, phase in _AUTOMATED_SOURCE_SPECS
+    }
+
+
 def selected_automated_source_display_names(
     registry: Mapping[str, SourceDefinition],
     phase_order: Sequence[str],

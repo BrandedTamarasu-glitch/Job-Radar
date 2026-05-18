@@ -62,7 +62,8 @@ from .source_parsing import (
 )
 from .source_queries import build_search_queries
 from .source_registry import (
-    SourceDefinition,
+    SOURCE_PHASE_ORDER,
+    build_source_registry,
     selected_automated_source_display_names,
     source_queries_by_phase,
     source_display_name,
@@ -271,22 +272,19 @@ def _fetch_hiringcafe_query(query: dict, profile: dict) -> list[JobResult]:
     return fetch_hiringcafe(query["query"], query.get("location", ""))
 
 
-SOURCE_PHASE_ORDER = ("scraper", "api", "aggregator")
-
-
-SOURCE_REGISTRY: dict[str, SourceDefinition] = {
-    "dice": SourceDefinition("dice", "Dice", "scraper", _fetch_dice_query),
-    "hn_hiring": SourceDefinition("hn_hiring", "HN Hiring", "scraper", _fetch_hn_hiring_query),
-    "remoteok": SourceDefinition("remoteok", "RemoteOK", "scraper", _fetch_remoteok_query),
-    "weworkremotely": SourceDefinition("weworkremotely", "We Work Remotely", "scraper", _fetch_weworkremotely_query),
-    "adzuna": SourceDefinition("adzuna", "Adzuna", "api", _fetch_adzuna_query),
-    "authentic_jobs": SourceDefinition("authentic_jobs", "Authentic Jobs", "api", _fetch_authentic_jobs_query),
-    "usajobs": SourceDefinition("usajobs", "USAJobs (Federal)", "api", _fetch_usajobs_query),
-    "jobicy": SourceDefinition("jobicy", "Jobicy (Remote)", "api", _fetch_jobicy_query),
-    "hiringcafe": SourceDefinition("hiringcafe", "hiring.cafe", "api", _fetch_hiringcafe_query),
-    "jsearch": SourceDefinition("jsearch", "JSearch", "aggregator", _fetch_jsearch_query),
-    "serpapi": SourceDefinition("serpapi", "SerpAPI (Google Jobs)", "aggregator", _fetch_serpapi_query),
-}
+SOURCE_REGISTRY = build_source_registry({
+    "dice": _fetch_dice_query,
+    "hn_hiring": _fetch_hn_hiring_query,
+    "remoteok": _fetch_remoteok_query,
+    "weworkremotely": _fetch_weworkremotely_query,
+    "adzuna": _fetch_adzuna_query,
+    "authentic_jobs": _fetch_authentic_jobs_query,
+    "usajobs": _fetch_usajobs_query,
+    "jobicy": _fetch_jobicy_query,
+    "hiringcafe": _fetch_hiringcafe_query,
+    "jsearch": _fetch_jsearch_query,
+    "serpapi": _fetch_serpapi_query,
+})
 
 
 def get_automated_source_display_names() -> list[str]:

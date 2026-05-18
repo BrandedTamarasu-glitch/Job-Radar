@@ -2,7 +2,9 @@
 
 from job_radar.source_registry import (
     ManualSourceDefinition,
+    SOURCE_PHASE_ORDER,
     SourceDefinition,
+    build_source_registry,
     selected_automated_source_display_names,
     selected_manual_source_display_names,
     source_queries_by_phase,
@@ -38,6 +40,34 @@ def test_selected_automated_source_display_names_follow_phase_order():
         ("scraper", "api", "aggregator"),
         ["agg", "scraper"],
     ) == ["Scraper", "Aggregator"]
+
+
+def test_build_source_registry_uses_canonical_sources_and_phases():
+    fetchers = {
+        key: _fetch
+        for key in [
+            "dice",
+            "hn_hiring",
+            "remoteok",
+            "weworkremotely",
+            "adzuna",
+            "authentic_jobs",
+            "usajobs",
+            "jobicy",
+            "hiringcafe",
+            "jsearch",
+            "serpapi",
+        ]
+    }
+
+    registry = build_source_registry(fetchers)
+
+    assert list(registry) == list(fetchers)
+    assert SOURCE_PHASE_ORDER == ("scraper", "api", "aggregator")
+    assert registry["dice"].phase == "scraper"
+    assert registry["adzuna"].phase == "api"
+    assert registry["jsearch"].phase == "aggregator"
+    assert registry["usajobs"].display_name == "USAJobs (Federal)"
 
 
 def test_selected_automated_source_display_names_respects_empty_selection():
