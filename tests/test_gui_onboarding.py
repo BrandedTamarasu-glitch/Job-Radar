@@ -1,6 +1,7 @@
 import inspect
 
 from job_radar.gui.applications_tab import _add_application_next_action_queue, build_applications_tab_content
+from job_radar.gui.applications_view_model import format_next_action_due_text
 from job_radar.gui.dashboard_panel import add_dashboard_next_steps
 from job_radar.gui.demo_report_view_model import demo_report_error_message, demo_report_success_message
 from job_radar.gui.dialogs import show_message_dialog
@@ -302,13 +303,13 @@ def test_search_run_metadata_records_review_counts():
 
 
 def test_next_action_due_text_formats_queue_states():
-    assert MainWindow._format_next_action_due_text(None, {
+    assert format_next_action_due_text({
         "is_overdue": True,
         "days_until": -2,
     }) == "Overdue by 2 day(s)"
-    assert MainWindow._format_next_action_due_text(None, {"days_until": 0}) == "Due today"
-    assert MainWindow._format_next_action_due_text(None, {"days_until": 3}) == "Due in 3 day(s)"
-    assert MainWindow._format_next_action_due_text(None, {}) == "No due date"
+    assert format_next_action_due_text({"days_until": 0}) == "Due today"
+    assert format_next_action_due_text({"days_until": 3}) == "Due in 3 day(s)"
+    assert format_next_action_due_text({}) == "No due date"
 
 
 def test_profile_form_hints_cover_match_quality_fields():

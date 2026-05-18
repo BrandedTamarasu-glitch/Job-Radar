@@ -76,7 +76,6 @@ from job_radar.gui.applications_view_model import (
     application_template_insert_error_message,
     applications_csv_export_error_message,
     applications_csv_export_success_message,
-    format_next_action_due_text,
     normalize_application_detail_input,
 )
 from job_radar.gui.applications_tab import ApplicationsTabCallbacks, build_applications_tab_content
@@ -620,10 +619,6 @@ class MainWindow(ctk.CTk):
         """Set the Applications follow-up filter and rebuild the tab."""
         self._application_followup_filter = followup_filter
         self._build_applications_tab(parent)
-
-    def _format_next_action_due_text(self, action: dict) -> str:
-        """Return a compact due-date label for an application next action."""
-        return format_next_action_due_text(action)
 
     def _complete_application_next_action(self, parent, queued_action: dict):
         """Clear a queued next action after the user completes it."""
