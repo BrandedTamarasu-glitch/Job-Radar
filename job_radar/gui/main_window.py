@@ -83,7 +83,7 @@ from job_radar.gui.dashboard_view_model import build_dashboard_actions
 from job_radar.gui.dashboard_panel import add_dashboard_next_steps
 from job_radar.gui.demo_report_view_model import demo_report_error_message, demo_report_success_message
 from job_radar.gui.dialogs import show_message_dialog
-from job_radar.gui.profile_panel import add_profile_field, add_profile_summary_panel
+from job_radar.gui.profile_panel import add_profile_field, add_profile_summary_panel, clear_profile_content
 from job_radar.gui.profile_form import ProfileForm
 from job_radar.gui.profile_view_model import (
     build_profile_readiness_display,
@@ -432,9 +432,7 @@ class MainWindow(ctk.CTk):
         parent
             Parent tab widget
         """
-        # Clear existing content
-        for widget in parent.winfo_children():
-            widget.destroy()
+        clear_profile_content(parent)
 
         # Create scrollable frame for profile content
         scroll_frame = ctk.CTkScrollableFrame(parent)
@@ -539,10 +537,8 @@ class MainWindow(ctk.CTk):
         profile : dict
             Current profile data
         """
-        # Clear profile tab content
         profile_tab = self._tabview.tab("Profile")
-        for widget in profile_tab.winfo_children():
-            widget.destroy()
+        clear_profile_content(profile_tab)
 
         # Create ProfileForm in edit mode
         form = ProfileForm(

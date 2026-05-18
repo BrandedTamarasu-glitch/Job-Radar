@@ -10,6 +10,12 @@ import customtkinter as ctk
 from job_radar.gui.profile_view_model import ProfileReadinessDisplay, ProfileSummaryRow
 
 
+def clear_profile_content(parent) -> None:
+    """Remove all widgets from a Profile tab container."""
+    for widget in parent.winfo_children():
+        widget.destroy()
+
+
 def add_profile_field(parent, row: int, label_text: str, value_text: str) -> None:
     """Add a label-value pair to the profile grid."""
     label = ctk.CTkLabel(

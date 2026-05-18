@@ -6,7 +6,7 @@ from job_radar.gui.dashboard_panel import add_dashboard_next_steps
 from job_radar.gui.demo_report_view_model import demo_report_error_message, demo_report_success_message
 from job_radar.gui.dialogs import show_message_dialog
 from job_radar.gui.main_window import MainWindow
-from job_radar.gui.profile_panel import add_profile_field, add_profile_summary_panel
+from job_radar.gui.profile_panel import add_profile_field, add_profile_summary_panel, clear_profile_content
 from job_radar.gui.profile_form import PROFILE_FIELD_HINTS, ProfileForm
 from job_radar.gui.search_panel import (
     add_recent_searches_panel,
@@ -134,9 +134,19 @@ def test_profile_readiness_guidance_links_to_profile_tab():
 def test_profile_tab_includes_dashboard_next_steps():
     source = inspect.getsource(MainWindow._build_profile_tab)
 
+    assert "clear_profile_content(parent)" in source
     assert "_dashboard_actions(readiness)" in source
     assert "_add_dashboard_next_steps" in source
     assert "add_profile_summary_panel" in source
+
+
+def test_profile_edit_reuses_profile_clear_helper():
+    helper_source = inspect.getsource(clear_profile_content)
+    source = inspect.getsource(MainWindow._on_edit_profile)
+
+    assert "for widget in parent.winfo_children()" in helper_source
+    assert "widget.destroy()" in helper_source
+    assert "clear_profile_content(profile_tab)" in source
 
 
 def test_profile_summary_panel_includes_readiness_and_edit_action():
