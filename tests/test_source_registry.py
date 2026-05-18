@@ -2,6 +2,7 @@
 
 from job_radar.source_registry import (
     ManualSourceDefinition,
+    SOURCE_DISPLAY_NAMES,
     SOURCE_PHASE_ORDER,
     SourceDefinition,
     build_source_registry,
@@ -95,6 +96,11 @@ def test_source_display_name_uses_registry_then_fallback_then_source_key():
     assert source_display_name(registry, {"legacy": "Legacy"}, "dice") == "Dice"
     assert source_display_name(registry, {"legacy": "Legacy"}, "legacy") == "Legacy"
     assert source_display_name(registry, {"legacy": "Legacy"}, "unknown") == "unknown"
+
+
+def test_source_display_name_uses_canonical_fallback_names_by_default():
+    assert SOURCE_DISPLAY_NAMES["jsearch_other"] == "JSearch (Other)"
+    assert source_display_name({}, "jsearch_other") == "JSearch (Other)"
 
 
 def test_source_queries_by_phase_filters_and_groups_known_sources():

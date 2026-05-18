@@ -6,14 +6,15 @@ Date: 2026-05-18
 
 - Repo path: `/home/corye/openai-cli/Job-Radar`
 - Branch: `main`
-- Git status after latest slice: clean, `main...origin/main [ahead 98]`
-- Last full validation: `1174 passed, 8 skipped`
-- Do not push unless explicitly asked. The 98 local commits after the last push are still local.
+- Git status after latest slice: clean, `main...origin/main [ahead 99]`
+- Last full validation: `1175 passed, 8 skipped`
+- Do not push unless explicitly asked. The 99 local commits after the last push are still local.
 
 ## Latest Local Commits
 
 ```text
-(current) refactor: centralize source registry construction
+(current) refactor: centralize source display names
+aa55c8a refactor: centralize source registry construction
 c863819 refactor: extract dice scraper
 2e49827 refactor: extract hn hiring scraper
 331e246 refactor: extract remote scraper fetchers
@@ -119,6 +120,7 @@ Started reducing `job_radar/gui/main_window.py` by moving display formatting int
   - Shared source registry dataclasses and display-name selection helpers
   - Shared selected-query filtering and source phase grouping for fetch orchestration
   - Canonical automated source phase order and registry construction metadata
+  - Canonical fallback display-name map for source identifiers
   - `sources.py` now delegates registry/manual display-name selection and registry metadata while retaining query adapters
 - `job_radar/manual_sources.py`
   - Manual job-board URL generators, manual source registry, and manual URL generation helpers
@@ -264,8 +266,8 @@ Current line counts:
  117 job_radar/source_config.py
  122 job_radar/source_queries.py
  117 job_radar/manual_sources.py
- 119 job_radar/source_registry.py
- 460 job_radar/sources.py
+ 142 job_radar/source_registry.py
+ 440 job_radar/sources.py
  627 job_radar/gui/worker_thread.py
 2320 job_radar/gui/main_window.py
   14 job_radar/gui/demo_report_view_model.py
@@ -308,7 +310,7 @@ rtk .venv/bin/python -m pytest tests/
 Latest result:
 
 ```text
-1174 passed, 8 skipped
+1175 passed, 8 skipped
 ```
 
 ## Active Plan

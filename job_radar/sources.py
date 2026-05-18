@@ -118,26 +118,6 @@ def fetch_remoteok(query: str) -> list[JobResult]:
 # We Work Remotely fetcher
 # ---------------------------------------------------------------------------
 
-# Map source identifiers to display names for progress messages
-_SOURCE_DISPLAY_NAMES = {
-    "dice": "Dice",
-    "hn_hiring": "HN Hiring",
-    "remoteok": "RemoteOK",
-    "weworkremotely": "We Work Remotely",
-    "adzuna": "Adzuna",
-    "authentic_jobs": "Authentic Jobs",
-    "linkedin": "LinkedIn",
-    "indeed": "Indeed",
-    "glassdoor": "Glassdoor",
-    "jsearch": "JSearch",
-    "jsearch_other": "JSearch (Other)",
-    "usajobs": "USAJobs (Federal)",
-    "serpapi": "SerpAPI (Google Jobs)",
-    "jobicy": "Jobicy (Remote)",
-    "hiringcafe": "hiring.cafe",
-}
-
-
 def fetch_weworkremotely(query: str) -> list[JobResult]:
     """Fetch remote job listings from We Work Remotely."""
     return _fetch_weworkremotely_scraper(query, fetch_with_retry_func=fetch_with_retry)
@@ -303,7 +283,7 @@ def get_selected_source_display_names(selected_sources: list[str] | None = None)
 
 def _source_display_name(source: str) -> str:
     """Return a human-readable source name for query or result source keys."""
-    return source_display_name(SOURCE_REGISTRY, _SOURCE_DISPLAY_NAMES, source)
+    return source_display_name(SOURCE_REGISTRY, source)
 
 
 def get_source_display_name(source: str) -> str:

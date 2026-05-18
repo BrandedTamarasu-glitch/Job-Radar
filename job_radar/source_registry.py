@@ -30,6 +30,24 @@ class ManualSourceDefinition:
 
 SOURCE_PHASE_ORDER = ("scraper", "api", "aggregator")
 
+SOURCE_DISPLAY_NAMES = {
+    "dice": "Dice",
+    "hn_hiring": "HN Hiring",
+    "remoteok": "RemoteOK",
+    "weworkremotely": "We Work Remotely",
+    "adzuna": "Adzuna",
+    "authentic_jobs": "Authentic Jobs",
+    "linkedin": "LinkedIn",
+    "indeed": "Indeed",
+    "glassdoor": "Glassdoor",
+    "jsearch": "JSearch",
+    "jsearch_other": "JSearch (Other)",
+    "usajobs": "USAJobs (Federal)",
+    "serpapi": "SerpAPI (Google Jobs)",
+    "jobicy": "Jobicy (Remote)",
+    "hiringcafe": "hiring.cafe",
+}
+
 _AUTOMATED_SOURCE_SPECS = (
     ("dice", "Dice", "scraper"),
     ("hn_hiring", "HN Hiring", "scraper"),
@@ -109,10 +127,15 @@ def source_queries_by_phase(
 
 def source_display_name(
     registry: Mapping[str, SourceDefinition],
-    fallback_names: Mapping[str, str],
-    source: str,
+    fallback_names_or_source: Mapping[str, str] | str,
+    source: str | None = None,
 ) -> str:
     """Return a human-readable source name from the registry or fallback map."""
+    if source is None:
+        fallback_names = SOURCE_DISPLAY_NAMES
+        source = str(fallback_names_or_source)
+    else:
+        fallback_names = fallback_names_or_source
     definition = registry.get(source)
     if definition:
         return definition.display_name
