@@ -627,7 +627,7 @@ def test_search_worker_emits_completion_summary(tmp_path, source_health_recorder
             "threshold_seconds": 8.0,
         }
     ]
-    assert summary["source_warnings"] == summary["slow_query_warnings"]
+    assert "source_warnings" not in summary
     assert summary["cache_stats"] == {"hits": 2, "misses": 1, "writes": 1, "disabled": 0}
     assert summary["result_stats"] == {"total": 0, "new": 0, "high_score": 0}
     assert summary["sources"] == [

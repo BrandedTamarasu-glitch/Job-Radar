@@ -82,7 +82,7 @@ Current progress:
 - `job_radar/source_mappers.py` now contains the Adzuna, Authentic Jobs, JSearch, USAJobs, SerpAPI, Jobicy, and hiring.cafe API response mappers plus hiring.cafe salary helpers while `job_radar/sources.py` preserves the existing mapper import paths.
 - `job_radar/source_api_fetchers.py` now contains the Adzuna, Authentic Jobs, JSearch, USAJobs, SerpAPI, Jobicy, and hiring.cafe API fetchers while `job_radar/sources.py` preserves existing patch-compatible fetcher import paths and registry wiring.
 - `job_radar/source_scrapers.py` now contains the Dice, HN Hiring, RemoteOK, and We Work Remotely scraper fetchers while `job_radar/sources.py` preserves existing patch-compatible fetcher import paths and registry wiring.
-- New source health history writes now use canonical `query_failure_details` and `slow_query_warnings` fields without persisting new ambiguous `source_warnings` aliases; legacy `source_warnings` entries are still normalized when read.
+- New source health history writes and GUI worker summaries now use canonical `query_failure_details` and `slow_query_warnings` fields without persisting new ambiguous `source_warnings` aliases; legacy `source_warnings` entries are still normalized when read.
 - GUI display formatting cleanup has started by moving saved-search panel loading/rows/feedback, Applications pipeline rows, follow-up queue rows, filters, and Applications export/import/edit feedback into view-model helpers.
 - Applications tab construction now lives in a focused `job_radar/gui/applications_tab.py` helper while `MainWindow` retains behavior callbacks.
 - Settings update status formatting now lives in `job_radar/gui/update_status_view_model.py`.

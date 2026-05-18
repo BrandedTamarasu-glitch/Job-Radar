@@ -333,7 +333,6 @@ class SearchWorker:
                 "failed_sources": sorted(set(failed_source_names), key=str.casefold),
                 "query_failure_details": source_failures,
                 "slow_query_warnings": slow_query_warnings,
-                "source_warnings": slow_query_warnings,
                 "cache_stats": dedup_stats.get("cache_stats", {}),
                 "search_config": {
                     "preset": self._search_config.get("preset"),
