@@ -268,8 +268,10 @@ def test_calendar_export_writes_followup_ics_file():
 def test_search_complete_includes_review_state_summary():
     source = inspect.getsource(MainWindow._show_search_complete)
     summary_source = inspect.getsource(search_completion_content)
+    loader_source = inspect.getsource(MainWindow._review_state_summary_lines)
 
     assert "_review_state_summary_lines" in source
+    assert "load_review_state_summary_lines(review_state_counts)" in loader_source
     assert "search_completion_content" in source
     assert "review_queue_text(review_lines or [])" in summary_source
     assert "build_search_completion_panel" in source

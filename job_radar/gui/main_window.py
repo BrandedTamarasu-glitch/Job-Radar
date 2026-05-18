@@ -90,7 +90,7 @@ from job_radar.gui.profile_view_model import (
     build_profile_summary_rows,
     profile_load_error_message,
 )
-from job_radar.gui.review_state_view_model import format_review_state_summary
+from job_radar.gui.review_state_view_model import load_review_state_summary_lines
 from job_radar.gui.search_panel import (
     add_recent_searches_panel,
     add_saved_searches_panel,
@@ -1027,10 +1027,7 @@ class MainWindow(ctk.CTk):
 
     def _review_state_summary_lines(self) -> list[str]:
         """Return persisted review-state summary lines for the Search completion screen."""
-        try:
-            return format_review_state_summary(review_state_counts())
-        except Exception:
-            return []
+        return load_review_state_summary_lines(review_state_counts)
 
     def _load_current_profile_for_guidance(self) -> dict | None:
         """Load the saved profile for non-blocking guidance text."""

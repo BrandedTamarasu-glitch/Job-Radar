@@ -22,3 +22,11 @@ def format_review_state_summary(counts: dict[str, int] | None) -> list[str]:
             job_word = "job" if count == 1 else "jobs"
             lines.append(f"{count} {label} {job_word}")
     return lines
+
+
+def load_review_state_summary_lines(count_loader) -> list[str]:
+    """Return review-state summary lines, falling back to empty lines on load errors."""
+    try:
+        return format_review_state_summary(count_loader())
+    except Exception:
+        return []
