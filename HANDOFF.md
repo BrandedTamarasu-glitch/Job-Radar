@@ -6,13 +6,15 @@ Date: 2026-05-18
 
 - Repo path: `/home/corye/openai-cli/Job-Radar`
 - Branch: `main`
-- Git status after latest slice: clean, `main...origin/main [ahead 95]`
+- Git status after latest slice: clean, `main...origin/main [ahead 96]`
 - Last full validation: `1173 passed, 8 skipped`
-- Do not push unless explicitly asked. The 95 local commits after the last push are still local.
+- Do not push unless explicitly asked. The 96 local commits after the last push are still local.
 
 ## Latest Local Commits
 
 ```text
+(current) refactor: extract hn hiring scraper
+331e246 refactor: extract remote scraper fetchers
 1c48f54 refactor: extract hiringcafe fetcher
 5413885 refactor: extract usajobs fetcher
 71f661c refactor: extract jsearch fetcher
@@ -139,7 +141,7 @@ Started reducing `job_radar/gui/main_window.py` by moving display formatting int
   - Adzuna, Authentic Jobs, JSearch, USAJobs, SerpAPI, Jobicy, and hiring.cafe API fetchers
   - `sources.py` keeps patch-compatible wrappers/re-exports for existing tests/imports and registry wiring
 - `job_radar/source_scrapers.py`
-  - RemoteOK and We Work Remotely scraper fetchers
+  - HN Hiring, RemoteOK, and We Work Remotely scraper fetchers
   - `sources.py` keeps patch-compatible wrappers for existing tests/imports and registry wiring
 - `job_radar/gui/applications_view_model.py`
   - `format_next_action_due_text`
@@ -251,7 +253,7 @@ Current line counts:
 2149 job_radar/report.py
 1138 job_radar/search.py
  261 job_radar/search_pipeline.py
- 190 job_radar/source_scrapers.py
+ 406 job_radar/source_scrapers.py
  487 job_radar/source_api_fetchers.py
  488 job_radar/source_mappers.py
  120 job_radar/source_parsing.py
@@ -260,7 +262,7 @@ Current line counts:
  122 job_radar/source_queries.py
  117 job_radar/manual_sources.py
   92 job_radar/source_registry.py
- 763 job_radar/sources.py
+ 550 job_radar/sources.py
  627 job_radar/gui/worker_thread.py
 2320 job_radar/gui/main_window.py
   14 job_radar/gui/demo_report_view_model.py
@@ -303,7 +305,7 @@ rtk .venv/bin/python -m pytest tests/
 Latest result:
 
 ```text
-1133 passed, 8 skipped
+1173 passed, 8 skipped
 ```
 
 ## Active Plan
@@ -321,7 +323,7 @@ Still planned in Sprint 3:
 
 - Extract a shared search pipeline service used by CLI and GUI adapters.
 - Continue splitting `gui/main_window.py` into tab/presenter/view-model modules.
-- Move source adapters out of the single `sources.py` hotspot behind a small registry/interface.
+- Continue moving the remaining Dice source adapter out of the single `sources.py` hotspot behind a small registry/interface.
 - Consolidate profile schema construction/validation across CLI and GUI.
 - Rename source-health fields to distinguish source failures from slow-query warnings, with migration.
 
@@ -334,11 +336,11 @@ Still planned in Sprint 4:
 
 ## Recommended Next Slice
 
-Continue with small, low-risk `MainWindow` extractions before attempting larger tab splitting:
+Continue the source-adapter extraction only if the next Dice parser move stays low-risk; otherwise return to small, low-risk `MainWindow` extractions before attempting larger tab splitting:
 
-1. Move more search-panel state loading and empty-state text out of `MainWindow` if it stays low-risk.
-2. Continue extracting tab construction only where callbacks stay simple and tests remain behavior-oriented.
-3. After a few more GUI slices, commit the GUI architecture cleanup docs and code.
+1. Move Dice scraping into `source_scrapers.py` with the same patch-compatible wrapper pattern, if the parser can move without behavioral edits.
+2. Move more search-panel state loading and empty-state text out of `MainWindow` if Dice looks too risky for a safe slice.
+3. Continue extracting tab construction only where callbacks stay simple and tests remain behavior-oriented.
 
 Suggested validation for the next GUI slice:
 
