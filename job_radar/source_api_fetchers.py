@@ -10,6 +10,7 @@ from .rate_limits import check_rate_limit
 from .source_config import source_cache_ttl
 from .source_mappers import (
     map_adzuna_to_job_result,
+    map_authenticjobs_to_job_result,
     map_jobicy_to_job_result,
     map_serpapi_to_job_result,
 )
@@ -86,6 +87,74 @@ def fetch_adzuna(
             log.debug("[Adzuna] Request failed: %s", e)
 
     log.info("[Adzuna] Found %d results for '%s'", len(results), query)
+    return results
+
+
+def fetch_authenticjobs(
+    query: str,
+    location: str = "",
+    verbose: bool = False,
+    *,
+    get_api_key_func=get_api_key,
+    check_rate_limit_func=check_rate_limit,
+    fetch_with_retry_func=fetch_with_retry,
+) -> list[JobResult]:
+    """Fetch job listings from Authentic Jobs API."""
+    results = []
+
+    api_key = get_api_key_func("AUTHENTIC_JOBS_API_KEY", "Authentic Jobs")
+    if not api_key:
+        return results
+
+    if not check_rate_limit_func("authentic_jobs", verbose=verbose):
+        return results
+
+    params = {
+        "api_key": api_key,
+        "method": "aj.jobs.search",
+        "format": "json",
+        "keywords": query,
+        "perpage": "50",
+    }
+    if location:
+        params["location"] = location
+
+    url = "https://authenticjobs.com/api/?" + urllib.parse.urlencode(params)
+
+    try:
+        body = fetch_with_retry_func(
+            url,
+            headers=HEADERS,
+            use_cache=True,
+            cache_ttl_seconds=source_cache_ttl("authentic_jobs"),
+        )
+        if body is None:
+            log.debug("[Authentic Jobs] Fetch failed for '%s'", query)
+            return results
+
+        data = _json.loads(body)
+
+        listings = data.get("listings", {}).get("listing", [])
+        if isinstance(listings, dict):
+            listings = [listings]
+        elif not isinstance(listings, list):
+            listings = []
+
+        for item in listings:
+            job = map_authenticjobs_to_job_result(item)
+            if job:
+                results.append(job)
+
+    except _json.JSONDecodeError as e:
+        log.debug("[Authentic Jobs] JSON parse error: %s", e)
+    except Exception as e:
+        error_str = str(e).lower()
+        if "401" in error_str or "403" in error_str or "unauthorized" in error_str:
+            log.error("[Authentic Jobs] Authentication failed - run 'job-radar --setup-apis' to reconfigure")
+        else:
+            log.debug("[Authentic Jobs] Request failed: %s", e)
+
+    log.info("[Authentic Jobs] Found %d results for '%s'", len(results), query)
     return results
 
 
