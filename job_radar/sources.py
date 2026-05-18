@@ -31,7 +31,7 @@ from .source_config import (
     source_cache_ttl,
 )
 from .source_execution import SourceExecutionState
-from .source_mappers import map_adzuna_to_job_result
+from .source_mappers import map_adzuna_to_job_result, map_authenticjobs_to_job_result
 from .source_models import JobResult
 from .source_parsing import (
     _DATE_RE,
@@ -714,77 +714,6 @@ def fetch_authenticjobs(query: str, location: str = "", verbose: bool = False) -
 
     log.info("[Authentic Jobs] Found %d results for '%s'", len(results), query)
     return results
-
-
-def map_authenticjobs_to_job_result(item: dict) -> JobResult | None:
-    """Map Authentic Jobs API response item to JobResult.
-
-    Validates required fields (title, company, url) and returns None if any are missing.
-    Defensive implementation for unclear API structure per RESEARCH.md.
-    """
-    # Extract and validate required fields
-    title = item.get("title", "").strip()
-
-    # Company may be nested or at top level
-    company_raw = item.get("company", {})
-    if isinstance(company_raw, dict):
-        company = company_raw.get("name", "").strip()
-    else:
-        company = str(company_raw).strip() if company_raw else ""
-
-    # Try both url and apply_url
-    url = item.get("url", "").strip() or item.get("apply_url", "").strip()
-
-    if not title or not company or not url:
-        log.debug("[Authentic Jobs] Skipping job with missing required fields: title=%s, company=%s, url=%s",
-                 bool(title), bool(company), bool(url))
-        return None
-
-    # Location normalization (defensive nested access)
-    location_raw = ""
-    if isinstance(company_raw, dict):
-        location_obj = company_raw.get("location", {})
-        if isinstance(location_obj, dict):
-            location_raw = location_obj.get("name", "")
-        elif location_obj:
-            location_raw = str(location_obj)
-    location = parse_location_to_city_state(location_raw)
-
-    # Salary - typically not available from Authentic Jobs
-    salary = "Not specified"
-
-    # Description cleaning
-    description_raw = item.get("description", "")
-    description = strip_html_and_normalize(description_raw)
-    if len(description) > 500:
-        description = description[:497] + "..."
-
-    # Arrangement detection
-    arrangement = _parse_arrangement(f"{title} {description}")
-
-    # Employment type (defensive access)
-    emp_type_obj = item.get("type", {})
-    if isinstance(emp_type_obj, dict):
-        emp_type = emp_type_obj.get("name", "")
-    else:
-        emp_type = str(emp_type_obj) if emp_type_obj else ""
-
-    # Date posted
-    date_posted = item.get("post_date", "")
-
-    return JobResult(
-        title=_clean_field(title, _MAX_TITLE),
-        company=_clean_field(company, _MAX_COMPANY),
-        location=_clean_field(location, _MAX_LOCATION),
-        arrangement=arrangement,
-        salary=salary,
-        date_posted=date_posted,
-        description=description,
-        url=url,
-        source="authentic_jobs",
-        employment_type=emp_type,
-        parse_confidence="high",
-    )
 
 
 # ---------------------------------------------------------------------------

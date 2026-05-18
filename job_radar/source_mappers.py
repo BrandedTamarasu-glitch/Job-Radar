@@ -74,3 +74,61 @@ def map_adzuna_to_job_result(item: dict) -> JobResult | None:
         salary_max=salary_max,
         salary_currency=salary_currency,
     )
+
+
+def map_authenticjobs_to_job_result(item: dict) -> JobResult | None:
+    """Map Authentic Jobs API response item to JobResult."""
+    title = item.get("title", "").strip()
+
+    company_raw = item.get("company", {})
+    if isinstance(company_raw, dict):
+        company = company_raw.get("name", "").strip()
+    else:
+        company = str(company_raw).strip() if company_raw else ""
+
+    url = item.get("url", "").strip() or item.get("apply_url", "").strip()
+
+    if not title or not company or not url:
+        log.debug("[Authentic Jobs] Skipping job with missing required fields: title=%s, company=%s, url=%s",
+                  bool(title), bool(company), bool(url))
+        return None
+
+    location_raw = ""
+    if isinstance(company_raw, dict):
+        location_obj = company_raw.get("location", {})
+        if isinstance(location_obj, dict):
+            location_raw = location_obj.get("name", "")
+        elif location_obj:
+            location_raw = str(location_obj)
+    location = parse_location_to_city_state(location_raw)
+
+    salary = "Not specified"
+
+    description_raw = item.get("description", "")
+    description = strip_html_and_normalize(description_raw)
+    if len(description) > 500:
+        description = description[:497] + "..."
+
+    arrangement = _parse_arrangement(f"{title} {description}")
+
+    emp_type_obj = item.get("type", {})
+    if isinstance(emp_type_obj, dict):
+        emp_type = emp_type_obj.get("name", "")
+    else:
+        emp_type = str(emp_type_obj) if emp_type_obj else ""
+
+    date_posted = item.get("post_date", "")
+
+    return JobResult(
+        title=_clean_field(title, _MAX_TITLE),
+        company=_clean_field(company, _MAX_COMPANY),
+        location=_clean_field(location, _MAX_LOCATION),
+        arrangement=arrangement,
+        salary=salary,
+        date_posted=date_posted,
+        description=description,
+        url=url,
+        source="authentic_jobs",
+        employment_type=emp_type,
+        parse_confidence="high",
+    )
