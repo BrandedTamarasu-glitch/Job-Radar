@@ -93,6 +93,8 @@ Started reducing `job_radar/gui/main_window.py` by moving display formatting int
 - `job_radar/gui/update_status_view_model.py`
   - Settings update status text/color formatting
   - relative last-check time formatting
+- `job_radar/gui/maintenance_view_model.py`
+  - Settings cache/app-data maintenance status messages
 
 Current line counts:
 
@@ -101,6 +103,7 @@ Current line counts:
 3321 job_radar/gui/main_window.py
  287 job_radar/gui/applications_tab.py
  297 job_radar/gui/applications_view_model.py
+ 265 job_radar/gui/maintenance_view_model.py
   78 job_radar/gui/update_status_view_model.py
  478 job_radar/saved_searches.py
 ```
@@ -123,7 +126,7 @@ rtk .venv/bin/python -m pytest tests/
 Latest result:
 
 ```text
-1069 passed, 8 skipped
+1071 passed, 8 skipped
 ```
 
 ## Active Plan

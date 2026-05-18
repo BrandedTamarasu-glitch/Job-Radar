@@ -3,8 +3,13 @@
 import json
 
 from job_radar.gui.maintenance_view_model import (
+    app_data_bundle_validation_message,
+    app_data_export_error_message,
+    app_data_export_success_message,
     build_feedback_diagnostics_summary,
     build_local_maintenance_summary,
+    cache_clear_error_message,
+    cache_clear_success_message,
     format_feedback_diagnostics_lines,
     format_local_maintenance_lines,
 )
@@ -108,3 +113,34 @@ def test_feedback_diagnostics_summary_is_privacy_safe(tmp_path):
     assert "private-application-note" not in text
     assert "secret saved search" not in text
     assert "tokenish-cache-name" not in text
+
+
+def test_maintenance_status_messages_are_consistent_for_settings(tmp_path):
+    assert cache_clear_success_message(3, tmp_path / "cache") == (
+        f"Removed 3 cached response file(s) from {tmp_path / 'cache'}"
+    )
+    assert cache_clear_error_message(OSError("locked")) == "Failed to clear cache: locked"
+    assert app_data_export_success_message(tmp_path / "bundle.zip") == (
+        f"Exported app data to {tmp_path / 'bundle.zip'}"
+    )
+    assert app_data_export_error_message(OSError("disk full")) == (
+        "Failed to export app data: disk full"
+    )
+
+
+def test_app_data_bundle_validation_message_handles_valid_and_invalid_results():
+    assert app_data_bundle_validation_message(
+        is_valid=True,
+        files=["profile.json"],
+        errors=[],
+    ) == "Bundle is valid: 1 file ready to restore"
+    assert app_data_bundle_validation_message(
+        is_valid=True,
+        files=["profile.json", "tracker.json"],
+        errors=[],
+    ) == "Bundle is valid: 2 files ready to restore"
+    assert app_data_bundle_validation_message(
+        is_valid=False,
+        files=[],
+        errors=["missing manifest", "bad checksum"],
+    ) == "Bundle validation failed: missing manifest; bad checksum"

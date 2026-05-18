@@ -75,7 +75,8 @@ Current progress:
 - GUI display formatting cleanup has started by moving saved-search panel loading/rows/feedback, Applications pipeline rows, follow-up queue rows, filters, and Applications export/import/edit feedback into view-model helpers.
 - Applications tab construction now lives in a focused `job_radar/gui/applications_tab.py` helper while `MainWindow` retains behavior callbacks.
 - Settings update status formatting now lives in `job_radar/gui/update_status_view_model.py`.
-- Latest validation: `1069 passed, 8 skipped`.
+- Settings maintenance cache/app-data feedback now lives in `job_radar/gui/maintenance_view_model.py`.
+- Latest validation: `1071 passed, 8 skipped`.
 
 Validation:
 - Full `pytest tests/`

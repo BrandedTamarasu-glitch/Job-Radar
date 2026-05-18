@@ -86,8 +86,13 @@ from job_radar.gui.search_summary import (
     zero_result_lines,
 )
 from job_radar.gui.maintenance_view_model import (
+    app_data_bundle_validation_message,
+    app_data_export_error_message,
+    app_data_export_success_message,
     build_feedback_diagnostics_summary,
     build_local_maintenance_summary,
+    cache_clear_error_message,
+    cache_clear_success_message,
     format_feedback_diagnostics_lines,
     format_local_maintenance_lines,
 )
@@ -2031,9 +2036,9 @@ class MainWindow(ctk.CTk):
 
         try:
             removed = clear_cache()
-            message = f"Removed {removed} cached response file(s) from {get_cache_dir()}"
+            message = cache_clear_success_message(removed, get_cache_dir())
         except OSError as e:
-            message = f"Failed to clear cache: {e}"
+            message = cache_clear_error_message(e)
 
         if self._cache_status_label:
             self._cache_status_label.configure(text=message)
@@ -2043,9 +2048,9 @@ class MainWindow(ctk.CTk):
         try:
             output_path = get_results_dir() / f"job-radar-data-{date.today().isoformat()}.zip"
             export_path = export_app_data_bundle(output_path)
-            message = f"Exported app data to {export_path}"
+            message = app_data_export_success_message(export_path)
         except OSError as e:
-            message = f"Failed to export app data: {e}"
+            message = app_data_export_error_message(e)
 
         if self._cache_status_label:
             self._cache_status_label.configure(text=message)
@@ -2061,11 +2066,11 @@ class MainWindow(ctk.CTk):
             return
 
         result = validate_app_data_bundle(value)
-        if result.is_valid:
-            file_noun = "file" if len(result.files) == 1 else "files"
-            message = f"Bundle is valid: {len(result.files)} {file_noun} ready to restore"
-        else:
-            message = "Bundle validation failed: " + "; ".join(result.errors)
+        message = app_data_bundle_validation_message(
+            is_valid=result.is_valid,
+            files=result.files,
+            errors=result.errors,
+        )
 
         if self._cache_status_label:
             self._cache_status_label.configure(text=message)

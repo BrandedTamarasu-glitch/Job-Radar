@@ -170,6 +170,39 @@ def format_feedback_diagnostics_lines(summary: FeedbackDiagnosticsSummary) -> li
     return lines
 
 
+def cache_clear_success_message(removed: int, cache_dir: Path) -> str:
+    """Return Settings feedback after clearing cached responses."""
+    return f"Removed {removed} cached response file(s) from {cache_dir}"
+
+
+def cache_clear_error_message(error: object) -> str:
+    """Return Settings feedback after cache clearing fails."""
+    return f"Failed to clear cache: {error}"
+
+
+def app_data_export_success_message(export_path: Path) -> str:
+    """Return Settings feedback after app-data export succeeds."""
+    return f"Exported app data to {export_path}"
+
+
+def app_data_export_error_message(error: object) -> str:
+    """Return Settings feedback after app-data export fails."""
+    return f"Failed to export app data: {error}"
+
+
+def app_data_bundle_validation_message(
+    *,
+    is_valid: bool,
+    files: list[str],
+    errors: list[str],
+) -> str:
+    """Return Settings feedback after app-data bundle validation."""
+    if is_valid:
+        file_noun = "file" if len(files) == 1 else "files"
+        return f"Bundle is valid: {len(files)} {file_noun} ready to restore"
+    return "Bundle validation failed: " + "; ".join(errors)
+
+
 def _directory_file_count_and_size(path: Path) -> tuple[int, int]:
     if not path.exists():
         return 0, 0
