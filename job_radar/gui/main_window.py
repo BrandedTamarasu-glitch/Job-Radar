@@ -58,6 +58,7 @@ from job_radar.gui.api_status_view_model import (
     api_missing_credentials_status,
     api_missing_key_status,
     api_network_error_status,
+    api_quota_status,
     api_response_status,
     api_testing_status,
     api_timeout_status,
@@ -2131,17 +2132,8 @@ class MainWindow(ctk.CTk):
                 quota_info = get_quota_usage(backend_api)
                 if quota_info:
                     used, limit, period = quota_info
-                    percentage = (used / limit) * 100 if limit > 0 else 0
-
-                    # Color based on usage
-                    if percentage >= 100:
-                        color = "red"
-                    elif percentage >= 80:
-                        color = "orange"
-                    else:
-                        color = "gray"
-
-                    self.after(0, lambda l=label, t=f"{used}/{limit} this {period}", c=color: (
+                    display = api_quota_status(used, limit, period)
+                    self.after(0, lambda l=label, t=display.text, c=display.color: (
                         l.configure(text=t, text_color=c)
                     ))
                 else:

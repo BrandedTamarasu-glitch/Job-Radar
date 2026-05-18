@@ -4,9 +4,10 @@
 
 ### Improvements
 - **Settings update view-model cleanup** - Moved skipped-version status and manual update-result text formatting out of `MainWindow` into the update status view model with focused coverage.
+- **API quota view-model cleanup** - Moved Settings quota usage text/color formatting out of `MainWindow` into the API status view model.
 
 ### Validation
-- Full automated regression after post-release cleanup: 1182 passed, 8 skipped.
+- Full automated regression after post-release cleanup: 1183 passed, 8 skipped.
 
 ## v2.8.0 — 2026-05-18
 

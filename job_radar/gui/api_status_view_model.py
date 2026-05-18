@@ -73,3 +73,15 @@ def api_response_status(
     if fallback == "http":
         return api_http_status(http_status)
     return api_unexpected_status(http_status)
+
+
+def api_quota_status(used: int, limit: int, period: str) -> ApiStatusDisplay:
+    """Return quota usage label display data."""
+    percentage = (used / limit) * 100 if limit > 0 else 0
+    if percentage >= 100:
+        color = "red"
+    elif percentage >= 80:
+        color = "orange"
+    else:
+        color = "gray"
+    return ApiStatusDisplay(f"{used}/{limit} this {period}", color)
