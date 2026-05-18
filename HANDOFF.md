@@ -6,14 +6,15 @@ Date: 2026-05-18
 
 - Repo path: `/home/corye/openai-cli/Job-Radar`
 - Branch: `main`
-- Git status after latest slice: clean, `main...origin/main [ahead 99]`
+- Git status after latest slice: clean, `main...origin/main [ahead 100]`
 - Last full validation: `1175 passed, 8 skipped`
-- Do not push unless explicitly asked. The 99 local commits after the last push are still local.
+- Do not push unless explicitly asked. The 100 local commits after the last push are still local.
 
 ## Latest Local Commits
 
 ```text
-(current) refactor: centralize source display names
+(current) refactor: stop persisting legacy source warnings
+9dcb54d refactor: centralize source display names
 aa55c8a refactor: centralize source registry construction
 c863819 refactor: extract dice scraper
 2e49827 refactor: extract hn hiring scraper
@@ -236,6 +237,7 @@ Started reducing `job_radar/gui/main_window.py` by moving display formatting int
   - Shared terminal download queue handling helpers
   - Shared download progress and asset queue handling helpers
   - Shared legacy worker queue handling helpers
+  - New source health history writes use canonical `query_failure_details` and `slow_query_warnings` without persisting new ambiguous `source_warnings` aliases
   - Removed redundant Applications due-text wrapper in favor of the view-model helper
   - Removed obsolete Profile field wrapper after Profile row rendering moved to `profile_panel.py`
   - Removed obsolete Settings update-status initializer after update panel extraction
@@ -330,7 +332,7 @@ Still planned in Sprint 3:
 - Continue splitting `gui/main_window.py` into tab/presenter/view-model modules.
 - Source adapter implementations have moved out of the single `sources.py` hotspot; `sources.py` still carries compatibility imports, wrappers, and registry wiring.
 - Consolidate profile schema construction/validation across CLI and GUI.
-- Rename source-health fields to distinguish source failures from slow-query warnings, with migration.
+- Continue source-health compatibility cleanup where it is safe; new tracker writes now distinguish source failures from slow-query warnings, while legacy `source_warnings` reads remain supported.
 
 Still planned in Sprint 4:
 

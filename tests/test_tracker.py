@@ -598,9 +598,7 @@ def test_record_source_health_persists_run_summary(tmp_path):
     assert entry["slow_query_warnings"] == [
         {"source": "remoteok", "query": "Backend", "elapsed_seconds": 9.0}
     ]
-    assert entry["source_warnings"] == [
-        {"source": "remoteok", "query": "Backend", "elapsed_seconds": 9.0}
-    ]
+    assert "source_warnings" not in entry
     assert entry["cache_stats"] == {"hits": 2, "misses": 1, "writes": 1, "disabled": 0}
     assert entry["search_config"] == {"preset": "remote-backend", "selected_sources": ["dice"]}
     assert entry["sources"] == [

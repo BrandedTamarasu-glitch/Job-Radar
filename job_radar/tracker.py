@@ -245,7 +245,6 @@ def record_source_health(
     if slow_query_warnings is not None:
         warnings = list(slow_query_warnings or [])
         health_entry["slow_query_warnings"] = warnings
-        health_entry["source_warnings"] = warnings
     if summary.get("cache_stats") is not None:
         health_entry["cache_stats"] = dict(summary.get("cache_stats") or {})
     if summary.get("search_config") is not None:
