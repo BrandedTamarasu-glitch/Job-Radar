@@ -37,7 +37,7 @@ from .sources import (
     get_automated_source_display_names,
 )
 from .report import ZERO_RESULTS_TIPS, generate_report
-from .search_pipeline import score_results
+from .search_pipeline import apply_result_filters, score_results
 from .demo_report import generate_demo_report
 from .search_presets import (
     SEARCH_PRESETS,
@@ -1002,7 +1002,11 @@ def main():
 
     # Step 2: Date filter
     print(f"\n{C.BOLD}Step 2:{C.RESET} Filtering by date range ({from_date} to {to_date})...")
-    filtered = filter_by_date(all_results, from_date, to_date)
+    filtered, _from_date, _to_date = apply_result_filters(
+        all_results,
+        {"from_date": from_date, "to_date": to_date},
+        date_filter_func=filter_by_date,
+    )
     print(f"  {len(filtered)} results after date filtering (from {len(all_results)} total)")
 
     # Step 3: Score

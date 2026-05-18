@@ -72,7 +72,7 @@ Goal: reduce merge hotspots and duplicated behavior after the trust fixes are st
 Current progress:
 - Report rendering has been split into focused HTML and Markdown modules while preserving compatibility wrappers in `job_radar/report.py`.
 - Extracted modules now cover report safety, assets, text helpers, filtering, source warnings, tiers, matching, stats, profile/tracker summaries, manual links, job details, controls, job attributes, result tables, result rows, cards, and Markdown sections.
-- `job_radar/search_pipeline.py` now contains shared search filter parsing, profile preference, freshness/date resolution, raw-result filtering, scoring/dealbreaker sorting, and post-score filtering helpers for GUI/CLI reuse; the CLI now uses the shared scorer.
+- `job_radar/search_pipeline.py` now contains shared search filter parsing, profile preference, freshness/date resolution, raw-result filtering, scoring/dealbreaker sorting, and post-score filtering helpers for GUI/CLI reuse; the CLI now uses the shared scorer and raw-result date filter.
 - GUI display formatting cleanup has started by moving saved-search panel loading/rows/feedback, Applications pipeline rows, follow-up queue rows, filters, and Applications export/import/edit feedback into view-model helpers.
 - Applications tab construction now lives in a focused `job_radar/gui/applications_tab.py` helper while `MainWindow` retains behavior callbacks.
 - Settings update status formatting now lives in `job_radar/gui/update_status_view_model.py`.
