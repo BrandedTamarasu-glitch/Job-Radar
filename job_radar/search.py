@@ -42,12 +42,12 @@ from .search_pipeline import (
     filter_application_status_results,
     filter_min_score_results,
     filter_new_results,
+    prepare_search_profile,
     score_results,
 )
 from .demo_report import generate_demo_report
 from .search_presets import (
     SEARCH_PRESETS,
-    apply_search_preset,
     format_preset_list,
     preset_choices,
 )
@@ -896,8 +896,7 @@ def main():
         # Normal mode - use recovery (auto-wizard on corrupt/missing)
         profile = load_profile_with_recovery(profile_path_str)
 
-    if args.preset:
-        profile = apply_search_preset(profile, args.preset)
+    profile = prepare_search_profile(profile, preset=args.preset)
 
     # Profile preview on startup (unless suppressed by --no-wizard)
     if not args.no_wizard:

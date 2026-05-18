@@ -25,6 +25,7 @@ from job_radar.search_pipeline import (
     infer_job_arrangement,
     parse_company_filter,
     parse_skill_filter,
+    prepare_search_profile,
     resolve_date_filter,
     score_results,
 )
@@ -233,7 +234,6 @@ class SearchWorker:
         try:
             # Lazy imports to avoid circular dependencies and keep module importable
             from job_radar.api_config import load_api_credentials
-            from job_radar.search_presets import apply_search_preset
             from job_radar.sources import (
                 fetch_all,
                 generate_manual_urls,
@@ -252,13 +252,10 @@ class SearchWorker:
             from job_radar.search import filter_by_date
             from job_radar.paths import get_results_dir
 
-            search_profile = apply_search_preset(
+            search_profile = prepare_search_profile(
                 self._profile,
-                self._search_config.get("preset"),
-            )
-            search_profile = apply_preferred_skills(
-                search_profile,
-                self._search_config.get("preferred_skills"),
+                preset=self._search_config.get("preset"),
+                preferred_skills=self._search_config.get("preferred_skills"),
             )
 
             # Step 1: Load API credentials

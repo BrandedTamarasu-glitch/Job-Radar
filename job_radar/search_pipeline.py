@@ -59,6 +59,19 @@ def apply_preferred_skills(profile: dict, preferred_skills=None) -> dict:
     return search_profile
 
 
+def prepare_search_profile(
+    profile: dict,
+    *,
+    preset: str | None = None,
+    preferred_skills=None,
+) -> dict:
+    """Apply shared per-search profile overlays without mutating the saved profile."""
+    from job_radar.search_presets import apply_search_preset
+
+    search_profile = apply_search_preset(profile, preset)
+    return apply_preferred_skills(search_profile, preferred_skills)
+
+
 def filter_by_company(results: list, include=None, exclude=None) -> list:
     """Filter jobs by company include/exclude terms."""
     include_terms = parse_company_filter(include)

@@ -13,6 +13,7 @@ from job_radar.search_pipeline import (
     filter_new_results,
     parse_company_filter,
     parse_skill_filter,
+    prepare_search_profile,
     resolve_date_filter,
     score_results,
 )
@@ -33,6 +34,25 @@ def test_apply_preferred_skills_returns_search_profile_copy():
 
     assert search_profile == {"secondary_skills": ["Docker", "Kubernetes"]}
     assert profile == {"secondary_skills": ["Docker"]}
+
+
+def test_prepare_search_profile_applies_preset_and_preferred_skills():
+    profile = {
+        "target_titles": ["Backend Engineer"],
+        "core_skills": ["Python"],
+        "secondary_skills": ["Docker"],
+    }
+
+    search_profile = prepare_search_profile(
+        profile,
+        preset="remote-backend",
+        preferred_skills="Kubernetes",
+    )
+
+    assert "Senior Backend Engineer" in search_profile["target_titles"]
+    assert search_profile["secondary_skills"] == ["Docker", "Kubernetes"]
+    assert profile["target_titles"] == ["Backend Engineer"]
+    assert profile["secondary_skills"] == ["Docker"]
 
 
 def test_shared_company_and_location_filters():
