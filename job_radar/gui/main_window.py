@@ -78,7 +78,11 @@ from job_radar.gui.applications_view_model import (
     applications_csv_export_success_message,
     normalize_application_detail_input,
 )
-from job_radar.gui.applications_tab import ApplicationsTabCallbacks, build_applications_tab_content
+from job_radar.gui.applications_tab import (
+    ApplicationsTabCallbacks,
+    build_applications_tab_content,
+    set_applications_status,
+)
 from job_radar.gui.dashboard_view_model import build_dashboard_actions
 from job_radar.gui.dashboard_panel import add_dashboard_next_steps
 from job_radar.gui.demo_report_view_model import demo_report_error_message, demo_report_success_message
@@ -613,11 +617,11 @@ class MainWindow(ctk.CTk):
             )
             self._build_applications_tab(parent)
         except Exception as e:
-            if self._applications_export_status_label is not None:
-                self._applications_export_status_label.configure(
-                    text=application_followup_update_error_message(e),
-                    text_color="red",
-                )
+            set_applications_status(
+                self._applications_export_status_label,
+                application_followup_update_error_message(e),
+                "red",
+            )
 
     def _snooze_application_next_action(self, parent, queued_action: dict):
         """Move a queued follow-up three days forward."""
@@ -632,11 +636,11 @@ class MainWindow(ctk.CTk):
             )
             self._build_applications_tab(parent)
         except Exception as e:
-            if self._applications_export_status_label is not None:
-                self._applications_export_status_label.configure(
-                    text=application_followup_snooze_error_message(e),
-                    text_color="red",
-                )
+            set_applications_status(
+                self._applications_export_status_label,
+                application_followup_snooze_error_message(e),
+                "red",
+            )
 
     def _insert_application_note_template(self, parent, application_row, template_key: str):
         """Append a rendered application note template and refresh the Applications tab."""
@@ -660,11 +664,11 @@ class MainWindow(ctk.CTk):
             )
             self._build_applications_tab(parent)
         except Exception as e:
-            if self._applications_export_status_label is not None:
-                self._applications_export_status_label.configure(
-                    text=application_template_insert_error_message(e),
-                    text_color="red",
-                )
+            set_applications_status(
+                self._applications_export_status_label,
+                application_template_insert_error_message(e),
+                "red",
+            )
 
     def _update_application_status_from_menu(self, parent, application_row, selected_label: str):
         """Update an application's status from a GUI menu selection."""
@@ -682,11 +686,11 @@ class MainWindow(ctk.CTk):
             )
             self._build_applications_tab(parent)
         except Exception as e:
-            if self._applications_export_status_label is not None:
-                self._applications_export_status_label.configure(
-                    text=application_status_update_error_message(e),
-                    text_color="red",
-                )
+            set_applications_status(
+                self._applications_export_status_label,
+                application_status_update_error_message(e),
+                "red",
+            )
 
     def _prompt_application_next_action(self, parent, application_row):
         """Prompt for next-action text and persist it to the tracker."""
@@ -757,11 +761,11 @@ class MainWindow(ctk.CTk):
             )
             self._build_applications_tab(parent)
         except Exception as e:
-            if self._applications_export_status_label is not None:
-                self._applications_export_status_label.configure(
-                    text=application_detail_update_error_message(e),
-                    text_color="red",
-                )
+            set_applications_status(
+                self._applications_export_status_label,
+                application_detail_update_error_message(e),
+                "red",
+            )
 
     def _export_applications_csv(self):
         """Export tracked application pipeline entries to CSV."""
@@ -769,17 +773,17 @@ class MainWindow(ctk.CTk):
             applications = get_all_application_statuses()
             output_path = get_results_dir() / f"applications-{date.today().isoformat()}.csv"
             export_path = export_applications_csv(applications, output_path)
-            if self._applications_export_status_label is not None:
-                self._applications_export_status_label.configure(
-                    text=applications_csv_export_success_message(export_path),
-                    text_color="green",
-                )
+            set_applications_status(
+                self._applications_export_status_label,
+                applications_csv_export_success_message(export_path),
+                "green",
+            )
         except Exception as e:
-            if self._applications_export_status_label is not None:
-                self._applications_export_status_label.configure(
-                    text=applications_csv_export_error_message(e),
-                    text_color="red",
-                )
+            set_applications_status(
+                self._applications_export_status_label,
+                applications_csv_export_error_message(e),
+                "red",
+            )
 
     def _import_report_status_updates(self, parent):
         """Import pending status updates exported from an HTML report."""
@@ -800,17 +804,17 @@ class MainWindow(ctk.CTk):
             imported = import_report_status_updates_json(path)
             changed = merge_application_entries(imported)
             self._build_applications_tab(parent)
-            if self._applications_export_status_label is not None:
-                self._applications_export_status_label.configure(
-                    text=application_status_import_success_message(changed),
-                    text_color="green",
-                )
+            set_applications_status(
+                self._applications_export_status_label,
+                application_status_import_success_message(changed),
+                "green",
+            )
         except Exception as e:
-            if self._applications_export_status_label is not None:
-                self._applications_export_status_label.configure(
-                    text=application_status_import_error_message(e),
-                    text_color="red",
-                )
+            set_applications_status(
+                self._applications_export_status_label,
+                application_status_import_error_message(e),
+                "red",
+            )
 
     def _export_application_followups_ics(self):
         """Export dated application follow-ups to an iCalendar file."""
@@ -818,17 +822,17 @@ class MainWindow(ctk.CTk):
             applications = get_all_application_statuses()
             output_path = get_results_dir() / f"application-followups-{date.today().isoformat()}.ics"
             export_path = export_application_followups_ics(applications, output_path)
-            if self._applications_export_status_label is not None:
-                self._applications_export_status_label.configure(
-                    text=application_calendar_export_success_message(export_path),
-                    text_color="green",
-                )
+            set_applications_status(
+                self._applications_export_status_label,
+                application_calendar_export_success_message(export_path),
+                "green",
+            )
         except Exception as e:
-            if self._applications_export_status_label is not None:
-                self._applications_export_status_label.configure(
-                    text=application_calendar_export_error_message(e),
-                    text_color="red",
-                )
+            set_applications_status(
+                self._applications_export_status_label,
+                application_calendar_export_error_message(e),
+                "red",
+            )
 
     def _on_clear_dismissed_reviews(self):
         """Clear a bounded batch of dismissed review-state entries."""

@@ -38,6 +38,12 @@ class ApplicationsTabCallbacks:
     snooze_next_action: Callable[[dict[str, Any]], None]
 
 
+def set_applications_status(status_label, message: str, color: str) -> None:
+    """Update Applications-tab feedback when the status label exists."""
+    if status_label is not None:
+        status_label.configure(text=message, text_color=color)
+
+
 def build_applications_tab_content(
     parent,
     *,

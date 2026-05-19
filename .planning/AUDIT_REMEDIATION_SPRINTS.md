@@ -123,6 +123,7 @@ Current progress:
 - Profile schema parsing/range constants and level derivation now live in `job_radar/profile_schema.py` and are reused by the CLI wizard, quick editor, GUI profile form, and profile validation.
 - Temporary Search-tab success message replacement and dismissal scheduling now live in `job_radar/gui/search_panel.py`.
 - Search-tab saved-search feedback label updates now live in `job_radar/gui/search_panel.py`.
+- Applications-tab export/import/edit feedback label updates now live in `job_radar/gui/applications_tab.py`.
 - Latest validation: `1200 passed, 8 skipped`.
 
 Remaining Sprint 3 work:

@@ -1,6 +1,10 @@
 import inspect
 
-from job_radar.gui.applications_tab import _add_application_next_action_queue, build_applications_tab_content
+from job_radar.gui.applications_tab import (
+    _add_application_next_action_queue,
+    build_applications_tab_content,
+    set_applications_status,
+)
 from job_radar.gui.applications_view_model import format_next_action_due_text
 from job_radar.gui.dashboard_panel import add_dashboard_next_steps
 from job_radar.gui.demo_report_view_model import demo_report_error_message, demo_report_success_message
@@ -260,6 +264,7 @@ def test_snooze_application_next_action_moves_due_date_forward():
 
 def test_applications_tab_includes_direct_edit_controls():
     source = inspect.getsource(build_applications_tab_content)
+    status_source = inspect.getsource(set_applications_status)
 
     assert "Export Calendar" in source
     assert "callbacks.export_calendar" in source
@@ -267,6 +272,7 @@ def test_applications_tab_includes_direct_edit_controls():
     assert "callbacks.prompt_due_date" in source
     assert "callbacks.prompt_notes" in source
     assert "Edit Notes" in source
+    assert "status_label.configure(text=message, text_color=color)" in status_source
 
 
 def test_calendar_export_writes_followup_ics_file():
