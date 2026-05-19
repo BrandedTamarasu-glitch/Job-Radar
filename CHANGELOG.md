@@ -6,9 +6,10 @@
 - **Settings update view-model cleanup** - Moved skipped-version status and manual update-result text formatting out of `MainWindow` into the update status view model with focused coverage.
 - **API quota view-model cleanup** - Moved Settings quota usage text/color formatting out of `MainWindow` into the API status view model.
 - **Shared report browser opening** - Routed the GUI Open Report action through the shared browser helper used by demo reports, keeping auto-open/headless behavior centralized.
+- **Uninstall result view-model cleanup** - Moved uninstall partial-failure and completion message formatting out of `MainWindow`.
 
 ### Validation
-- Full automated regression after post-release cleanup: 1184 passed, 8 skipped.
+- Full automated regression after post-release cleanup: 1185 passed, 8 skipped.
 
 ## v2.8.0 — 2026-05-18
 

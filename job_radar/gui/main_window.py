@@ -160,6 +160,10 @@ from job_radar.gui.uninstall_dialog import (
     FinalConfirmationDialog,
     DeletionProgressDialog,
 )
+from job_radar.gui.uninstall_view_model import (
+    uninstall_failure_message,
+    uninstall_final_message,
+)
 from job_radar.rate_limits import get_quota_usage
 from job_radar.review_state import clear_review_state_by_state, review_state_counts
 from job_radar.saved_searches import (
@@ -2226,24 +2230,17 @@ class MainWindow(ctk.CTk):
         # Step 5: Handle results
         if failures:
             # Partial failure - show what failed
-            failure_msg = "Some files could not be deleted:\n\n"
-            for path, error in failures[:5]:  # Show first 5
-                failure_msg += f"• {path}\n  Error: {error}\n"
-            if len(failures) > 5:
-                failure_msg += f"\n...and {len(failures) - 5} more"
-
-            self._show_error_dialog(failure_msg)
+            self._show_error_dialog(uninstall_failure_message(failures))
 
         # Check if binary cleanup needed
         binary_path = get_binary_path()
+        cleanup_message = None
         if binary_path:
             try:
-                message, script_path = create_cleanup_script(binary_path)
-                final_msg = message
-            except Exception as e:
-                final_msg = f"Data removed. Please manually delete: {binary_path}"
-        else:
-            final_msg = "Data removed successfully."
+                cleanup_message, script_path = create_cleanup_script(binary_path)
+            except Exception:
+                cleanup_message = None
+        final_msg = uninstall_final_message(binary_path, cleanup_message)
 
         # Step 6: Show final success dialog and quit
         success_dialog = ctk.CTkToplevel(self)

@@ -43,6 +43,7 @@ from job_radar.gui.settings_panel import (
     refresh_source_diagnostics_textbox,
 )
 from job_radar.gui.tab_shell import MAIN_TAB_NAMES, build_main_tabview
+from job_radar.gui.uninstall_view_model import uninstall_failure_message, uninstall_final_message
 from job_radar.gui.welcome_panel import build_welcome_screen
 from job_radar.gui.window_shell import clear_content_except_header
 
@@ -576,6 +577,26 @@ def test_settings_danger_zone_includes_uninstall_action():
     assert "Danger Zone" in source
     assert "Uninstall Job Radar" in source
     assert "command=on_uninstall" in source
+
+
+def test_uninstall_result_messages_are_composed_outside_main_window():
+    source = inspect.getsource(MainWindow._handle_uninstall_results)
+
+    assert "uninstall_failure_message(failures)" in source
+    assert "uninstall_final_message(binary_path, cleanup_message)" in source
+    assert uninstall_failure_message([
+        ("/tmp/a", "denied"),
+        ("/tmp/b", "busy"),
+        ("/tmp/c", "locked"),
+        ("/tmp/d", "missing"),
+        ("/tmp/e", "readonly"),
+        ("/tmp/f", "unknown"),
+    ]).endswith("...and 1 more")
+    assert uninstall_final_message(None, None) == "Data removed successfully."
+    assert uninstall_final_message("/app/job-radar", None) == (
+        "Data removed. Please manually delete: /app/job-radar"
+    )
+    assert uninstall_final_message("/app/job-radar", "Cleanup scheduled") == "Cleanup scheduled"
 
 
 def test_settings_scoring_panel_builds_widget_with_save_callback():

@@ -119,7 +119,8 @@ Current progress:
 - Skipped-version and manual update-result Settings status text now live in `job_radar/gui/update_status_view_model.py`.
 - API quota label text/color formatting now lives in `job_radar/gui/api_status_view_model.py`.
 - GUI Open Report now uses the shared browser helper for centralized auto-open/headless behavior.
-- Latest validation: `1184 passed, 8 skipped`.
+- Uninstall partial-failure and completion message formatting now lives in `job_radar/gui/uninstall_view_model.py`.
+- Latest validation: `1185 passed, 8 skipped`.
 
 Remaining Sprint 3 work:
 - Continue reducing `job_radar/gui/main_window.py` through low-risk helper extractions.
