@@ -455,7 +455,7 @@ python -m job_radar --help
 
 ### Running Tests
 
-The project includes a comprehensive test suite with 1193 automated tests:
+The project includes a comprehensive test suite with 1208 automated tests:
 
 ```bash
 # Install dev dependencies
@@ -516,6 +516,7 @@ For release builds, also run the platform build script and smoke-test the genera
 - Demo report (2 tests) - validates no-network sample profile/jobs and report generation
 - Data portability (9 tests) - validates portable app-data export bundles, manifests, restore preflight validation, and restore backups
 - Profile readiness (7 tests) - validates onboarding readiness status, missing required fields, scoring-signal recommendations, match-quality recommendations, and guidance prioritization
+- Profile schema (15 tests) - validates shared years, compensation-floor parsing, exact validation messages, and level derivation thresholds
 - Profile manager (24 tests) - validates atomic writes, default scoring/staffing setup, backups, rotation, schema migration, validation
 - Profile display (16 tests) - validates formatted output, field filtering, NO_COLOR compliance
 - Profile editor (23 tests) - validates field menu, diff preview, editing, validator reuse
@@ -563,7 +564,7 @@ Release notes for this version are tracked in `CHANGELOG.md`.
 Local Linux artifact build verification passed for `job-radar-v2.8.0-linux.tar.gz`.
 Sprint Y feedback-loop planning and next product slice candidates are tracked in `.planning/POST_RELEASE_FEEDBACK_U_Y.md`, and Settings now includes copyable redacted feedback diagnostics for privacy-safe issue reports.
 
-The Review Squad audit remediation stream is tracked in `.planning/AUDIT_REMEDIATION_SPRINTS.md`. Sprint 3 has decomposed the report renderer, source adapters, shared search pipeline, and several GUI maintenance/search/profile helpers while preserving compatibility wrappers where needed; latest validation: `1185 passed, 8 skipped`.
+The Review Squad audit remediation stream is tracked in `.planning/AUDIT_REMEDIATION_SPRINTS.md`. Sprint 3 has decomposed the report renderer, source adapters, shared search pipeline, profile schema helpers, and several GUI maintenance/search/profile helpers while preserving compatibility wrappers where needed; latest validation: `1200 passed, 8 skipped`.
 
 ### Building Executables
 

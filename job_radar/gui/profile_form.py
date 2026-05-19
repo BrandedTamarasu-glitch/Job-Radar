@@ -14,6 +14,11 @@ from pathlib import Path
 from tkinter import filedialog
 
 from job_radar.profile_manager import save_profile, ProfileValidationError
+from job_radar.profile_schema import (
+    derive_level,
+    parse_compensation_floor,
+    parse_years_experience,
+)
 from job_radar.paths import get_data_dir
 from job_radar.gui.tag_chip_widget import TagChipWidget
 
@@ -29,7 +34,6 @@ PROFILE_FIELD_HINTS = {
 }
 
 
-# Validation functions extracted from wizard.py logic
 def validate_name(text: str) -> tuple[bool, str]:
     """Validate name field (non-empty).
 
@@ -61,16 +65,11 @@ def validate_years(text: str) -> tuple[bool, str]:
     tuple[bool, str]
         (is_valid, error_message) - error_message is empty if valid
     """
-    text = text.strip()
     try:
-        years = int(text)
-        if years < 0:
-            return (False, "Years must be 0 or greater")
-        if years > 50:
-            return (False, "Please enter a realistic number of years (0-50)")
+        parse_years_experience(text)
         return (True, "")
-    except ValueError:
-        return (False, "Please enter a whole number (e.g., 3, 5, 10)")
+    except ValueError as exc:
+        return (False, str(exc))
 
 
 def validate_compensation(text: str) -> tuple[bool, str]:
@@ -86,31 +85,11 @@ def validate_compensation(text: str) -> tuple[bool, str]:
     tuple[bool, str]
         (is_valid, error_message) - error_message is empty if valid
     """
-    text = text.strip()
-    if not text:  # Empty is OK (optional field)
+    try:
+        parse_compensation_floor(text)
         return (True, "")
-
-    # Remove common formatting (commas, dollar signs, 'k')
-    cleaned = text.replace(',', '').replace('$', '').strip()
-
-    # Handle 'k' suffix (e.g., "120k" -> "120000")
-    if cleaned.lower().endswith('k'):
-        try:
-            value = float(cleaned[:-1]) * 1000
-        except ValueError:
-            return (False, "Enter a number (e.g., 120000 or 120k)")
-    else:
-        try:
-            value = float(cleaned)
-        except ValueError:
-            return (False, "Enter a number (e.g., 120000 or 120k)")
-
-    if value < 0:
-        return (False, "Compensation must be positive")
-    if value > 1000000:
-        return (False, "Please enter a realistic compensation (under $1M)")
-
-    return (True, "")
+    except ValueError as exc:
+        return (False, str(exc))
 
 
 class ProfileForm(ctk.CTkFrame):
@@ -817,19 +796,13 @@ class ProfileForm(ctk.CTkFrame):
         """
         # Extract values
         name = self._fields["name"].get().strip()
-        years_experience = int(self._fields["years_experience"].get().strip())
+        years_experience = parse_years_experience(
+            self._fields["years_experience"].get()
+        )
         target_titles = self._fields["target_titles"].get_values()
         core_skills = self._fields["core_skills"].get_values()
 
-        # Derive level from years_experience (same logic as wizard.py)
-        if years_experience < 2:
-            level = "junior"
-        elif years_experience < 5:
-            level = "mid"
-        elif years_experience < 10:
-            level = "senior"
-        else:
-            level = "principal"
+        level = derive_level(years_experience)
 
         # Build base profile
         profile_data = {
@@ -860,12 +833,7 @@ class ProfileForm(ctk.CTkFrame):
 
         comp_floor_text = self._fields["comp_floor"].get().strip()
         if comp_floor_text:
-            # Parse compensation (handle $, commas, k suffix)
-            cleaned = comp_floor_text.replace(',', '').replace('$', '').strip()
-            if cleaned.lower().endswith('k'):
-                comp_value = int(float(cleaned[:-1]) * 1000)
-            else:
-                comp_value = int(float(cleaned))
+            comp_value = parse_compensation_floor(comp_floor_text)
             profile_data["comp_floor"] = comp_value
 
         dealbreakers = self._fields["dealbreakers"].get_values()

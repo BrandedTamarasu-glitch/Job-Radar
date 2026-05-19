@@ -1,6 +1,6 @@
 # Job Radar Handoff
 
-Date: 2026-05-18
+Date: 2026-05-19
 
 ## Current State
 
@@ -9,17 +9,17 @@ Date: 2026-05-18
 - Git status after release: clean and synced with `origin/main`, except preserved untracked `.forgeflow/`
 - Current release: `v2.8.0`
 - Release URL: https://github.com/BrandedTamarasu-glitch/Job-Radar/releases/tag/v2.8.0
-- Last local full validation: `1185 passed, 8 skipped`
+- Last local full validation: `1200 passed, 8 skipped`
 - Release workflow validation: GitHub Actions Release run `26061938202` passed tests, platform builds, installer builds, and release creation.
 
 ## Latest Commits
 
 ```text
-828b19f ci: fix windows release tests
-f21eb34 docs: prepare v2.8.0 release
-cc3ba06 refactor: centralize app data status
-3e88566 refactor: centralize cache clear status
-e83496e refactor: centralize dismissed review cleanup
+62bd951 refactor: centralize uninstall result messages
+cb29ed8 refactor: use shared report browser opener
+9b6eba8 refactor: centralize api quota status
+ef43823 refactor: centralize manual update status text
+c7e066a refactor: centralize skipped update status
 ```
 
 ## Recently Shipped
@@ -64,6 +64,7 @@ The v2.8.0 line includes the audit-remediation architecture work completed so fa
 - Post-release API quota display cleanup moved quota label text/color formatting into `job_radar/gui/api_status_view_model.py`
 - GUI Open Report now uses the shared browser helper instead of direct `webbrowser` calls.
 - Uninstall partial-failure and completion message formatting now lives in `job_radar/gui/uninstall_view_model.py`.
+- Profile years parsing, compensation-floor parsing, range constants, and level derivation now live in `job_radar/profile_schema.py` for CLI wizard, quick editor, GUI form, and profile validation reuse.
 
 ## Active Plan
 
@@ -74,12 +75,11 @@ Completed or mostly handled:
 - Sprint 0: release blockers
 - Sprint 1: trust/state/release hygiene
 - Sprint 2: persistence/schema consolidation
-- Sprint 3: report, source, search-pipeline, and broad GUI architecture cleanup
+- Sprint 3: report, source, search-pipeline, profile schema, and broad GUI architecture cleanup
 
 Still planned in Sprint 3:
 
 - Continue reducing `job_radar/gui/main_window.py` where helpers can own construction or state formatting without taking behavior callbacks away from `MainWindow`
-- Consolidate profile schema construction and validation across CLI and GUI
 - Trim `job_radar/sources.py` compatibility wrappers only where tests and downstream imports prove they are not public surface
 
 Still planned in Sprint 4:
@@ -94,7 +94,7 @@ Still planned in Sprint 4:
 Continue with another small post-release Sprint 3 slice:
 
 1. Inspect `job_radar/gui/main_window.py` for remaining text/state helpers that can move into existing view-model modules.
-2. Prefer one narrow extraction with behavior-oriented tests.
+2. Or inspect `job_radar/sources.py` compatibility wrappers for a narrow, provably internal cleanup.
 3. Run focused GUI/view-model tests, then full `rtk .venv/bin/python -m pytest tests/`.
 4. Commit after validation.
 

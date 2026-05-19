@@ -120,11 +120,11 @@ Current progress:
 - API quota label text/color formatting now lives in `job_radar/gui/api_status_view_model.py`.
 - GUI Open Report now uses the shared browser helper for centralized auto-open/headless behavior.
 - Uninstall partial-failure and completion message formatting now lives in `job_radar/gui/uninstall_view_model.py`.
-- Latest validation: `1185 passed, 8 skipped`.
+- Profile schema parsing/range constants and level derivation now live in `job_radar/profile_schema.py` and are reused by the CLI wizard, quick editor, GUI profile form, and profile validation.
+- Latest validation: `1200 passed, 8 skipped`.
 
 Remaining Sprint 3 work:
 - Continue reducing `job_radar/gui/main_window.py` through low-risk helper extractions.
-- Consolidate profile schema construction and validation across CLI and GUI.
 - Trim `job_radar/sources.py` compatibility wrappers only where tests and downstream imports prove they are not public surface.
 
 Validation:

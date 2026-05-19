@@ -1,6 +1,6 @@
 # Project State: Job Radar
 
-**Last Updated:** 2026-05-18T14:45:00-07:00
+**Last Updated:** 2026-05-19T14:43:30-07:00
 
 ## Project Reference
 
@@ -15,7 +15,7 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 **Status:** Sprint 3 follow-up cleanup in progress
 **Last activity:** 2026-05-18 — Job Radar v2.8.0 was released from the audit remediation stream after local validation (`1180 passed, 8 skipped`) and a passing tag-triggered GitHub Actions release workflow.
 
-**Next step:** continue low-risk Sprint 3 follow-up work: reduce `job_radar/gui/main_window.py`, consolidate profile schema construction/validation, or trim `job_radar/sources.py` compatibility wrappers where tests prove it is safe.
+**Next step:** continue low-risk Sprint 3 follow-up work: reduce `job_radar/gui/main_window.py` or trim `job_radar/sources.py` compatibility wrappers where tests prove it is safe.
 
 ## Performance Metrics
 
@@ -48,7 +48,7 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 ### Quality Indicators
 
 **Test Coverage:**
-- Latest full local suite: `1185 passed, 8 skipped`
+- Latest full local suite: `1200 passed, 8 skipped`
 - Release workflow tests passed on Linux, macOS, and Windows for `v2.8.0`
 - Coverage areas include scoring, config, tracker, wizard, report, UX, API, PDF, deduplication, accessibility, profile management, GUI view models, rate limiting, JSearch, USAJobs, hiring.cafe, schema migration, scoring config, update/install flows, and release verification
 
@@ -138,7 +138,7 @@ Last session: 2026-05-18
 Stopped at: v2.8.0 released; post-release handoff/planning cleanup started
 Resume file: None
 
-**Next step:** Continue with a low-risk Sprint 3 follow-up slice, preferably another small `MainWindow` helper extraction with focused GUI/view-model tests before full regression.
+**Next step:** Continue with a low-risk Sprint 3 follow-up slice, preferably another small `MainWindow` helper extraction with focused GUI/view-model tests before full regression, or a narrow `job_radar/sources.py` compatibility-wrapper cleanup if inspection proves it is internal.
 
 ---
 *State initialized: 2026-02-13*

@@ -15,6 +15,11 @@ import questionary
 from questionary import Style, Validator, ValidationError
 
 from .profile_manager import save_profile, DEFAULT_SCORING_WEIGHTS
+from .profile_schema import (
+    derive_level,
+    parse_compensation_floor,
+    parse_years_experience,
+)
 # Config.json also uses atomic write but doesn't need backup/validation
 from .profile_manager import _write_json_atomic as _write_json
 
@@ -76,22 +81,11 @@ class YearsExperienceValidator(Validator):
     """Validate years of experience is a non-negative number."""
 
     def validate(self, document):
-        text = document.text.strip()
         try:
-            years = int(text)
-            if years < 0:
-                raise ValidationError(
-                    message="Years must be 0 or greater",
-                    cursor_position=len(document.text)
-                )
-            if years > 50:
-                raise ValidationError(
-                    message="Please enter a realistic number of years (0-50)",
-                    cursor_position=len(document.text)
-                )
-        except ValueError:
+            parse_years_experience(document.text)
+        except ValueError as exc:
             raise ValidationError(
-                message="Please enter a whole number (e.g., 3, 5, 10)",
+                message=str(exc),
                 cursor_position=len(document.text)
             )
 
@@ -100,39 +94,11 @@ class CompensationValidator(Validator):
     """Validate compensation is empty or a reasonable number."""
 
     def validate(self, document):
-        text = document.text.strip()
-        if not text:  # Empty is OK (optional field)
-            return
-
-        # Remove common formatting (commas, dollar signs, 'k')
-        cleaned = text.replace(',', '').replace('$', '').strip()
-
-        # Handle 'k' suffix (e.g., "120k" -> "120000")
-        if cleaned.lower().endswith('k'):
-            try:
-                value = float(cleaned[:-1]) * 1000
-            except ValueError:
-                raise ValidationError(
-                    message="Enter a number (e.g., 120000 or 120k)",
-                    cursor_position=len(document.text)
-                )
-        else:
-            try:
-                value = float(cleaned)
-            except ValueError:
-                raise ValidationError(
-                    message="Enter a number (e.g., 120000 or 120k)",
-                    cursor_position=len(document.text)
-                )
-
-        if value < 0:
+        try:
+            parse_compensation_floor(document.text)
+        except ValueError as exc:
             raise ValidationError(
-                message="Compensation must be positive",
-                cursor_position=len(document.text)
-            )
-        if value > 1000000:
-            raise ValidationError(
-                message="Please enter a realistic compensation (under $1M)",
+                message=str(exc),
                 cursor_position=len(document.text)
             )
 
@@ -593,15 +559,8 @@ def run_setup_wizard() -> bool:
     core_skills = [s.strip() for s in answers['skills'].split(',') if s.strip()]
 
     # Derive level from years of experience
-    years = int(answers['years_experience'])
-    if years < 2:
-        level = "junior"
-    elif years < 5:
-        level = "mid"
-    elif years < 10:
-        level = "senior"
-    else:
-        level = "principal"
+    years = parse_years_experience(answers['years_experience'])
+    level = derive_level(years)
 
     profile_data = {
         "name": answers['name'],
@@ -626,13 +585,7 @@ def run_setup_wizard() -> bool:
             profile_data['domain_expertise'] = domain_list
 
     if answers.get('comp_floor') and answers['comp_floor'].strip():
-        comp_text = answers['comp_floor'].strip()
-        # Parse compensation (handle $, commas, k suffix)
-        cleaned = comp_text.replace(',', '').replace('$', '').strip()
-        if cleaned.lower().endswith('k'):
-            comp_value = int(float(cleaned[:-1]) * 1000)
-        else:
-            comp_value = int(float(cleaned))
+        comp_value = parse_compensation_floor(answers['comp_floor'])
         profile_data['comp_floor'] = comp_value
 
     if answers.get('dealbreakers') and answers['dealbreakers'].strip():
@@ -793,17 +746,9 @@ def run_setup_wizard() -> bool:
                 style=custom_style
             ).ask()
             if new_val:
-                years = int(new_val)
+                years = parse_years_experience(new_val)
                 profile_data['years_experience'] = years
-                # Recalculate level
-                if years < 2:
-                    profile_data['level'] = "junior"
-                elif years < 5:
-                    profile_data['level'] = "mid"
-                elif years < 10:
-                    profile_data['level'] = "senior"
-                else:
-                    profile_data['level'] = "principal"
+                profile_data['level'] = derive_level(years)
 
         elif field_to_edit.startswith("Titles"):
             new_val = questionary.text(
@@ -881,12 +826,7 @@ def run_setup_wizard() -> bool:
             ).ask()
             if new_val is not None:
                 if new_val.strip():
-                    comp_text = new_val.strip()
-                    cleaned = comp_text.replace(',', '').replace('$', '').strip()
-                    if cleaned.lower().endswith('k'):
-                        comp_value = int(float(cleaned[:-1]) * 1000)
-                    else:
-                        comp_value = int(float(cleaned))
+                    comp_value = parse_compensation_floor(new_val)
                     profile_data['comp_floor'] = comp_value
                 elif 'comp_floor' in profile_data:
                     del profile_data['comp_floor']

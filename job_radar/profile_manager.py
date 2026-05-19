@@ -7,6 +7,7 @@ from pathlib import Path
 
 from .json_io import write_json_atomic as _write_json_atomic
 from .paths import get_backup_dir
+from .profile_schema import MAX_COMPENSATION_FLOOR, MAX_YEARS_EXPERIENCE
 
 log = logging.getLogger(__name__)
 
@@ -116,20 +117,20 @@ def validate_profile(profile: dict) -> None:
         years = profile["years_experience"]
         if not isinstance(years, int):
             raise InvalidTypeError("years_experience", "integer", type(years))
-        if not (0 <= years <= 50):
+        if not (0 <= years <= MAX_YEARS_EXPERIENCE):
             raise ProfileValidationError(
                 f"Your years_experience value of {years} is out of range "
-                "-- it must be between 0 and 50."
+                f"-- it must be between 0 and {MAX_YEARS_EXPERIENCE}."
             )
 
     if "comp_floor" in profile:
         comp = profile["comp_floor"]
         if not isinstance(comp, (int, float)):
             raise InvalidTypeError("comp_floor", "number", type(comp))
-        if not (0 <= comp <= 1_000_000):
+        if not (0 <= comp <= MAX_COMPENSATION_FLOOR):
             raise ProfileValidationError(
                 f"Your comp_floor value of {comp} is out of range "
-                "-- it must be between 0 and 1,000,000."
+                f"-- it must be between 0 and {MAX_COMPENSATION_FLOOR:,}."
             )
 
     if "arrangement" in profile:

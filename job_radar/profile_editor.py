@@ -17,6 +17,7 @@ from .profile_manager import (
     load_profile,
     save_profile,
 )
+from .profile_schema import derive_level
 from .search import _Colors as C
 from .wizard import (
     CommaSeparatedValidator,
@@ -294,14 +295,7 @@ def _edit_number_field(
 
     # Recalculate level when years_experience changes
     if field_key == "years_experience":
-        if new_value < 2:
-            data["level"] = "junior"
-        elif new_value < 5:
-            data["level"] = "mid"
-        elif new_value < 10:
-            data["level"] = "senior"
-        else:
-            data["level"] = "principal"
+        data["level"] = derive_level(new_value)
 
     try:
         if is_config:
