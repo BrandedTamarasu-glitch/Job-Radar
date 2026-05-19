@@ -71,6 +71,12 @@ def show_temporary_success_message(
     return success_label
 
 
+def set_saved_search_status(status_label, message: str, color: str) -> None:
+    """Update saved-search feedback when the status label exists."""
+    if status_label is not None:
+        status_label.configure(text=message, text_color=color)
+
+
 def clear_search_content(parent) -> None:
     """Remove all widgets from the Search content frame before rendering a new state."""
     for widget in parent.winfo_children():

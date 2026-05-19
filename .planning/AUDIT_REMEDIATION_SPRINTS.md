@@ -122,6 +122,7 @@ Current progress:
 - Uninstall partial-failure and completion message formatting now lives in `job_radar/gui/uninstall_view_model.py`.
 - Profile schema parsing/range constants and level derivation now live in `job_radar/profile_schema.py` and are reused by the CLI wizard, quick editor, GUI profile form, and profile validation.
 - Temporary Search-tab success message replacement and dismissal scheduling now live in `job_radar/gui/search_panel.py`.
+- Search-tab saved-search feedback label updates now live in `job_radar/gui/search_panel.py`.
 - Latest validation: `1200 passed, 8 skipped`.
 
 Remaining Sprint 3 work:

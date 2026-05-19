@@ -9,6 +9,7 @@
 - **Uninstall result view-model cleanup** - Moved uninstall partial-failure and completion message formatting out of `MainWindow`.
 - **Profile schema helper consolidation** - Centralized profile years, compensation-floor parsing, range constants, and level derivation for CLI wizard, quick editor, GUI profile form, and profile validation reuse.
 - **Search success message helper cleanup** - Moved temporary Search-tab success message replacement and dismissal timing into the search panel helper module.
+- **Saved-search feedback helper cleanup** - Moved Search-tab saved-search feedback label updates into the search panel helper module.
 
 ### Validation
 - Full automated regression after post-release cleanup: 1200 passed, 8 skipped.

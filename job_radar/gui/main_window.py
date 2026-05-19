@@ -103,6 +103,7 @@ from job_radar.gui.search_panel import (
     build_search_progress_panel,
     clear_search_content,
     pack_search_idle_actions,
+    set_saved_search_status,
     show_temporary_success_message,
     update_source_progress_widgets,
 )
@@ -927,25 +928,24 @@ class MainWindow(ctk.CTk):
             return
         is_valid, error_msg = self._search_controls.validate()
         if not is_valid:
-            if self._saved_search_status_label is not None:
-                self._saved_search_status_label.configure(text=error_msg, text_color="red")
+            set_saved_search_status(self._saved_search_status_label, error_msg, "red")
             return
 
         config = self._search_controls.get_config()
         name = summarize_search_config(config)
         try:
             save_named_search(name, config)
-            if self._saved_search_status_label is not None:
-                self._saved_search_status_label.configure(
-                    text=saved_search_success_message(name),
-                    text_color="green",
-                )
+            set_saved_search_status(
+                self._saved_search_status_label,
+                saved_search_success_message(name),
+                "green",
+            )
         except Exception as e:
-            if self._saved_search_status_label is not None:
-                self._saved_search_status_label.configure(
-                    text=saved_search_error_message(e),
-                    text_color="red",
-                )
+            set_saved_search_status(
+                self._saved_search_status_label,
+                saved_search_error_message(e),
+                "red",
+            )
 
     def _open_demo_report(self):
         """Generate and open the no-network demo report from the GUI."""

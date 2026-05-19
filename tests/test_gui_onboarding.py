@@ -20,6 +20,7 @@ from job_radar.gui.search_panel import (
     pack_search_idle_actions,
     build_search_progress_panel,
     replace_success_message,
+    set_saved_search_status,
     show_temporary_success_message,
     update_source_progress_widgets,
 )
@@ -707,10 +708,13 @@ def test_saved_search_panel_loads_and_applies_named_searches():
 
 def test_save_current_search_persists_named_search():
     source = inspect.getsource(MainWindow._save_current_search)
+    status_source = inspect.getsource(set_saved_search_status)
 
     assert "summarize_search_config(config)" in source
     assert "save_named_search(name, config)" in source
     assert "self._search_controls.validate()" in source
+    assert "set_saved_search_status" in source
+    assert "status_label.configure(text=message, text_color=color)" in status_source
 
 
 def test_apply_saved_search_uses_search_controls_defaults():
