@@ -103,7 +103,7 @@ from job_radar.gui.search_panel import (
     build_search_progress_panel,
     clear_search_content,
     pack_search_idle_actions,
-    replace_success_message,
+    show_temporary_success_message,
     update_source_progress_widgets,
 )
 from job_radar.gui.search_summary import (
@@ -369,14 +369,15 @@ class MainWindow(ctk.CTk):
         message : str
             Success message text
         """
-        self._success_message_label = replace_success_message(
+        self._success_message_label = show_temporary_success_message(
             self._search_content,
             self._success_message_label,
             message,
+            schedule_hide=lambda delay_ms: self.after(
+                delay_ms,
+                self._hide_success_message,
+            ),
         )
-
-        # Auto-hide after 3 seconds
-        self.after(3000, self._hide_success_message)
 
     def _hide_success_message(self):
         """Hide success message label."""

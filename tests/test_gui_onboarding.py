@@ -20,6 +20,7 @@ from job_radar.gui.search_panel import (
     pack_search_idle_actions,
     build_search_progress_panel,
     replace_success_message,
+    show_temporary_success_message,
     update_source_progress_widgets,
 )
 from job_radar.gui.search_summary import search_completion_content, search_readiness_guidance_lines
@@ -89,14 +90,18 @@ def test_profile_save_navigation_reuses_search_success_flow():
 
 def test_search_success_message_helper_replaces_existing_label():
     source = inspect.getsource(replace_success_message)
+    temporary_source = inspect.getsource(show_temporary_success_message)
     window_source = inspect.getsource(MainWindow._show_success_message)
 
     assert "existing_label.destroy()" in source
     assert "text_color=\"green\"" in source
     assert "row=1" in source
     assert "return success_label" in source
-    assert "replace_success_message" in window_source
-    assert "self.after(3000, self._hide_success_message)" in window_source
+    assert "replace_success_message" in temporary_source
+    assert "schedule_hide(3000)" in temporary_source
+    assert "show_temporary_success_message" in window_source
+    assert "self.after(" in window_source
+    assert "self._hide_success_message" in window_source
 
 
 def test_demo_report_feedback_supports_welcome_and_search_contexts():

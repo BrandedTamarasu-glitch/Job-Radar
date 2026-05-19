@@ -15,11 +15,11 @@ Date: 2026-05-19
 ## Latest Commits
 
 ```text
+a88b687 refactor: centralize profile schema helpers
 62bd951 refactor: centralize uninstall result messages
 cb29ed8 refactor: use shared report browser opener
 9b6eba8 refactor: centralize api quota status
 ef43823 refactor: centralize manual update status text
-c7e066a refactor: centralize skipped update status
 ```
 
 ## Recently Shipped
@@ -65,6 +65,7 @@ The v2.8.0 line includes the audit-remediation architecture work completed so fa
 - GUI Open Report now uses the shared browser helper instead of direct `webbrowser` calls.
 - Uninstall partial-failure and completion message formatting now lives in `job_radar/gui/uninstall_view_model.py`.
 - Profile years parsing, compensation-floor parsing, range constants, and level derivation now live in `job_radar/profile_schema.py` for CLI wizard, quick editor, GUI form, and profile validation reuse.
+- Temporary Search-tab success message replacement and auto-hide timing now live in `job_radar/gui/search_panel.py`.
 
 ## Active Plan
 

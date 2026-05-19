@@ -58,6 +58,19 @@ def replace_success_message(parent, existing_label, message: str):
     return success_label
 
 
+def show_temporary_success_message(
+    parent,
+    existing_label,
+    message: str,
+    *,
+    schedule_hide: Callable[[int], None],
+):
+    """Display a replacement success label and schedule its dismissal."""
+    success_label = replace_success_message(parent, existing_label, message)
+    schedule_hide(3000)
+    return success_label
+
+
 def clear_search_content(parent) -> None:
     """Remove all widgets from the Search content frame before rendering a new state."""
     for widget in parent.winfo_children():
