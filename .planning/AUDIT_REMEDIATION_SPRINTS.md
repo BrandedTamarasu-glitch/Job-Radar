@@ -127,7 +127,7 @@ Current progress:
 - Settings maintenance feedback label updates now live in `job_radar/gui/settings_panel.py`.
 - API credential status label application now lives in `job_radar/gui/api_status_view_model.py`.
 - Latest validation: `1201 passed, 8 skipped`.
-- v2.8.1 local release checkpoint prepared on 2026-05-19 with Linux artifact/checksum verification; not pushed or tagged.
+- v2.8.1 shipped on 2026-05-19 after local validation (`1201 passed, 8 skipped`) and a passing tag-triggered GitHub Actions release workflow across tests, platform builds, installers, and release creation.
 
 Remaining Sprint 3 work:
 - Continue reducing `job_radar/gui/main_window.py` through low-risk helper extractions.

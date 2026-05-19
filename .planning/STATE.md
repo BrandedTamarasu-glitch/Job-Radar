@@ -7,15 +7,15 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Accurate job-candidate scoring — if the scoring is wrong, nothing else matters.
-**Current focus:** v2.8.1 local release checkpoint
+**Current focus:** Post-v2.8.1 audit remediation cleanup
 
 ## Current Position
 
-**Milestone:** v2.8.1 local checkpoint prepared
-**Status:** Release docs/version/build checkpoint ready locally; not pushed or tagged
-**Last activity:** 2026-05-19 — Job Radar v2.8.1 local release checkpoint was prepared after local validation (`1201 passed, 8 skipped`) and Linux artifact build verification.
+**Milestone:** v2.8.1 shipped
+**Status:** Sprint 3 follow-up cleanup published in v2.8.1
+**Last activity:** 2026-05-19 — Job Radar v2.8.1 was released after local validation (`1201 passed, 8 skipped`) and a passing tag-triggered GitHub Actions release workflow.
 
-**Next step:** commit the v2.8.1 checkpoint locally, then push/tag only if publishing is requested.
+**Next step:** decide whether to continue Sprint 3 with higher-risk API/update/uninstall extraction or defer remaining architecture cleanup to a planned follow-up.
 
 ## Performance Metrics
 
@@ -49,7 +49,7 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Test Coverage:**
 - Latest full local suite: `1201 passed, 8 skipped`
-- Release workflow tests passed on Linux, macOS, and Windows for `v2.8.0`
+- Release workflow tests passed on Linux, macOS, and Windows for `v2.8.1`
 - Coverage areas include scoring, config, tracker, wizard, report, UX, API, PDF, deduplication, accessibility, profile management, GUI view models, rate limiting, JSearch, USAJobs, hiring.cafe, schema migration, scoring config, update/install flows, and release verification
 
 **Code Stats (v2.1.0 shipped):**
