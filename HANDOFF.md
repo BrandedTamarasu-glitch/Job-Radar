@@ -9,17 +9,17 @@ Date: 2026-05-19
 - Git status after release: clean and synced with `origin/main`, except preserved untracked `.forgeflow/`
 - Current release: `v2.8.0`
 - Release URL: https://github.com/BrandedTamarasu-glitch/Job-Radar/releases/tag/v2.8.0
-- Last local full validation: `1200 passed, 8 skipped`
+- Last local full validation: `1201 passed, 8 skipped`
 - Release workflow validation: GitHub Actions Release run `26061938202` passed tests, platform builds, installer builds, and release creation.
 
 ## Latest Commits
 
 ```text
+f37cb4b refactor: centralize maintenance feedback
 5c3ea0b refactor: centralize applications feedback
 bd13371 refactor: centralize saved search feedback
 73e2ab1 refactor: centralize search success messages
 a88b687 refactor: centralize profile schema helpers
-62bd951 refactor: centralize uninstall result messages
 ```
 
 ## Recently Shipped
@@ -69,6 +69,7 @@ The v2.8.0 line includes the audit-remediation architecture work completed so fa
 - Search-tab saved-search feedback label updates now live in `job_radar/gui/search_panel.py`.
 - Applications-tab export/import/edit feedback label updates now live in `job_radar/gui/applications_tab.py`.
 - Settings maintenance feedback label updates now live in `job_radar/gui/settings_panel.py`.
+- API credential status label application now lives in `job_radar/gui/api_status_view_model.py`.
 
 ## Active Plan
 

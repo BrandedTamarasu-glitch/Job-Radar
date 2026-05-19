@@ -455,7 +455,7 @@ python -m job_radar --help
 
 ### Running Tests
 
-The project includes a comprehensive test suite with 1208 automated tests:
+The project includes a comprehensive test suite with 1209 automated tests:
 
 ```bash
 # Install dev dependencies
@@ -564,7 +564,7 @@ Release notes for this version are tracked in `CHANGELOG.md`.
 Local Linux artifact build verification passed for `job-radar-v2.8.0-linux.tar.gz`.
 Sprint Y feedback-loop planning and next product slice candidates are tracked in `.planning/POST_RELEASE_FEEDBACK_U_Y.md`, and Settings now includes copyable redacted feedback diagnostics for privacy-safe issue reports.
 
-The Review Squad audit remediation stream is tracked in `.planning/AUDIT_REMEDIATION_SPRINTS.md`. Sprint 3 has decomposed the report renderer, source adapters, shared search pipeline, profile schema helpers, and several GUI maintenance/search/profile helpers while preserving compatibility wrappers where needed; latest validation: `1200 passed, 8 skipped`.
+The Review Squad audit remediation stream is tracked in `.planning/AUDIT_REMEDIATION_SPRINTS.md`. Sprint 3 has decomposed the report renderer, source adapters, shared search pipeline, profile schema helpers, and several GUI maintenance/search/profile helpers while preserving compatibility wrappers where needed; latest validation: `1201 passed, 8 skipped`.
 
 ### Building Executables
 

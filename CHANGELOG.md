@@ -12,9 +12,10 @@
 - **Saved-search feedback helper cleanup** - Moved Search-tab saved-search feedback label updates into the search panel helper module.
 - **Applications feedback helper cleanup** - Moved Applications-tab export/import/edit feedback label updates into the Applications tab helper module.
 - **Settings maintenance feedback helper cleanup** - Moved Settings maintenance feedback label updates into the Settings panel helper module.
+- **API status feedback helper cleanup** - Moved API credential status label application into the API status view model.
 
 ### Validation
-- Full automated regression after post-release cleanup: 1200 passed, 8 skipped.
+- Full automated regression after post-release cleanup: 1201 passed, 8 skipped.
 
 ## v2.8.0 — 2026-05-18
 

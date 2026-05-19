@@ -125,7 +125,8 @@ Current progress:
 - Search-tab saved-search feedback label updates now live in `job_radar/gui/search_panel.py`.
 - Applications-tab export/import/edit feedback label updates now live in `job_radar/gui/applications_tab.py`.
 - Settings maintenance feedback label updates now live in `job_radar/gui/settings_panel.py`.
-- Latest validation: `1200 passed, 8 skipped`.
+- API credential status label application now lives in `job_radar/gui/api_status_view_model.py`.
+- Latest validation: `1201 passed, 8 skipped`.
 
 Remaining Sprint 3 work:
 - Continue reducing `job_radar/gui/main_window.py` through low-risk helper extractions.

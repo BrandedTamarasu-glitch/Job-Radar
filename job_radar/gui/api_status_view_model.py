@@ -17,6 +17,11 @@ def api_testing_status() -> ApiStatusDisplay:
     return ApiStatusDisplay("Testing...", "gray")
 
 
+def apply_api_status_display(status_label, display: ApiStatusDisplay) -> None:
+    """Apply API credential status display data to a label."""
+    status_label.configure(text=display.text, text_color=display.color)
+
+
 def api_missing_key_status() -> ApiStatusDisplay:
     return ApiStatusDisplay("⚠ No API key provided", "orange")
 

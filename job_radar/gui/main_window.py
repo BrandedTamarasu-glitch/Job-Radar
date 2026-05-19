@@ -53,6 +53,7 @@ from job_radar.tracker import (
 from job_radar.update_checker import UpdateChecker, launch_installer, cleanup_old_installers, extract_summary
 from job_radar.gui.api_status_view_model import (
     ApiStatusDisplay,
+    apply_api_status_display,
     api_error_status,
     api_missing_credentials_status,
     api_missing_key_status,
@@ -1983,7 +1984,7 @@ class MainWindow(ctk.CTk):
 
     def _configure_api_status(self, status_label, display: ApiStatusDisplay):
         """Apply API credential test status display data to a label."""
-        status_label.configure(text=display.text, text_color=display.color)
+        apply_api_status_display(status_label, display)
 
     def _configure_api_status_async(self, status_label, display: ApiStatusDisplay):
         """Apply API credential test status display data from a worker thread."""

@@ -1,5 +1,6 @@
 from job_radar.gui.api_status_view_model import (
     ApiStatusDisplay,
+    apply_api_status_display,
     api_error_status,
     api_http_status,
     api_invalid_credentials_status,
@@ -29,6 +30,20 @@ def test_api_status_view_model_formats_common_states():
     assert api_invalid_credentials_status().color == "red"
     assert api_network_error_status().text == "⚠ Network error"
     assert api_timeout_status().text == "⚠ Timeout"
+
+
+def test_apply_api_status_display_configures_label():
+    class FakeLabel:
+        def __init__(self):
+            self.kwargs = None
+
+        def configure(self, **kwargs):
+            self.kwargs = kwargs
+
+    label = FakeLabel()
+    apply_api_status_display(label, api_testing_status())
+
+    assert label.kwargs == {"text": "Testing...", "text_color": "gray"}
 
 
 def test_api_status_view_model_formats_dynamic_states():
