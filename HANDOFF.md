@@ -6,20 +6,21 @@ Date: 2026-05-19
 
 - Repo path: `/home/corye/openai-cli/Job-Radar`
 - Branch: `main`
-- Git status after release: clean and synced with `origin/main`, except preserved untracked `.forgeflow/`
-- Current release: `v2.8.0`
-- Release URL: https://github.com/BrandedTamarasu-glitch/Job-Radar/releases/tag/v2.8.0
+- Git status after local release checkpoint: clean except preserved untracked `.forgeflow/`
+- Current local release checkpoint: `v2.8.1` (not pushed or tagged)
+- Latest published release: `v2.8.0`
+- Published release URL: https://github.com/BrandedTamarasu-glitch/Job-Radar/releases/tag/v2.8.0
 - Last local full validation: `1201 passed, 8 skipped`
 - Release workflow validation: GitHub Actions Release run `26061938202` passed tests, platform builds, installer builds, and release creation.
 
 ## Latest Commits
 
 ```text
+0845626 refactor: centralize api status display
 f37cb4b refactor: centralize maintenance feedback
 5c3ea0b refactor: centralize applications feedback
 bd13371 refactor: centralize saved search feedback
 73e2ab1 refactor: centralize search success messages
-a88b687 refactor: centralize profile schema helpers
 ```
 
 ## Recently Shipped
@@ -50,6 +51,28 @@ OK: wrote checksums to job-radar-v2.8.0-linux.sha256
 ```
 
 The first tag-triggered release run failed on Windows CI. The fix in `828b19f` made private credential writes tolerate platforms without `os.fchmod`, made an installer-message assertion platform-aware, and relaxed the report payload-size guard for Windows line endings. The tag was then force-updated with user approval and the rerun passed.
+
+### v2.8.1 Local Release Checkpoint
+
+The `v2.8.1` version/docs checkpoint is prepared locally and has not been pushed or tagged.
+
+Validation completed:
+
+```text
+rtk .venv/bin/python -m pytest tests/test_metadata.py tests/test_release_verification.py tests/test_release_notes.py
+21 passed
+
+rtk .venv/bin/python -m pytest tests/
+1201 passed, 8 skipped
+
+rtk env PYTHON_BIN=.venv/bin/python bash scripts/build.sh
+OK: dist/job-radar/job-radar
+OK: job-radar-v2.8.1-linux.tar.gz
+OK: wrote checksums to job-radar-v2.8.1-linux.sha256
+
+./dist/job-radar/job-radar --version
+job-radar 2.8.1
+```
 
 ## Sprint 3 Completed Work
 

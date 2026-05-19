@@ -1,4 +1,4 @@
-Job Radar v2.8.0
+Job Radar v2.8.1
 ==============
 
 A desktop and command-line job search tool that scores listings against your candidate profile.

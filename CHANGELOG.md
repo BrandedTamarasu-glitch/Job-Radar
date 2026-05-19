@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v2.8.1 — 2026-05-19
+
 ### Improvements
 - **Settings update view-model cleanup** - Moved skipped-version status and manual update-result text formatting out of `MainWindow` into the update status view model with focused coverage.
 - **API quota view-model cleanup** - Moved Settings quota usage text/color formatting out of `MainWindow` into the API status view model.
@@ -16,6 +18,7 @@
 
 ### Validation
 - Full automated regression after post-release cleanup: 1201 passed, 8 skipped.
+- Local Linux artifact build verification passed for `job-radar-v2.8.1-linux.tar.gz` with checksum manifest generation.
 
 ## v2.8.0 — 2026-05-18
 

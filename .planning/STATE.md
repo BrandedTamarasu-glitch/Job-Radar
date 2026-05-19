@@ -1,21 +1,21 @@
 # Project State: Job Radar
 
-**Last Updated:** 2026-05-19T14:58:24-07:00
+**Last Updated:** 2026-05-19T15:02:00-07:00
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Accurate job-candidate scoring — if the scoring is wrong, nothing else matters.
-**Current focus:** Post-v2.8.0 audit remediation cleanup
+**Current focus:** v2.8.1 local release checkpoint
 
 ## Current Position
 
-**Milestone:** v2.8.0 shipped
-**Status:** Sprint 3 follow-up cleanup in progress
-**Last activity:** 2026-05-18 — Job Radar v2.8.0 was released from the audit remediation stream after local validation (`1180 passed, 8 skipped`) and a passing tag-triggered GitHub Actions release workflow.
+**Milestone:** v2.8.1 local checkpoint prepared
+**Status:** Release docs/version/build checkpoint ready locally; not pushed or tagged
+**Last activity:** 2026-05-19 — Job Radar v2.8.1 local release checkpoint was prepared after local validation (`1201 passed, 8 skipped`) and Linux artifact build verification.
 
-**Next step:** continue low-risk Sprint 3 follow-up work: reduce `job_radar/gui/main_window.py` or trim `job_radar/sources.py` compatibility wrappers where tests prove it is safe.
+**Next step:** commit the v2.8.1 checkpoint locally, then push/tag only if publishing is requested.
 
 ## Performance Metrics
 
