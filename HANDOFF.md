@@ -15,11 +15,11 @@ Date: 2026-05-19
 ## Latest Commits
 
 ```text
+5c3ea0b refactor: centralize applications feedback
 bd13371 refactor: centralize saved search feedback
 73e2ab1 refactor: centralize search success messages
 a88b687 refactor: centralize profile schema helpers
 62bd951 refactor: centralize uninstall result messages
-cb29ed8 refactor: use shared report browser opener
 ```
 
 ## Recently Shipped
@@ -68,6 +68,7 @@ The v2.8.0 line includes the audit-remediation architecture work completed so fa
 - Temporary Search-tab success message replacement and auto-hide timing now live in `job_radar/gui/search_panel.py`.
 - Search-tab saved-search feedback label updates now live in `job_radar/gui/search_panel.py`.
 - Applications-tab export/import/edit feedback label updates now live in `job_radar/gui/applications_tab.py`.
+- Settings maintenance feedback label updates now live in `job_radar/gui/settings_panel.py`.
 
 ## Active Plan
 

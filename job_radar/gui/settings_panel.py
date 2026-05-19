@@ -41,6 +41,16 @@ class UpdatePanelWidgets:
     clear_skipped_button: ctk.CTkButton
 
 
+def set_maintenance_status(status_label, message: str, color: str | None = None) -> None:
+    """Update Settings maintenance feedback when the status label exists."""
+    if status_label is None:
+        return
+    if color is None:
+        status_label.configure(text=message)
+    else:
+        status_label.configure(text=message, text_color=color)
+
+
 def refresh_source_diagnostics_textbox(textbox, text: str) -> None:
     """Replace Settings source diagnostics text while preserving read-only state."""
     textbox.configure(state="normal")

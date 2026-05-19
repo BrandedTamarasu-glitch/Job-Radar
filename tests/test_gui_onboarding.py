@@ -47,6 +47,7 @@ from job_radar.gui.settings_panel import (
     add_storage_maintenance_panel,
     add_update_settings_panel,
     refresh_source_diagnostics_textbox,
+    set_maintenance_status,
 )
 from job_radar.gui.tab_shell import MAIN_TAB_NAMES, build_main_tabview
 from job_radar.gui.uninstall_view_model import uninstall_failure_message, uninstall_final_message
@@ -390,6 +391,7 @@ def test_settings_tab_includes_local_maintenance_summary():
     helper_source = inspect.getsource(MainWindow._local_maintenance_text)
     text_source = inspect.getsource(local_maintenance_text)
     panel_source = inspect.getsource(add_storage_maintenance_panel)
+    status_source = inspect.getsource(set_maintenance_status)
 
     assert "_local_maintenance_text()" in source
     assert "local_maintenance_text(get_data_dir(), get_results_dir())" in helper_source
@@ -397,6 +399,8 @@ def test_settings_tab_includes_local_maintenance_summary():
     assert "format_local_maintenance_lines" in text_source
     assert "Storage Maintenance" in panel_source
     assert "Clear Dismissed Reviews" in panel_source
+    assert "status_label.configure(text=message)" in status_source
+    assert "status_label.configure(text=message, text_color=color)" in status_source
 
 
 def test_settings_tab_includes_privacy_safe_feedback_diagnostics():

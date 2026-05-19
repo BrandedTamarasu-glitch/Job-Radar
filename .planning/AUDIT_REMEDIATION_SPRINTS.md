@@ -124,6 +124,7 @@ Current progress:
 - Temporary Search-tab success message replacement and dismissal scheduling now live in `job_radar/gui/search_panel.py`.
 - Search-tab saved-search feedback label updates now live in `job_radar/gui/search_panel.py`.
 - Applications-tab export/import/edit feedback label updates now live in `job_radar/gui/applications_tab.py`.
+- Settings maintenance feedback label updates now live in `job_radar/gui/settings_panel.py`.
 - Latest validation: `1200 passed, 8 skipped`.
 
 Remaining Sprint 3 work:

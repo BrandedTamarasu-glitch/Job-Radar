@@ -11,6 +11,7 @@
 - **Search success message helper cleanup** - Moved temporary Search-tab success message replacement and dismissal timing into the search panel helper module.
 - **Saved-search feedback helper cleanup** - Moved Search-tab saved-search feedback label updates into the search panel helper module.
 - **Applications feedback helper cleanup** - Moved Applications-tab export/import/edit feedback label updates into the Applications tab helper module.
+- **Settings maintenance feedback helper cleanup** - Moved Settings maintenance feedback label updates into the Settings panel helper module.
 
 ### Validation
 - Full automated regression after post-release cleanup: 1200 passed, 8 skipped.

@@ -125,6 +125,7 @@ from job_radar.gui.settings_panel import (
     add_storage_maintenance_panel,
     add_update_settings_panel,
     refresh_source_diagnostics_textbox,
+    set_maintenance_status,
 )
 from job_radar.gui.maintenance_view_model import (
     build_local_maintenance_summary,
@@ -841,8 +842,7 @@ class MainWindow(ctk.CTk):
             clear_review_state_func=clear_review_state_by_state,
         )
 
-        if self._cache_status_label:
-            self._cache_status_label.configure(text=message, text_color=color)
+        set_maintenance_status(self._cache_status_label, message, color)
 
     def _show_search_idle(self):
         """Display idle state with search controls and Run Search button."""
@@ -1581,8 +1581,7 @@ class MainWindow(ctk.CTk):
             cache_dir_func=get_cache_dir,
         )
 
-        if self._cache_status_label:
-            self._cache_status_label.configure(text=message)
+        set_maintenance_status(self._cache_status_label, message)
 
     def _on_export_app_data(self):
         """Export portable app data bundle from Settings."""
@@ -1591,8 +1590,7 @@ class MainWindow(ctk.CTk):
             export_func=export_app_data_bundle,
         )
 
-        if self._cache_status_label:
-            self._cache_status_label.configure(text=message)
+        set_maintenance_status(self._cache_status_label, message)
 
     def _on_validate_app_data_bundle(self):
         """Prompt for and validate a portable app-data bundle."""
@@ -1609,8 +1607,7 @@ class MainWindow(ctk.CTk):
             validate_func=validate_app_data_bundle,
         )
 
-        if self._cache_status_label:
-            self._cache_status_label.configure(text=message)
+        set_maintenance_status(self._cache_status_label, message)
 
     def _source_diagnostics_text(self) -> str:
         """Return current source diagnostics text for the Settings tab."""
@@ -1633,10 +1630,10 @@ class MainWindow(ctk.CTk):
         text = self._feedback_diagnostics_text()
         self.clipboard_clear()
         self.clipboard_append(text)
-        if self._cache_status_label:
-            self._cache_status_label.configure(
-                text="Copied redacted feedback diagnostics to clipboard"
-            )
+        set_maintenance_status(
+            self._cache_status_label,
+            "Copied redacted feedback diagnostics to clipboard",
+        )
 
     def _refresh_source_diagnostics(self):
         """Refresh source diagnostics text in Settings."""
