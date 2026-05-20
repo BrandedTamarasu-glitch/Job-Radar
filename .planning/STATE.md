@@ -7,15 +7,15 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Accurate job-candidate scoring — if the scoring is wrong, nothing else matters.
-**Current focus:** Sprint 4 UX, accessibility, and product polish
+**Current focus:** v2.9.0 post-release monitoring and next-slice selection
 
 ## Current Position
 
-**Milestone:** v2.9.0 release prep
-**Status:** Sprint 4 complete locally; v2.9.0 checkpoint in progress
-**Last activity:** 2026-05-20 — v2.9.0 release metadata and docs were prepared and local release validation passed (`1205 passed, 8 skipped`, Linux artifact/checksum build, executable `job-radar 2.9.0` smoke).
+**Milestone:** v2.9.0 shipped
+**Status:** v2.9.0 published with Linux, macOS, Windows, installer, and checksum assets
+**Last activity:** 2026-05-20 — v2.9.0 was tagged, published, and validated by local release checks (`1205 passed, 8 skipped`, Linux artifact/checksum build, executable `job-radar 2.9.0` smoke) plus GitHub Actions Release run `26164927148`.
 
-**Next step:** commit release prep, tag and push `v2.9.0`, monitor the release workflow, then update docs/wiki with final release status.
+**Next step:** monitor v2.9.0 release feedback, then select the next low-risk post-release backlog item.
 
 ## Performance Metrics
 
@@ -49,7 +49,7 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Test Coverage:**
 - Latest full local suite: `1205 passed, 8 skipped`
-- Release workflow tests passed on Linux, macOS, and Windows for `v2.8.1`
+- Release workflow tests passed on Linux, macOS, and Windows for `v2.9.0`
 - Coverage areas include scoring, config, tracker, wizard, report, UX, API, PDF, deduplication, accessibility, profile management, GUI view models, rate limiting, JSearch, USAJobs, hiring.cafe, schema migration, scoring config, update/install flows, and release verification
 
 **Code Stats (v2.1.0 shipped):**
@@ -124,7 +124,7 @@ See `.planning/AUDIT_REMEDIATION_SPRINTS.md`.
 - Sprint 1: Must-Fix Trust, State, And Release Hygiene — complete
 - Sprint 2: Persistence And Schema Consolidation — complete
 - Sprint 3: Rebase-Nimble Architecture — shipped in v2.8.0 with follow-up cleanup remaining
-- Sprint 4: UX, Accessibility, And Product Polish — complete locally
+- Sprint 4: UX, Accessibility, And Product Polish — shipped in v2.9.0
 
 ### Blockers/Concerns
 

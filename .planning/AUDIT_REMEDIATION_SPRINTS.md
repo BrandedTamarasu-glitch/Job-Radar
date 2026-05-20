@@ -2,7 +2,7 @@
 
 Last updated: 2026-05-20
 
-This plan converts the Review Squad top-to-bottom quality, security, UX, and rebase audit into executable sprints. The v2.9.0 release checkpoint packages Sprint 0-3 remediation work plus the completed Sprint 4 UX, accessibility, and product-polish slices listed below.
+This plan converts the Review Squad top-to-bottom quality, security, UX, and rebase audit into executable sprints. The v2.9.0 release packages Sprint 0-3 remediation work plus the completed Sprint 4 UX, accessibility, and product-polish slices listed below.
 
 ## Sprint 0 - Release Blockers
 
@@ -71,6 +71,7 @@ Goal: reduce merge hotspots and duplicated behavior after the trust fixes are st
 
 Current progress:
 - v2.8.0 shipped from this sprint on 2026-05-18 after local validation (`1180 passed, 8 skipped`) and a passing tag-triggered GitHub Actions release workflow across tests, platform builds, installers, and release creation.
+- v2.9.0 shipped on 2026-05-20 after local validation (`1205 passed, 8 skipped`), Linux artifact/checksum verification, executable version smoke, and passing GitHub Actions Release workflow run `26164927148`.
 - Report rendering has been split into focused HTML and Markdown modules while preserving compatibility wrappers in `job_radar/report.py`.
 - Extracted modules now cover report safety, assets, text helpers, filtering, source warnings, tiers, matching, stats, profile/tracker summaries, manual links, job details, controls, job attributes, result tables, result rows, cards, and Markdown sections.
 - `job_radar/search_pipeline.py` now contains shared search filter parsing, preset/preferred-skill profile preparation, freshness/date resolution, raw-result filtering, scoring/dealbreaker sorting, and post-score filtering helpers for GUI/CLI reuse; the CLI now uses the shared profile preparation, scorer, raw-result date filter, and composable post-score filters.

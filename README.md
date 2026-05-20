@@ -7,7 +7,7 @@ A desktop job search tool that searches multiple job boards, scores listings aga
 - **Sprint 4 UX polish:** Welcome/Search states are scroll-safe, Applications action rows wrap instead of clipping, and report status copy clearly explains offline use plus JSON export/import.
 - **Workflow maintenance:** Release and accessibility workflows now use current Node 24 GitHub Actions majors and explicit Windows 2025 VS 2026 release runners.
 - **Docs truth sweep:** README, FAQ, distribution docs, and wiki wording now match current source counts, macOS portable paths, and status export/import behavior.
-- **Validation:** The v2.9.0 release checkpoint passed the full automated suite: `1205 passed, 8 skipped`.
+- **Validation:** The published v2.9.0 release passed local validation (`1205 passed, 8 skipped`) plus the tag-triggered GitHub Actions Release workflow across tests, platform builds, installers, and release publishing.
 
 ## Installation
 
@@ -559,10 +559,10 @@ The Product Iteration U-Y work is complete and tracked in `.planning/PRODUCT_ITE
 - **Sprint Y:** post-release feedback loop — complete
 
 Sprint X release-readiness checkpoints are tracked in `.planning/RELEASE_READINESS_U_Y.md`.
-Current release validation: full automated regression passed with 1205 tests and 8 skips before the v2.9.0 build checkpoint.
-Build-script metadata verification passed for release artifact naming and checksum checks.
+Current release validation: v2.9.0 is published at https://github.com/BrandedTamarasu-glitch/Job-Radar/releases/tag/v2.9.0.
+Local full automated regression passed with 1205 tests and 8 skips, build-script metadata verification passed for release artifact naming and checksum checks, and local Linux artifact verification passed for `job-radar-v2.9.0-linux.tar.gz`.
+The tag-triggered GitHub Actions Release workflow run `26164927148` passed tests, platform builds, installer builds, and release publishing.
 Release notes for this version are tracked in `CHANGELOG.md`.
-Local Linux artifact build verification passed for `job-radar-v2.9.0-linux.tar.gz`.
 Sprint Y feedback-loop planning and next product slice candidates are tracked in `.planning/POST_RELEASE_FEEDBACK_U_Y.md`, and Settings now includes copyable redacted feedback diagnostics for privacy-safe issue reports.
 
 The Review Squad audit remediation stream is tracked in `.planning/AUDIT_REMEDIATION_SPRINTS.md`. Sprint 3 has decomposed the report renderer, source adapters, shared search pipeline, profile schema helpers, and several GUI maintenance/search/profile helpers while preserving compatibility wrappers where needed; Sprint 4 layout and copy polish is complete locally; latest validation: `1205 passed, 8 skipped`.

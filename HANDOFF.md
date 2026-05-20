@@ -6,11 +6,11 @@ Date: 2026-05-20
 
 - Repo path: `/home/corye/openai-cli/Job-Radar`
 - Branch: `main`
-- Git status after release prep: local `v2.9.0` release-prep commit pending, except preserved untracked `.forgeflow/`
-- Current release target: `v2.9.0`
-- Previous release URL: https://github.com/BrandedTamarasu-glitch/Job-Radar/releases/tag/v2.8.1
+- Git status after release: local branch synced with origin except preserved untracked `.forgeflow/`
+- Current release: `v2.9.0`
+- Current release URL: https://github.com/BrandedTamarasu-glitch/Job-Radar/releases/tag/v2.9.0
 - Last local full validation: `1205 passed, 8 skipped`
-- Release workflow validation: GitHub Actions Release run `26128165442` passed tests, platform builds, installer builds, and release creation.
+- Release workflow validation: GitHub Actions Release run `26164927148` passed tests, platform builds, installer builds, and release publishing.
 
 ## Latest Commits
 
@@ -73,9 +73,9 @@ OK: wrote checksums to job-radar-v2.8.1-linux.sha256
 job-radar 2.8.1
 ```
 
-### v2.9.0 Release Prep
+### v2.9.0 Release
 
-The `v2.9.0` checkpoint packages Sprint 4 UX polish, GitHub Actions runtime maintenance, report status-sync copy, and public documentation truth-sweep updates.
+The `v2.9.0` release packages Sprint 4 UX polish, GitHub Actions runtime maintenance, report status-sync copy, and public documentation truth-sweep updates. The tag is published with Linux, macOS, Windows, installer, and checksum assets.
 
 Validation completed:
 
@@ -93,6 +93,13 @@ OK: wrote checksums to job-radar-v2.9.0-linux.sha256
 
 ./dist/job-radar/job-radar --version
 job-radar 2.9.0
+```
+
+The tag-triggered GitHub Actions Release workflow passed:
+
+```text
+Run: 26164927148
+Release: https://github.com/BrandedTamarasu-glitch/Job-Radar/releases/tag/v2.9.0
 ```
 
 ## Sprint 3 Completed Work
@@ -142,14 +149,7 @@ Sprint 4 completed locally:
 
 ## Recommended Next Slice
 
-Complete the `v2.9.0` release checkpoint: run release validation, commit release prep, tag `v2.9.0`, push the branch and tag, monitor the GitHub Actions Release workflow, then update README/wiki release status once the workflow publishes the assets.
-
-Suggested release-checkpoint validation:
-
-```bash
-rtk .venv/bin/python -m pytest tests/test_metadata.py tests/test_release_verification.py tests/test_release_notes.py
-rtk .venv/bin/python -m pytest tests/
-```
+Start the next post-release planning slice: monitor v2.9.0 for installer/download feedback, then choose the next low-risk backlog item from the post-release feedback candidates or remaining compatibility-focused audit cleanup.
 
 Latest validation:
 
