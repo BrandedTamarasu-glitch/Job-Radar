@@ -7,7 +7,7 @@ A desktop job search tool that searches multiple job boards, scores listings aga
 - **Post-release GUI cleanup:** Additional Search, Applications, Settings, API, uninstall, update-status, and report-opening feedback helpers have moved out of `MainWindow` while preserving existing behavior.
 - **Profile schema helpers:** Years-experience parsing, compensation-floor parsing, range constants, and level derivation now live in one shared helper used by the CLI wizard, quick editor, GUI form, and profile validation.
 - **Release checkpoint:** Runtime/package metadata and build scripts now target v2.8.1.
-- **Validation:** The v2.8.1 release checkpoint passed the full automated suite: `1201 passed, 8 skipped`; latest post-release workflow maintenance validation passed with `1202 passed, 8 skipped`.
+- **Validation:** The v2.8.1 release checkpoint passed the full automated suite: `1201 passed, 8 skipped`; latest Sprint 4 layout validation passed with `1203 passed, 8 skipped`.
 
 ## Installation
 
@@ -453,7 +453,7 @@ python -m job_radar --help
 
 ### Running Tests
 
-The project includes a comprehensive test suite with 1210 automated tests:
+The project includes a comprehensive test suite with 1211 automated tests:
 
 ```bash
 # Install dev dependencies
@@ -510,7 +510,7 @@ For release builds, also run the platform build script and smoke-test the genera
 - Report generation and renderers (137 tests) - validates HTML/Markdown output, renderer modules, clipboard UI, status tracking, persisted shortlist/maybe-later/dismiss review state, keyboard navigation, compact/detail view, match summaries, filtered-out explanations, grouped skill callouts, safe URL handling, empty states, manual links, large-report row caps and render skipping, mobile layout, accessibility
 - UX polish (69 tests) - validates banner, help text, progress messages, maintenance commands, error handling
 - GUI search summary (36 tests) - validates search completion, source warnings, per-source timing, cache counters, run context explanations, cache controls, app-data export/validation controls, cancellation boundaries through final report preparation, progress normalization, GUI preset application, automated/manual source selection, company filters, application-status report filtering, must-have and nice-to-have skill controls, location strictness, freshness presets, and profile-aware zero-result guidance
-- GUI onboarding (66 tests) - validates first-run demo report access, welcome/search feedback handling, Search tab profile-readiness and pre-run source strategy guidance, Profile-tab dashboard next steps, Settings maintenance summary and dismissed-review cleanup, profile-form field hints, profile-aware zero-result guidance wiring, non-blocking recent-search recording, recent-search reapply controls, recent and saved search comparison insight text, review queue summaries, Applications follow-up filters/calendar export/next-action queue/quick complete and snooze/direct edit wiring, source diagnostics refresh helpers, and run metadata recording
+- GUI onboarding (69 tests) - validates first-run demo report access, welcome/search feedback handling, Search tab profile-readiness and pre-run source strategy guidance, Profile-tab dashboard next steps, Settings maintenance summary and dismissed-review cleanup, profile-form field hints, profile-aware zero-result guidance wiring, non-blocking recent-search recording, recent-search reapply controls, recent and saved search comparison insight text, review queue summaries, Applications follow-up filters/calendar export/next-action queue/quick complete and snooze/direct edit wiring, source diagnostics refresh helpers, run metadata recording, scroll-safe Search/welcome containers, and wrapped Applications actions
 - Demo report (2 tests) - validates no-network sample profile/jobs and report generation
 - Data portability (9 tests) - validates portable app-data export bundles, manifests, restore preflight validation, and restore backups
 - Profile readiness (7 tests) - validates onboarding readiness status, missing required fields, scoring-signal recommendations, match-quality recommendations, and guidance prioritization
@@ -556,13 +556,13 @@ The Product Iteration U-Y work is complete and tracked in `.planning/PRODUCT_ITE
 - **Sprint Y:** post-release feedback loop — complete
 
 Sprint X release-readiness checkpoints are tracked in `.planning/RELEASE_READINESS_U_Y.md`.
-Current release validation: full automated regression passed with 1201 tests and 8 skips before the v2.8.1 build checkpoint. Latest post-release workflow maintenance validation passed with 1202 tests and 8 skips.
+Current release validation: full automated regression passed with 1201 tests and 8 skips before the v2.8.1 build checkpoint. Latest Sprint 4 layout validation passed with 1203 tests and 8 skips.
 Build-script metadata verification passed for release artifact naming and checksum checks.
 Release notes for this version are tracked in `CHANGELOG.md`.
 Local Linux artifact build verification passed for `job-radar-v2.8.1-linux.tar.gz`.
 Sprint Y feedback-loop planning and next product slice candidates are tracked in `.planning/POST_RELEASE_FEEDBACK_U_Y.md`, and Settings now includes copyable redacted feedback diagnostics for privacy-safe issue reports.
 
-The Review Squad audit remediation stream is tracked in `.planning/AUDIT_REMEDIATION_SPRINTS.md`. Sprint 3 has decomposed the report renderer, source adapters, shared search pipeline, profile schema helpers, and several GUI maintenance/search/profile helpers while preserving compatibility wrappers where needed; latest validation: `1202 passed, 8 skipped`.
+The Review Squad audit remediation stream is tracked in `.planning/AUDIT_REMEDIATION_SPRINTS.md`. Sprint 3 has decomposed the report renderer, source adapters, shared search pipeline, profile schema helpers, and several GUI maintenance/search/profile helpers while preserving compatibility wrappers where needed; Sprint 4 has started GUI layout polish; latest validation: `1203 passed, 8 skipped`.
 
 ### Building Executables
 

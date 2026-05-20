@@ -143,7 +143,7 @@ Validation:
 Goal: improve usability once trust, state, and architecture risks are under control.
 
 - Make welcome/search/progress/completion/error views scroll-safe at minimum window size and OS text scaling. Completed locally: first-run welcome content and Search tab idle/progress/completion/error/cancel states now render inside scrollable containers.
-- Rework Applications row actions so status, edits, and templates do not clip.
+- Rework Applications row actions so status, edits, and templates do not clip. Completed locally: Applications header actions and per-row status/edit/template controls now use grid-based wrapped rows.
 - Improve report offline status feedback and status-sync messaging.
 - Review copy for macOS portable install paths, source counts, and feature claims.
 
@@ -151,4 +151,4 @@ Validation:
 - GUI view-model tests.
 - Targeted screenshot/manual checks at minimum and default window sizes.
 - Documentation review against implemented behavior.
-- Latest Sprint 4 slice validation: `pytest tests/test_gui_onboarding.py` (`68 passed`) and full `pytest tests/` (`1202 passed, 8 skipped`).
+- Latest Sprint 4 slice validation: `pytest tests/test_applications_view_model.py tests/test_gui_onboarding.py` (`86 passed`) and full `pytest tests/` (`1203 passed, 8 skipped`).

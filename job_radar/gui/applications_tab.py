@@ -66,38 +66,40 @@ def build_applications_tab_content(
         header_frame,
         text="Applications",
         font=ctk.CTkFont(size=18, weight="bold"),
-    ).grid(row=0, column=0, sticky="w")
+    ).grid(row=0, column=0, columnspan=2, sticky="w")
 
     actions_frame = ctk.CTkFrame(header_frame, fg_color="transparent")
-    actions_frame.grid(row=0, column=1, sticky="e")
+    actions_frame.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(8, 0))
+    for column in range(4):
+        actions_frame.grid_columnconfigure(column, weight=1, uniform="application_actions")
 
     ctk.CTkButton(
         actions_frame,
         text="Export CSV",
-        width=120,
+        height=30,
         command=callbacks.export_csv,
-    ).pack(side="left", padx=(0, 8))
+    ).grid(row=0, column=0, sticky="ew", padx=(0, 6))
 
     ctk.CTkButton(
         actions_frame,
         text="Import Status JSON",
-        width=150,
+        height=30,
         command=callbacks.import_status_updates,
-    ).pack(side="left", padx=(0, 8))
+    ).grid(row=0, column=1, sticky="ew", padx=(0, 6))
 
     ctk.CTkButton(
         actions_frame,
         text="Export Calendar",
-        width=140,
+        height=30,
         command=callbacks.export_calendar,
-    ).pack(side="left", padx=(0, 8))
+    ).grid(row=0, column=2, sticky="ew", padx=(0, 6))
 
     ctk.CTkButton(
         actions_frame,
         text="Refresh",
-        width=100,
+        height=30,
         command=callbacks.refresh,
-    ).pack(side="left")
+    ).grid(row=0, column=3, sticky="ew")
 
     filter_frame = ctk.CTkFrame(scroll_frame, fg_color="transparent")
     filter_frame.grid(row=1, column=0, sticky="w", pady=(0, 8))
@@ -193,47 +195,75 @@ def build_applications_tab_content(
                 justify="left",
             ).grid(row=item_index * 3 - 1, column=0, sticky="ew", padx=16, pady=(0, 4))
 
-            edit_frame = ctk.CTkFrame(group_frame, fg_color="transparent")
-            edit_frame.grid(row=item_index * 3, column=0, sticky="w", padx=16, pady=(0, 8))
-            status_menu = ctk.CTkOptionMenu(
-                edit_frame,
-                values=application_status_menu_labels(item.status),
-                width=150,
-                command=lambda selected, row=item: callbacks.update_status(row, selected),
+            _add_application_row_actions(
+                group_frame,
+                row_index=item_index * 3,
+                item=item,
+                templates=templates,
+                callbacks=callbacks,
             )
-            status_menu.set(item.status_label)
-            status_menu.pack(side="left", padx=(0, 10))
-            ctk.CTkButton(
-                edit_frame,
-                text="Set Next",
-                width=100,
-                height=28,
-                command=lambda row=item: callbacks.prompt_next_action(row),
-            ).pack(side="left", padx=(0, 6))
-            ctk.CTkButton(
-                edit_frame,
-                text="Set Due",
-                width=90,
-                height=28,
-                command=lambda row=item: callbacks.prompt_due_date(row),
-            ).pack(side="left", padx=(0, 10))
-            ctk.CTkButton(
-                edit_frame,
-                text="Edit Notes",
-                width=110,
-                height=28,
-                command=lambda row=item: callbacks.prompt_notes(row),
-            ).pack(side="left", padx=(0, 10))
-            for template in templates:
-                ctk.CTkButton(
-                    edit_frame,
-                    text=f"Add {template.label}",
-                    width=140,
-                    height=28,
-                    command=lambda row=item, key=template.key: callbacks.insert_note_template(row, key),
-                ).pack(side="left", padx=(0, 6))
 
     return status_label
+
+
+def _add_application_row_actions(
+    parent,
+    *,
+    row_index: int,
+    item,
+    templates,
+    callbacks: ApplicationsTabCallbacks,
+) -> None:
+    """Add wrapped application status/edit/template controls for one row."""
+    edit_frame = ctk.CTkFrame(parent, fg_color="transparent")
+    edit_frame.grid(row=row_index, column=0, sticky="ew", padx=16, pady=(0, 8))
+    edit_frame.grid_columnconfigure(0, weight=1)
+
+    status_menu = ctk.CTkOptionMenu(
+        edit_frame,
+        values=application_status_menu_labels(item.status),
+        width=180,
+        command=lambda selected, row=item: callbacks.update_status(row, selected),
+    )
+    status_menu.set(item.status_label)
+    status_menu.grid(row=0, column=0, sticky="w", pady=(0, 6))
+
+    edit_actions = ctk.CTkFrame(edit_frame, fg_color="transparent")
+    edit_actions.grid(row=1, column=0, sticky="ew", pady=(0, 6))
+    for column in range(3):
+        edit_actions.grid_columnconfigure(column, weight=1, uniform="application_edit")
+
+    ctk.CTkButton(
+        edit_actions,
+        text="Set Next",
+        height=28,
+        command=lambda row=item: callbacks.prompt_next_action(row),
+    ).grid(row=0, column=0, sticky="ew", padx=(0, 6))
+    ctk.CTkButton(
+        edit_actions,
+        text="Set Due",
+        height=28,
+        command=lambda row=item: callbacks.prompt_due_date(row),
+    ).grid(row=0, column=1, sticky="ew", padx=(0, 6))
+    ctk.CTkButton(
+        edit_actions,
+        text="Edit Notes",
+        height=28,
+        command=lambda row=item: callbacks.prompt_notes(row),
+    ).grid(row=0, column=2, sticky="ew")
+
+    template_actions = ctk.CTkFrame(edit_frame, fg_color="transparent")
+    template_actions.grid(row=2, column=0, sticky="ew")
+    for column in range(max(1, len(templates))):
+        template_actions.grid_columnconfigure(column, weight=1, uniform="application_templates")
+
+    for column, template in enumerate(templates):
+        ctk.CTkButton(
+            template_actions,
+            text=f"Add {template.label}",
+            height=28,
+            command=lambda row=item, key=template.key: callbacks.insert_note_template(row, key),
+        ).grid(row=0, column=column, sticky="ew", padx=(0, 6 if column < len(templates) - 1 else 0))
 
 
 def _add_application_next_action_queue(

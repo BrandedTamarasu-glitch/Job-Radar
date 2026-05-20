@@ -2,6 +2,7 @@ import inspect
 
 from job_radar.gui.applications_tab import (
     _add_application_next_action_queue,
+    _add_application_row_actions,
     build_applications_tab_content,
     set_applications_status,
 )
@@ -271,15 +272,28 @@ def test_snooze_application_next_action_moves_due_date_forward():
 
 def test_applications_tab_includes_direct_edit_controls():
     source = inspect.getsource(build_applications_tab_content)
+    actions_source = inspect.getsource(_add_application_row_actions)
     status_source = inspect.getsource(set_applications_status)
 
     assert "Export Calendar" in source
     assert "callbacks.export_calendar" in source
-    assert "callbacks.prompt_next_action" in source
-    assert "callbacks.prompt_due_date" in source
-    assert "callbacks.prompt_notes" in source
-    assert "Edit Notes" in source
+    assert "_add_application_row_actions" in source
+    assert "callbacks.prompt_next_action" in actions_source
+    assert "callbacks.prompt_due_date" in actions_source
+    assert "callbacks.prompt_notes" in actions_source
+    assert "Edit Notes" in actions_source
     assert "status_label.configure(text=message, text_color=color)" in status_source
+
+
+def test_applications_row_actions_use_wrapped_layout():
+    source = inspect.getsource(_add_application_row_actions)
+    tab_source = inspect.getsource(build_applications_tab_content)
+
+    assert "edit_actions.grid(row=1" in source
+    assert "template_actions.grid(row=2" in source
+    assert 'sticky="ew"' in source
+    assert "pack(side=\"left\"" not in source
+    assert "application_actions" in tab_source
 
 
 def test_calendar_export_writes_followup_ics_file():

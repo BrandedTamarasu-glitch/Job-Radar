@@ -12,10 +12,10 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 ## Current Position
 
 **Milestone:** v2.8.1 shipped
-**Status:** Sprint 4 underway; first scroll-safe GUI slice complete locally
-**Last activity:** 2026-05-20 — first-run welcome content and Search tab idle/progress/completion/error/cancel states were moved into scrollable containers for minimum-window and text-scaling resilience. Local validation passed with `1202 passed, 8 skipped`.
+**Status:** Sprint 4 underway; scroll-safe GUI and Applications layout slices complete locally
+**Last activity:** 2026-05-20 — Applications header actions and row status/edit/template controls were moved into grid-based wrapped rows after the scroll-safe welcome/Search slice. Local validation passed with `1203 passed, 8 skipped`.
 
-**Next step:** continue Sprint 4 with Applications row-action clipping fixes, then report offline/status-sync messaging, then docs/copy review.
+**Next step:** continue Sprint 4 with report offline/status-sync messaging, then docs/copy review.
 
 ## Performance Metrics
 
@@ -48,7 +48,7 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 ### Quality Indicators
 
 **Test Coverage:**
-- Latest full local suite: `1202 passed, 8 skipped`
+- Latest full local suite: `1203 passed, 8 skipped`
 - Release workflow tests passed on Linux, macOS, and Windows for `v2.8.1`
 - Coverage areas include scoring, config, tracker, wizard, report, UX, API, PDF, deduplication, accessibility, profile management, GUI view models, rate limiting, JSearch, USAJobs, hiring.cafe, schema migration, scoring config, update/install flows, and release verification
 
