@@ -1,6 +1,6 @@
 # Audit Remediation Sprints
 
-Last updated: 2026-05-18
+Last updated: 2026-05-20
 
 This plan converts the Review Squad top-to-bottom quality, security, UX, and rebase audit into executable sprints. The v2.8.0 release has shipped with Sprint 0-2 trust/state work and the completed Sprint 3 architecture cleanup slices listed below.
 
@@ -126,7 +126,8 @@ Current progress:
 - Applications-tab export/import/edit feedback label updates now live in `job_radar/gui/applications_tab.py`.
 - Settings maintenance feedback label updates now live in `job_radar/gui/settings_panel.py`.
 - API credential status label application now lives in `job_radar/gui/api_status_view_model.py`.
-- Latest validation: `1201 passed, 8 skipped`.
+- Release and accessibility workflows now use current Node 24 GitHub Actions action majors, and release Windows jobs use the explicit `windows-2025-vs2026` runner label.
+- Latest validation: `1202 passed, 8 skipped`.
 - v2.8.1 shipped on 2026-05-19 after local validation (`1201 passed, 8 skipped`) and a passing tag-triggered GitHub Actions release workflow across tests, platform builds, installers, and release creation.
 
 Remaining Sprint 3 work:

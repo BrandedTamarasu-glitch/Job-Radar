@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Improvements
+- **GitHub Actions runtime maintenance** - Updated release and accessibility workflows to current Node 24 action majors and switched release Windows jobs to the explicit `windows-2025-vs2026` runner label.
+
+### Validation
+- Full automated regression after workflow maintenance: 1202 passed, 8 skipped.
+
 ## v2.8.1 — 2026-05-19
 
 ### Improvements

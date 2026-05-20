@@ -7,7 +7,7 @@ A desktop job search tool that searches multiple job boards, scores listings aga
 - **Post-release GUI cleanup:** Additional Search, Applications, Settings, API, uninstall, update-status, and report-opening feedback helpers have moved out of `MainWindow` while preserving existing behavior.
 - **Profile schema helpers:** Years-experience parsing, compensation-floor parsing, range constants, and level derivation now live in one shared helper used by the CLI wizard, quick editor, GUI form, and profile validation.
 - **Release checkpoint:** Runtime/package metadata and build scripts now target v2.8.1.
-- **Validation:** The v2.8.1 release checkpoint passed the full automated suite: `1201 passed, 8 skipped`.
+- **Validation:** The v2.8.1 release checkpoint passed the full automated suite: `1201 passed, 8 skipped`; latest post-release workflow maintenance validation passed with `1202 passed, 8 skipped`.
 
 ## Installation
 
@@ -453,7 +453,7 @@ python -m job_radar --help
 
 ### Running Tests
 
-The project includes a comprehensive test suite with 1209 automated tests:
+The project includes a comprehensive test suite with 1210 automated tests:
 
 ```bash
 # Install dev dependencies
@@ -525,7 +525,7 @@ For release builds, also run the platform build script and smoke-test the genera
 - Auto-update (42 tests) - validates detection, download, SHA256 verification, installer launch, skip version
 - Release verification (11 tests) - validates release bundle/installer artifact expectations, missing/empty files, filename and installer-directory drift diagnostics, executable permissions, clean CLI failures, noisy virtualenv-match suppression, and checksum manifests
 - Release notes (6 tests) - validates changelog section extraction, tag normalization, output writing, and clean release-note CLI failures
-- Metadata (2 tests) - validates runtime/package version sync and release build files deriving versions from package metadata
+- Metadata (5 tests) - validates runtime/package version sync, release build files deriving versions from package metadata, installer repository metadata, release token scoping, and CI workflow action runtimes
 - Browser (12 tests) - validates report opening, platform detection, error handling
 - Paths (16 tests) - validates config directory resolution, platform compatibility
 
@@ -556,13 +556,13 @@ The Product Iteration U-Y work is complete and tracked in `.planning/PRODUCT_ITE
 - **Sprint Y:** post-release feedback loop — complete
 
 Sprint X release-readiness checkpoints are tracked in `.planning/RELEASE_READINESS_U_Y.md`.
-Current release validation: full automated regression passed with 1201 tests and 8 skips before the v2.8.1 build checkpoint.
+Current release validation: full automated regression passed with 1201 tests and 8 skips before the v2.8.1 build checkpoint. Latest post-release workflow maintenance validation passed with 1202 tests and 8 skips.
 Build-script metadata verification passed for release artifact naming and checksum checks.
 Release notes for this version are tracked in `CHANGELOG.md`.
 Local Linux artifact build verification passed for `job-radar-v2.8.1-linux.tar.gz`.
 Sprint Y feedback-loop planning and next product slice candidates are tracked in `.planning/POST_RELEASE_FEEDBACK_U_Y.md`, and Settings now includes copyable redacted feedback diagnostics for privacy-safe issue reports.
 
-The Review Squad audit remediation stream is tracked in `.planning/AUDIT_REMEDIATION_SPRINTS.md`. Sprint 3 has decomposed the report renderer, source adapters, shared search pipeline, profile schema helpers, and several GUI maintenance/search/profile helpers while preserving compatibility wrappers where needed; latest validation: `1201 passed, 8 skipped`.
+The Review Squad audit remediation stream is tracked in `.planning/AUDIT_REMEDIATION_SPRINTS.md`. Sprint 3 has decomposed the report renderer, source adapters, shared search pipeline, profile schema helpers, and several GUI maintenance/search/profile helpers while preserving compatibility wrappers where needed; latest validation: `1202 passed, 8 skipped`.
 
 ### Building Executables
 

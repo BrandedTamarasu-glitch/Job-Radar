@@ -1,15 +1,15 @@
 # Job Radar Handoff
 
-Date: 2026-05-19
+Date: 2026-05-20
 
 ## Current State
 
 - Repo path: `/home/corye/openai-cli/Job-Radar`
 - Branch: `main`
-- Git status after release: clean and synced with `origin/main`, except preserved untracked `.forgeflow/`
+- Git status after workflow maintenance: local maintenance commit pending push, except preserved untracked `.forgeflow/`
 - Current release: `v2.8.1`
 - Release URL: https://github.com/BrandedTamarasu-glitch/Job-Radar/releases/tag/v2.8.1
-- Last local full validation: `1201 passed, 8 skipped`
+- Last local full validation: `1202 passed, 8 skipped`
 - Release workflow validation: GitHub Actions Release run `26128165442` passed tests, platform builds, installer builds, and release creation.
 
 ## Latest Commits
@@ -92,6 +92,7 @@ The v2.8.0 line includes the audit-remediation architecture work completed so fa
 - Applications-tab export/import/edit feedback label updates now live in `job_radar/gui/applications_tab.py`.
 - Settings maintenance feedback label updates now live in `job_radar/gui/settings_panel.py`.
 - API credential status label application now lives in `job_radar/gui/api_status_view_model.py`.
+- Release and accessibility workflows now use current Node 24 GitHub Actions majors, and release Windows jobs use the explicit `windows-2025-vs2026` runner label.
 
 ## Active Plan
 
@@ -103,6 +104,7 @@ Completed or mostly handled:
 - Sprint 1: trust/state/release hygiene
 - Sprint 2: persistence/schema consolidation
 - Sprint 3: report, source, search-pipeline, profile schema, and broad GUI architecture cleanup
+- Post-release workflow maintenance for GitHub Actions Node 24 runtime migration
 
 Still planned in Sprint 3:
 
@@ -130,6 +132,16 @@ Suggested focused validation:
 ```bash
 rtk .venv/bin/python -m pytest tests/test_gui_onboarding.py tests/test_gui_search_summary.py tests/test_profile_view_model.py
 rtk .venv/bin/python -m pytest tests/
+```
+
+Latest validation:
+
+```bash
+rtk .venv/bin/python -m pytest tests/test_metadata.py tests/test_release_verification.py tests/test_release_notes.py
+22 passed
+
+rtk .venv/bin/python -m pytest tests/
+1202 passed, 8 skipped
 ```
 
 ## Notes

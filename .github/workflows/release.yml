@@ -15,12 +15,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-2025-vs2026, macos-latest]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.10'
 
@@ -39,22 +39,22 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-2025-vs2026, macos-latest]
         include:
           - os: ubuntu-latest
             platform: linux
             archive_name: job-radar-${{ github.ref_name }}-linux.tar.gz
-          - os: windows-latest
+          - os: windows-2025-vs2026
             platform: windows
             archive_name: job-radar-${{ github.ref_name }}-windows.zip
           - os: macos-latest
             platform: macos
             archive_name: job-radar-${{ github.ref_name }}-macos.zip
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.10'
 
@@ -116,7 +116,7 @@ jobs:
         run: python -m job_radar.release_verification --platform ${{ matrix.platform }} --version ${{ github.ref_name }} --checksum-manifest job-radar-${{ github.ref_name }}-${{ matrix.platform }}.sha256
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: job-radar-${{ matrix.platform }}
           path: job-radar-${{ github.ref_name }}-*
@@ -132,14 +132,14 @@ jobs:
           - os: macos-latest
             platform: macos
             artifact_name: job-radar-macos
-          - os: windows-latest
+          - os: windows-2025-vs2026
             platform: windows
             artifact_name: job-radar-windows
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.10'
 
@@ -147,7 +147,7 @@ jobs:
         run: pip install Pillow
 
       - name: Download PyInstaller artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ${{ matrix.artifact_name }}
 
@@ -203,7 +203,7 @@ jobs:
 
       - name: Upload DMG artifact (macOS)
         if: runner.os == 'macOS'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: installer-macos
           if-no-files-found: error
@@ -213,7 +213,7 @@ jobs:
 
       - name: Upload installer artifact (Windows)
         if: runner.os == 'Windows'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: installer-windows
           if-no-files-found: error
@@ -228,10 +228,10 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
 
       - name: Stage release assets
         run: |
@@ -252,7 +252,7 @@ jobs:
         run: python -m job_radar.release_notes --tag ${{ github.ref_name }} --output RELEASE_BODY.md
 
       - name: Create Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           body_path: RELEASE_BODY.md
           files: release-assets/*

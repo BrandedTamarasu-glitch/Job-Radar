@@ -1,19 +1,19 @@
 # Project State: Job Radar
 
-**Last Updated:** 2026-05-19T15:02:00-07:00
+**Last Updated:** 2026-05-20T00:00:00-07:00
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Accurate job-candidate scoring — if the scoring is wrong, nothing else matters.
-**Current focus:** Post-v2.8.1 audit remediation cleanup
+**Current focus:** Post-v2.8.1 release workflow maintenance
 
 ## Current Position
 
 **Milestone:** v2.8.1 shipped
-**Status:** Sprint 3 follow-up cleanup published in v2.8.1
-**Last activity:** 2026-05-19 — Job Radar v2.8.1 was released after local validation (`1201 passed, 8 skipped`) and a passing tag-triggered GitHub Actions release workflow.
+**Status:** Sprint 3 follow-up cleanup published in v2.8.1; post-release workflow maintenance complete locally
+**Last activity:** 2026-05-20 — release/accessibility workflows were updated for GitHub Actions Node 24 action majors and explicit Windows 2025 VS 2026 release runners. Local validation passed with `1202 passed, 8 skipped`.
 
 **Next step:** decide whether to continue Sprint 3 with higher-risk API/update/uninstall extraction or defer remaining architecture cleanup to a planned follow-up.
 
@@ -48,7 +48,7 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 ### Quality Indicators
 
 **Test Coverage:**
-- Latest full local suite: `1201 passed, 8 skipped`
+- Latest full local suite: `1202 passed, 8 skipped`
 - Release workflow tests passed on Linux, macOS, and Windows for `v2.8.1`
 - Coverage areas include scoring, config, tracker, wizard, report, UX, API, PDF, deduplication, accessibility, profile management, GUI view models, rate limiting, JSearch, USAJobs, hiring.cafe, schema migration, scoring config, update/install flows, and release verification
 

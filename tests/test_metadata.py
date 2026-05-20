@@ -57,3 +57,28 @@ def test_release_workflow_uses_job_scoped_write_permission():
     assert "permissions:\n  contents: read" in workflow
     assert "release:\n    name: Create Release" in workflow
     assert "    permissions:\n      contents: write" in workflow
+
+
+def test_ci_workflows_use_current_action_runtimes():
+    """CI workflows should stay ahead of GitHub Actions runtime deprecations."""
+    release_workflow = Path(".github/workflows/release.yml").read_text(
+        encoding="utf-8"
+    )
+    accessibility_workflow = Path(".github/workflows/accessibility.yml").read_text(
+        encoding="utf-8"
+    )
+
+    assert "actions/checkout@v6" in release_workflow
+    assert "actions/setup-python@v6" in release_workflow
+    assert "actions/upload-artifact@v7" in release_workflow
+    assert "actions/download-artifact@v8" in release_workflow
+    assert "softprops/action-gh-release@v3" in release_workflow
+    assert "windows-2025-vs2026" in release_workflow
+    assert "windows-latest" not in release_workflow
+
+    assert "actions/checkout@v6" in accessibility_workflow
+    assert "actions/setup-python@v6" in accessibility_workflow
+    assert "actions/setup-node@v6" in accessibility_workflow
+    assert "actions/upload-artifact@v7" in accessibility_workflow
+    assert "node-version: '24'" in accessibility_workflow
+    assert "node-version: '20'" not in accessibility_workflow
