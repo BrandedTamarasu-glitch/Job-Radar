@@ -1,6 +1,6 @@
 # Job Radar — Frequently Asked Questions
 
-**Version 2.3.0** | [Changelog](CHANGELOG.md) | [README](README.md) | [Full Documentation](WORKFLOW.md)
+**Version 2.8.1** | [Changelog](CHANGELOG.md) | [README](README.md) | [Full Documentation](WORKFLOW.md)
 
 ## Installation & Setup
 
@@ -61,16 +61,17 @@ The Settings tab summarizes local app data size, HTTP cache file counts, tracker
 
 ### Can I use Job Radar without API keys?
 
-Yes! Job Radar works out-of-the-box with 7 free sources:
+Yes. Job Radar works out-of-the-box with 6 no-key automated sources:
 - Dice.com (scraper)
 - HN Hiring (scraper)
 - RemoteOK (public API)
 - We Work Remotely (scraper)
 - Jobicy (public API, rate limited to 1/hour)
 - hiring.cafe (public API, rate limited to 60/hour)
-- 4 manual URL builders (Wellfound, Indeed, LinkedIn, Glassdoor)
 
-API keys for Adzuna, Authentic Jobs, JSearch, USAJobs, and SerpAPI expand coverage but are entirely optional.
+It also creates 5 manual URL builders you can open yourself: Wellfound, Indeed, LinkedIn, Glassdoor, and We Work Remotely.
+
+API keys for Adzuna, Authentic Jobs, JSearch, USAJobs, and SerpAPI expand coverage but are optional.
 
 ## API Configuration
 
@@ -306,13 +307,13 @@ results/
 └── tracker.json
 ```
 
-Open any `.html` file in your browser. Status tracking data is embedded in tracker.json, so statuses persist across all reports.
+Open any generated `.html` report in your browser. Known tracker statuses are embedded when the report is generated. Status edits made inside the report stay in browser localStorage until you use **Export Status Updates** and then **Applications → Import Status JSON** in the desktop app.
 
 ## Troubleshooting
 
 ### The search is taking a very long time
 
-Job Radar queries 11 API sources plus 4 manual URL builders. Some sources (especially scrapers) can be slow. Typical search duration: 30-90 seconds.
+Job Radar can query 11 automated sources plus 5 manual URL builders. Some automated sources, especially scrapers, can be slow. Typical search duration: 30-90 seconds.
 
 **If it takes longer:**
 1. Check your internet connection
@@ -360,7 +361,7 @@ Debug logging shows:
 ### The GUI won't launch
 
 **macOS:**
-1. Remove quarantine attribute: `xattr -d com.apple.quarantine /Applications/JobRadar.app`
+1. Remove quarantine attribute from the app path you installed or extracted: `xattr -d com.apple.quarantine /path/to/JobRadar.app`
 2. Right-click app → Open (not double-click)
 3. Check Console.app for crash logs
 
@@ -466,11 +467,11 @@ See WORKFLOW.md for development setup instructions.
 
 ### How do I add a new job source?
 
-1. Add a fetcher function and mapper in `job_radar/sources.py`
-2. Map response data to the standard `JobResult` dataclass
-3. Add the source to `build_search_queries()` and `fetch_all()` in `job_radar/sources.py`
-4. Add rate limit config in `job_radar/rate_limits.py`
-5. Write tests in `tests/test_sources_api.py`
+1. Add a focused fetcher/mapper module or extend the existing source fetcher/mapper modules.
+2. Map response data to the standard `JobResult` dataclass.
+3. Add the source metadata to the source registry and query construction.
+4. Add rate limit config when the source needs request throttling.
+5. Write focused source tests and update documentation.
 6. Submit a pull request!
 
 See existing fetchers for examples.

@@ -12,10 +12,10 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 ## Current Position
 
 **Milestone:** v2.8.1 shipped
-**Status:** Sprint 4 underway; scroll-safe GUI, Applications layout, and report messaging slices complete locally
-**Last activity:** 2026-05-20 — report controls and status-change feedback were clarified so generated reports describe offline use and browser-local status edits that require JSON export plus Applications-tab import. Local validation passed with `1203 passed, 8 skipped`.
+**Status:** Sprint 4 complete locally
+**Last activity:** 2026-05-20 — README, FAQ, and distribution README were aligned with current macOS portable paths, source counts, status export/import behavior, and source-extension architecture. Local validation passed with `1204 passed, 8 skipped`.
 
-**Next step:** finish Sprint 4 with docs/copy review for macOS portable install paths, source counts, and feature claims.
+**Next step:** review the local Sprint 4 commits and decide whether to push or prepare the next release checkpoint.
 
 ## Performance Metrics
 
@@ -48,7 +48,7 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 ### Quality Indicators
 
 **Test Coverage:**
-- Latest full local suite: `1203 passed, 8 skipped`
+- Latest full local suite: `1204 passed, 8 skipped`
 - Release workflow tests passed on Linux, macOS, and Windows for `v2.8.1`
 - Coverage areas include scoring, config, tracker, wizard, report, UX, API, PDF, deduplication, accessibility, profile management, GUI view models, rate limiting, JSearch, USAJobs, hiring.cafe, schema migration, scoring config, update/install flows, and release verification
 
@@ -124,7 +124,7 @@ See `.planning/AUDIT_REMEDIATION_SPRINTS.md`.
 - Sprint 1: Must-Fix Trust, State, And Release Hygiene — complete
 - Sprint 2: Persistence And Schema Consolidation — complete
 - Sprint 3: Rebase-Nimble Architecture — shipped in v2.8.0 with follow-up cleanup remaining
-- Sprint 4: UX, Accessibility, And Product Polish — pending
+- Sprint 4: UX, Accessibility, And Product Polish — complete locally
 
 ### Blockers/Concerns
 

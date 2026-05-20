@@ -9,7 +9,7 @@ Date: 2026-05-20
 - Git status after workflow maintenance: local maintenance commit pending push, except preserved untracked `.forgeflow/`
 - Current release: `v2.8.1`
 - Release URL: https://github.com/BrandedTamarasu-glitch/Job-Radar/releases/tag/v2.8.1
-- Last local full validation: `1203 passed, 8 skipped`
+- Last local full validation: `1204 passed, 8 skipped`
 - Release workflow validation: GitHub Actions Release run `26128165442` passed tests, platform builds, installer builds, and release creation.
 
 ## Latest Commits
@@ -111,15 +111,12 @@ Still planned in Sprint 3:
 - Continue reducing `job_radar/gui/main_window.py` where helpers can own construction or state formatting without taking behavior callbacks away from `MainWindow`
 - Trim `job_radar/sources.py` compatibility wrappers only where tests and downstream imports prove they are not public surface
 
-Still planned in Sprint 4:
-
-- Review copy for macOS portable install paths, source counts, and feature claims
-
 Sprint 4 completed locally:
 
 - First-run welcome content and Search tab idle/progress/completion/error/cancel states now render in scrollable containers for minimum-window and OS text-scaling resilience.
 - Applications header actions and per-row status/edit/template controls now use grid-based wrapped rows to reduce clipping at narrow widths and larger text settings.
 - Report controls and status-change feedback now explain that generated reports work offline and browser-local status edits require JSON export plus Applications-tab import.
+- README, FAQ, and distribution README now use current macOS portable paths, source counts, status export/import behavior, and source-extension architecture.
 
 ## Recommended Next Slice
 
@@ -167,6 +164,12 @@ rtk .venv/bin/python -m pytest tests/test_report.py tests/test_report_controls.p
 
 rtk .venv/bin/python -m pytest tests/
 1203 passed, 8 skipped
+
+rtk .venv/bin/python -m pytest tests/test_metadata.py tests/test_release_notes.py tests/test_install_status_view_model.py tests/test_demo_report_view_model.py
+17 passed
+
+rtk .venv/bin/python -m pytest tests/
+1204 passed, 8 skipped
 ```
 
 ## Notes

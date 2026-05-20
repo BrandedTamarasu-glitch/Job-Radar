@@ -10,7 +10,7 @@ GETTING STARTED
 2. Open a terminal/command prompt in this folder
 3. Run the executable:
    - Windows: job-radar.exe --help
-   - macOS:   ./job-radar --help  (or open JobRadar.app)
+   - macOS:   open JobRadar.app, or run JobRadar.app/Contents/MacOS/job-radar --help
    - Linux:   ./job-radar --help
 
 4. Create your profile:
@@ -19,7 +19,7 @@ GETTING STARTED
 
 5. Run a search:
    - Windows: job-radar.exe
-   - macOS:   ./job-radar
+   - macOS:   open JobRadar.app, or run JobRadar.app/Contents/MacOS/job-radar
    - Linux:   ./job-radar
 
 REQUIREMENTS

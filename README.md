@@ -1,13 +1,13 @@
 # Job Radar
 
-A desktop job search tool that searches multiple job boards, scores listings against your profile, and generates ranked reports. Available as both a **desktop GUI application** (double-click to launch) and a **CLI** for power users and scripting. Features include multi-source search (11 API sources: Dice, HN Hiring, RemoteOK, We Work Remotely, Adzuna, Authentic Jobs, JSearch, USAJobs, SerpAPI, Jobicy, hiring.cafe + 4 manual URLs: Wellfound, Indeed, LinkedIn, Glassdoor), PDF resume import, fuzzy skill matching, user-configurable scoring weights, cross-source deduplication with richness scoring, real-time API quota tracking, in-app auto-updates, and dual-format HTML and Markdown reports with shortlist state, compact/detail review, keyboard navigation, application status tracking, and WCAG 2.1 Level AA accessibility.
+A desktop job search tool that searches multiple job boards, scores listings against your profile, and generates ranked reports. Available as both a **desktop GUI application** (double-click to launch) and a **CLI** for power users and scripting. Features include multi-source search (11 automated sources: Dice, HN Hiring, RemoteOK, We Work Remotely, Adzuna, Authentic Jobs, JSearch, USAJobs, SerpAPI, Jobicy, hiring.cafe + 5 manual URL builders: Wellfound, Indeed, LinkedIn, Glassdoor, We Work Remotely), PDF resume import, fuzzy skill matching, user-configurable scoring weights, cross-source deduplication with richness scoring, API quota tracking for configured providers, in-app auto-updates, and dual-format HTML and Markdown reports with shortlist state, compact/detail review, keyboard navigation, application status export/import, and WCAG 2.1 Level AA accessibility.
 
 ## What's New in v2.8.1
 
 - **Post-release GUI cleanup:** Additional Search, Applications, Settings, API, uninstall, update-status, and report-opening feedback helpers have moved out of `MainWindow` while preserving existing behavior.
 - **Profile schema helpers:** Years-experience parsing, compensation-floor parsing, range constants, and level derivation now live in one shared helper used by the CLI wizard, quick editor, GUI form, and profile validation.
 - **Release checkpoint:** Runtime/package metadata and build scripts now target v2.8.1.
-- **Validation:** The v2.8.1 release checkpoint passed the full automated suite: `1201 passed, 8 skipped`; latest Sprint 4 report messaging validation passed with `1203 passed, 8 skipped`.
+- **Validation:** The v2.8.1 release checkpoint passed the full automated suite: `1201 passed, 8 skipped`; latest Sprint 4 validation passed with `1204 passed, 8 skipped`.
 
 ## Installation
 
@@ -98,9 +98,9 @@ The installer includes:
 1. Download `job-radar-vX.X.X-macos.zip` from the Releases page
 2. Double-click the ZIP file to extract it
 3. Drag `JobRadar.app` to your Applications folder (optional but recommended)
-4. Remove the quarantine attribute (required for unsigned apps):
+4. Remove the quarantine attribute from the app wherever you extracted or moved it:
    ```bash
-   xattr -d com.apple.quarantine /Applications/JobRadar.app
+   xattr -d com.apple.quarantine /path/to/JobRadar.app
    ```
 5. **Double-click `JobRadar.app`** to launch the GUI
 
@@ -108,8 +108,11 @@ The installer includes:
 
 For advanced users or scripting:
 ```bash
-# Run CLI directly
+# Run CLI directly after installing the app in /Applications
 /Applications/JobRadar.app/Contents/MacOS/job-radar
+
+# Or run it from a portable ZIP extraction
+/path/to/JobRadar.app/Contents/MacOS/job-radar
 
 # Or create an alias
 echo 'alias job-radar="/Applications/JobRadar.app/Contents/MacOS/job-radar"' >> ~/.zshrc
@@ -199,14 +202,14 @@ The HTML report includes interactive features and visual hierarchy to help you s
 - **Copy URL** buttons on each job listing for quick clipboard access
 - **Copy All Recommended** button to batch-copy all high-scoring job URLs
 - **Keyboard shortcuts:** Press `C` to copy a focused job's URL, `A` to copy all recommended URLs
-- **Status tracking:** Mark jobs as Applied, Interviewing, Rejected, or Offer — status persists across sessions
+- **Status tracking:** Mark jobs as Applied, Interviewing, Rejected, or Offer; report-side changes stay in browser storage until exported as JSON and imported into Applications
 - **Filtering:** Hide jobs by status (Applied, Rejected, Interviewing, Offer) with filter state persistence
 - **CSV Export:** Download all visible job results as a spreadsheet (UTF-8, Excel-compatible)
 - **Print-optimized:** Press Cmd+P/Ctrl+P for clean offline output with preserved tier colors
 
 ### Optional: API Credentials
 
-Job Radar works out-of-the-box with 7 free sources (Dice, HN Hiring, RemoteOK, We Work Remotely, Jobicy, hiring.cafe + 4 manual URLs). To expand coverage with additional API sources, configure API keys:
+Job Radar works out-of-the-box with 6 no-key automated sources (Dice, HN Hiring, RemoteOK, We Work Remotely, Jobicy, hiring.cafe) plus 5 manual URL builders (Wellfound, Indeed, LinkedIn, Glassdoor, We Work Remotely). To expand coverage with additional API sources, configure API keys:
 
 **GUI Method (Recommended):**
 1. Open the **Settings** tab in the Job Radar GUI
@@ -453,7 +456,7 @@ python -m job_radar --help
 
 ### Running Tests
 
-The project includes a comprehensive test suite with 1211 automated tests:
+The project includes a comprehensive test suite with 1212 automated tests:
 
 ```bash
 # Install dev dependencies
@@ -498,7 +501,7 @@ For release builds, also run the platform build script and smoke-test the genera
 - Tracker functions (27 tests) - validates deduplication, pruning, app-data storage, application notes/next actions, timeline recording, follow-up queueing, application import merging, application-status report filtering, source health history with search context, and stats aggregation with tmp_path isolation
 - Config module (24 tests) - validates config file parsing, CLI override, defaults, validation
 - Wizard (38 tests) - validates setup flow, PDF integration, navigation, error handling
-- API integration (61 tests) - validates all 11 API sources, mappers, rate limiting, source selection, cache stats propagation, per-source cache TTLs, diagnostics-driven TTL overrides, source cancellation boundaries, manual source links, deduplication
+- API integration (61 tests) - validates all 11 automated sources, mappers, rate limiting, source selection, cache stats propagation, per-source cache TTLs, diagnostics-driven TTL overrides, source cancellation boundaries, manual source links, deduplication
 - API config (18 tests) - validates API key storage, validation, GUI integration, quota tracking
 - Cache (14 tests) - validates HTTP cache lifecycle, request timeout handling, cache counters, and custom TTL expiry
 - Rate limits (16 tests) - validates rate limiter cleanup, shared backends, config loading, quota queries
@@ -525,7 +528,7 @@ For release builds, also run the platform build script and smoke-test the genera
 - Auto-update (42 tests) - validates detection, download, SHA256 verification, installer launch, skip version
 - Release verification (11 tests) - validates release bundle/installer artifact expectations, missing/empty files, filename and installer-directory drift diagnostics, executable permissions, clean CLI failures, noisy virtualenv-match suppression, and checksum manifests
 - Release notes (6 tests) - validates changelog section extraction, tag normalization, output writing, and clean release-note CLI failures
-- Metadata (5 tests) - validates runtime/package version sync, release build files deriving versions from package metadata, installer repository metadata, release token scoping, and CI workflow action runtimes
+- Metadata (6 tests) - validates runtime/package version sync, release build files deriving versions from package metadata, installer repository metadata, release token scoping, CI workflow action runtimes, and public documentation source-count claims
 - Browser (12 tests) - validates report opening, platform detection, error handling
 - Paths (16 tests) - validates config directory resolution, platform compatibility
 
@@ -556,13 +559,13 @@ The Product Iteration U-Y work is complete and tracked in `.planning/PRODUCT_ITE
 - **Sprint Y:** post-release feedback loop — complete
 
 Sprint X release-readiness checkpoints are tracked in `.planning/RELEASE_READINESS_U_Y.md`.
-Current release validation: full automated regression passed with 1201 tests and 8 skips before the v2.8.1 build checkpoint. Latest Sprint 4 report messaging validation passed with 1203 tests and 8 skips.
+Current release validation: full automated regression passed with 1201 tests and 8 skips before the v2.8.1 build checkpoint. Latest Sprint 4 validation passed with 1204 tests and 8 skips.
 Build-script metadata verification passed for release artifact naming and checksum checks.
 Release notes for this version are tracked in `CHANGELOG.md`.
 Local Linux artifact build verification passed for `job-radar-v2.8.1-linux.tar.gz`.
 Sprint Y feedback-loop planning and next product slice candidates are tracked in `.planning/POST_RELEASE_FEEDBACK_U_Y.md`, and Settings now includes copyable redacted feedback diagnostics for privacy-safe issue reports.
 
-The Review Squad audit remediation stream is tracked in `.planning/AUDIT_REMEDIATION_SPRINTS.md`. Sprint 3 has decomposed the report renderer, source adapters, shared search pipeline, profile schema helpers, and several GUI maintenance/search/profile helpers while preserving compatibility wrappers where needed; Sprint 4 has started GUI layout polish; latest validation: `1203 passed, 8 skipped`.
+The Review Squad audit remediation stream is tracked in `.planning/AUDIT_REMEDIATION_SPRINTS.md`. Sprint 3 has decomposed the report renderer, source adapters, shared search pipeline, profile schema helpers, and several GUI maintenance/search/profile helpers while preserving compatibility wrappers where needed; Sprint 4 layout and copy polish is complete locally; latest validation: `1204 passed, 8 skipped`.
 
 ### Building Executables
 

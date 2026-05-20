@@ -82,3 +82,19 @@ def test_ci_workflows_use_current_action_runtimes():
     assert "actions/upload-artifact@v7" in accessibility_workflow
     assert "node-version: '24'" in accessibility_workflow
     assert "node-version: '20'" not in accessibility_workflow
+
+
+def test_public_docs_source_counts_match_registries():
+    """Public source-count copy should match the source registries."""
+    readme = Path("README.md").read_text(encoding="utf-8")
+    faq = Path("FAQ.md").read_text(encoding="utf-8")
+
+    assert "11 automated sources" in readme
+    assert "5 manual URL builders" in readme
+    assert "11 API sources" not in readme
+    assert "4 manual URLs" not in readme
+
+    assert "6 no-key automated sources" in faq
+    assert "5 manual URL builders" in faq
+    assert "11 automated sources plus 5 manual URL builders" in faq
+    assert "11 API sources plus 4 manual URL builders" not in faq
