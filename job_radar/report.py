@@ -1297,7 +1297,7 @@ def _generate_html_report(
         if (isPending) {{
           var pendingIcon = document.createElement('span');
           pendingIcon.className = 'pending-dot';
-          pendingIcon.title = 'Pending sync to tracker.json';
+          pendingIcon.title = 'Pending export/import into Applications';
           badge.appendChild(pendingIcon);
         }}
 
@@ -1323,7 +1323,7 @@ def _generate_html_report(
         if (isPending) {{
           var pendingIcon = document.createElement('span');
           pendingIcon.className = 'pending-dot';
-          pendingIcon.title = 'Pending sync to tracker.json';
+          pendingIcon.title = 'Pending export/import into Applications';
           badge.appendChild(pendingIcon);
         }}
 
@@ -1414,7 +1414,7 @@ def _generate_html_report(
         }};
         renderStatusBadge(jobElement, newStatus, true);
         var statusLabel = STATUS_CONFIG[newStatus] ? STATUS_CONFIG[newStatus].label : newStatus;
-        var msg = 'Marked as ' + statusLabel;
+        var msg = 'Marked as ' + statusLabel + '. Export JSON to import this change in Applications.';
         notyf.success(msg);
         announceToScreenReader(msg);
       }}
@@ -1470,7 +1470,7 @@ def _generate_html_report(
 
       var count = Object.keys(pendingUpdates).length;
       if (count === 0) {{
-        var msg = 'No pending status updates to export';
+        var msg = 'No browser-only status updates to export';
         notyf.error(msg);
         announceToScreenReader(msg);
         return;
@@ -1489,7 +1489,7 @@ def _generate_html_report(
       link.click();
       URL.revokeObjectURL(url);
 
-      var msg = 'Exported ' + count + ' status update' + (count > 1 ? 's' : '');
+      var msg = 'Exported ' + count + ' status update' + (count > 1 ? 's' : '') + ' for Applications import';
       notyf.success(msg);
       announceToScreenReader(msg);
     }}

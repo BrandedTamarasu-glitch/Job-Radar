@@ -6,11 +6,13 @@
 - **GitHub Actions runtime maintenance** - Updated release and accessibility workflows to current Node 24 action majors and switched release Windows jobs to the explicit `windows-2025-vs2026` runner label.
 - **Sprint 4 scroll-safe GUI states** - Made the first-run welcome screen and Search tab idle/progress/completion/error/cancel states render inside scrollable containers for minimum-window and text-scaling resilience.
 - **Sprint 4 Applications layout polish** - Reworked Applications header and row action controls into grid-based rows so status edits, detail actions, and note templates do not depend on one clipped horizontal strip.
+- **Sprint 4 report sync copy** - Clarified that generated reports work offline and that report status edits remain browser-local until exported as JSON and imported from the Applications tab.
 
 ### Validation
 - Full automated regression after workflow maintenance: 1202 passed, 8 skipped.
 - Full automated regression after Sprint 4 scroll-safe GUI slice: 1202 passed, 8 skipped.
 - Full automated regression after Sprint 4 Applications layout slice: 1203 passed, 8 skipped.
+- Full automated regression after Sprint 4 report messaging slice: 1203 passed, 8 skipped.
 
 ## v2.8.1 — 2026-05-19
 

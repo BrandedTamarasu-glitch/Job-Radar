@@ -248,9 +248,11 @@ def test_application_pipeline_display_row_uses_defaults_without_details():
 def test_application_export_import_status_messages_are_consistent_for_gui():
     assert applications_csv_export_success_message("/tmp/apps.csv") == "Exported to /tmp/apps.csv"
     assert applications_csv_export_error_message(ValueError("disk full")) == "Export failed: disk full"
-    assert application_status_import_success_message(3) == "Imported 3 status update(s)"
+    assert application_status_import_success_message(3) == (
+        "Imported 3 report status update(s) into Applications"
+    )
     assert application_status_import_error_message(ValueError("bad json")) == (
-        "Status import failed: bad json"
+        "Report status import failed: bad json"
     )
     assert application_calendar_export_success_message("/tmp/followups.ics") == (
         "Exported calendar to /tmp/followups.ics"

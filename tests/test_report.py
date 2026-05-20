@@ -1103,6 +1103,9 @@ def test_html_report_contains_status_javascript(sample_profile, sample_scored_re
 
     # Check for localStorage key
     assert "job-radar-application-status" in html_content
+    assert "Pending export/import into Applications" in html_content
+    assert "Export JSON to import this change in Applications" in html_content
+    assert "for Applications import" in html_content
 
 
 def test_html_report_contains_job_key_attributes(sample_profile, sample_scored_results, sample_manual_urls, tmp_path):
@@ -1150,6 +1153,8 @@ def test_html_report_contains_export_button(sample_profile, sample_scored_result
 
     # Check for export function
     assert "exportPendingStatusUpdates" in html_content
+    assert "Status edits stay in this browser" in html_content
+    assert "This report works offline after generation" in html_content
 
 
 # ── WCAG 2.1 Level AA Accessibility Tests (Phase 18-03) ─────────────────────

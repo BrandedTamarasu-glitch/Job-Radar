@@ -7,7 +7,7 @@ A desktop job search tool that searches multiple job boards, scores listings aga
 - **Post-release GUI cleanup:** Additional Search, Applications, Settings, API, uninstall, update-status, and report-opening feedback helpers have moved out of `MainWindow` while preserving existing behavior.
 - **Profile schema helpers:** Years-experience parsing, compensation-floor parsing, range constants, and level derivation now live in one shared helper used by the CLI wizard, quick editor, GUI form, and profile validation.
 - **Release checkpoint:** Runtime/package metadata and build scripts now target v2.8.1.
-- **Validation:** The v2.8.1 release checkpoint passed the full automated suite: `1201 passed, 8 skipped`; latest Sprint 4 layout validation passed with `1203 passed, 8 skipped`.
+- **Validation:** The v2.8.1 release checkpoint passed the full automated suite: `1201 passed, 8 skipped`; latest Sprint 4 report messaging validation passed with `1203 passed, 8 skipped`.
 
 ## Installation
 
@@ -556,7 +556,7 @@ The Product Iteration U-Y work is complete and tracked in `.planning/PRODUCT_ITE
 - **Sprint Y:** post-release feedback loop — complete
 
 Sprint X release-readiness checkpoints are tracked in `.planning/RELEASE_READINESS_U_Y.md`.
-Current release validation: full automated regression passed with 1201 tests and 8 skips before the v2.8.1 build checkpoint. Latest Sprint 4 layout validation passed with 1203 tests and 8 skips.
+Current release validation: full automated regression passed with 1201 tests and 8 skips before the v2.8.1 build checkpoint. Latest Sprint 4 report messaging validation passed with 1203 tests and 8 skips.
 Build-script metadata verification passed for release artifact naming and checksum checks.
 Release notes for this version are tracked in `CHANGELOG.md`.
 Local Linux artifact build verification passed for `job-radar-v2.8.1-linux.tar.gz`.

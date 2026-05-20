@@ -113,13 +113,13 @@ Still planned in Sprint 3:
 
 Still planned in Sprint 4:
 
-- Improve report offline status feedback and status-sync messaging
 - Review copy for macOS portable install paths, source counts, and feature claims
 
 Sprint 4 completed locally:
 
 - First-run welcome content and Search tab idle/progress/completion/error/cancel states now render in scrollable containers for minimum-window and OS text-scaling resilience.
 - Applications header actions and per-row status/edit/template controls now use grid-based wrapped rows to reduce clipping at narrow widths and larger text settings.
+- Report controls and status-change feedback now explain that generated reports work offline and browser-local status edits require JSON export plus Applications-tab import.
 
 ## Recommended Next Slice
 
@@ -158,6 +158,12 @@ rtk .venv/bin/python -m pytest tests/
 
 rtk .venv/bin/python -m pytest tests/test_applications_view_model.py tests/test_gui_onboarding.py
 86 passed
+
+rtk .venv/bin/python -m pytest tests/
+1203 passed, 8 skipped
+
+rtk .venv/bin/python -m pytest tests/test_report.py tests/test_report_controls.py tests/test_demo_report_view_model.py tests/test_applications_view_model.py
+130 passed
 
 rtk .venv/bin/python -m pytest tests/
 1203 passed, 8 skipped

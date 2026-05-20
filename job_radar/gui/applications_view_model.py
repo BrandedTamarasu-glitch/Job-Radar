@@ -217,12 +217,12 @@ def applications_csv_export_error_message(error: object) -> str:
 
 def application_status_import_success_message(changed_count: int) -> str:
     """Return Applications tab feedback after report status import succeeds."""
-    return f"Imported {changed_count} status update(s)"
+    return f"Imported {changed_count} report status update(s) into Applications"
 
 
 def application_status_import_error_message(error: object) -> str:
     """Return Applications tab feedback after report status import fails."""
-    return f"Status import failed: {error}"
+    return f"Report status import failed: {error}"
 
 
 def application_calendar_export_success_message(export_path: object) -> str:

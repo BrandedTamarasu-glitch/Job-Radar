@@ -29,6 +29,8 @@ def test_html_copy_action_bar_renders_recommended_copy_and_export_controls():
     assert 'onclick="copyAllRecommendedUrls(this)"' in html
     assert "Export Status Updates" in html
     assert 'onclick="exportPendingStatusUpdates()"' in html
+    assert "Status edits stay in this browser" in html
+    assert "import it from the Applications tab" in html
     assert "shortcut-hint" in html
 
 
@@ -51,6 +53,8 @@ def test_html_filter_controls_render_status_filters_and_export_actions():
     assert 'onclick="exportVisibleJobsToCSV()"' in html
     assert 'id="view-mode-toggle"' in html
     assert 'id="filter-count"' in html
+    assert "This report works offline after generation" in html
+    assert "export JSON and import it from the Applications tab" in html
 
 
 def test_html_shortlist_button_renders_all_review_states():

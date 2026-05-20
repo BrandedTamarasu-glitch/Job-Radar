@@ -12,10 +12,10 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 ## Current Position
 
 **Milestone:** v2.8.1 shipped
-**Status:** Sprint 4 underway; scroll-safe GUI and Applications layout slices complete locally
-**Last activity:** 2026-05-20 — Applications header actions and row status/edit/template controls were moved into grid-based wrapped rows after the scroll-safe welcome/Search slice. Local validation passed with `1203 passed, 8 skipped`.
+**Status:** Sprint 4 underway; scroll-safe GUI, Applications layout, and report messaging slices complete locally
+**Last activity:** 2026-05-20 — report controls and status-change feedback were clarified so generated reports describe offline use and browser-local status edits that require JSON export plus Applications-tab import. Local validation passed with `1203 passed, 8 skipped`.
 
-**Next step:** continue Sprint 4 with report offline/status-sync messaging, then docs/copy review.
+**Next step:** finish Sprint 4 with docs/copy review for macOS portable install paths, source counts, and feature claims.
 
 ## Performance Metrics
 

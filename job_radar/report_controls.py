@@ -25,6 +25,10 @@ def html_copy_action_bar(section: str) -> str:
               onclick="exportPendingStatusUpdates()">
         Export Status Updates
       </button>"""
+        status_sync_note = """
+    <p class="text-muted small mt-1 mb-3">
+      Status edits stay in this browser until you export JSON and import it from the Applications tab.
+    </p>"""
     else:
         raise ValueError(f"Unknown copy action bar section: {section}")
 
@@ -35,6 +39,7 @@ def html_copy_action_bar(section: str) -> str:
       </button>{export_button}
       <span class="shortcut-hint ms-2">{_KEYBOARD_HINT}</span>
     </div>
+    {status_sync_note if section == "recommended" else ""}
     """
 
 
@@ -70,6 +75,7 @@ def html_filter_controls() -> str:
         <span id="filter-count" class="text-muted small ms-2" aria-hidden="true"></span>
       </div>
       <p class="text-muted small mt-2 mb-0">Filter applies to jobs with status set. Unset jobs are always visible.</p>
+      <p class="text-muted small mt-1 mb-0">This report works offline after generation. Status edits stay in this browser until you export JSON and import it from the Applications tab.</p>
     </div>
     """
 
