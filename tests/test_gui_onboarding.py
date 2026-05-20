@@ -251,6 +251,16 @@ def test_application_next_action_queue_includes_complete_action():
     assert "callbacks.snooze_next_action" in source
 
 
+def test_application_next_action_queue_uses_wrapped_actions():
+    source = inspect.getsource(_add_application_next_action_queue)
+
+    assert "queue_actions.grid" in source
+    assert "followup_actions" in source
+    assert 'sticky="ew"' in source
+    assert "width=96" not in source
+    assert "wraplength=640" in source
+
+
 def test_complete_application_next_action_clears_followup_details():
     source = inspect.getsource(MainWindow._complete_application_next_action)
 

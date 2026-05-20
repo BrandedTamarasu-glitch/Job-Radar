@@ -6,20 +6,20 @@ Date: 2026-05-20
 
 - Repo path: `/home/corye/openai-cli/Job-Radar`
 - Branch: `main`
-- Git status after workflow maintenance: local maintenance commit pending push, except preserved untracked `.forgeflow/`
+- Git status after Sprint 4: local Sprint 4 commits pending push, except preserved untracked `.forgeflow/`
 - Current release: `v2.8.1`
 - Release URL: https://github.com/BrandedTamarasu-glitch/Job-Radar/releases/tag/v2.8.1
-- Last local full validation: `1204 passed, 8 skipped`
+- Last local full validation: `1205 passed, 8 skipped`
 - Release workflow validation: GitHub Actions Release run `26128165442` passed tests, platform builds, installer builds, and release creation.
 
 ## Latest Commits
 
 ```text
-a3db694 release: prepare v2.8.1 checkpoint
-0845626 refactor: centralize api status display
-f37cb4b refactor: centralize maintenance feedback
-5c3ea0b refactor: centralize applications feedback
-bd13371 refactor: centralize saved search feedback
+95a28de ui: wrap follow-up queue actions
+1c585f5 docs: complete sprint 4 copy review
+c4c885d ux: clarify report status sync
+21960f5 ui: wrap applications row actions
+6b430bd ui: make search states scroll-safe
 ```
 
 ## Recently Shipped
@@ -114,23 +114,18 @@ Still planned in Sprint 3:
 Sprint 4 completed locally:
 
 - First-run welcome content and Search tab idle/progress/completion/error/cancel states now render in scrollable containers for minimum-window and OS text-scaling resilience.
-- Applications header actions and per-row status/edit/template controls now use grid-based wrapped rows to reduce clipping at narrow widths and larger text settings.
+- Applications header actions, follow-up queue actions, and per-row status/edit/template controls now use grid-based wrapped rows to reduce clipping at narrow widths and larger text settings.
 - Report controls and status-change feedback now explain that generated reports work offline and browser-local status edits require JSON export plus Applications-tab import.
 - README, FAQ, and distribution README now use current macOS portable paths, source counts, status export/import behavior, and source-extension architecture.
 
 ## Recommended Next Slice
 
-Continue with another small post-release Sprint 3 slice:
+Review the local Sprint 4 commits and decide whether to push or prepare the next release checkpoint.
 
-1. Inspect `job_radar/gui/main_window.py` for remaining text/state helpers that can move into existing view-model modules.
-2. Or inspect `job_radar/sources.py` compatibility wrappers for a narrow, provably internal cleanup.
-3. Run focused GUI/view-model tests, then full `rtk .venv/bin/python -m pytest tests/`.
-4. Commit after validation.
-
-Suggested focused validation:
+Suggested release-checkpoint validation:
 
 ```bash
-rtk .venv/bin/python -m pytest tests/test_gui_onboarding.py tests/test_gui_search_summary.py tests/test_profile_view_model.py
+rtk .venv/bin/python -m pytest tests/test_metadata.py tests/test_release_verification.py tests/test_release_notes.py
 rtk .venv/bin/python -m pytest tests/
 ```
 
@@ -170,6 +165,15 @@ rtk .venv/bin/python -m pytest tests/test_metadata.py tests/test_release_notes.p
 
 rtk .venv/bin/python -m pytest tests/
 1204 passed, 8 skipped
+
+rtk .venv/bin/python -m pytest tests/test_gui_onboarding.py tests/test_applications_view_model.py
+87 passed
+
+rtk .venv/bin/python -c '<CustomTkinter construction smoke for welcome/search/applications at 700x500, 900x600, and widget scales 1.0/1.25>'
+gui smoke ok: 700x500, 900x600, scales 1.0 and 1.25
+
+rtk .venv/bin/python -m pytest tests/
+1205 passed, 8 skipped
 ```
 
 ## Notes

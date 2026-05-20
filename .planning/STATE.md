@@ -13,7 +13,7 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Milestone:** v2.8.1 shipped
 **Status:** Sprint 4 complete locally
-**Last activity:** 2026-05-20 — README, FAQ, and distribution README were aligned with current macOS portable paths, source counts, status export/import behavior, and source-extension architecture. Local validation passed with `1204 passed, 8 skipped`.
+**Last activity:** 2026-05-20 — Forgeflow review follow-up wrapped Applications follow-up queue actions and added live CustomTkinter construction smoke coverage at minimum/default window sizes and larger widget scaling. Local validation passed with `1205 passed, 8 skipped`.
 
 **Next step:** review the local Sprint 4 commits and decide whether to push or prepare the next release checkpoint.
 
@@ -48,7 +48,7 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 ### Quality Indicators
 
 **Test Coverage:**
-- Latest full local suite: `1204 passed, 8 skipped`
+- Latest full local suite: `1205 passed, 8 skipped`
 - Release workflow tests passed on Linux, macOS, and Windows for `v2.8.1`
 - Coverage areas include scoring, config, tracker, wizard, report, UX, API, PDF, deduplication, accessibility, profile management, GUI view models, rate limiting, JSearch, USAJobs, hiring.cafe, schema migration, scoring config, update/install flows, and release verification
 
@@ -130,7 +130,7 @@ See `.planning/AUDIT_REMEDIATION_SPRINTS.md`.
 
 - No current release blocker after v2.8.0.
 - Remaining Sprint 3 work should stay small and compatibility-focused to avoid destabilizing the newly shipped release line.
-- Sprint 4 requires product/UX judgment and targeted screenshot/manual checks.
+- Live CustomTkinter construction smoke passed for Sprint 4 welcome/search/applications states at `700x500`, `900x600`, and widget scales `1.0`/`1.25`; no screenshot artifact was committed.
 
 ## Session Continuity
 

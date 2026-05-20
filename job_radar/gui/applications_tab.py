@@ -287,7 +287,7 @@ def _add_application_next_action_queue(
         row = application_next_action_row(action)
 
         action_frame = ctk.CTkFrame(queue_frame, fg_color="transparent")
-        action_frame.grid(row=index * 2 - 1, column=0, sticky="ew", padx=16, pady=(4, 0))
+        action_frame.grid(row=index * 3 - 2, column=0, sticky="ew", padx=16, pady=(4, 0))
         action_frame.grid_columnconfigure(0, weight=1)
 
         ctk.CTkLabel(
@@ -295,23 +295,28 @@ def _add_application_next_action_queue(
             text=f"{index}. {action['next_action']} — {row.title} at {row.company}",
             font=ctk.CTkFont(size=13, weight="bold"),
             anchor="w",
+            wraplength=640,
+            justify="left",
         ).grid(row=0, column=0, sticky="ew")
 
-        ctk.CTkButton(
-            action_frame,
-            text="Complete",
-            width=96,
-            height=28,
-            command=lambda queued=action: callbacks.complete_next_action(queued),
-        ).grid(row=0, column=1, sticky="e", padx=(12, 0))
+        queue_actions = ctk.CTkFrame(queue_frame, fg_color="transparent")
+        queue_actions.grid(row=index * 3 - 1, column=0, sticky="ew", padx=16, pady=(4, 4))
+        for column in range(2):
+            queue_actions.grid_columnconfigure(column, weight=1, uniform="followup_actions")
 
         ctk.CTkButton(
-            action_frame,
+            queue_actions,
+            text="Complete",
+            height=28,
+            command=lambda queued=action: callbacks.complete_next_action(queued),
+        ).grid(row=0, column=0, sticky="ew", padx=(0, 6))
+
+        ctk.CTkButton(
+            queue_actions,
             text="Snooze 3d",
-            width=96,
             height=28,
             command=lambda queued=action: callbacks.snooze_next_action(queued),
-        ).grid(row=0, column=2, sticky="e", padx=(6, 0))
+        ).grid(row=0, column=1, sticky="ew")
 
         ctk.CTkLabel(
             queue_frame,
@@ -320,4 +325,4 @@ def _add_application_next_action_queue(
             wraplength=760,
             anchor="w",
             justify="left",
-        ).grid(row=index * 2, column=0, sticky="ew", padx=16, pady=(0, 6))
+        ).grid(row=index * 3, column=0, sticky="ew", padx=16, pady=(0, 6))
