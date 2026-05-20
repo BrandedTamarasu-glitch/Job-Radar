@@ -564,8 +564,8 @@ class MainWindow(ctk.CTk):
         parent
             Parent tab widget
         """
-        # Create content frame that will hold either idle or progress state
-        self._search_content = ctk.CTkFrame(parent, fg_color="transparent")
+        # Create scrollable content frame that will hold idle/progress/result states.
+        self._search_content = ctk.CTkScrollableFrame(parent, fg_color="transparent")
         self._search_content.pack(fill="both", expand=True, padx=10, pady=10)
         self._search_content.grid_rowconfigure(0, weight=1)
         self._search_content.grid_columnconfigure(0, weight=1)

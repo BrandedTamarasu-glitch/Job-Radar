@@ -113,10 +113,13 @@ Still planned in Sprint 3:
 
 Still planned in Sprint 4:
 
-- Make welcome/search/progress/completion/error views scroll-safe at minimum window size and OS text scaling
 - Rework Applications row actions so status, edits, and templates do not clip
 - Improve report offline status feedback and status-sync messaging
 - Review copy for macOS portable install paths, source counts, and feature claims
+
+Sprint 4 completed locally:
+
+- First-run welcome content and Search tab idle/progress/completion/error/cancel states now render in scrollable containers for minimum-window and OS text-scaling resilience.
 
 ## Recommended Next Slice
 
@@ -139,6 +142,16 @@ Latest validation:
 ```bash
 rtk .venv/bin/python -m pytest tests/test_metadata.py tests/test_release_verification.py tests/test_release_notes.py
 22 passed
+
+rtk .venv/bin/python -m pytest tests/
+1202 passed, 8 skipped
+```
+
+Sprint 4 latest validation:
+
+```bash
+rtk .venv/bin/python -m pytest tests/test_gui_onboarding.py
+68 passed
 
 rtk .venv/bin/python -m pytest tests/
 1202 passed, 8 skipped

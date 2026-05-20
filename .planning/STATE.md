@@ -7,15 +7,15 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Accurate job-candidate scoring — if the scoring is wrong, nothing else matters.
-**Current focus:** Post-v2.8.1 release workflow maintenance
+**Current focus:** Sprint 4 UX, accessibility, and product polish
 
 ## Current Position
 
 **Milestone:** v2.8.1 shipped
-**Status:** Sprint 3 follow-up cleanup published in v2.8.1; post-release workflow maintenance complete locally
-**Last activity:** 2026-05-20 — release/accessibility workflows were updated for GitHub Actions Node 24 action majors and explicit Windows 2025 VS 2026 release runners. Local validation passed with `1202 passed, 8 skipped`.
+**Status:** Sprint 4 underway; first scroll-safe GUI slice complete locally
+**Last activity:** 2026-05-20 — first-run welcome content and Search tab idle/progress/completion/error/cancel states were moved into scrollable containers for minimum-window and text-scaling resilience. Local validation passed with `1202 passed, 8 skipped`.
 
-**Next step:** decide whether to continue Sprint 3 with higher-risk API/update/uninstall extraction or defer remaining architecture cleanup to a planned follow-up.
+**Next step:** continue Sprint 4 with Applications row-action clipping fixes, then report offline/status-sync messaging, then docs/copy review.
 
 ## Performance Metrics
 

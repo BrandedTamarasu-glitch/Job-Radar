@@ -14,8 +14,12 @@ def build_welcome_screen(
     on_preview_demo: Callable[[], None],
 ) -> ctk.CTkLabel:
     """Build the first-run welcome screen and return its status label."""
-    content_frame = ctk.CTkFrame(parent, fg_color="transparent")
-    content_frame.place(in_=parent, relx=0.5, rely=0.5, anchor="center")
+    scroll_frame = ctk.CTkScrollableFrame(parent, fg_color="transparent")
+    scroll_frame.grid(row=2, column=0, sticky="nsew", padx=20, pady=(0, 20))
+    scroll_frame.grid_columnconfigure(0, weight=1)
+
+    content_frame = ctk.CTkFrame(scroll_frame, fg_color="transparent")
+    content_frame.grid(row=0, column=0, sticky="n", pady=20)
 
     ctk.CTkLabel(
         content_frame,

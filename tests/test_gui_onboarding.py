@@ -58,6 +58,9 @@ from job_radar.gui.window_shell import clear_content_except_header
 def test_welcome_screen_exposes_demo_report_preview():
     source = inspect.getsource(build_welcome_screen)
 
+    assert "CTkScrollableFrame(parent" in source
+    assert 'sticky="nsew"' in source
+    assert 'content_frame.grid(row=0, column=0, sticky="n"' in source
     assert "Preview Demo Report" in source
     assert "command=on_preview_demo" in source
     assert "Get Started" in source
@@ -130,9 +133,12 @@ def test_search_idle_includes_profile_readiness_guidance():
 
 def test_search_state_views_reuse_clear_content_helper():
     helper_source = inspect.getsource(clear_search_content)
+    search_tab_source = inspect.getsource(MainWindow._build_search_tab)
 
     assert "for widget in parent.winfo_children()" in helper_source
     assert "widget.destroy()" in helper_source
+    assert "CTkScrollableFrame(parent" in search_tab_source
+    assert 'pack(fill="both", expand=True' in search_tab_source
     assert "clear_search_content(self._search_content)" in inspect.getsource(MainWindow._show_search_progress)
     assert "clear_search_content(self._search_content)" in inspect.getsource(MainWindow._show_search_complete)
     assert "clear_search_content(self._search_content)" in inspect.getsource(MainWindow._on_search_cancelled)
