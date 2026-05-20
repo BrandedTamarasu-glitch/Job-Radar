@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 
 ## Current Position
 
-**Milestone:** v2.8.1 shipped
-**Status:** Sprint 4 complete locally
-**Last activity:** 2026-05-20 — Forgeflow review follow-up wrapped Applications follow-up queue actions and added live CustomTkinter construction smoke coverage at minimum/default window sizes and larger widget scaling. Local validation passed with `1205 passed, 8 skipped`.
+**Milestone:** v2.9.0 release prep
+**Status:** Sprint 4 complete locally; v2.9.0 checkpoint in progress
+**Last activity:** 2026-05-20 — v2.9.0 release metadata and docs were prepared and local release validation passed (`1205 passed, 8 skipped`, Linux artifact/checksum build, executable `job-radar 2.9.0` smoke).
 
-**Next step:** review the local Sprint 4 commits and decide whether to push or prepare the next release checkpoint.
+**Next step:** commit release prep, tag and push `v2.9.0`, monitor the release workflow, then update docs/wiki with final release status.
 
 ## Performance Metrics
 

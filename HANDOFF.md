@@ -6,9 +6,9 @@ Date: 2026-05-20
 
 - Repo path: `/home/corye/openai-cli/Job-Radar`
 - Branch: `main`
-- Git status after Sprint 4: local Sprint 4 commits pending push, except preserved untracked `.forgeflow/`
-- Current release: `v2.8.1`
-- Release URL: https://github.com/BrandedTamarasu-glitch/Job-Radar/releases/tag/v2.8.1
+- Git status after release prep: local `v2.9.0` release-prep commit pending, except preserved untracked `.forgeflow/`
+- Current release target: `v2.9.0`
+- Previous release URL: https://github.com/BrandedTamarasu-glitch/Job-Radar/releases/tag/v2.8.1
 - Last local full validation: `1205 passed, 8 skipped`
 - Release workflow validation: GitHub Actions Release run `26128165442` passed tests, platform builds, installer builds, and release creation.
 
@@ -73,6 +73,28 @@ OK: wrote checksums to job-radar-v2.8.1-linux.sha256
 job-radar 2.8.1
 ```
 
+### v2.9.0 Release Prep
+
+The `v2.9.0` checkpoint packages Sprint 4 UX polish, GitHub Actions runtime maintenance, report status-sync copy, and public documentation truth-sweep updates.
+
+Validation completed:
+
+```text
+rtk .venv/bin/python -m pytest tests/test_metadata.py tests/test_release_verification.py tests/test_release_notes.py
+23 passed
+
+rtk .venv/bin/python -m pytest tests/
+1205 passed, 8 skipped
+
+rtk env PYTHON_BIN=.venv/bin/python bash scripts/build.sh
+OK: dist/job-radar/job-radar
+OK: job-radar-v2.9.0-linux.tar.gz
+OK: wrote checksums to job-radar-v2.9.0-linux.sha256
+
+./dist/job-radar/job-radar --version
+job-radar 2.9.0
+```
+
 ## Sprint 3 Completed Work
 
 The v2.8.0 line includes the audit-remediation architecture work completed so far:
@@ -120,7 +142,7 @@ Sprint 4 completed locally:
 
 ## Recommended Next Slice
 
-Review the local Sprint 4 commits and decide whether to push or prepare the next release checkpoint.
+Complete the `v2.9.0` release checkpoint: run release validation, commit release prep, tag `v2.9.0`, push the branch and tag, monitor the GitHub Actions Release workflow, then update README/wiki release status once the workflow publishes the assets.
 
 Suggested release-checkpoint validation:
 

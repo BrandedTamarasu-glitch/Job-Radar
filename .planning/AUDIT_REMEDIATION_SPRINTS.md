@@ -2,7 +2,7 @@
 
 Last updated: 2026-05-20
 
-This plan converts the Review Squad top-to-bottom quality, security, UX, and rebase audit into executable sprints. The v2.8.0 release has shipped with Sprint 0-2 trust/state work and the completed Sprint 3 architecture cleanup slices listed below.
+This plan converts the Review Squad top-to-bottom quality, security, UX, and rebase audit into executable sprints. The v2.9.0 release checkpoint packages Sprint 0-3 remediation work plus the completed Sprint 4 UX, accessibility, and product-polish slices listed below.
 
 ## Sprint 0 - Release Blockers
 

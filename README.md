@@ -2,12 +2,12 @@
 
 A desktop job search tool that searches multiple job boards, scores listings against your profile, and generates ranked reports. Available as both a **desktop GUI application** (double-click to launch) and a **CLI** for power users and scripting. Features include multi-source search (11 automated sources: Dice, HN Hiring, RemoteOK, We Work Remotely, Adzuna, Authentic Jobs, JSearch, USAJobs, SerpAPI, Jobicy, hiring.cafe + 5 manual URL builders: Wellfound, Indeed, LinkedIn, Glassdoor, We Work Remotely), PDF resume import, fuzzy skill matching, user-configurable scoring weights, cross-source deduplication with richness scoring, API quota tracking for configured providers, in-app auto-updates, and dual-format HTML and Markdown reports with shortlist state, compact/detail review, keyboard navigation, application status export/import, and WCAG 2.1 Level AA accessibility.
 
-## What's New in v2.8.1
+## What's New in v2.9.0
 
-- **Post-release GUI cleanup:** Additional Search, Applications, Settings, API, uninstall, update-status, and report-opening feedback helpers have moved out of `MainWindow` while preserving existing behavior.
-- **Profile schema helpers:** Years-experience parsing, compensation-floor parsing, range constants, and level derivation now live in one shared helper used by the CLI wizard, quick editor, GUI form, and profile validation.
-- **Release checkpoint:** Runtime/package metadata and build scripts now target v2.8.1.
-- **Validation:** The v2.8.1 release checkpoint passed the full automated suite: `1201 passed, 8 skipped`; latest Sprint 4 validation passed with `1205 passed, 8 skipped`.
+- **Sprint 4 UX polish:** Welcome/Search states are scroll-safe, Applications action rows wrap instead of clipping, and report status copy clearly explains offline use plus JSON export/import.
+- **Workflow maintenance:** Release and accessibility workflows now use current Node 24 GitHub Actions majors and explicit Windows 2025 VS 2026 release runners.
+- **Docs truth sweep:** README, FAQ, distribution docs, and wiki wording now match current source counts, macOS portable paths, and status export/import behavior.
+- **Validation:** The v2.9.0 release checkpoint passed the full automated suite: `1205 passed, 8 skipped`.
 
 ## Installation
 
@@ -559,10 +559,10 @@ The Product Iteration U-Y work is complete and tracked in `.planning/PRODUCT_ITE
 - **Sprint Y:** post-release feedback loop — complete
 
 Sprint X release-readiness checkpoints are tracked in `.planning/RELEASE_READINESS_U_Y.md`.
-Current release validation: full automated regression passed with 1201 tests and 8 skips before the v2.8.1 build checkpoint. Latest Sprint 4 validation passed with 1205 tests and 8 skips.
+Current release validation: full automated regression passed with 1205 tests and 8 skips before the v2.9.0 build checkpoint.
 Build-script metadata verification passed for release artifact naming and checksum checks.
 Release notes for this version are tracked in `CHANGELOG.md`.
-Local Linux artifact build verification passed for `job-radar-v2.8.1-linux.tar.gz`.
+Local Linux artifact build verification passed for `job-radar-v2.9.0-linux.tar.gz`.
 Sprint Y feedback-loop planning and next product slice candidates are tracked in `.planning/POST_RELEASE_FEEDBACK_U_Y.md`, and Settings now includes copyable redacted feedback diagnostics for privacy-safe issue reports.
 
 The Review Squad audit remediation stream is tracked in `.planning/AUDIT_REMEDIATION_SPRINTS.md`. Sprint 3 has decomposed the report renderer, source adapters, shared search pipeline, profile schema helpers, and several GUI maintenance/search/profile helpers while preserving compatibility wrappers where needed; Sprint 4 layout and copy polish is complete locally; latest validation: `1205 passed, 8 skipped`.

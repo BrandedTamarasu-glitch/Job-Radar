@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v2.9.0 — 2026-05-20
+
 ### Improvements
 - **GitHub Actions runtime maintenance** - Updated release and accessibility workflows to current Node 24 action majors and switched release Windows jobs to the explicit `windows-2025-vs2026` runner label.
 - **Sprint 4 scroll-safe GUI states** - Made the first-run welcome screen and Search tab idle/progress/completion/error/cancel states render inside scrollable containers for minimum-window and text-scaling resilience.
